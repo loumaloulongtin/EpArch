@@ -105,7 +105,7 @@ $$\text{SelfCorrecting}(D) \Rightarrow \text{permitsRevision}(D)$$
 
 ### Math Form
 
-$$\nexists f : \text{Stripped} \to \text{Full}.\, f \circ \text{strip} = \text{id}$$
+$$\neg \exists f : \text{Stripped} \to \text{Full}.\, f \circ \text{strip} = \text{id}$$
 
 $$h_1 \neq h_2 \land \text{claim}(h_1) = \text{claim}(h_2) \Rightarrow \text{strip}(h_1) = \text{strip}(h_2)$$
 
@@ -145,9 +145,9 @@ $$f \notin \text{ObservableFields}(d) \Rightarrow \neg\text{canTargetRepair}(f, 
 
 | Theorem | Statement | Paper Claim |
 |---------|-----------|-------------|
-| `factorization_enables_field_identification` | Any broken Field ∈ {S,E,V,τ,red,acl} (Field enum exhaustion; has_SEV_factorization = True for all deposits; SEV premise vacuous) | §7: Field enum completeness |
-| `factorization_enables_legibility` | Deposited + ∃ broken field → Legible (Field enum exhaustion; SEV premise vacuous) | §7: Legibility |
-| `strong_sev_localizes_to_core_fields` | StepSemantics.lean | has_strong_SEV_factorization(∀ f, broken→f∈[S,E,V]) → ∃ broken field ∈ [S,E,V] (SEV premise essential; conclusion strictly stronger than 6-field) | §7: Strong SEV → core-field localization |
+| `factorization_enables_field_identification` | Broken field is contained in the 6-field enum {S,E,V,τ,red,acl} | §7: Field enum completeness |
+| `factorization_enables_legibility` | Deposited deposit with a broken field → Legible | §7: Legibility |
+| `strong_sev_localizes_to_core_fields` | Strong SEV factorization → broken field ∈ {S,E,V} | §7: Strong SEV → core-field localization |
 | `all_challenges_field_specific` | All challenges target one of 6 canonical fields | §7/§14: Field specificity |
 | `headers_enable_field_diagnosis` | depositHasHeader → challenge is field-specific | §7: Header enables diagnosis |
 | `header_enables_efficient_resolution` | depositHasHeader → efficient resolution via field targeting | §14: Header efficiency |
@@ -418,25 +418,7 @@ Applications of the safety/sensitivity framework to specific epistemological cas
 | `E_inclusion_closes_expertise_gap_of_W` | AdversarialObligations.lean | W_E_inclusion → E includes threat → ¬gap_exploited | `E_inclusion_closes_expertise_gap` |
 | `cheap_constraint_blocks_V_spoof_of_W` | AdversarialObligations.lean | W_cheap_constraint → cheap test → ¬V_attack | `cheap_constraint_blocks_V_spoof` |
 
-### World Assumption Bundles
-
-| Bundle | Contents | Enables |
-|--------|----------|---------|
-| `W_lies_possible` | some_false, unrestricted_utterance | lie_possible_of_W |
-| `W_bounded_verification` | verification_has_cost | bounded_audit_fails |
-| `W_partial_observability` | obs_underdetermines | (future: epistemic limits) |
-| `W_asymmetric_costs` | export_cost, defense_cost, asymmetry | cost_asymmetry_of_W |
-| `W_spoofedV` | broken_chain_no_path | spoofed_V_blocks_path_of_W |
-| `W_ddos` | overwhelm_causes_collapse | ddos_causes_verification_collapse_of_W |
-| `W_collapse_centralization` | exhaustion_triggers_delegation | collapse_causes_centralization_of_W |
-| `W_lies_scale` | costs, asymmetry_holds | lies_scale_of_W |
-| `W_rolex_ddos` | rolex_structure, ddos_structure, both_* | rolex_ddos_structural_equivalence_of_W |
-| `W_ddos_full` | extends W_ddos, W_collapse_centralization | ddos_to_centralization_of_W |
-| `W_cheap_validator` | cheap_validator_enables_check | cheap_validator_blocks_V_attack_of_W |
-| `W_trust_bridge` | trust_bridge_enables_check | trust_bridge_blocks_V_attack_of_W |
-| `W_reversibility` | reversibility_neutralizes | reversibility_neutralizes_τ_of_W |
-| `W_E_inclusion` | E_modeling_closes_gap | E_inclusion_closes_expertise_gap_of_W |
-| `W_cheap_constraint` | cheap_test_exposes_spoof | cheap_constraint_blocks_V_spoof_of_W |
+**World Assumption Bundles:** 15 `W_*` bundles (`W_lies_possible` through `W_cheap_constraint`) each gate exactly one obligation theorem above; full definitions in World.lean and WorldCtx.lean.
 
 ### Math Form
 
@@ -450,54 +432,8 @@ $$\text{W\_ddos\_full} \land \text{overwhelmed}(s) \Rightarrow \text{centralized
 
 ## Adversarial Attack Surfaces
 
-Each architectural constraint creates both a capability and an exploitable surface. The following tables catalog attack scenarios formalized through Lean structures in the adversarial modules.
+Each architectural constraint creates both a capability and an exploitable surface. Five canonical surfaces follow directly from the bucket structure: **Lifecycle** (ladder overload, premature closure — `DDoSVector.LadderOverload`, `τ_compressed`), **Revision** (challenge flooding, denial triggering — `DDoSVector.DenialTriggering`), **Export/Strip Asymmetry** (V-spoofing, proxy substitution, provenance laundering — `stripV_loses_provenance`, `ProxySubstitution`, `no_strip_left_inverse`), **Diagnosability** (E-field poisoning, diagnostic denial — `DDoSVector.EFieldPoisoning`, `stripped_no_field_repair`), and **Temporal Validity** (τ compression, staleness induction — `FullStackAttack.τ_compressed`, `tick_can_cause_staleness`). Coordinated full-stack attacks are formalized as `FullStackAttack` in AdversarialBase.lean; the four `DDoSVector` constructors cover the exhaustive attack vector taxonomy.
 
-### Lifecycle (Candidate/Deposited Gap)
-| Attack | Mechanism | Formalized In |
-|--------|-----------|---------------|
-| Ladder Overload | Flood Candidate stage faster than validation | `DDoSVector.LadderOverload` |
-| Premature Closure Pressure | Force Candidate→Deposited before validation | `τ_compressed` in `FullStackAttack` |
-| Traction Hijacking | Generate traction without earning authorization | `TractionAuthorizationSplit`; `lies_scale_of_W` |
-
-### Revision / Self-Correction
-| Attack | Mechanism | Formalized In |
-|--------|-----------|---------------|
-| Challenge Flooding | Overwhelm revision capacity with frivolous challenges | DDoS on repair loop |
-| Denial Triggering | Induce "nothing is trustworthy" state | `DDoSVector.DenialTriggering` |
-| Revision Weaponization | Abuse challenge mechanism for harassment | `repair_requires_prior_challenge` (quarantine gate) |
-
-### Export / Strip Asymmetry
-| Attack | Mechanism | Formalized In |
-|--------|-----------|---------------|
-| V-spoofing | Stripped deposits lose provenance | `stripV_loses_provenance`, `stripV_not_injective` |
-| Proxy substitution | Stripping enables "similar enough" swaps | `ProxySubstitution`; `lies_scale_of_W` |
-| Provenance laundering | Strip → re-wrap with false headers | `no_strip_left_inverse` |
-| Authority inflation | Stripped claim re-attributed to higher authority | `stripV_loses_provenance` |
-
-### Diagnosability
-| Attack | Mechanism | Formalized In |
-|--------|-----------|---------------|
-| E-field poisoning | Flood environment with noise → degrade E-field reliability | `DDoSVector.EFieldPoisoning` |
-| Diagnostic denial | Force stripping → only coarse repair possible | `stripped_no_field_repair` |
-| Repair loop exhaustion | Trigger unlocalizable repairs → infinite retry | `stripped_no_field_repair` |
-
-### Temporal Validity (τ)
-| Attack | Mechanism | Formalized In |
-|--------|-----------|---------------|
-| τ compression | Force artificially short validity windows | `τ_compressed` in `FullStackAttack` |
-| Staleness induction | Delay victim's refresh → deposits expire | `tick_can_cause_staleness` |
-| Temporal denial | Flood refresh queue → critical deposits can't renew | maintenance pressure semantics |
-| Clock manipulation | Accelerate expiry via shared/observable clock | `stale_blocks_withdrawal` |
-
-### Coordinated Full-Stack
-| Attack Class | Lean Reference | Severity |
-|--------------|----------------|----------|
-| Resource Exhaustion | `DDoSVector.LadderOverload`, `DDoSVector.VChannelExhaustion` | High |
-| Provenance Spoofing | `stripV_loses_provenance`, `ProxySubstitution` | Medium |
-| Diagnostic Degradation | `DDoSVector.EFieldPoisoning` | Medium |
-| Temporal Pressure | `FullStackAttack.τ_compressed` | Medium |
-| Environmental Poisoning | `fake_barn_is_E_failure` | High |
-| Coordinated Full-Stack | `FullStackAttack` structure | Critical |
 
 ---
 
@@ -652,15 +588,7 @@ Three levels of safety are formalized: premise strengthening (adding premises pr
 
 ### Compatible Extension Framework (Tier A)
 
-| Structure | Description |
-|-----------|-------------|
-| `CoreSig` | Core type signature (Agent, Claim, Bubble, Time, Deposit, Header) |
-| `CoreOps` | Core operations (truth, obs, verifyWithin, hasRevision, selfCorrects) |
-| `CoreModel` | Bundle of CoreSig + CoreOps + Nonempty Bubble |
-| `ExtSig` | Extended signature (adds AgentExtra, WorldExtra) |
-| `ExtOps` | Extended operations (adds getAgentExtra, getWorldExtra) |
-| `ExtModel` | Bundle of ExtSig + ExtOps |
-| `Compatible` | Commuting laws between ExtModel and CoreModel |
+`CoreModel` bundles the core type signature and operations. `Compatible` extensions are `ExtModel`s whose extra fields commute with `CoreModel` projections — ensuring the transport theorems below hold.
 
 ### Transport Theorems (Tier A)
 
@@ -708,9 +636,6 @@ $$\text{Compatible} := \forall B.\, E.\text{selfCorrects}(B) \Leftrightarrow C.\
 
 $$\text{PRP} \Rightarrow \neg\exists t_{\text{final}}.\, \forall t \geq t_{\text{final}}.\, \forall c.\, \text{cost}(c) \leq \text{budget}(a, t)$$
 
-**Interpretation:** Under PRP, agents cannot reach a time after which all challenges are affordable.
-This is the formalization of "embedded agency" — no God's-eye-view, no terminal verification.
-
 ### Design-Imposition Theorems (Tier A — Proved)
 
 Pattern: `AgentConstraints + HealthGoal + ¬Mechanism → False`
@@ -721,11 +646,6 @@ File: `Agent/Imposition.lean`
 | `safe_withdrawal_needs_reversibility` | Time-bounded agents need reversibility | Reversibility |
 | `sound_deposits_need_cheap_validator` | PRP + bounded audit need cheap validators | CheapValidator |
 | `reliable_export_needs_gate` | Fallible observation needs export gates | ExportGate |
-
-**Note:** These are proved theorems (Tier A), not axioms. They derive that certain
-combinations are impossible from the agent-constraint and health-goal definitions.
-The containment invariants (`truth_invariant_preserved`, `gate_invariant_preserved`)
-are also proved by trace induction.
 
 ### Budget Forcing (Corner 8)
 
