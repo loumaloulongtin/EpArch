@@ -1,78 +1,96 @@
 # World Layer Documentation
 
-This document describes the World layer (`EpArch/World.lean` and `EpArch/WorldCtx.lean`) which provides the substrate for converting mechanism axioms into conditional obligation theorems.
+This document explains the **World layer** (`EpArch/WorldCtx.lean` and `EpArch/World.lean`) as the semantic substrate used to convert world-side assumptions into **conditional obligation theorems**.
 
-## Canonical Type Vocabulary
+Its job is narrow:
 
-> **IMPORTANT:** `EpArch.Claim` (defined in `Basic.lean`) is the **canonical claim type** used across the entire codebase.
-
-| Type | Location | Status | Usage |
-|------|----------|--------|-------|
-| `EpArch.Claim` | `Basic.lean` | **Canonical** | The single claim type for all modules |
-| `WorldCtx.Claim` | `WorldCtx.lean` | Type parameter | Instantiated to `EpArch.Claim` |
-
-**Rule:** Other modules must NOT define new claim/proposition types. When modules use type parameters like `{PropLike : Type u}`, they should be instantiated with `EpArch.Claim`.
-
-This ensures:
-- One vocabulary across Bank, Health, StepSemantics, AdversarialObligations, and Agent modules
-- No parallel type universes that complicate composition
-- Clear paper-facing exports without type confusion
+- define what the World layer is
+- explain what the `W_*` bundles mean
+- show what these bundles buy, and what they do **not** buy
+- prevent overclaiming about world-conditioned results
 
 ---
 
-## Philosophy
+## What the World Layer Is
 
-**World assumptions are NOT asserted as true.** They parameterize obligation theorems.
+The World layer is **not** a concrete model of reality.
 
-Instead of:
+It is a **parametric semantic interface** used to state theorems of the form:
+
+```
+W_* → obligation
+```
+
+Instead of asserting mechanism-style claims directly as unconditional axioms, the architecture makes the world-side assumptions explicit and bundles them.
+
+So instead of:
+
 ```lean
 axiom lies_scale : export_cost < defense_cost
 ```
 
-We get:
+the World layer supports:
+
 ```lean
 theorem lies_scale_of_W : W_lies_scale → export_cost < defense_cost
 ```
 
-This transformation:
-- Makes assumptions **explicit** and **nameable**
-- Allows users to **swap assumption bundles**
-- Transforms "take it or leave it" claims into "if you accept X, then Y follows"
+This makes assumptions **explicit and nameable**, lets readers inspect exactly which world-side assumptions are doing work, and converts "take it or leave it" claims into conditional, auditable theorem statements.
+
+---
+
+## Why the Layer Is Parametric
+
+`WorldCtx` is a semantic signature, not a fixed world model. Theorems stated over `(C : WorldCtx)` range over any instantiation satisfying the signature and the relevant bundles.
+
+This separation buys two things:
+
+**Generality** — theorems are not tied to one stub world.
+
+**Clean assumption discipline** — the repo separates what is assumed about worlds from what is proved about the architecture under those assumptions.
+
+The World layer is best understood as the place where the repo says: *"If the world has this structure, then these epistemic pressures or obligations follow."*
 
 ---
 
 ## Core Primitives
 
-These are the fields of `WorldCtx`, the canonical parametric signature. All theorem signatures take `(C : WorldCtx)` and access primitives as `C.Truth`, `C.Claim`, etc. The deprecated `PropLike` alias in `World.lean` is equal to `EpArch.Claim`; it exists only for backward compatibility and should not be used in new code.
+These are the fields of `WorldCtx`. All theorem signatures take `(C : WorldCtx)` and access primitives as `C.Truth`, `C.Claim`, etc.
 
-| Primitive | Type | Description |
-|-----------|------|-------------|
+| Primitive | Type | Role |
+|-----------|------|------|
 | `World` | `Type` | Possible states of affairs |
-| `Claim` | `Type` | Propositions / things that can be true or false |
+| `Claim` | `Type` | Propositions / truth-evaluable items |
 | `Truth` | `World → Claim → Prop` | World-relative truth predicate |
-| `Utter` | `Agent → Claim → Prop` | Agent utterance (speech act) |
-| `Obs` | `Type` | Observations (epistemically accessible) |
+| `Utter` | `Agent → Claim → Prop` | Speech-act / utterance relation |
+| `Obs` | `Type` | Observations / epistemically accessible outputs |
 | `obs` | `World → Obs` | Observation function |
-| `VerifyWithin` | `World → Claim → Nat → Prop` | Bounded verification |
+| `VerifyWithin` | `World → Claim → Nat → Prop` | Bounded verification predicate |
 | `effectiveTime` | `World → Nat` | Available verification capacity |
+
+`Truth` says what is true in a world; `obs` says what is accessible to an observer; `VerifyWithin` says what can be checked within bounded effort; `effectiveTime` gives the resource side of that boundedness.
 
 ---
 
 ## Derived Concepts
 
+Several useful world-layer notions are defined from the core interface.
+
 | Concept | Definition | Meaning |
 |---------|------------|---------|
-| `Lie w a P` | `Utter a P ∧ ¬Truth w P` | Agent utters falsehood |
+| `Lie w a P` | `Utter a P ∧ ¬Truth w P` | Agent utters a falsehood |
 | `can_lie a` | `∃ w P, Lie w a P` | Agent can lie somewhere |
-| `PartialObs w0 w1` | `obs w0 = obs w1` | Observationally equivalent worlds |
-| `NotDeterminedByObs P` | `∃ w0 w1, PartialObs w0 w1 ∧ (Truth w0 P ↔ ¬Truth w1 P)` | Truth underdetermined by observation |
-| `RequiresSteps w P k` | `∀ t < k, ¬VerifyWithin w P t` | P needs at least k steps |
+| `PartialObs w0 w1` | `obs w0 = obs w1` | Two worlds are observationally indistinguishable |
+| `NotDeterminedByObs P` | `∃ w0 w1, PartialObs w0 w1 ∧ (Truth w0 P ↔ ¬Truth w1 P)` | Observation underdetermines truth |
+| `RequiresSteps w P k` | `∀ t < k, ¬VerifyWithin w P t` | Verifying P needs at least k steps |
+
+These are the minimum derived notions needed to state obligation theorems cleanly.
 
 ---
 
 ## World Assumption Bundles
 
-These structures bundle assumptions for obligation theorems:
+The `W_*` structures package assumptions that later theorems depend on.
 
 ### `W_lies_possible`
 ```lean
@@ -80,113 +98,64 @@ structure WorldCtx.W_lies_possible (C : WorldCtx) where
   some_false : ∃ w P, ¬C.Truth w P
   unrestricted_utterance : ∀ a P, C.Utter a P
 ```
-**Buys:** Lying is structurally possible
-**Assumes:** False propositions exist; agents can utter anything
+**Buys:** Lying is structurally possible.
+**Assumes:** False propositions exist; agents can utter arbitrary claims.
+
+This is an existence/capability bundle. It says nothing about frequency, effectiveness, or strategic success.
 
 ### `W_bounded_verification`
 ```lean
 structure WorldCtx.W_bounded_verification (C : WorldCtx) where
   verification_has_cost : ∃ P k, k > 0 ∧ ∀ w, C.RequiresSteps w P k
 ```
-**Buys:** Verification has non-trivial cost
-**Assumes:** Some propositions require multiple steps to verify
+**Buys:** Some verification tasks have non-trivial cost.
+**Assumes:** At least some propositions require more than zero effort to verify.
+
+This gives the architecture a formal handle on bounded audit.
 
 ### `W_partial_observability`
 ```lean
 structure WorldCtx.W_partial_observability (C : WorldCtx) where
   obs_underdetermines : ∃ P, C.NotDeterminedByObs P
 ```
-**Buys:** Observation doesn't determine all truth
-**Assumes:** Observationally equivalent worlds can differ in truth values
+**Buys:** Observation does not settle all truth.
+**Assumes:** There exist observationally equivalent worlds differing in truth value.
+
+This is the clean world-layer form of "what can be seen is not everything that matters."
 
 ---
 
-## Obligation Theorems (Phase 1)
+## Obligation Theorems
 
 ### `lie_possible_of_W`
 ```lean
 theorem WorldCtx.lie_possible_of_W (C : WorldCtx) (W : WorldCtx.W_lies_possible C) :
     ∃ w a P, C.Lie w a P
 ```
-**Paper claim:** "Agents can lie"
-**What it buys:** Lying is structurally possible (existence)
-**What it doesn't buy:** Prevalence, effectiveness, or scaling
+**What it buys:** Lying is structurally possible.
+**What it does not buy:** Prevalence, scaling, strategic success, or social consequences.
 
 ### `all_agents_can_lie_of_W`
 ```lean
 theorem WorldCtx.all_agents_can_lie_of_W (C : WorldCtx) (W : WorldCtx.W_lies_possible C)
     (a : C.Agent) : C.can_lie a
 ```
-**Paper claim:** "Any agent can lie"
-**What it buys:** Universal capability (all agents)
-**What it doesn't buy:** Will they? How often?
+**What it buys:** Lying is an agent-general capability under the bundle.
+**What it does not buy:** That agents will exercise this capability.
 
 ### `bounded_audit_fails`
 ```lean
 theorem WorldCtx.bounded_audit_fails (C : WorldCtx) (w : C.World) (P : C.Claim)
     (k t : Nat) : C.RequiresSteps w P k → t < k → ¬C.VerifyWithin w P t
 ```
-**Paper claim:** "Verification is bounded"
-**What it buys:** Time constraints matter
-**What it doesn't buy:** What k is for any specific P
+**What it buys:** Time/resource limits matter formally.
+**What it does not buy:** A fixed empirical cost model for real verification tasks.
 
 ---
 
-## Naming Convention
+## Adversarial Obligation Theorems (`AdversarialObligations.lean`)
 
-| Pattern | Meaning |
-|---------|---------|
-| `X` | Existing axiom name (mechanism claim) |
-| `X_of_W` | Conditional theorem version |
-| `W_X` | Minimal assumption bundle for `X_of_W` |
-
----
-
-## Claim Budget
-
-### ✅ What We CAN Claim
-
-- "Under W_lies_possible, lying is structurally possible"
-- "Bounded verification implies time constraints matter"
-- "These assumptions are explicit and auditable"
-
-### ❌ What We CANNOT Claim
-
-- "Agents WILL lie" (existence ≠ prevalence)
-- "Verification costs are THIS high" (parameterized, not instantiated)
-- "These world assumptions are true" (they're parameters, not assertions)
-
-### ⚠️ Overclaim Traps
-
-| Trap | Why Wrong | Correct Framing |
-|------|-----------|-----------------|
-| "We proved agents lie" | Conditional on assumptions | "Under W_lies_possible, lies are structurally possible" |
-| "Verification is infeasible" | Only if time < required | "If t < k and RequiresSteps w P k, verification fails" |
-| "World model is realistic" | It's minimal, not complete | "World layer provides sufficient structure for obligation theorems" |
-
----
-
-## Relationship to Existing Modules
-
-```
-Basic.lean (Agent, Claim, Bubble, etc.)
-    ↓
-WorldCtx.lean (WorldCtx structure: World, Truth, Utter, etc.)
-    ↓                          ↓
-World.lean (re-exports)    AdversarialObligations.lean (W-bundles → obligations)
-                               ↑
-                           AdversarialBase.lean (attack patterns)
-                               ↑
-                           Basic.lean + Header.lean + Bank.lean + Commitments.lean
-```
-
-The World layer sits between Basic (pure types) and Adversarial (attack modeling), providing the semantic substrate for truth, utterance, and verification. Note: `AdversarialBase.lean` imports `Basic`, `Header`, `Bank`, and `Commitments` (not `World.lean`). `AdversarialObligations.lean` imports `WorldCtx` (not `World.lean`) plus `AdversarialBase`.
-
----
-
-## Adversarial Obligation Theorems (AdversarialObligations.lean)
-
-The `AdversarialObligations.lean` module converts the adversarial axioms from `AdversarialBase.lean` into conditional obligation theorems:
+`AdversarialObligations.lean` converts the adversarial axioms from `AdversarialBase.lean` into conditional obligation theorems using the same `W_*` / `_of_W` pattern.
 
 | Original Axiom | Obligation Theorem | World Bundle |
 |----------------|-------------------|--------------|
@@ -196,9 +165,7 @@ The `AdversarialObligations.lean` module converts the adversarial axioms from `A
 | `lies_scale` | `lies_scale_of_W` | `W_lies_scale` |
 | `rolex_ddos_structural_equivalence` | `rolex_ddos_structural_equivalence_of_W` | `W_rolex_ddos` |
 
-### Composed Chain
-
-The `ddos_to_centralization_of_W` theorem composes the DDoS and centralization theorems:
+The `ddos_to_centralization_of_W` theorem composes the DDoS and centralization results into the full paper chain: "DDoS vectors → verification collapse → trust centralization."
 
 ```lean
 theorem ddos_to_centralization_of_W (W : W_ddos_full)
@@ -206,5 +173,48 @@ theorem ddos_to_centralization_of_W (W : W_ddos_full)
     some_vector_overwhelmed s → is_centralized t
 ```
 
-This captures the full paper claim: "DDoS vectors → verification collapse → trust centralization"
+---
+
+## Reading Discipline
+
+The `W_*` bundles are exposed explicitly because the project formalizes inference load openly — not because the assumptions are dubious. In the intended application class (bounded epistemic agents in adversarial environments), they are **minimal structural pressures**, not speculative metaphysical commitments.
+
+`W_lies_possible`, `W_bounded_verification`, and `W_partial_observability` encode three background conditions that are close to unavoidable in any realistic bounded setting: non-omniscience, non-zero verification cost, and the structural possibility of false utterance. Making them explicit does not make the framework fragile. It makes the inference load **visible and auditable**.
+
+The `_of_W` theorems are conditional in the **logical** sense — they factor out the world-side assumptions so readers can see exactly which pressures drive which obligations. This is distinct from saying the assumptions may be false. Richer world assumptions can be added or substituted; doing so refines or extends the analysis without invalidating the framework.
+
+The one overclaim to avoid: existence/capability results (`lie_possible_of_W`, `all_agents_can_lie_of_W`) establish *that* a property holds structurally, not *how often* or *how effectively* it is exercised. Scaling and prevalence claims are separate.
+
+---
+
+## Naming Convention
+
+| Pattern | Meaning |
+|---------|---------|
+| `W_X` | Minimal assumption bundle for the `X_of_W` theorem |
+| `X_of_W` | Conditional theorem version of axiom `X` |
+
+---
+
+## Relationship to Other Modules
+
+```
+Basic.lean
+    ↓
+WorldCtx.lean
+    ↓                             ↓
+World.lean (re-exports)    AdversarialObligations.lean (W-bundles → obligations)
+                                  ↑
+                            AdversarialBase.lean (attack patterns)
+```
+
+`WorldCtx.lean` provides the semantic interface for truth, observation, and bounded verification. `World.lean` is a compatibility/re-export layer, not the conceptual center. `AdversarialBase.lean` imports `Basic`, `Header`, `Bank`, and `Commitments` (not `World.lean`); `AdversarialObligations.lean` imports `WorldCtx` plus `AdversarialBase`.
+
+---
+
+## Maintainer Notes
+
+- `EpArch.Claim` (defined in `Basic.lean`) is the canonical claim type across the codebase. `WorldCtx.Claim` is a type parameter instantiated to `EpArch.Claim`. Do not define new claim/proposition types in other modules.
+- The deprecated `PropLike` alias in `World.lean` equals `EpArch.Claim`; it exists only for backward compatibility and should not be used in new code.
+- New world-side claims should prefer the `W_*` / `_of_W` pattern over unconditional assertion.
 
