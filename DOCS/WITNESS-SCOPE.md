@@ -1,98 +1,159 @@
-# Witness Scope Matrix
+# Witness Scope: What `ConcreteLedgerModel.lean` Establishes
 
-This document specifies **exactly** which axioms/properties are witnessed by `ConcreteLedgerModel.lean` and which are **not**.
+This document specifies what is **directly witnessed by `ConcreteLedgerModel.lean`**, what is **proved elsewhere in the repo**, and what is **out of scope**.
 
----
+Its job is narrow:
 
-## What "Witnessed" Means
-
-A property is **witnessed** if `ConcreteLedgerModel.lean` contains a proof that a concrete instantiation satisfies it. This demonstrates:
-
-1. **Satisfiability** — The property is not vacuously true or contradictory
-2. **Realizability** — At least one concrete system can satisfy it
-3. **Non-triviality** — The axiom set doesn't collapse
-
-**Witnessing does NOT prove:**
-- Uniqueness (other models may exist)
-- Necessity (other designs may work)
-- Empirical truth (this is a formal model)
+- prevent overclaiming about the **concrete witness file**
+- without understating stronger results established **elsewhere** in the formalization
 
 ---
 
-## Witness Matrix
+## What "Witnessed by `ConcreteLedgerModel.lean`" Means
 
-### ✅ Witnessed Properties (proved in ConcreteLedgerModel.lean)
+A property is **witnessed here** if `ConcreteLedgerModel.lean` contains a proof that a **concrete instantiation** satisfies it.
 
-| Property | Theorem | Location |
-|----------|---------|----------|
-| Bubbles exist | `concrete_has_bubbles` | Line ~841 |
-| Trust bridges exist | `concrete_has_trust_bridges` | Line ~846 |
-| Headers exist (SEV structure) | `concrete_has_headers` | Line ~851 |
-| Revocation mechanism exists | `concrete_has_revocation` | Line ~856 |
-| Bank primitive exists | `concrete_has_bank` | Line ~861 |
-| Redeemability exists | `concrete_has_redeemability` | Line ~866 |
-| **All properties satisfied** | `concrete_satisfies_all_properties` | Line ~891 |
-| Well-formedness | `concrete_wellformed` | Line ~908 |
-| Revision traces exist | `concrete_revision_trace_exists'` | Line ~1154 |
-| Self-correction supported | `concrete_model_supports_self_correction7` | Line ~1170 |
-| SEV factorization | `concrete_has_factorization8` | Line ~1180 |
-| Repair path exists | `concrete_has_repair_path8` | Line ~1187 |
-| Withdrawal gates | `concrete_withdrawal_requires_gates` | Line ~737 |
-| Export needs provenance | `concrete_export_needs_provenance` | Line ~695 |
-| Headerless → undiagnosable | `concrete_headerless_undiagnosable` | Line ~779 |
+That buys three things:
 
-### ⚠️ Not Witnessed (axioms, not instantiated)
+1. **Satisfiability** — the relevant package is not contradictory
+2. **Realizability** — at least one concrete system satisfies it
+3. **Non-vacuity** — the architecture is not empty theater
 
-| Property | Category | Notes |
-|----------|----------|-------|
-| World assumption bundles (`W_*`) | Tier B premises | These are *assumed*, not witnessed |
-| Health necessity theorems | Tier A (proved) | Proved from definitions, not axioms |
-| Invariants (C1-C8) | Tier C spec | Protocol requirements, not witnessed |
-| LTS refinement properties | Tier A | Proved abstractly, not via concrete model |
+What it does **not** buy by itself:
 
-### ❌ Explicitly Out of Scope
+- uniqueness
+- empirical truth
+- completeness — handled in `EpArch/Header.lean`
+- safe-extension / no-hidden-degrees-of-freedom — handled in `EpArch/RevisionSafety.lean`
+- existence-under-constraints packaging — handled in `EpArch/Feasibility.lean`
+
+---
+
+## Directly Witnessed in `ConcreteLedgerModel.lean`
+
+These are concrete-instance results, not merely abstract theorems.
+
+| Property | Theorem |
+|----------|---------|
+| Bubbles exist | `concrete_has_bubbles` |
+| Trust bridges exist | `concrete_has_trust_bridges` |
+| Headers exist (SEV structure) | `concrete_has_headers` |
+| Revocation mechanism exists | `concrete_has_revocation` |
+| Bank primitive exists | `concrete_has_bank` |
+| Redeemability exists | `concrete_has_redeemability` |
+| All operational properties satisfied | `concrete_satisfies_all_properties` |
+| Well-formedness holds | `concrete_wellformed` |
+| Revision traces exist | `concrete_revision_trace_exists'` |
+| Self-correction is supported | `concrete_model_supports_self_correction7` |
+| SEV factorization exists | `concrete_has_factorization8` |
+| Repair path exists | `concrete_has_repair_path8` |
+| Withdrawal requires three gates | `concrete_withdrawal_requires_gates` |
+| Export requires provenance discipline | `concrete_export_needs_provenance` |
+| Headerless states are undiagnosable | `concrete_headerless_undiagnosable` |
+
+---
+
+## Not Witnessed Here, But Established Elsewhere in the Repo
+
+These are real results, but **this file is not where they live**.
+
+| Result | Where established | Notes |
+|--------|-------------------|-------|
+| World-bundle feasibility | `EpArch.WorldWitness`, `EpArch.Feasibility.world_bundles_feasible` | Witnessed at the world-bundle layer |
+| Existence-under-constraints | `EpArch.Feasibility.existence_under_constraints` | Packages non-vacuity + success + forced primitives |
+| Forced-primitives / minimality | `EpArch.Minimality`, `EpArch.Feasibility.goals_force_bank_primitives` | "Success forces Bank primitives" is not a witness-only claim |
+| Field-completeness / no hidden DOF | `EpArch.Header` (`observational_completeness_full`) | Type/completeness result, not a concrete witness |
+| Safe compatible extension | `EpArch.RevisionSafety` | Repo-level preservation theorem |
+| LTS refinement / operational grounding | `EpArch.StepSemantics`, `EpArch.Theorems` | Proved abstractly, not by inspecting one concrete model |
+| World assumption bundles (`W_*`) | Premise layer | Assumed, not witnessed |
+| Invariants (`C1`–`C8`) | Protocol / spec layer | Requirements, not instantiated here |
+| Abstract health-goal necessity | `EpArch.Health`, `EpArch.Mechanisms` | Derived from definitions, not from one concrete model |
+
+---
+
+## Explicitly Out of Scope
+
+Not claimed anywhere in the formalization.
 
 | Property | Reason |
 |----------|--------|
-| Cryptographic security | Not a crypto formalization |
+| Cryptographic security | Not a cryptographic proof |
 | Implementation correctness | Spec ≠ implementation |
 | Physical realizability | Formal model only |
 | Empirical correspondence | Model ≠ world |
+| Optimality | No optimality claim |
+| Uniqueness of realization | Multiple realizations may exist |
 
 ---
 
-## Satisfiability Summary
+## What the Concrete Witness Buys
 
-The concrete model witnesses that the **core axiom set is satisfiable**:
+At minimum, the concrete witness supports:
 
 ```lean
-∃ (W : WorkingSystem), 
-  WellFormed W ∧ 
+∃ W : WorkingSystem,
+  WellFormed W ∧
+  SatisfiesAllProperties W
+```
+
+At repo level this is packaged more strongly as:
+
+```lean
+∃ W : WorkingSystem,
+  WellFormed W ∧
   SatisfiesAllProperties W ∧
   containsBankPrimitives W
 ```
 
-This is packaged in `EpArch.Feasibility.existence_under_constraints`.
+via `EpArch.Feasibility.existence_under_constraints`.
 
-The architecture is **not vacuous** — there's at least one instantiation, AND
-success forces Bank primitives (minimality).
+The architecture is **not vacuous**: there is at least one concrete successful instance, and the repo separately proves that success forces Bank primitives.
 
 ---
 
-## What This Does NOT Imply
+## What This Does Not Mean by Itself
 
 | Non-implication | Why |
 |-----------------|-----|
-| "All axioms are witnessed" | Only structural axioms; W bundles are assumed |
-| "The model is complete" | Other models may exist with different properties |
-| "The model is optimal" | No optimality claim |
-| "The model is unique" | Explicitly not claimed |
+| "All premises are concretely witnessed here" | Some results live in other modules |
+| "Completeness is established by the witness file alone" | Completeness is in `Header.lean` |
+| "Safe extension is established by the witness file alone" | Preservation is in `RevisionSafety.lean` |
+| "The real world literally instantiates this model" | Formal witness ≠ empirical claim |
+| "This realization is unique" | Only existence is shown |
 
 ---
 
-## Audit Command
+## Practical Reading Rule
 
-```bash
-# Count witness theorems
+Use this file when the question is:
+
+> "What does the concrete model itself witness?"
+
+Do **not** use this file alone to answer:
+
+> "What stronger repo-wide claims are established about completeness, forced primitives, or safe extension?"
+
+For those, consult:
+
+- `EpArch/Header.lean`
+- `EpArch/RevisionSafety.lean`
+- `EpArch/Feasibility.lean`
+- `README.md`
+
+---
+
+## Audit Commands
+
+```powershell
+# List concrete witness theorems
 Select-String -Path "EpArch/ConcreteLedgerModel.lean" -Pattern "theorem concrete_"
+
+# Check the packaged repo-level existence theorem
+Select-String -Path "EpArch/Feasibility.lean" -Pattern "existence_under_constraints"
+
+# Check field-completeness theorem
+Select-String -Path "EpArch/Header.lean" -Pattern "observational_completeness_full"
+
+# Check revision-safety entry points
+Select-String -Path "EpArch/RevisionSafety.lean" -Pattern "preserve|compatible|revision"
 ```
