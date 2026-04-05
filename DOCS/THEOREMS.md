@@ -289,9 +289,9 @@ $$\tau\text{-valid}(\text{clock}, \tau) \land \text{clock}' > \text{clock} \Righ
 
 ### Math Form
 
-$$\text{Safe}(d) \Leftrightarrow \text{V\_independent}(d) \Leftrightarrow \text{header\_preserved}(d)$$
+$$\text{Safe}(d) \Leftrightarrow \text{V-independent}(d) \Leftrightarrow \text{header-preserved}(d)$$
 
-$$\text{Sensitive}(d) \Leftrightarrow \text{E\_covers}(d) \Leftrightarrow \text{header\_preserved}(d)$$
+$$\text{Sensitive}(d) \Leftrightarrow \text{E-covers}(d) \Leftrightarrow \text{header-preserved}(d)$$
 
 ### Modal Case Theorems (Theorems.lean)
 
@@ -422,11 +422,11 @@ Applications of the safety/sensitivity framework to specific epistemological cas
 
 ### Math Form
 
-$$\text{W\_lies\_possible} \Rightarrow \exists w\, a\, P.\, \text{Lie}(w, a, P)$$
+$$\text{W-lies-possible} \Rightarrow \exists w\, a\, P.\, \text{Lie}(w, a, P)$$
 
 $$\text{RequiresSteps}(w, P, k) \land t < k \Rightarrow \neg\text{VerifyWithin}(w, P, t)$$
 
-$$\text{W\_ddos\_full} \land \text{overwhelmed}(s) \Rightarrow \text{centralized}(t)$$
+$$\text{W-ddos-full} \land \text{overwhelmed}(s) \Rightarrow \text{centralized}(t)$$
 
 ---
 
@@ -816,7 +816,7 @@ File: `Agent/Imposition.lean`
 
 ### Math Form
 
-$$\text{Entrenched}(a, P) \land \text{deposit\_no\_longer\_active}(s, d) \Rightarrow \neg\text{isDeposited}(s, d)$$
+$$\text{Entrenched}(a, P) \land \text{deposit-no-longer-active}(s, d) \Rightarrow \neg\text{isDeposited}(s, d)$$
 
 ---
 
