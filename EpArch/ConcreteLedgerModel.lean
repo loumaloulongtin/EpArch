@@ -837,32 +837,26 @@ def ConcreteWorkingSystem : WorkingSystem where
 
 Each proof is trivial by definition — the spec has the feature. -/
 
-/-- Concrete model has bubbles. -/
 theorem concrete_has_bubbles : HasBubbles ConcreteWorkingSystem := by
   unfold HasBubbles ConcreteWorkingSystem concreteSystemSpec
   rfl
 
-/-- Concrete model has trust bridges. -/
 theorem concrete_has_trust_bridges : HasTrustBridges ConcreteWorkingSystem := by
   unfold HasTrustBridges ConcreteWorkingSystem concreteSystemSpec
   rfl
 
-/-- Concrete model has headers. -/
 theorem concrete_has_headers : HasHeaders ConcreteWorkingSystem := by
   unfold HasHeaders ConcreteWorkingSystem concreteSystemSpec
   rfl
 
-/-- Concrete model has revocation. -/
 theorem concrete_has_revocation : HasRevocation ConcreteWorkingSystem := by
   unfold HasRevocation ConcreteWorkingSystem concreteSystemSpec
   rfl
 
-/-- Concrete model has bank. -/
 theorem concrete_has_bank : HasBank ConcreteWorkingSystem := by
   unfold HasBank ConcreteWorkingSystem concreteSystemSpec
   rfl
 
-/-- Concrete model has redeemability. -/
 theorem concrete_has_redeemability : HasRedeemability ConcreteWorkingSystem := by
   unfold HasRedeemability ConcreteWorkingSystem concreteSystemSpec
   rfl
@@ -1008,10 +1002,7 @@ def concreteHeader : Header CStandard String String := {
 /-! ## Concrete Deposit (Abstract Type) -/
 
 /-- A concrete deposit using the abstract Deposit type from Header.lean.
-    This bridges the concrete model to the abstract StepSemantics.
-
-    Note: CProp = String, so we use String directly here.
-    No longer noncomputable since all witnesses are concrete. -/
+    Bridges the concrete model to the abstract StepSemantics. CProp = String. -/
 def witness_deposit : Deposit String CStandard String String := {
   P := "test_claim"
   h := concreteHeader
@@ -1021,8 +1012,7 @@ def witness_deposit : Deposit String CStandard String String := {
 
 /-! ## Conversion Functions -/
 
-/-- Convert a CDeposit to the abstract Deposit type.
-    No longer noncomputable since all witnesses are concrete. -/
+/-- Convert a CDeposit to the abstract Deposit type. -/
 def toConcreteDep (cd : CDeposit) : Deposit String CStandard String String := {
   P := cd.claim
   h := {
@@ -1039,8 +1029,7 @@ def toConcreteDep (cd : CDeposit) : Deposit String CStandard String String := {
 
 /-! ## Non-Vacuity for Competition Gate Theorem -/
 
-/-- A concrete system state with one deposited entry.
-    No longer noncomputable since all witnesses are concrete. -/
+/-- A concrete system state with one deposited entry. -/
 def initialConcreteState7 : SystemState String CStandard String String := {
   ledger := [witness_deposit]
   bubbles := [concreteBubble]
@@ -1390,8 +1379,9 @@ theorem competition_gate_non_vacuity_revision :
 
 /-- COMPETITION GATE NON-VACUITY 3: Stripping is meaningful.
 
-    The concrete model has deposits that CAN be stripped.
-    This shows `no_strip_left_inverse` applies to real deposits. -/
+    Existence witness: the concrete model has at least one deposit.
+    Non-injectivity of strip follows from `different_headers_same_strip`,
+    not from bare existence. -/
 theorem competition_gate_non_vacuity_stripping :
     ∃ (_d : Deposit String CStandard String String),
       True := -- Existence witness

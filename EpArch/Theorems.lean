@@ -389,23 +389,15 @@ def canonical_gettier (P : PropLike) (truth_ground evidence_basis : PropLike) :
 def IsGettierCase (g : GettierCase (PropLike := PropLike)) : Prop :=
   g.S_passes = true ∧ g.E_passes = true ∧ g.v_independence.tracks = false
 
-/-- Gettier cases route to V-failure (definitional).
+/-- Gettier cases route to V-failure.
 
-    Trivial because IsGettierCase requires V-failure. -/
+    Definitional: IsGettierCase encodes V-failure as a required component. -/
 theorem gettier_is_V_failure (g : GettierCase (PropLike := PropLike)) :
     IsGettierCase g → case_V_independence_fails g := by
   intro ⟨_, _, hV⟩
   simp only [case_V_independence_fails, V_fails, hV, Bool.not_false]
 
-/-- Theorem: Gettier cases route to V-failure.
-
-    In a Gettier case:
-    - The proposition is true
-    - The header appears valid (S satisfied)
-    - But V (provenance independence) fails
-
-    The belief is "accidentally" true — the evidence chain doesn't track
-    the truth-maker. This is a V-field failure, not an S-field failure. -/
+-- Paper-facing alias of gettier_is_V_failure.
 theorem GettierRoutesToVFailure (g : GettierCase (PropLike := PropLike)) :
     IsGettierCase g → case_V_independence_fails g :=
   gettier_is_V_failure g
@@ -507,15 +499,15 @@ def canonical_fake_barn (P : PropLike) : FakeBarnCase (PropLike := PropLike) :=
 def IsFakeBarnCase (fb : FakeBarnCase (PropLike := PropLike)) : Prop :=
   fb.S_passes = true ∧ fb.V_passes = true ∧ E_coverage_fails fb.e_coverage = true
 
-/-- Fake Barn cases route to E-failure (definitional).
+/-- Fake Barn cases route to E-failure.
 
-    Trivial because IsFakeBarnCase requires E-failure. -/
+    Definitional: IsFakeBarnCase encodes E-failure as a required component. -/
 theorem fake_barn_is_E_failure (fb : FakeBarnCase (PropLike := PropLike)) :
     IsFakeBarnCase fb → barn_case_E_inadequate fb := by
   intro ⟨_, _, hE⟩
   simp only [barn_case_E_inadequate, E_fails, hE]
 
-/-- Theorem: Fake Barn routes to E-failure (error model didn't include environment). -/
+-- Paper-facing alias of fake_barn_is_E_failure.
 theorem FakeBarnRoutesToEFailure (fb : FakeBarnCase (PropLike := PropLike)) :
     IsFakeBarnCase fb → barn_case_E_inadequate fb :=
   fake_barn_is_E_failure fb
@@ -622,7 +614,7 @@ def ungrounded   (c : ConfabulationCase (PropLike := PropLike)) : Prop := c.has_
     The failure is not accuracy failure but category confusion — the system accepted
     an output in a slot requiring Bank without Bank contact.
 
-    This is LotteryIsTypeError with renamed fields. Compiles by identical proof. -/
+    Direct instantiation of LotteryIsTypeError with fluency/grounding fields. -/
 theorem confabulation_is_type_error (c : ConfabulationCase (PropLike := PropLike)) :
     high_fluency c → ungrounded c → TypeError := by
   intro h_fluency h_ungrounded
@@ -701,9 +693,7 @@ theorem header_improves_diagnosability (B : Bubble) (P : PropLike)
 
     The header contains the S/E/V factorization. Challenges carry a
     `suspected : Field`. With headers, we can match the suspected field
-    against the actual failure in S, E, or V.
-
-    Previously an axiom; now a theorem. -/
+    against the actual failure in S, E, or V. -/
 theorem header_localization_link (B : Bubble) (P : PropLike)
     (d : Deposit PropLike Standard ErrorModel Provenance) :
     dispute B P → header_preserved d → localizes B P := by
@@ -711,6 +701,7 @@ theorem header_localization_link (B : Bubble) (P : PropLike)
   unfold localizes header_preserved_diagnosability header_stripped_diagnosability
   decide
 
+-- Paper-facing alias of header_localization_link.
 theorem header_enables_localization_thm (B : Bubble) (P : PropLike)
     (d : Deposit PropLike Standard ErrorModel Provenance) :
     dispute B P → header_preserved d → localizes B P :=
@@ -779,10 +770,7 @@ theorem safety_V_link_case (sc : SafetyCase (PropLike := PropLike) (Standard := 
   intro h
   exact h  -- Safety and V_independence are the same predicate
 
-/-- Theorem: Safety failure routes to V-independence failure.
-
-    Safety is a V-field condition: the provenance must be independent
-    of the lucky features. -/
+-- Alias of safety_V_link_case.
 theorem safety_is_V_condition (sc : SafetyCase (PropLike := PropLike) (Standard := Standard)
     (ErrorModel := ErrorModel) (Provenance := Provenance)) :
     ¬Safety sc → ¬V_independence sc :=
@@ -801,10 +789,7 @@ theorem sensitivity_E_link_case (sc : SensitivityCase (PropLike := PropLike) (St
   intro h
   exact h  -- Sensitivity and E_covers_counterfactual are the same predicate
 
-/-- Theorem: Sensitivity failure routes to E-field gap.
-
-    Sensitivity is an E-field condition: the error model must include the
-    counterfactual scenario. -/
+-- Alias of sensitivity_E_link_case.
 theorem sensitivity_is_E_condition (sc : SensitivityCase (PropLike := PropLike) (Standard := Standard)
     (ErrorModel := ErrorModel) (Provenance := Provenance)) :
     ¬Sensitivity sc → ¬E_covers_counterfactual sc :=
@@ -861,6 +846,7 @@ theorem closure_type_separation (c : closure_puzzle (PropLike := PropLike))
   unfold certainty_closes deposits_auto_propagate
   simp [h_ladder, h_bank]
 
+-- Paper-facing alias of closure_type_separation.
 theorem closure_dissolution (c : closure_puzzle (PropLike := PropLike))
     (h_ladder : c.ladder_closes = true)
     (h_bank : c.bank_auto_propagates = false) :
@@ -902,9 +888,9 @@ theorem luminosity_type_separation (l : luminosity_puzzle (PropLike := PropLike)
   unfold meta_certainty header_inspectable
   exact h
 
+-- Paper-facing alias of luminosity_type_separation.
 theorem luminosity_dissolution (l : luminosity_puzzle (PropLike := PropLike))
     (h : l.has_meta_certainty = true ∨ l.has_inspectable_header = true) :
-    -- No infinite regress: metadata is finite
     meta_certainty l ∨ header_inspectable l :=
   luminosity_type_separation l h
 
@@ -967,10 +953,10 @@ theorem higher_order_relocation (h : higher_order_case (PropLike := PropLike) (S
   · exact wf.v_implies_withdrawal hv
   · simp [wf.v_implies_no_internal hv]
 
+-- Paper-facing alias of higher_order_relocation.
 theorem higher_order_knowledge_dissolution (h : higher_order_case (PropLike := PropLike) (Standard := Standard)
     (ErrorModel := ErrorModel) (Provenance := Provenance))
     (wf : WellFormedHigherOrder h) :
-    -- V tracks provenance; withdraw, don't re-justify
     V_tracks_provenance h → (withdrawal_not_rejustification h ∧ ¬agent_needs_internal_reliability_rep h) :=
   higher_order_relocation h wf
 
@@ -1027,10 +1013,10 @@ theorem apriori_domain_parameterization (a : apriori_case (PropLike := PropLike)
   · exact wf.necessary_uses_proof hn
   · simp [wf.necessary_not_experiment hn]
 
+-- Paper-facing alias of apriori_domain_parameterization.
 theorem apriori_dissolution (a : apriori_case (PropLike := PropLike))
     (wf : WellFormedApriori a)
     (h_sev : a.sev_present = true) :
-    -- Same (S,E,V) structure; different constraint surface (proof, not experiment)
     a.is_necessary → (has_SEV_structure a ∧ redeemability_is_proof_consistency a ∧ ¬redeemability_is_physical_experiment a) :=
   apriori_domain_parameterization a wf h_sev
 
@@ -1383,16 +1369,14 @@ def revalidation (t : testimony_case (PropLike := PropLike)) : Prop :=
 def header_mutates (t : testimony_case (PropLike := PropLike)) : Prop :=
   t.speaker_bubble ≠ t.hearer_bubble
 
-/-- Testimony is export—requires trust-bridge or revalidation.
-
-    Previously an axiom; now definitional. The route field forces a choice. -/
+/-- Testimony is export — requires trust-bridge or revalidation. -/
 theorem testimony_is_export (t : testimony_case (PropLike := PropLike)) :
     trust_import t ∨ revalidation t := by
   unfold trust_import revalidation
   cases h : t.via_trust <;> simp
 
+-- Paper-facing alias of testimony_is_export.
 theorem testimony_dissolution (t : testimony_case (PropLike := PropLike)) :
-    -- Testimony is export: either trust-bridge or revalidate
     trust_import t ∨ revalidation t :=
   testimony_is_export t
 
@@ -1426,10 +1410,7 @@ def provenance_intact (f : forgotten_evidence_case (PropLike := PropLike) (Stand
     (ErrorModel := ErrorModel) (Provenance := Provenance)) : Prop :=
   f.deposit.h.V = f.original_evidence
 
-/-- Access loss ≠ deposit invalidation.
-
-    Previously an axiom; now definitional. Agent access and bubble deposit
-    are independent: losing access doesn't modify the deposit. -/
+/-- Access loss ≠ deposit invalidation: agent access and bubble deposit are independent. -/
 theorem forgotten_evidence_persistence
     (f : forgotten_evidence_case (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
@@ -1439,12 +1420,12 @@ theorem forgotten_evidence_persistence
   intro _
   exact ⟨h_in_bubble, h_provenance⟩
 
+-- Paper-facing alias of forgotten_evidence_persistence.
 theorem forgotten_evidence_dissolution
     (f : forgotten_evidence_case (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
     (h_in_bubble : f.deposit_in_bubble = true)
     (h_provenance : f.deposit.h.V = f.original_evidence) :
-    -- Access loss ≠ deposit invalidation
     agent_lost_access f → (bubble_deposit_persists f ∧ provenance_intact f) :=
   forgotten_evidence_persistence f h_in_bubble h_provenance
 
@@ -1479,16 +1460,14 @@ def staleness_mismatch (d : disagreement_case (PropLike := PropLike)) : Prop :=
 def standards_mismatch (d : disagreement_case (PropLike := PropLike)) : Prop :=
   d.mismatch_type = .standards
 
-/-- Disagreement routes to bubble mismatch.
-
-    Previously an axiom; now definitional via MismatchType enum. -/
+/-- Disagreement routes to a bubble mismatch (scope, staleness, or standards). -/
 theorem disagreement_is_routing (d : disagreement_case (PropLike := PropLike)) :
     scope_mismatch d ∨ staleness_mismatch d ∨ standards_mismatch d := by
   unfold scope_mismatch staleness_mismatch standards_mismatch
   cases d.mismatch_type <;> simp
 
+-- Paper-facing alias of disagreement_is_routing.
 theorem peer_disagreement_dissolution (d : disagreement_case (PropLike := PropLike)) :
-    -- Disagreement routes to bubble mismatch, not single-fact dispute
     scope_mismatch d ∨ staleness_mismatch d ∨ standards_mismatch d :=
   disagreement_is_routing d
 
@@ -1505,14 +1484,13 @@ structure group_knowledge_case where
 def bubbles_differ (g : group_knowledge_case) : Prop :=
   g.individual_bubble ≠ g.group_bubble
 
-/-- Different bubbles entails bubbles differ (tautology).
-
-    Previously an axiom; now just unfolding the definition. -/
+/-- Different bubbles entails bubbles_differ (tautology). -/
 theorem group_bubble_separation (g : group_knowledge_case) :
     g.individual_bubble ≠ g.group_bubble → bubbles_differ g := by
   intro h
   exact h
 
+-- Paper-facing alias of group_bubble_separation.
 theorem group_knowledge_dissolution (g : group_knowledge_case) :
     g.individual_bubble ≠ g.group_bubble → bubbles_differ g :=
   group_bubble_separation g
@@ -1555,23 +1533,19 @@ def coordination_value (v : value_case (PropLike := PropLike)) : Nat :=
   | .deposit n => n + 1  -- ensure > 0
   | .mere_certainty => 0
 
-/-- Deposits are exportable with positive coordination value.
-
-    Previously an axiom; now definitional via KnowledgeState. -/
+/-- Deposits are exportable with positive coordination value. -/
 theorem deposit_exportability (v : value_case (PropLike := PropLike)) :
     is_deposit v → exportable v ∧ coordination_value v > 0 := by
   intro h
   unfold is_deposit exportable coordination_value at *
   cases hv : v.state <;> simp_all [Nat.succ_pos]
 
+-- Paper-facing alias of deposit_exportability.
 theorem value_of_knowledge_dissolution (v : value_case (PropLike := PropLike)) :
-    -- Deposits have coordination value that certainty lacks
     is_deposit v → exportable v ∧ coordination_value v > 0 :=
   deposit_exportability v
 
-/-- Mere certainty is not exportable.
-
-    Previously an axiom; now definitional. -/
+/-- Mere certainty is not exportable. -/
 theorem certainty_not_exportable_link (v : value_case (PropLike := PropLike)) :
     is_mere_certainty v → ¬exportable v := by
   intro h h_exp
@@ -1625,8 +1599,8 @@ def local_redeemability_holds (s : skeptical_scenario (PropLike := PropLike)) (_
 theorem local_redeemability_survives (s : skeptical_scenario (PropLike := PropLike)) (B : Bubble) :
     severs_constraint_contact s → local_redeemability_holds s B := fun h => h
 
+-- Paper-facing alias of local_redeemability_survives.
 theorem skepticism_dissolution (s : skeptical_scenario (PropLike := PropLike)) (B : Bubble) :
-    -- Skepticism attacks global reachability; model offers local redeemability
     severs_constraint_contact s → local_redeemability_holds s B :=
   local_redeemability_survives s B
 
@@ -1704,10 +1678,10 @@ theorem context_is_policy (c : context_case (PropLike := PropLike))
   intro _
   exact ⟨h_threshold, c.high_stakes_implies_policy h_stakes, no_semantic_shift c⟩
 
+-- Paper-facing alias of context_is_policy.
 theorem contextualism_dissolution (c : context_case (PropLike := PropLike))
     (h_stakes : c.stakes > 100)
     (h_threshold : c.threshold > 50) :
-    -- Stakes sensitivity = S-threshold varies by context, not "knows" meaning change
     stakes_level c > 100 → S_threshold c > 50 ∧ is_policy_variation c ∧ ¬is_semantic_shift c :=
   context_is_policy c h_stakes h_threshold
 
@@ -1736,9 +1710,7 @@ def credibility_deflation (i : injustice_case) : Prop := i.deflates_credibility 
 /-- Unjustified ACL downgrade. -/
 def unjustified_acl_downgrade (i : injustice_case) : Prop := i.downgrades_acl = true
 
-/-- Identity-based filtering is import corruption.
-
-    Previously an axiom; now with explicit fields. -/
+/-- Identity-based filtering at import gates constitutes credibility deflation. -/
 theorem injustice_is_import_corruption (i : injustice_case)
     (h_deflates : i.deflates_credibility = true)
     (h_downgrades : i.downgrades_acl = true) :
@@ -1746,10 +1718,10 @@ theorem injustice_is_import_corruption (i : injustice_case)
   intro _
   exact ⟨h_deflates, h_downgrades⟩
 
+-- Paper-facing alias of injustice_is_import_corruption.
 theorem epistemic_injustice_dissolution (i : injustice_case)
     (h_deflates : i.deflates_credibility = true)
     (h_downgrades : i.downgrades_acl = true) :
-    -- Injustice is import corruption: ACL distortion based on identity
     identity_based_filtering i → (credibility_deflation i ∧ unjustified_acl_downgrade i) :=
   injustice_is_import_corruption i h_deflates h_downgrades
 
@@ -1770,16 +1742,14 @@ def includes_artifact (e : extended_case) : Prop := e.artifact_included = true
 /-- Is the artifact in the bubble? (Same as inclusion.) -/
 def artifact_in_bubble (e : extended_case) : Prop := e.artifact_included = true
 
-/-- Artifact inclusion determines bubble membership.
-
-    Previously an axiom; now tautological (same definition). -/
+/-- Artifact inclusion determines bubble membership (same definition). -/
 theorem artifact_bubble_membership (e : extended_case) :
     includes_artifact e → artifact_in_bubble e := by
   intro h
   exact h
 
+-- Paper-facing alias of artifact_bubble_membership.
 theorem extended_cognition_dissolution (e : extended_case) :
-    -- "Where is cognition?" → "Where is the bubble boundary?"
     includes_artifact e → artifact_in_bubble e :=
   artifact_bubble_membership e
 
