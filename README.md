@@ -162,6 +162,8 @@ The formalization serves three purposes:
 2. **Conditional necessity** — rival architectures must address specific theorem-level challenges to compete
 3. **Operational grounding** — abstract paper commitments have concrete LTS semantics that can be inspected
 
+Together these three results support a stronger combined claim: the architecture is **mandatory up to compatible extension and notation-preserving redescription**. You can add extra state (`ScopeIrrelevance`), safely extend the system (`RevisionSafety`), or change the vocabulary (`notation_invariance_of_redeemability`) — but if the extension is genuinely compatible, the core structure is preserved. If you change the core semantics, you have a different system, not a harmless rewording.
+
 This is an architectural specification that makes the paper's claims checkable, not a full mechanization of epistemology.
 
 ---
