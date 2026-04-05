@@ -1,10 +1,12 @@
 # Theorem Inventory
 
-This document catalogs all 409 proved theorems in the formalization, organized by their role in the paper's argument.
+This document catalogs **435** proved theorems in the formalization, organized by argumentative role. The count covers all named theorems, lemmas, and equivalent definitions in the EpArch namespace; internal list-manipulation helpers are excluded.
 
 **What the architecture claims:** Decentralized epistemic authorization requires specific structural mechanisms — a lifecycle with type-separated stages, header-preserving export, a revision loop, temporal validity, and a Bank substrate. These aren't design preferences; they are forced by the combination of agent constraints and system health goals.
 
-**What this document is:** A navigable index of all theorem buckets (1–23), grouped by argumentative role. Each bucket states the paper claim it supports, the Lean file, and the key theorems. Tier labels: **A** = proved, **B** = conditional on W-bundle, **C** = design axiom.
+**What this document is:** A bucketed theorem index (Buckets 1–23), grouped by the claim each cluster supports. Each bucket names the Lean file, the key theorems, and the paper claim they underwrite. This is broader than Appendix A of the paper, which covers only paper-cited theorems with full math notation; this file covers the full proof burden distribution across the repo. For deeper exposition of any area, the standalone DOCS files are the right place.
+
+**Tier labels:** **A** = proved unconditionally, **B** = conditional on a W-bundle premise, **C** = design axiom.
 
 **All theorems are fully proved** — zero `sorry`, zero new axioms beyond the 35 listed in [AXIOMS.md](AXIOMS.md).
 
@@ -345,24 +347,6 @@ Applications of the safety/sensitivity framework to specific epistemological cas
 | `lies_structurally_possible` | AdversarialBase.lean | Lies are structurally possible given `is_lie` | §15.10 |
 | `adversarial_proxy_signature` | AdversarialBase.lean | Adversarial proxy = truthful but mislicensed | §15.11 |
 
-### Obligation Theorems in AdversarialObligations.lean (Tier B — `W_* → Mechanism`)
-
-These are conditional theorems: given a world-assumption bundle `W_*`, the conclusion follows. They replaced the former axioms with explicit premises.
-
-| Theorem | File | W-Bundle | Statement |
-|---------|------|----------|-----------|
-| `spoofed_V_blocks_path_of_W` | AdversarialObligations.lean | `W_spoofedV` | Spoofed V → no verification path |
-| `ddos_causes_verification_collapse_of_W` | AdversarialObligations.lean | `W_ddos` | DDoS vector → verification collapse |
-| `collapse_causes_centralization_of_W` | AdversarialObligations.lean | `W_collapse_centralization` | Collapse → trust centralization |
-| `lies_scale_of_W` | AdversarialObligations.lean | `W_lies_scale` | export_cost < defense_cost |
-| `rolex_ddos_structural_equivalence_of_W` | AdversarialObligations.lean | `W_rolex_ddos` | Same exploit at different scales |
-| `ddos_to_centralization_of_W` | AdversarialObligations.lean | `W_ddos_full` | DDoS → centralization (composed) |
-| `cheap_validator_blocks_V_attack_of_W` | AdversarialObligations.lean | `W_cheap_validator` | CheapValidator blocks V-attack |
-| `trust_bridge_blocks_V_attack_of_W` | AdversarialObligations.lean | `W_trust_bridge` | TrustBridge blocks V-attack |
-| `reversibility_neutralizes_τ_of_W` | AdversarialObligations.lean | `W_reversibility` | Reversibility neutralizes τ |
-| `E_inclusion_closes_expertise_gap_of_W` | AdversarialObligations.lean | `W_E_inclusion` | E-inclusion closes expertise gap |
-| `cheap_constraint_blocks_V_spoof_of_W` | AdversarialObligations.lean | `W_cheap_constraint` | CheapConstraint blocks V-spoof |
-
 ---
 
 ## Bucket 11: Repair Loop Semantics
@@ -396,7 +380,7 @@ These are conditional theorems: given a world-assumption bundle `W_*`, the concl
 
 ---
 
-## Bucket 13: Obligation Theorems (World ⇒ Mechanism) — v9
+## Bucket 13: Obligation Theorems (World ⇒ Mechanism)
 
 **Paper Role:** Convert implicit mechanism axioms into explicit conditional theorems.
 
@@ -438,14 +422,6 @@ This transforms "take it or leave it" axioms into "if you accept X, then Y follo
 | `reversibility_neutralizes_τ_of_W` | AdversarialObligations.lean | W_reversibility → reversible → ¬τ_attack | `reversibility_neutralizes_τ` |
 | `E_inclusion_closes_expertise_gap_of_W` | AdversarialObligations.lean | W_E_inclusion → E includes threat → ¬gap_exploited | `E_inclusion_closes_expertise_gap` |
 | `cheap_constraint_blocks_V_spoof_of_W` | AdversarialObligations.lean | W_cheap_constraint → cheap test → ¬V_attack | `cheap_constraint_blocks_V_spoof` |
-
-#### Batch C: Cleanup (Definitional + Vacuous Replacement)
-
-| Theorem | File | Statement | Original Axiom |
-|---------|------|-----------|----------------|
-| `sophistication_monotonic` | AdversarialBase.lean | level₁ < level₂ → soph₁ < soph₂ | (was axiom, now definitional via `attack_sophistication := attack_level_num`) |
-| `sincerity_norms_irrelevant` | AdversarialBase.lean | is_lie l → is_lie l | (replaces vacuous `sincerity_norms_insufficient`) |
-| `lies_structurally_possible` | AdversarialBase.lean | is_lie l → fabricated ∧ severed | (meaningful content extracted from vacuous axiom) |
 
 ### World Assumption Bundles
 
@@ -532,7 +508,7 @@ The `FullStackAttack` structure (`AdversarialBase.lean`) captures coordinated at
 
 ---
 
-## Bucket 14: Health → Necessity Theorems (Phase 3)
+## Bucket 14: Health → Necessity Theorems
 
 **Paper Role:** Connect health goals to mechanism requirements (invariants).
 
@@ -542,25 +518,13 @@ The `FullStackAttack` structure (`AdversarialBase.lean`) captures coordinated at
 
 If you want health property X, you NEED mechanism Y. These are conditional necessity claims.
 
-### Capability Predicates (A.2 — Agent/Imposition.lean)
-
-**New in v9.1:** Capability predicates replace boolean flags for design-imposition theorems.
+### Capability Predicates (Agent/Imposition.lean)
 
 | Predicate | Description | What It Captures |
 |-----------|-------------|------------------|
 | `ReversibleWithdrawal` | System can undo withdrawals | Reversibility capability |
 | `CheapValidatorAvailable` | System has low-cost verification | Validator capability |
 | `ExportGateEnforced` | System blocks erroneous exports | Gate capability |
-
-### Capability Implication Theorems (Proved)
-
-| Theorem | Statement | File |
-|---------|-----------|------|
-| `SafeWithdrawalGoal_implies_ReversibleWithdrawal` | Proves `True` (ReversibleWithdrawal applied to True = True; conclusion trivially holds; real necessity in safe_withdrawal_needs_reversibility) | Imposition.lean |
-| `SoundDepositsGoal_implies_CheapValidatorAvailable` | Proves `True` via ex falso (h_expensive : cost > budget contradicts h_goal : cost ≤ budget; real necessity in sound_deposits_need_cheap_validator) | Imposition.lean |
-| `ReliableExportGoal_implies_ExportGateEnforced` | Reliable goal + ¬observationCorrect → exportBlocked (meaningful: applies goal predicate directly) | Imposition.lean |
-
-**Note:** `ReliableExportGoal_implies_ExportGateEnforced` meaningfully proves `exportBlocked` from the goal predicate. The first two prove `True` (trivially or via ex falso); real necessity arguments are in `safe_withdrawal_needs_reversibility` and `sound_deposits_need_cheap_validator`.
 
 ### Health Goal Definitions (Health.lean)
 
@@ -591,7 +555,7 @@ $$\text{SelfCorrectingSystem}(M) \Rightarrow \text{HasRevisionCapability}(M)$$
 
 ---
 
-## Bucket 15: Scope/Irrelevance Theorems (Phase 6)
+## Bucket 15: Scope/Irrelevance Theorems
 
 **Paper Role:** Turn "out of scope" prose into machine-checkable scope boundaries.
 
@@ -639,7 +603,7 @@ Reduce reviewer attack surface by proving that certain "fundamentals" (physics, 
 
 ---
 
-## Bucket 16: Discharged Linking Axioms (Phase 4)
+## Bucket 16: Discharged Linking Axioms
 
 **Paper Role:** Convert philosophical "linking axioms" from axioms to definitional theorems.
 
@@ -708,7 +672,7 @@ Three theorems establishing that the constraint surface is notation-independent:
 
 ---
 
-## Bucket 17: Revision Safety (Contract Mode) — v10
+## Bucket 17: Revision Safety
 
 **Paper Role:** Guarantee that extending/strengthening the model doesn't break existing results.
 
@@ -795,7 +759,7 @@ $$\text{Compatible} := \forall B.\, E.\text{selfCorrects}(B) \Leftrightarrow C.\
 
 ---
 
-## Bucket 18: Agent Constraints & PRP (CS-03) — v11
+## Bucket 18: Agent Constraints & PRP
 
 **Paper Role:** Mechanize "the system is designed for imperfect agents" via structural constraints.
 
@@ -892,17 +856,6 @@ are also proved by trace induction.
 
 ---
 
-## Helper Theorems (Internal)
-
-- `List.get?_*` family — List manipulation
-- `mem_*` family — Membership lemmas
-- `updateDepositStatus_*` — State update helpers
-- `modifyAt_*` — Index-specific modification
-- `V_spoofable_iff_not_independent`, `E_has_gap_iff_not_covers` — Modal helpers
-- `Unsafe`, `Insensitive` — Negation definitions
-
----
-
 ## Bucket 19: Feasibility / Existence Under Constraints (Tier A)
 
 **Paper Role:** Establishes that the constraint+objective package is consistent AND that success forces Bank primitives.
@@ -921,7 +874,7 @@ are also proved by trace induction.
 | `success_feasible` | Feasibility.lean | ∃ W. WellFormed W ∧ SatisfiesAllProperties W | Success bundle non-empty |
 | `world_bundles_feasible` | Feasibility.lean | World bundles satisfiable | Appendix: World non-vacuity |
 | `commitments_feasible` | Feasibility.lean | 8 commitments satisfiable | Appendix: Model non-vacuity |
-| `joint_feasible` | Feasibility.lean | Constraints + objectives jointly satisfiable | Legacy: Non-vacuity |
+| `joint_feasible` | Feasibility.lean | Constraints + objectives jointly satisfiable | Non-vacuity |
 | `all_bundles_satisfiable` | WorldWitness.lean | W_* bundles jointly satisfiable | Appendix: World witness |
 | `all_commitments_satisfiable` | ConcreteLedgerModel.lean | 8 commitments have witnesses | Appendix: Commitment witness |
 | `concrete_satisfies_all_properties` | ConcreteLedgerModel.lean | ConcreteWorkingSystem satisfies all properties | Witness for success |
