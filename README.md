@@ -159,10 +159,10 @@ Some paper concepts are explicitly out of scope for this formalization:
 | [DOCS/AXIOMS.md](DOCS/AXIOMS.md) | Full axiom inventory with categories and justifications |
 | [DOCS/THEOREMS.md](DOCS/THEOREMS.md) | Theorem inventory organized by paper role |
 | [DOCS/SEMANTICS.md](DOCS/SEMANTICS.md) | Operational proxy definitions and their paper counterparts |
-| [DOCS/WORLD.md](DOCS/WORLD.md) | World-bundle structure and satisfiability |
+| [DOCS/WORLD.md](DOCS/WORLD.md) | World layer: parametric semantic interface and W_* obligation theorems |
 | [DOCS/CORROBORATION.md](DOCS/CORROBORATION.md) | Corroboration module design notes |
 | [DOCS/FEASIBILITY.md](DOCS/FEASIBILITY.md) | Feasibility witness strategy |
-| [DOCS/WITNESS-SCOPE.md](DOCS/WITNESS-SCOPE.md) | Scope of non-vacuity witnesses |
+| [DOCS/WITNESS-SCOPE.md](DOCS/WITNESS-SCOPE.md) | What ConcreteLedgerModel.lean witnesses, what is proved elsewhere, and what is out of scope |
 
 ---
 
