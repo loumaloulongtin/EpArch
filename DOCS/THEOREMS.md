@@ -115,7 +115,7 @@ $$h_1 \neq h_2 \land \text{claim}(h_1) = \text{claim}(h_2) \Rightarrow \text{str
 
 **Paper Role:** Header stripping reduces diagnosability; fewer observable fields → coarser repair.
 
-### v8 Diagnosability Module (Diagnosability.lean)
+### Core Theorems (Diagnosability.lean)
 
 | Theorem | Statement | Paper Claim |
 |---------|-----------|-------------|
@@ -126,7 +126,7 @@ $$h_1 \neq h_2 \land \text{claim}(h_1) = \text{claim}(h_2) \Rightarrow \text{str
 | `full_can_repair_any` | Full can target any field | §15: Surgical repair |
 | `repair_requires_observability` | Repair granularity = observable fields | §15: Equivalence |
 
-### v7 Bridge Theorems (Theorems.lean)
+### Bridge Theorems (Theorems.lean)
 
 | Theorem | Statement | Paper Claim |
 |---------|-----------|-------------|
@@ -141,7 +141,7 @@ $$\text{diagnosability}(\text{full}) = 6 > 0 = \text{diagnosability}(\text{strip
 
 $$f \notin \text{ObservableFields}(d) \Rightarrow \neg\text{canTargetRepair}(f, d)$$
 
-### v7 Field-Localization Bridge (StepSemantics.lean)
+### Field-Localization Bridge (StepSemantics.lean)
 
 | Theorem | Statement | Paper Claim |
 |---------|-----------|-------------|
@@ -163,9 +163,9 @@ $$f \notin \text{ObservableFields}(d) \Rightarrow \neg\text{canTargetRepair}(f, 
 | `header_localization_link` | Theorems.lean | dispute ∧ header_preserved → localizes | §7/§15: Header → localization |
 | `diagnose_finds_broken` | Theorems.lean | Sound diagnosis oracle finds broken field | §15: Diagnostic completeness |
 
-### v8 ↔ v7 Coupling Theorems (Theorems.lean)
+### Diagnosability Coupling Theorems (Theorems.lean)
 
-Bridge theorems connecting Diagnosability.lean (v8) and Theorems.lean (v7) metrics:
+Bridge theorems coupling the Diagnosability.lean and Theorems.lean metric systems:
 
 | Theorem | File | Statement | Paper Claim |
 |---------|------|-----------|-------------|
@@ -386,11 +386,6 @@ Applications of the safety/sensitivity framework to specific epistemological cas
 
 **Files:** `World.lean`, `AdversarialObligations.lean`
 
-### Philosophy
-
-World assumptions parameterize theorems rather than being asserted as true.
-This transforms "take it or leave it" axioms into "if you accept X, then Y follows."
-
 ### Core Theorems (World.lean)
 
 | Theorem | File | Statement | Paper Claim |
@@ -504,8 +499,6 @@ Each architectural constraint creates both a capability and an exploitable surfa
 | Environmental Poisoning | `fake_barn_is_E_failure` | High |
 | Coordinated Full-Stack | `FullStackAttack` structure | Critical |
 
-The `FullStackAttack` structure (`AdversarialBase.lean`) captures coordinated attacks combining: `τ_compressed` (force rapid re-verification), `V_spoofed` (fake provenance), `cues_amplified` (cheap signals substituted for expensive checks), `consultation_blocked` (block access to real validators), `expertise_exploited` (exploit expertise gap).
-
 ---
 
 ## Bucket 14: Health → Necessity Theorems
@@ -513,10 +506,6 @@ The `FullStackAttack` structure (`AdversarialBase.lean`) captures coordinated at
 **Paper Role:** Connect health goals to mechanism requirements (invariants).
 
 **File:** `Health.lean`, `Agent/Imposition.lean`
-
-### Philosophy
-
-If you want health property X, you NEED mechanism Y. These are conditional necessity claims.
 
 ### Capability Predicates (Agent/Imposition.lean)
 
@@ -528,7 +517,7 @@ If you want health property X, you NEED mechanism Y. These are conditional neces
 
 ### Health Goal Definitions (Health.lean)
 
-Health goals are now definitional predicates over `CoreModel`/`CoreOps` (0 axioms):
+Health goals are definitional predicates over `CoreModel`/`CoreOps`:
 
 | Definition | Signature | Description |
 |------------|-----------|-------------|
@@ -561,9 +550,7 @@ $$\text{SelfCorrectingSystem}(M) \Rightarrow \text{HasRevisionCapability}(M)$$
 
 **File:** `ScopeIrrelevance.lean`
 
-### Philosophy
-
-Reduce reviewer attack surface by proving that certain "fundamentals" (physics, consciousness, psychology, embodiment) are *irrelevant-by-design* — theorems don't depend on them.
+These theorems prove that out-of-scope fundamentals (physics, consciousness, psychology, embodiment) are irrelevant by design — no architectural theorem depends on them.
 
 ### S1: Substrate Independence
 
@@ -609,11 +596,7 @@ Reduce reviewer attack surface by proving that certain "fundamentals" (physics, 
 
 **File:** `Theorems.lean`
 
-### Philosophy
-
-The original formalization had 20 "linking axioms" that connected philosophical concepts
-(testimony, disagreement, contextualism, etc.) to the model structure. Phase 4 discharges
-these by making the opaque predicates concrete.
+Each of the 20 original linking axioms is discharged by making an opaque predicate concrete — replacing an assumed philosophical connection with explicit typed fields and well-formedness constraints.
 
 ### Batch 1: Discharged Axioms (10) — Explicit Fields
 
@@ -649,27 +632,6 @@ these by making the opaque predicates concrete.
 | `bridge_monolithic_opaque` | ✅ theorem | Vacuously true (has_SEV_factorization = True by construction) |
 | `bridge_stripped_ungrounded` | ✅ theorem | Follows from depositHasHeader definition |
 
-### Discharge Pattern
-
-**Key insight:** Axioms encoding philosophical claims become theorems when:
-1. Opaque predicates become concrete definitions with explicit fields
-2. Well-formedness constraints encode the intended relationships
-3. Theorems follow from structure + constraints
-
-**Result:** All 20 linking axioms in Theorems.lean are now proved theorems.
-
-### Notation Invariance (Added)
-
-Three theorems establishing that the constraint surface is notation-independent:
-
-| Theorem | Statement |
-|---------|-----------|
-| `notation_invariance_of_redeemability` | `redeemability_is_proof_consistency a ↔ redeemability_is_proof_consistency (relabel_case r a)` |
-| `notation_invariance_of_empirical_redeemability` | `redeemability_is_physical_experiment a ↔ redeemability_is_physical_experiment (relabel_case r a)` |
-| `math_practice_is_bubble_distinct` | Two relabelings produce distinct surface proposals (P varies) while redeemability is bitwise identical |
-
-**Self-referential significance:** These proofs are themselves discharged by Lean's kernel — the constraint surface they claim is notation-invariant. Mathematical *practice* (notation, proof standards, community acceptance) is a bubble in the EpArch sense; the underlying structural positions are not.
-
 ---
 
 ## Bucket 17: Revision Safety
@@ -678,14 +640,7 @@ Three theorems establishing that the constraint surface is notation-independent:
 
 **File:** `RevisionSafety.lean`
 
-### Philosophy
-
-Answers the question: "If I adopt this architecture and it's later incomplete, do I get stuck?"
-
-**Answer:** No. The formalization provides three levels of revision safety:
-1. **Premise Strengthening** — Adding assumptions preserves implications
-2. **Compatible Extensions** — Extensions satisfying commuting laws preserve paper-facing properties
-3. **Refinement Safety** — LTS refinements preserve safety invariants
+Three levels of safety are formalized: premise strengthening (adding premises preserves implications), compatible extensions (commuting laws preserve paper-facing properties), and LTS refinement safety (refinements preserve invariants).
 
 ### Premise Strengthening Theorems (Tier A)
 
@@ -707,28 +662,6 @@ Answers the question: "If I adopt this architecture and it's later incomplete, d
 | `ExtModel` | Bundle of ExtSig + ExtOps |
 | `Compatible` | Commuting laws between ExtModel and CoreModel |
 
-### Compatible Structure (Contract Mode)
-
-```lean
-structure Compatible (E : ExtModel) (C : CoreModel) where
-  -- Projections
-  πBubble : E.sig.Bubble → C.sig.Bubble
-  πDeposit : E.sig.Deposit → C.sig.Deposit
-  πTime : E.sig.Time → C.sig.Time
-  πAgent : E.sig.Agent → C.sig.Agent
-  -- World primitive commuting laws
-  truth_comm : ∀ B d, E.ops.truth B d ↔ C.ops.truth (πBubble B) (πDeposit d)
-  obs_comm : ∀ d, E.ops.obs d ↔ C.ops.obs (πDeposit d)
-  verifyWithin_comm : ∀ B d t, E.ops.verifyWithin B d t ↔ C.ops.verifyWithin (πBubble B) (πDeposit d) (πTime t)
-  effectiveTime_comm : ∀ B, πTime (E.ops.effectiveTime B) = C.ops.effectiveTime (πBubble B)
-  -- Bank primitive commuting laws
-  submit_comm : ∀ a B d, E.ops.submit a B d ↔ C.ops.submit (πAgent a) (πBubble B) (πDeposit d)
-  revise_comm : ∀ B d d', E.ops.revise B d d' ↔ C.ops.revise (πBubble B) (πDeposit d) (πDeposit d')
-  -- Capability predicate commuting laws
-  hasRevision_comm : ∀ B, E.ops.hasRevision B ↔ C.ops.hasRevision (πBubble B)
-  selfCorrects_comm : ∀ B, E.ops.selfCorrects B ↔ C.ops.selfCorrects (πBubble B)
-```
-
 ### Transport Theorems (Tier A)
 
 | Theorem | Statement | Description |
@@ -745,12 +678,6 @@ structure Compatible (E : ExtModel) (C : CoreModel) where
 | `badExtension_incompatible_witness` | Semantic-breaking extension FAILS Compatible |
 | `badExtension_incompatible_if_id` | Corollary for identity projection |
 
-### Key Diagnostic
-
-The `badExtension_incompatible_witness` theorem proves that an extension which changes `selfCorrects` to always return `True` **cannot** satisfy `Compatible` with any model that has a non-self-correcting bubble.
-
-This is the core contract: semantic-breaking extensions are blocked by the type system.
-
 ### Math Form
 
 $$\text{Compatible}(E, C) \land \text{PaperFacing}(C) \Rightarrow \text{PaperFacing}(\text{forget}(E))$$
@@ -765,35 +692,7 @@ $$\text{Compatible} := \forall B.\, E.\text{selfCorrects}(B) \Leftrightarrow C.\
 
 **File:** `Agent.lean`
 
-### Philosophy
-
-The Agent layer captures why mechanisms are mandatory under realistic agent constraints.
-Key insight: **Permanent Redeemability Pressure (PRP)** — agents are continuously challenged
-and cannot achieve terminal epistemic closure.
-
-### Agent Constraint Structure
-
-| Structure | Description |
-|-----------|-------------|
-| `AgentConstraints` | Bundle of agent limitations (bounded verification, fallible observation, strategic utterance, PRP) |
-| `PRP` | Permanent Redeemability Pressure (challenge stream, costs, budgets, infinite challenge arrival) |
-| `Challenge` | Time-indexed challenge with content |
-| `Budget` | Agent verification capacity function |
-| `Mechanisms` | Architectural mechanism availability predicates |
-| `HealthGoals` | System health objectives |
-| `FaultEvent` | Agent failure modes (Lie, Omit, Misobserve, Forget, MisreportEvidence) |
-
-### PRP Structure (Core)
-
-```lean
-structure PRP (Agent Claim : Type u) where
-  challengeStream : TimeIdx → Option (Challenge Claim)
-  challengeCost : VerifyCost Claim
-  agentBudget : Agent → Budget
-  challengesInfinite : ∀ t, ∃ t' > t, (challengeStream t').isSome
-  pressureExists : ∀ a t, ∃ t' > t, ∃ c, 
-    challengeStream t' = some c ∧ challengeCost c.content > agentBudget a t'
-```
+**Permanent Redeemability Pressure (PRP):** agents face an infinite stream of challenges exceeding their verification budget — terminal epistemic closure is unreachable. The theorems in `Agent/Imposition.lean` derive that `AgentConstraints + HealthGoal + ¬Mechanism → False`.
 
 ### PRP Consequence Theorems (Tier A — Fully Proved)
 
@@ -841,19 +740,6 @@ are also proved by trace induction.
 | `lie_containment_principle` | Lies create untrusted deposits, don't flip truth | Epistemic sandbox |
 | `no_gate_bypass` | Gate enforcement is architectural, not agent-dependent | Gate invariance |
 
-### Claim Budget
-
-**This module CAN claim:**
-- ✅ PRP implies no terminal epistemic closure (proved)
-- ✅ PRP forces ongoing revision/scoping (proved)
-- ✅ Agent constraints necessitate mechanisms (structural disjunction)
-- ✅ Faults are contained architecturally (trivial cases proved)
-
-**This module CANNOT claim:**
-- ❌ Specific agent psychology or decision-making
-- ❌ Quantitative budget/cost relationships (only qualitative)
-- ❌ Full proof of mechanism necessity (requires Health/LTS linkage)
-
 ---
 
 ## Bucket 19: Feasibility / Existence Under Constraints (Tier A)
@@ -888,20 +774,6 @@ are also proved by trace induction.
 | `ConcreteRealizer` | Realizer.lean | Realizer witness instance |
 | `ConcreteSuccessfulSystem` | Realizer.lean | SuccessfulSystem witness instance |
 | `WitnessCtx` | WorldWitness.lean | Concrete WorldCtx instance |
-
-### Claim Budget
-
-**This bucket CAN claim:**
-- ✅ The 8 paper commitments are jointly satisfiable
-- ✅ World constraint bundles have at least one witness
-- ✅ A working system meeting the success bundle exists
-- ✅ Success forces Bank primitives (minimality)
-- ✅ The architecture is not vacuous
-
-**This bucket CANNOT claim:**
-- ❌ The real world literally is this model
-- ❌ Uniqueness of realization
-- ❌ Abduction from observations to existence
 
 ---
 
@@ -969,21 +841,6 @@ are also proved by trace induction.
 **DO NOT say:** "never provable true", "unprovable"  
 **Allowed:** "not fully authorizable from obs", "underdetermined", "credit required"
 
-### Claim Budget
-
-**This bucket CAN claim:**
-- ✅ Floor package is consistent (witness exists)
-- ✅ Floor package is falsifiable (countercontext exists)
-- ✅ Full authorization from obs is impossible
-- ✅ Extension doesn't collapse paper-facing claims
-- ✅ (Stretch) A designated `theory_core` token is underdetermined
-- ✅ (Universal) Schema works for any context with W_partial_observability
-
-**This bucket CANNOT claim:**
-- ❌ The real world is the witness
-- ❌ The theory is "unprovable" (wrong vocabulary)
-- ❌ People must accept it
-
 ---
 
 ## Bucket 21: Multi-Agent Corroboration (Appendix)
@@ -1014,19 +871,6 @@ are also proved by trace induction.
 | `IndependenceBounded` | Agent/Corroboration.lean | At most t compromised among independent |
 | `HonestImpliesTrue` | Agent/Corroboration.lean | Honest attestation → truth |
 
-### Claim Budget
-
-**This bucket CAN claim:**
-- ✅ Formal reason "why 2-3 independent attestations beats one" (under explicit interface)
-- ✅ Formal reason "why corroboration can fail" (common-mode / bubble infection)
-- ✅ Conditional minimality: if NoSPoF goal, corroboration is forced
-- ✅ Independence is a parameter (explicit knob), not hidden assumption
-
-**This bucket CANNOT claim:**
-- ❌ "Humans do this in practice" (no sociology)
-- ❌ "The real world satisfies the independence interface" (no realism)
-- ❌ "Corroboration guarantees truth" (only reduces risk under constraints)
-
 ---
 
 ## Bucket 22: Entrenchment (Pathological Ladder State)
@@ -1054,16 +898,6 @@ are also proved by trace induction.
 
 $$\text{Entrenched}(a, P) \land \text{deposit\_no\_longer\_active}(s, d) \Rightarrow \neg\text{isDeposited}(s, d)$$
 
-### Claim Budget
-
-**This bucket CAN claim:**
-- ✅ "An entrenched agent cannot safely withdraw when the Bank has quarantined or revoked the deposit"
-- ✅ "Entrenchment is a pathological *defect* of Certainty, not a synonym for it"
-
-**This bucket CANNOT claim:**
-- ❌ "All agents at Certainty are entrenched" (Entrenchment is an additional predicate)
-- ❌ "Real-world stubbornness is exactly this" (model-relative)
-
 ---
 
 ## Bucket 23: Observational Completeness (Header/Deposit Extensionality)
@@ -1086,14 +920,3 @@ $$\text{Entrenched}(a, P) \land \text{deposit\_no\_longer\_active}(s, d) \Righta
 $$d_1.P = d_2.P \;\land\; d_1.h = d_2.h \;\land\; d_1.\text{bubble} = d_2.\text{bubble} \;\land\; d_1.\text{status} = d_2.\text{status} \implies d_1 = d_2$$
 
 $$\forall\, \text{Pred},\ d_1 = d_2 \implies \text{Pred}(d_1) \implies \text{Pred}(d_2)$$
-
-### Claim Budget
-
-**This bucket CAN claim:**
-- ✅ "Deposits agreeing on all named fields are identical" (proved extensionality)
-- ✅ "The named fields exhaust deposit identity — no hidden degrees of freedom"
-- ✅ "Any proposed extension either refines an existing field (compatible, protected by A.R1–A.R3) or is operationally inert"
-
-**This bucket CANNOT claim:**
-- ❌ "No other field decomposition could work" (observational completeness is closure *within* our choice)
-- ❌ "The constraint enumeration is provably complete" (that requires external adequacy argument)
