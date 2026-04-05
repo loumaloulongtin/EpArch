@@ -1,6 +1,6 @@
 # Axiom Inventory
 
-This document is the single authoritative list of axioms in the formalization. Total: **35 axioms** across three files.
+This document is the single authoritative list of intentionally postulated design and interface axioms in the formalization. Total: **35 axioms** across three files.
 
 ---
 
@@ -15,12 +15,6 @@ The three axiom classes each have a different conceptual role:
 - **Invariants** are protocol constraints that must hold across all system states.
 
 The repo's theorem burden is to derive consequences from these axioms and minimize them where possible. When an axiom becomes definitional or derivable, it is removed from this inventory.
-
----
-
-## Axiom Minimization Note
-
-One item previously treated as an axiom — `SEVFactorization` — is now a `theorem` (its statement `∃ s e v, d.h.S=s ∧ d.h.E=e ∧ d.h.V=v` is trivially provable by reflexivity). It is not counted in the 35 and does not appear in the tables below.
 
 ---
 
@@ -94,7 +88,7 @@ These are protocol-level constraints. They do not describe what operations do �
 
 ## Axiom-Free Modules
 
-The following modules contain zero axioms. All results in them are theorems, definitions, or derived from the axioms above.
+These modules are theorem-bearing or definitional surfaces only; they introduce no new axioms. All results in them are derived from the 35 axioms above.
 
 | Module | Description |
 |--------|-------------|
