@@ -24,6 +24,8 @@ This folder contains detailed documentation for the Lean formalization of the Ep
 | [SEMANTICS.md](SEMANTICS.md) | Step semantics and LTS overview |
 | [WITNESS-SCOPE.md](WITNESS-SCOPE.md) | What the concrete model witnesses (and doesn't) |
 
+For the full paper-section-to-Lean-artifact mapping (with math notation, A.# labels, and claim-budget notes), see **Appendix A** of the paper.
+
 ## Core Concepts (Glossary)
 
 | Term | Meaning |
