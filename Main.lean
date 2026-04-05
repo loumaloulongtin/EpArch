@@ -106,19 +106,19 @@ Layer 9 (Surface):    PaperFacing
 
 | Surface | Import | Description |
 |---------|--------|-------------|
-| **Paper-Facing** | `MainPaper.lean` | Core-facing theorems only (36 axioms) |
-| **Full** | `Main.lean` | Full build (36 axioms) |
+| **Paper-Facing** | `MainPaper.lean` | Core-facing theorems only (35 axioms) |
+| **Full** | `Main.lean` | Full build (35 axioms) |
 
 ## Axiom Breakdown
 
 | Surface | Count | Notes |
 |---------|-------|-------|
 | Bank | 18 | Operator postconditions |
-| Commitments | 13 | Axioms implementing 8 architecture commitments |
+| Commitments | 12 | Axioms implementing 8 architecture commitments |
 | Invariants | 5 | Protocol invariants |
 | Agent Layer | 0 | Design-forcing now PROVED |
 | WorldCtx | 0 | transport_lies_possible now PROVED |
-| **Total** | **36** | Specification axioms only |
+| **Total** | **35** | Specification axioms only |
 
 Note: 5 former axioms are now theorems (Agent design-forcing + WorldCtx transport
 + Invariants challenge_requires_field_localization).

@@ -44,7 +44,7 @@ All axioms are specification-level (Tier C — design requirements, intentionall
 
 ---
 
-## Category 2: Commitments (13 axioms)
+## Category 2: Commitments (12 axioms)
 
 **File:** `EpArch/Commitments.lean`
 
@@ -52,7 +52,7 @@ All axioms are specification-level (Tier C — design requirements, intentionall
 |-------|------------|---------------|
 | `TractionAuthorizationSplit` | C1: Type separation — certainty_L ⊥ knowledge_B (genuine content: certainty_L is opaque, both independence directions are non-trivial) | §2 |
 | `NoGlobalLedgerTradeoff` | C2: No global ledger | §2 |
-| ~~`SEVFactorization`~~ | *(moved to theorem — trivially provable)* | §3 |
+| ~~`SEVFactorization`~~ | *(not counted — moved to theorem)* | §3 |
 | `redeemable_implies_path` | Redeemability → path | §4 |
 | `RedeemabilityExternal` | C4: Redeemability is external | §4 |
 | `by_consensus_creates_redeemability` | C4a: Consensus pattern | §4 |

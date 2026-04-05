@@ -23,9 +23,9 @@ It imports ONLY the paper-facing surface.
 | File | Count | Category |
 |------|-------|----------|
 | Bank.lean | 18 | Spec: operator postconditions |
-| Commitments.lean | 13 | Spec: architecture commitments |
+| Commitments.lean | 12 | Spec: architecture commitments |
 | Invariants.lean | 5 | Spec: protocol requirements |
-| **Total** | **36** | All specification axioms |
+| **Total** | **35** | All specification axioms |
 
 Health goals are definitional, not axioms.
 Agent design-forcing and WorldCtx transport are now proved theorems.
@@ -34,4 +34,4 @@ Agent design-forcing and WorldCtx transport are now proved theorems.
 import EpArch.PaperFacing
 
 def main : IO Unit :=
-  IO.println s!"EpArch: Paper-Facing Surface (36 axioms, 0 sorry)"
+  IO.println s!"EpArch: Paper-Facing Surface (35 axioms, 0 sorry)"

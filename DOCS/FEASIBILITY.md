@@ -197,4 +197,4 @@ ConcreteInstance ─────────────────┼───
 **None.** These theorems introduce no new axioms. They compose existing
 witnesses from `WorldWitness`, `ConcreteLedgerModel`, and `Minimality`.
 
-Paper-facing axiom count remains **36**.
+Paper-facing axiom count remains **35**.
