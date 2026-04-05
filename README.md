@@ -8,6 +8,18 @@ Machine-checked companion to **"Epistemic Architecture: A Constraints-and-Object
 
 ---
 
+## Where to Start
+
+| If you are... | Start here |
+|---|---|
+| A **Lean / formal methods reader** | [Quick Start for Lean Readers](#quick-start-for-lean-readers) below — core types, theorem names, direct file links |
+| A **philosopher or epistemologist** | `EpArch/Theorems.lean` — `gettier_is_V_failure`, `fake_barn_is_E_failure`, `LotteryIsTypeError`; then [Relationship to the Paper](#relationship-to-the-paper) for the completeness argument |
+| An **AI safety / LLM evaluation reader** | `EpArch/Theorems.lean` — `confabulation_is_type_error` (hallucination is the lottery problem instantiated in generative systems: high fluency-traction, no Bank grounding); `EpArch/AdversarialObligations.lean` for V-spoof and trust-bridge obligations |
+| Interested in **why these primitives are forced** | `EpArch/Agent/Imposition.lean` (mechanism necessity proofs), `EpArch/Minimality.lean` (forcing results), `EpArch/WorldWitness.lean` (non-vacuity witnesses) |
+| A **skeptic** wanting non-vacuity first | `EpArch/ConcreteLedgerModel.lean` — zero axioms, fully constructive trace from initial state to revoked |
+
+---
+
 ## What This Is
 
 This repository contains the Lean 4 formalization of EpArch — a constraints-and-objectives architecture for bounded epistemic agents under adversarial pressure. Starting from minimal operational constraints on agents and the world, the paper derives a cluster of required primitives: scoped authorization zones (Bubbles), a shared deposit ledger (Bank) with lifecycle gates, structured validation headers (S/E/V), and temporal validity (τ). This formalization machine-checks the key conditional necessity results, provides non-vacuity witnesses, and verifies revision safety.
