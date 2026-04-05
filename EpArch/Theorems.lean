@@ -1778,14 +1778,10 @@ structure MonolithicDeposit where
 
 /-- Without factorization, failures are opaque.
 
-    A "monolithic" system where claims cannot be decomposed into S/E/V
-    cannot localize failures to specific fields.
-
-    Proof: In our model, has_SEV_factorization is True by construction
-    (Header has S, E, V fields). So ¬has_SEV_factorization is False,
-    making the implication vacuously true.
-
-    This is the RIGHT answer: our model REQUIRES factorization by construction. -/
+    Proof: In our model, `has_SEV_factorization` is True by construction
+    (Header has S, E, V fields). So `¬has_SEV_factorization` is False,
+    making the implication vacuously true — the antecedent cannot be
+    satisfied by any well-formed deposit. -/
 theorem bridge_monolithic_opaque
     (BrokenField : Deposit PropLike Standard ErrorModel Provenance → Field → Prop)
     (d : Deposit PropLike Standard ErrorModel Provenance)
@@ -1805,19 +1801,17 @@ structure StrippedState where
 
 /-- Stripped challenges lack diagnostic grounding.
 
-    Stripped claims lose their S/E/V structure, so challenges
-    against them cannot be field-specific in a meaningful way.
-    The challenge may have a `suspected` field, but it's a GUESS
-    rather than a DIAGNOSIS based on header examination.
+    Stripped claims lose S/E/V structure, so challenges against them
+    cannot be field-specific. The challenge carries a `suspected` field,
+    but it is a guess rather than a diagnosis from header inspection.
 
-    Proof: depositHasHeader is exactly ∃ d, get? = some d ∧ header_preserved d.
-    So ¬depositHasHeader directly contradicts the RHS. -/
+    Proof: `depositHasHeader` is exactly `∃ d, get? = some d ∧ header_preserved d`.
+    `¬depositHasHeader` directly contradicts the RHS. -/
 theorem bridge_stripped_ungrounded
     (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
     (d_idx : Nat)
     (h_stripped : ¬StepSemantics.depositHasHeader s d_idx)
     (c : EpArch.Challenge PropLike Reason Evidence) :
-    -- The challenge may have a field, but it's not grounded in diagnosis
     ∃ f : Field, c.suspected = f ∧ ¬(∃ d, s.ledger.get? d_idx = some d ∧
       header_preserved d) := by
   refine ⟨c.suspected, rfl, ?_⟩
