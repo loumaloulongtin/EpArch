@@ -68,15 +68,15 @@ theorem success_feasible :
 ```
 
 The success bundle (WellFormed + SatisfiesAllProperties) is non-empty.
-Witnessed by `ConcreteWorkingSystem`.
+Proof: `ConcreteWorkingSystem` satisfies both.
 
 ### `world_bundles_feasible`
 
 **File:** `EpArch/Feasibility.lean`  
 **Tier:** A
 
-World constraint bundles (W_lies_possible, W_bounded_verification,
-W_partial_observability) are jointly satisfiable. Witnessed by `WitnessCtx`.
+World constraint bundles (`W_lies_possible`, `W_bounded_verification`,
+`W_partial_observability`) are jointly satisfiable. Proof: `WitnessCtx` in `WorldWitness.lean`.
 
 ### `commitments_feasible`
 
@@ -86,13 +86,13 @@ W_partial_observability) are jointly satisfiable. Witnessed by `WitnessCtx`.
 All 8 paper commitments are simultaneously satisfiable. Re-export of
 `ConcreteLedgerModel.all_commitments_satisfiable`.
 
-### `joint_feasible` (Legacy)
+### `joint_feasible`
 
 **File:** `EpArch/Feasibility.lean`  
 **Tier:** A
 
-Legacy theorem combining `constraints_feasible` and `objectives_feasible`.
-Use `existence_under_constraints` for new citations.
+Combines `constraints_feasible` and `objectives_feasible`.
+For new citations, prefer `existence_under_constraints`.
 
 ---
 
@@ -100,75 +100,48 @@ Use `existence_under_constraints` for new citations.
 
 ### `EpArch/Realizer.lean`
 
-Defines the `Realizer` structure and `SuccessfulSystem` structure:
-
-```lean
-structure Realizer where
-  commitments : <8 commitment conjunction>
-
-structure SuccessfulSystem where
-  W  : WorkingSystem
-  wf : WellFormed W
-  sat : SatisfiesAllProperties W
-```
-
-The `ConcreteRealizer` witnesses Realizer via `ConcreteLedgerModel`.
-The `ConcreteSuccessfulSystem` witnesses SuccessfulSystem via `ConcreteInstance`.
+Defines `Realizer` (8-commitment conjunction) and `SuccessfulSystem` (working system + well-formedness + satisfaction). `ConcreteRealizer` and `ConcreteSuccessfulSystem` provide the concrete instances that back the feasibility proofs.
 
 ### `EpArch/WorldWitness.lean`
 
-Defines `WitnessCtx` — a concrete `WorldCtx` instantiation with:
-- `World := Bool` (two worlds)
-- `Claim := Bool` (two claims)
-- `Truth w P := (w = P)` (truth = world-claim match)
-- `Obs := Unit` (maximal underdetermination)
-
-Proves `all_bundles_satisfiable`: the W_* bundles are jointly satisfiable.
+Defines `WitnessCtx` — a concrete `WorldCtx` instantiation used to prove `all_bundles_satisfiable`: the three `W_*` world-assumption bundles are jointly satisfiable.
 
 ### `EpArch/ConcreteLedgerModel.lean`
 
-Proves `all_commitments_satisfiable` (8 commitment witnesses) and
-provides `ConcreteInstance` namespace with:
-- `ConcreteWorkingSystem` — concrete working system
-- `concrete_wellformed` — proof it's well-formed
-- `concrete_satisfies_all_properties` — proof it satisfies all properties
+Proves `all_commitments_satisfiable` (all 8 commitment witnesses) and provides `ConcreteWorkingSystem` with its well-formedness and property-satisfaction proofs.
 
 ---
 
 ## Claim Budget
 
-### Buys (strong)
+These are strong formal results — existence and forcing claims, not realism claims.
 
-- ✅ "The constraint+objective package is consistent (nonempty)"
-- ✅ "There exists at least one working system meeting the success bundle"
-- ✅ "Success forces Bank primitives (minimality)"
-- ✅ "World-bundles are satisfiable (at least one witness)"
+- **Non-vacuity:** The constraint + objective package is consistent and non-empty.
+- **Existence:** There is at least one working system meeting the success bundle.
+- **Forcing:** Success forces Bank primitives — this is not optional.
+- **World consistency:** The world-assumption bundles are jointly satisfiable.
 
-### Does NOT Buy (do not overclaim)
+What these theorems do not establish:
 
-- ❌ "The real world literally is this model"
-- ❌ "Uniqueness" (many realizations can exist)
-- ❌ "Abduction/inference from observed O to existence of S"
+- Uniqueness (many realizations can exist)
+- Optimality (no optimality claim is made)
+- Realism (the concrete witnesses are formal constructions, not empirical models)
 
 ---
 
-## Strength Tier
+## Strength and Axiom Impact
 
-**Tier A** — Proved theorem
+**Tier A** — All theorems are fully proved by composing existing witnesses from `WorldWitness`, `ConcreteLedgerModel`, and `Minimality`. No new axioms are introduced. Paper-facing axiom count remains **35**.
 
-All theorems are fully proved by composing existing witnesses. No new axioms.
-
-**Semantic Role:** Non-vacuity + forced-primitives — not "world realism."
+**Semantic role:** Non-vacuity + forced-primitives — not world realism.
 
 ---
 
 ## Paper Citation
 
-For the appendix existence claim, cite:
+For the appendix existence claim:
 
-> "There exists a working system satisfying all operational properties,
-> and any such system must contain Bank primitives."
-> Proof: `EpArch.Feasibility.existence_under_constraints`
+> `EpArch.Feasibility.existence_under_constraints`
 
 ---
 
@@ -190,11 +163,4 @@ ConcreteInstance ─────────────────┼───
                                existence_under_constraints (HEADLINE)
 ```
 
----
 
-## Axiom Impact
-
-**None.** These theorems introduce no new axioms. They compose existing
-witnesses from `WorldWitness`, `ConcreteLedgerModel`, and `Minimality`.
-
-Paper-facing axiom count remains **35**.
