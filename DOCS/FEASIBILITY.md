@@ -137,14 +137,6 @@ What these theorems do not establish:
 
 ---
 
-## Paper Citation
-
-For the appendix existence claim:
-
-> `EpArch.Feasibility.existence_under_constraints`
-
----
-
 ## Relationship to Other Modules
 
 ```
