@@ -13,7 +13,7 @@ Machine-checked companion to **"Epistemic Architecture: A Constraints-and-Object
 | If you are... | Start here |
 |---|---|
 | A **Lean / formal methods reader** | [Quick Start for Lean Readers](#quick-start-for-lean-readers) below — core types, theorem names, direct file links |
-| A **philosopher or epistemologist** | `EpArch/Theorems.lean` — `gettier_is_V_failure`, `fake_barn_is_E_failure`, `LotteryIsTypeError`; then [Relationship to the Paper](#relationship-to-the-paper) for the completeness argument |
+| A **philosopher or epistemologist** | `EpArch/Theorems.lean` — `gettier_is_V_failure`, `fake_barn_is_E_failure`, `LotteryIsTypeError`; `EpArch/Header.lean` — `observational_completeness_full` for the no-hidden-degrees-of-freedom result; then [Relationship to the Paper](#relationship-to-the-paper) for the combined completeness argument |
 | An **AI safety / LLM evaluation reader** | `EpArch/Theorems.lean` — `confabulation_is_type_error` (hallucination is the lottery problem instantiated in generative systems: high fluency-traction, no Bank grounding); `EpArch/AdversarialObligations.lean` for V-spoof and trust-bridge obligations |
 | Interested in **why these primitives are forced** | `EpArch/Agent/Imposition.lean` (mechanism necessity proofs), `EpArch/Minimality.lean` (forcing results), `EpArch/WorldWitness.lean` (non-vacuity witnesses) |
 | A **skeptic** wanting non-vacuity first | `EpArch/ConcreteLedgerModel.lean` — zero axioms, fully constructive trace from initial state to revoked |
