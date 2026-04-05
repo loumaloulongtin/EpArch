@@ -1,8 +1,8 @@
 # EpArch Lean Formalization — Documentation Index
 
-This folder contains detailed documentation for the Lean formalization of the Epistemic Architecture (EpArch) framework.
+This folder documents the Lean formalization of the Epistemic Architecture (EpArch) framework — 435 proved theorems, 35 axioms, zero sorries.
 
-**The problem:** When independent agents — scientists, courts, open-source communities — assess and authorize knowledge claims, what structural requirements must any functioning system share? **The answer this formalization gives:** lifecycle gates, header-preserving export, a revision loop, and temporal validity are not design choices. They are *forced* by the combination of agent constraints (imperfect agents face permanent challenge pressure) and system health goals (safe withdrawal, reliable export, self-correction). The 435 theorem declarations below are the machine-checked evidence.
+**The core claim:** lifecycle gates, header-preserving export, a revision loop, and temporal validity are not design choices. They are *forced* by the combination of agent constraints (imperfect agents face permanent challenge pressure) and system health goals (safe withdrawal, reliable export, self-correction). The files below are the machine-checked record of that forcing argument.
 
 ## Build Surfaces
 
@@ -17,8 +17,7 @@ This folder contains detailed documentation for the Lean formalization of the Ep
 |------|-------------|
 | [THEOREMS.md](THEOREMS.md) | Complete theorem inventory organized by paper role |
 | [AXIOMS.md](AXIOMS.md) | Axiom inventory with categories and justifications |
-| [WORLD.md](WORLD.md) | World layer for obligation theorems |
-
+| [WORLD.md](WORLD.md) | Explicit world assumptions (W-bundles) and obligation theorem structure |
 | [FEASIBILITY.md](FEASIBILITY.md) | Non-vacuity / joint feasibility theorems |
 | [CORROBORATION.md](CORROBORATION.md) | Multi-agent corroboration and common-mode failure |
 | [SEMANTICS.md](SEMANTICS.md) | Step semantics and LTS overview |
