@@ -1,0 +1,277 @@
+/-
+EpArch/WorldCtx.lean — World Context (Parametric Semantic Signature)
+
+This module defines WorldCtx: a parameterized semantic signature for world
+layer theorems. Instead of concrete stubs (Truth := True), we use abstract
+fields that can be instantiated differently for different purposes:
+- WitnessCtx (in WorldWitness.lean): a concrete Bool-valued model proving
+  that the assumption bundles are non-vacuous (satisfiable).
+- Real domain models: domain-specific truth/verification semantics.
+
+## Why Parametric?
+
+Many of the paper's claims are CONDITIONAL: "IF lies are possible AND
+verification is bounded AND observation is partial, THEN mechanism M
+follows." These conditions are formalized as W_* bundles (W_lies_possible,
+W_bounded_verification, W_partial_observability, W_asymmetric_costs).
+
+WorldCtx provides the parametric interface through which these world-level
+assumptions enter the formalization. The obligation theorems in
+AdversarialObligations.lean take the form: W_* → mechanism claim.
+
+By keeping WorldCtx abstract, we get two things:
+1. Theorems that hold for ANY world satisfying the bundles (generality).
+2. A clear separation between "what we assume about the world" and "what
+   we prove about the architecture" (modularity).
+
+## Design Philosophy
+
+WorldCtx is NOT a world model — it's a signature/interface. Theorems stated
+over (C : WorldCtx) hold for ANY instantiation satisfying the signature.
+This makes assumptions explicit and avoids the "stubbed semantics" trap
+where Truth := True makes everything vacuously satisfiable.
+
+## Core Primitives
+
+- World : Type — possible states of affairs
+- Agent : Type — epistemic agents
+- Claim : Type — propositions / things that can be true or false
+- Obs : Type — observations (what's epistemically accessible)
+- Truth : World → Claim → Prop — world-relative truth
+- Utter : Agent → Claim → Prop — agent utterance (speech act)
+- obs : World → Obs — observation function
+- VerifyWithin : World → Claim → Nat → Prop — bounded verification
+- effectiveTime : World → Nat — resource capacity at world
+
+## Relationship to Other Files
+
+- **WorldWitness.lean**: Concrete instantiation proving W_* bundles are
+  satisfiable (non-vacuity).
+- **World.lean**: DEPRECATED local stubs. Use WorldCtx instead.
+- **AdversarialObligations.lean**: Obligation theorems conditioned on W_* bundles.
+- **Meta/FalsifiableNotAuthorizable.lean**: Uses WorldCtx to prove the theory
+  floor is falsifiable and not fully authorizable.
+-/
+
+import EpArch.Basic
+
+namespace EpArch
+
+universe u
+
+/-! ## World Context Structure -/
+
+/-- WorldCtx: semantic signature for world layer.
+
+    This is the core interface that all world-parametric theorems
+    are stated over. No concrete implementations here—just the shape. -/
+structure WorldCtx where
+  /-- Possible states of affairs -/
+  World : Type u
+  /-- Epistemic agents -/
+  Agent : Type u
+  /-- Propositions / claims -/
+  Claim : Type u
+  /-- Observations (epistemically accessible data) -/
+  Obs : Type u
+
+  /-- World-relative truth predicate -/
+  Truth : World → Claim → Prop
+  /-- Agent utterance (saying something, regardless of truth) -/
+  Utter : Agent → Claim → Prop
+  /-- Observation function: what's observable from a world -/
+  obs : World → Obs
+  /-- Bounded verification: can P be verified at w within t steps? -/
+  VerifyWithin : World → Claim → Nat → Prop
+  /-- Resource capacity at a world (for modeling constraints) -/
+  effectiveTime : World → Nat
+
+  /-- Witness that World is inhabited (for existential proofs) -/
+  world_inhabited : Nonempty World
+  /-- Witness that Agent is inhabited -/
+  agent_inhabited : Nonempty Agent
+  /-- Witness that Claim is inhabited -/
+  claim_inhabited : Nonempty Claim
+
+
+/-! ## Derived Concepts (Context-Parametric) -/
+
+variable (C : WorldCtx)
+
+/-- Lie: agent utters P, but P is false at w. -/
+def WorldCtx.Lie (w : C.World) (a : C.Agent) (P : C.Claim) : Prop :=
+  C.Utter a P ∧ ¬C.Truth w P
+
+/-- Can_lie: agent can lie (exists a world and proposition where they do). -/
+def WorldCtx.can_lie (a : C.Agent) : Prop :=
+  ∃ w P, C.Lie w a P
+
+/-- Partial observation equivalence: w0 and w1 look the same. -/
+def WorldCtx.PartialObs (w0 w1 : C.World) : Prop :=
+  C.obs w0 = C.obs w1
+
+/-- P's truth is not determined by observations alone.
+    There exist observationally equivalent worlds where P differs. -/
+def WorldCtx.NotDeterminedByObs (P : C.Claim) : Prop :=
+  ∃ w0 w1, C.PartialObs w0 w1 ∧ (C.Truth w0 P ↔ ¬C.Truth w1 P)
+
+/-- P requires at least k steps to verify at w. -/
+def WorldCtx.RequiresSteps (w : C.World) (P : C.Claim) (k : Nat) : Prop :=
+  ∀ t, t < k → ¬C.VerifyWithin w P t
+
+
+/-! ## World Assumption Bundles (Context-Parametric) -/
+
+/-- Bundle for "lies are possible" assumption. -/
+structure WorldCtx.W_lies_possible (C : WorldCtx) where
+  /-- There exist false propositions -/
+  some_false : ∃ w P, ¬C.Truth w P
+  /-- Agents can utter any proposition -/
+  unrestricted_utterance : ∀ a P, C.Utter a P
+
+/-- Bundle for "verification is bounded" assumption. -/
+structure WorldCtx.W_bounded_verification (C : WorldCtx) where
+  /-- Some propositions require significant verification effort -/
+  verification_has_cost : ∃ P k, k > 0 ∧ ∀ w, C.RequiresSteps w P k
+
+/-- Bundle for "observations underdetermine truth" assumption. -/
+structure WorldCtx.W_partial_observability (C : WorldCtx) where
+  /-- Some truths are not determined by observations -/
+  obs_underdetermines : ∃ P, C.NotDeterminedByObs P
+
+/-- Bundle for "costs are asymmetric" assumption. -/
+structure WorldCtx.W_asymmetric_costs (C : WorldCtx) where
+  export_cost : Nat
+  defense_cost : Nat
+  asymmetry : export_cost < defense_cost
+
+
+/-! ## Obligation Theorems (Context-Parametric)
+
+These are the key theorems that convert mechanism claims into
+conditional results over world assumptions.
+-/
+
+/-- Theorem: Lying is structurally possible under W_lies_possible. -/
+theorem WorldCtx.lie_possible_of_W (C : WorldCtx) (W : C.W_lies_possible) :
+    ∃ w a P, C.Lie w a P := by
+  have ⟨w, P, h_false⟩ := W.some_false
+  have ⟨a⟩ := C.agent_inhabited
+  exact ⟨w, a, P, W.unrestricted_utterance a P, h_false⟩
+
+/-- Theorem: Can_lie holds for all agents under W_lies_possible. -/
+theorem WorldCtx.all_agents_can_lie_of_W (C : WorldCtx) (W : C.W_lies_possible)
+    (a : C.Agent) : C.can_lie a := by
+  have ⟨w, P, h_false⟩ := W.some_false
+  exact ⟨w, P, W.unrestricted_utterance a P, h_false⟩
+
+/-- Theorem: Bounded audit fails when time is insufficient. -/
+theorem WorldCtx.bounded_audit_fails (C : WorldCtx) (w : C.World) (P : C.Claim)
+    (k t : Nat) : C.RequiresSteps w P k → t < k → ¬C.VerifyWithin w P t := by
+  intro h_requires h_lt
+  exact h_requires t h_lt
+
+/-- Theorem: Cost asymmetry follows from W_asymmetric_costs. -/
+theorem WorldCtx.cost_asymmetry_of_W (C : WorldCtx) (W : C.W_asymmetric_costs) :
+    W.export_cost < W.defense_cost :=
+  W.asymmetry
+
+
+/-! ## W4: WorldCtx Compatibility (Contract Mode)
+
+This section defines compatibility for WorldCtx extensions, ensuring that
+additions to a WorldCtx don't silently change the meaning of core primitives.
+-/
+
+/-- Extended WorldCtx: adds extra structure while preserving core. -/
+structure ExtWorldCtx extends WorldCtx where
+  /-- Extra world state -/
+  WorldExtra : Type u
+  /-- Extra agent state -/
+  AgentExtra : Type u
+
+/-- Compatibility witness for WorldCtx extensions.
+
+    An extension E is compatible with a core C if:
+    1. Core types can be projected from extended types
+    2. Core operations commute with projection
+
+    This ensures extensions can't silently change truth semantics. -/
+structure WorldCtxCompatible (E : ExtWorldCtx) (C : WorldCtx) where
+  /-- Projection on World -/
+  πWorld : E.World → C.World
+  /-- Projection on Agent -/
+  πAgent : E.Agent → C.Agent
+  /-- Projection on Claim -/
+  πClaim : E.Claim → C.Claim
+  /-- Projection on Obs -/
+  πObs : E.Obs → C.Obs
+  /-- Commuting law: Truth commutes with projection -/
+  truth_comm : ∀ (w : E.World) (P : E.Claim),
+    E.Truth w P ↔ C.Truth (πWorld w) (πClaim P)
+  /-- Commuting law: Utter commutes with projection -/
+  utter_comm : ∀ (a : E.Agent) (P : E.Claim),
+    E.Utter a P ↔ C.Utter (πAgent a) (πClaim P)
+  /-- Commuting law: obs commutes with projection -/
+  obs_comm : ∀ (w : E.World),
+    πObs (E.obs w) = C.obs (πWorld w)
+  /-- Commuting law: VerifyWithin commutes with projection -/
+  verify_comm : ∀ (w : E.World) (P : E.Claim) (t : Nat),
+    E.VerifyWithin w P t ↔ C.VerifyWithin (πWorld w) (πClaim P) t
+  /-- Commuting law: effectiveTime commutes with projection -/
+  time_comm : ∀ (w : E.World),
+    E.effectiveTime w = C.effectiveTime (πWorld w)
+
+/-- Transport for W_lies_possible: compatible extensions preserve lies-possible.
+
+    This transport requires an embedding witness showing the extension doesn't
+    remove relevant worlds/claims from the domain. The embedding provides
+    surjectivity-like properties needed to lift existential statements.
+
+    See RevisionSafety.lean for the full transport infrastructure. -/
+structure WorldCtxEmbedding (E : ExtWorldCtx) (C : WorldCtx) (h : WorldCtxCompatible E C) where
+  /-- Embed core world into extended world -/
+  embedWorld : C.World → E.World
+  /-- Embed core agent into extended agent -/
+  embedAgent : C.Agent → E.Agent
+  /-- Embed core claim into extended claim -/
+  embedClaim : C.Claim → E.Claim
+  /-- Embedding is section of projection (right inverse) -/
+  world_section : ∀ w, h.πWorld (embedWorld w) = w
+  agent_section : ∀ a, h.πAgent (embedAgent a) = a
+  claim_section : ∀ P, h.πClaim (embedClaim P) = P
+
+/-- Transport for W_lies_possible: compatible extensions with embeddings preserve lies-possible.
+
+    **KEY THEOREM (Contract Mode)**: Uses embedding witness to lift existentials.
+
+    The proof:
+    1. C.W_lies_possible gives us w, P in C where ¬C.Truth w P
+    2. Embed w, P into E using the embedding witness
+    3. Use truth_comm to transfer: ¬E.Truth (embed w) (embed P)
+    4. Use utter_comm similarly for unrestricted_utterance -/
+theorem WorldCtx.transport_lies_possible (E : ExtWorldCtx) (C : WorldCtx)
+    (h : WorldCtxCompatible E C) (emb : WorldCtxEmbedding E C h) :
+    C.W_lies_possible → E.toWorldCtx.W_lies_possible := fun W_C =>
+  -- Construct W_lies_possible for E.toWorldCtx
+  { some_false :=
+      let ⟨w, P, h_false⟩ := W_C.some_false
+      ⟨emb.embedWorld w, emb.embedClaim P, fun h_true_E =>
+        let h_true_C := (h.truth_comm (emb.embedWorld w) (emb.embedClaim P)).mp h_true_E
+        h_false (emb.world_section w ▸ emb.claim_section P ▸ h_true_C)⟩
+    unrestricted_utterance := fun a_E P_E =>
+      (h.utter_comm a_E P_E).mpr (W_C.unrestricted_utterance _ _) }
+
+/-- Transport for lie_possible_of_W: if C is lies-possible and E is compatible
+    with embedding, then lies are possible in E.
+
+    NOTE: This follows from transport_lies_possible + lie_possible_of_W. -/
+theorem WorldCtx.transport_lie_possible (E : ExtWorldCtx) (C : WorldCtx)
+    (h : WorldCtxCompatible E C) (emb : WorldCtxEmbedding E C h)
+    (W : C.W_lies_possible) :
+    ∃ w a P, E.Lie w a P := by
+  have W_E := transport_lies_possible E C h emb W
+  exact lie_possible_of_W E.toWorldCtx W_E
+
+
+end EpArch
