@@ -13,9 +13,9 @@ whether attestation sources satisfy an explicit **independence/diversity interfa
 When sources share failure modes (common-mode), corroboration can fail
 spectacularly—this is the formal version of "bubble infection."
 
-## Three Toggles
+## Three Structural Conditions
 
-### 1. Goal Toggle: No Single Point of Failure
+### 1. Goal Condition: No Single Point of Failure
 
 The `NoSinglePointFailure` goal makes corroboration mandatory:
 - If your system goal includes resilience to single-source compromise
@@ -24,7 +24,7 @@ The `NoSinglePointFailure` goal makes corroboration mandatory:
 
 This is **conditional minimality**: corroboration is forced by the goal, not assumed universally.
 
-### 2. Independence Interface (Explicit, Not Baked In)
+### 2. Independence Condition (Explicit, Not Baked In)
 
 Independence is a parameter `Independent : Source → Source → Prop`, NOT a baked-in assumption.
 This design choice is critical:
@@ -33,7 +33,7 @@ This design choice is critical:
 - **No hidden realism:** We don't claim sources ARE independent
 - **The knob is explicit:** You can instantiate with your diversity assumptions or leave abstract
 
-### 3. Common-Mode Toggle (Bubble Infection)
+### 3. Common-Mode Condition (Bubble Infection)
 
 `CommonModeAttack` models correlated compromise:
 - Multiple sources share an upstream/bubble/channel
@@ -45,33 +45,35 @@ This is the formal version of:
 
 ## Theorems
 
-### T1: Necessity (Fully Proved)
+The four theorems form a natural arc: corroboration is required (T1), works under independence (T2), fails under common-mode (T3), and diversity is the reason it fails (T4).
+
+### T1: Necessity
 **`single_source_can_accept_false`**
 - If single-source attacks are possible, single-source acceptance can accept false statements
 - Direct counterexample proof using attack scenario
 
 **`no_spof_requires_multi_source`**
 - If NoSPoF goal AND single-source attacks possible → contradiction from single-source acceptance
-- Conditional minimality: corroboration is FORCED by the goal
+- Conditional minimality: corroboration is forced by the goal, not assumed universally
 
-### T3: Common-Mode Failure (Fully Proved)
+### T2: Sufficiency Under Independence
+**`k_of_n_suffices_under_independence`**
+- If at most t independent sources are compromised, k > t independent attestations → resilience
+- Formal reason why 2–3 independent attestations beats one
+- Fully proved via pigeonhole helper lemmas (see Technical Notes)
+
+### T3: Common-Mode Failure
 **`common_mode_breaks_naive_corroboration`**
-- If common-mode compromise is possible, k-of-n (for any k up to compromised set size) can accept false
-- Explains "bubble infection" formally
+- If common-mode compromise is possible, k-of-n (for any k up to the compromised set size) can accept false
+- The formal version of "bubble infection"
 
 **`two_of_two_fails_under_common_mode`**
 - Even 2-of-2 corroboration fails under common-mode (minimal interesting case)
 
-### T4: Diversity Requirement (Fully Proved)
+### T4: Diversity Requirement
 **`common_mode_requires_diversity`**
 - Universal quantification over k: naive k-of-n fails when k ≤ compromised set size
-- Keeps prose honest: corroboration needs diversity, not just multiplicity
-
-### T2: Sufficiency Under Independence (Fully Proved)
-**`k_of_n_suffices_under_independence`**
-- If at most t independent sources compromised, k > t independent attestations → resilience
-- Formal reason "why 2-3 independent attestations beats one"
-- Fully proved via pigeonhole helper lemmas (see Technical Notes)
+- Corroboration needs diversity, not just multiplicity
 
 ## Claim Budget
 
