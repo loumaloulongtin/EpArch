@@ -106,27 +106,32 @@ This structural encoding means invariants are **maintained by construction**.
 
 ---
 
-## Paper-LTS Correspondence
+## Immediate Semantic Consequences
 
-| Paper Concept | LTS Implementation |
-|---------------|-------------------|
-| Deposit lifecycle | Step constructors |
-| Withdrawal gate | `Step.withdraw` preconditions |
-| Export gate | `Step.export_*` preconditions |
-| Challenge/Revision | `Step.challenge`, `Step.repair`, `Step.revoke` |
-| Trace semantics | `Trace` inductive type |
-| Self-correction | `Trace.demonstratesSelfCorrection` |
-| Revision-prohibiting | `prohibits_revision` predicate |
+Because preconditions are structural rather than checked post-hoc, the encoding directly forces:
+
+| Operation | What the type forces |
+|-----------|----------------------|
+| `Withdraw` | Cannot exist unless ACL permission, deposited status, and τ-validity all hold |
+| `Export` | Cannot exist unless header-preservation discipline holds (with or without a trust bridge) |
+| `Repair` / `Revoke` | Cannot fire unless the deposit is already quarantined |
+| `Challenge` | Cannot fire on a deposit that is not present in the ledger |
+
+**Safety is induction-friendly by construction:** once step-level preservation is proved for a given invariant, trace-level preservation follows generically via `generic_invariant_preservation`. There is no need to re-examine multi-step cases individually.
 
 ---
 
 ## Relationship to AgentLTS
 
-**AgentLTS** (in `Agent/Resilience.lean`) is a **simplified abstraction** of StepSemantics.
+**AgentLTS** (in `Agent/Resilience.lean`) is a **proof-oriented abstraction** of StepSemantics, not an alternative semantics.
 
-- **StepSemantics**: Canonical operational semantics with full detail
-- **AgentLTS**: Over-approximation for containment proofs
+- **StepSemantics**: Canonical operational semantics with full structural preconditions
+- **AgentLTS**: A deliberately coarser over-approximation, designed for containment proofs
+- **Why it exists**: Containment arguments — showing that no agent behavior escapes a given class — are easier to prove against the coarser abstraction
+- **Results transfer back**: Because StepSemantics is simulated by AgentLTS (`StepSemantics ⊆ AgentLTS`), containment results proved in AgentLTS also hold for StepSemantics
 
-The relationship: `StepSemantics ⊆ AgentLTS` (simulation).
+---
 
-Containment theorems proved in AgentLTS also hold for StepSemantics (via simulation).
+## Reading This File
+
+This file specifies the canonical operational semantics: transition structure, precondition encoding, and the trace-level safety pattern. It is about structural preconditions and preservation, not runtime implementation details or empirical systems. Core proofs live in `StepSemantics.lean`; containment arguments live in `Agent/Resilience.lean` and transport back via simulation.
