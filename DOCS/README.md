@@ -29,9 +29,9 @@ For the full paper-section-to-Lean-artifact mapping (with math notation, A.# lab
 
 | Term | Meaning |
 |------|---------|
-| **Deposit** | An epistemic claim with a governance lifecycle (Candidate → Validated → Deposited → Quarantined → Revoked). The unit of knowledge in the architecture. |
+| **Deposit** | An epistemic claim with a governance lifecycle (Candidate → Deposited → Quarantined → Revoked). The unit of knowledge in the architecture. |
 | **Bubble** | A bounded authorization domain. Authority is scoped to a bubble; cross-bubble transfer requires explicit export. |
-| **S / E / V** | The three header fields: **S**ource (who asserted it), **E**ntailment (why it is supported), **V**erification (how it was checked). Stripping these loses diagnosability. |
+| **S / E / V** | The three header fields: **S**tandard (the validation threshold applied), **E**rror model (known failure modes the validation accounts for), **V**-provenance (the chain of evidence and checks). Stripping these loses diagnosability. |
 | **Traction** | A claim has *traction* if it influences epistemic behavior (belief, action) — strictly broader than formal authorization. |
 | **Redeemability** | Whether a claim can be cashed out against external reality. External, not conferred by consensus. |
 | **Competition gate** | A theorem showing that a rival epistemic architecture *must* address some specific structural requirement to function — you cannot simply skip it. |
@@ -92,7 +92,6 @@ For the full paper-section-to-Lean-artifact mapping (with math notation, A.# lab
 ## Build & Verification
 
 ```bash
-cd lean-formalization
 lake build
 ```
 
