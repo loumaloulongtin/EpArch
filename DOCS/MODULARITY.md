@@ -129,27 +129,37 @@ machine-checked conjunction to formally certify the "no transport needed" status
 
 Shape: over `SystemState PropLike Standard ErrorModel Provenance` and `Step`.
 
-**Mechanism:** `ConcreteBankModel` — a `CoreModel` instance built from concrete EpArch bank types
-with abstract predicates for the operations. The key insight: the concrete bank types form a valid
-`CoreModel`, so the Tier 3 transport machinery applies directly.
+Two sub-results fill this cluster:
 
-- `concrete_bank_vacuous_pf`: `ConcreteBankModel` with `selfCorrects := False` is PaperFacing (vacuously)
-- `concrete_bank_transport`: compatible extensions preserve PaperFacing (by `transport_self_correction`)
-- `concrete_bank_vacuous_transport`: combines both into the standard use case
-- `tier4_transport_pack`: packages all three clusters in one citable theorem
+**§3b — LTS-Universal Operational Theorems**  
+The withdrawal/repair/submit theorems from `Theorems.lean` are structurally identical to Cluster B:
+they hold for **every** `SystemState`/`Step` instance by virtue of `Step` constructor preconditions.
+No model parameter varies, so no transport mechanism is needed.
 
-**Operation dependency map** — for manual use when dropping individual constraints/goals:
+- `lts_theorems_step_universal`: packages four key LTS facts as unconditionally valid —
+  - Withdrawal gates: `Step.Withdraw` requires ACL + current τ + Deposited status
+  - Repair revalidation: `Step.Repair` produces Candidate ledger status
+  - Repair quarantine: `Step.Repair` requires input to be Quarantined
+  - Submit Candidate: `Step.Submit` produces at least one Candidate deposit
 
-| Cluster | `CoreOps` fields | Constraint/goal |
-|---|---|---|
-| Withdrawal gate theorems | `truth`, `obs`, `submit` | `coordination_need`, `SafeWithdrawalGoal` |
-| Export gate / header theorems | `obs`, `deposit_header` | `export_across_boundaries` |
-| Revision / competition gate | `revise`, `hasRevision`, `selfCorrects` | `adversarial_pressure`, `CorrigibleLedgerGoal` |
-| Verification / audit | `verifyWithin`, `effectiveTime` | `bounded_audit`, `SoundDepositsGoal` |
-| Diagnosability ordering | `obs`, `truth` | `export_across_boundaries`, `SafeWithdrawalGoal` |
-| Scope/irrelevance | `selfCorrects`, `hasRevision` | `SelfCorrectionGoal`, `PaperFacing` |
+**§3c — All Five Health Goals Transport**  
+All five ∀-health goals are preserved by any compatible extension of `ConcreteBankModel`.
+This is the real Cluster C result — not just the competition gate but the full health-goal suite.
 
-**Gap:** None. All four tier 4 clusters are now machine-certified.
+- `ConcreteBankModel`: concrete EpArch bank types form a valid `CoreModel`
+- `concrete_bank_all_goals_transport`: given that a `ConcreteBankModel` satisfies all five goals,
+  any `Compatible` extension satisfies all five:
+  - `SafeWithdrawalGoal (forget E)`
+  - `ReliableExportGoal (forget E)`
+  - `SoundDepositsGoal (forget E)`
+  - `SelfCorrectionGoal / PaperFacing (forget E)`
+  - Universal `CorrigibleLedgerGoal (forget E)` (the ∃ component requires `SurjectiveCompatible`)
+- `tier4_full_pack`: headline theorem — Clusters A + B + LTS-universal + all five health goals
+
+**Gap:** None. All four tier 4 clusters are machine-certified:
+- Cluster A: CommitmentsCtx-parameterized theorems transport via premise strengthening.
+- Cluster B + §3b LTS-universal: structural and operational LTS theorems are universally valid.
+- Cluster C §3c: all five ∀-health goals transport through compatible `ConcreteBankModel` extensions.
 
 ---
 
@@ -161,7 +171,7 @@ with abstract predicates for the operations. The key insight: the concrete bank 
 | Constraints (6 forcing results) | Independent conjuncts — cherry-pick freely | ✅ Complete | `Minimality.lean` |
 | `PaperFacing` / competition gate | `transport_core` + `sub_revision_safety` | ✅ Complete | `RevisionSafety.lean`, `Modularity.lean` |
 | Health goals (5 predicates) | `CoreModel`-parameterized + individual transport theorems | ✅ Complete | `Health.lean`, `Meta/TheoremTransport.lean` |
-| Main theorem library (109+) | Three-cluster schema: CommitmentsCtx transport, structural unconditional, ConcreteBankModel bridge | ✅ Complete | `Meta/Tier4Transport.lean` |
+| Main theorem library (109+) | Four-part schema: CommitmentsCtx transport, structural unconditional, LTS-universal operational, all-five-health-goals bank bridge | ✅ Complete | `Meta/Tier4Transport.lean` |
 
 ---
 

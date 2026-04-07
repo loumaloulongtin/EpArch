@@ -1,6 +1,6 @@
 # Theorem Inventory
 
-This document catalogs **497** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
+This document catalogs **500** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
 
 **What the architecture claims:** Decentralized epistemic authorization requires specific structural mechanisms — a lifecycle with type-separated stages, header-preserving export, a revision loop, temporal validity, and a Bank substrate. These aren't design preferences; they are forced by the combination of agent constraints and system health goals.
 
@@ -688,7 +688,7 @@ $$\text{PRP} \Rightarrow \neg\exists t_{\text{final}}.\, \forall t \geq t_{\text
 
 ## Bucket 26: Theorem Transport — Main Library Layer (Tier 4 Closure)
 
-**Paper Role:** Machine-certifies that the three theorem clusters in the main library are transport-safe. Closes the Tier 4 gap in DOCS/MODULARITY.md.
+**Paper Role:** Machine-certifies that all four theorem clusters in the main library are transport-safe. Closes the Tier 4 gap in DOCS/MODULARITY.md: not just the competition gate but all operational LTS theorems and all five health goals are machine-certified as transport-safe.
 
 **File:** `Meta/Tier4Transport.lean`
 
@@ -705,6 +705,12 @@ $$\text{PRP} \Rightarrow \neg\exists t_{\text{final}}.\, \forall t \geq t_{\text
 |---------|------|-----------|------|
 | `structural_theorems_unconditional` | Meta/Tier4Transport.lean | SEVFactorization ∧ TemporalValidity ∧ monolithic_not_injective ∧ header_stripping_harder | Cluster B certification |
 
+### Cluster B Extended: LTS-Universal Operational Theorems
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `lts_theorems_step_universal` | Meta/Tier4Transport.lean | withdrawal_gates ∧ repair_enforces_revalidation ∧ repair_requires_prior_challenge ∧ submit_enforces_revalidation | Packages four LTS facts as universally valid for all SystemState/Step |
+
 ### Cluster C: Concrete Bank Bridge
 
 | Theorem | File | Statement | Role |
@@ -713,11 +719,18 @@ $$\text{PRP} \Rightarrow \neg\exists t_{\text{final}}.\, \forall t \geq t_{\text
 | `concrete_bank_transport` | Meta/Tier4Transport.lean | `Compatible E ConcreteBankModel → PaperFacing base → PaperFacing (forget E)` | Extension safety |
 | `concrete_bank_vacuous_transport` | Meta/Tier4Transport.lean | Combines base + transport for the vacuous case | Convenience theorem |
 
+### Cluster C Extended: All Five Health Goals Transport
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `concrete_bank_all_goals_transport` | Meta/Tier4Transport.lean | SafeWithdrawalGoal ∧ ReliableExportGoal ∧ SoundDepositsGoal ∧ SelfCorrectionGoal ∧ CorrigibleLedgerGoal all transport through Compatible ConcreteBankModel extensions | Full health-goal transport certification |
+
 ### Full Pack
 
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
-| `tier4_transport_pack` | Meta/Tier4Transport.lean | Cluster A ∧ Cluster B ∧ Cluster C | Full Tier 4 certification |
+| `tier4_transport_pack` | Meta/Tier4Transport.lean | Cluster A ∧ Cluster B ∧ Cluster C (legacy) | Legacy Tier 4 certification |
+| `tier4_full_pack` | Meta/Tier4Transport.lean | CommitmentsCtx ∧ SEV ∧ LTS-withdrawal ∧ SafeWithdrawal ∧ ReliableExport ∧ SoundDeposits ∧ SelfCorrection | Headline four-cluster Tier 4 certification |
 
 ### Supporting Definitions
 
@@ -728,7 +741,9 @@ $$\text{PRP} \Rightarrow \neg\exists t_{\text{final}}.\, \forall t \geq t_{\text
 
 ### Math Form
 
-$$\forall E \supseteq C_{\text{base}},\; \text{PaperFacing}(C_{\text{base}}) \Rightarrow \text{PaperFacing}(\text{forget}(E))$$
+$$\forall E \supseteq C_{\text{bank}},\; G(C_{\text{bank}}) \Rightarrow G(\text{forget}(E)) \text{ for } G \in \{\text{SafeWithdrawal, ReliableExport, SoundDeposits, SelfCorrection, Corrigible}_\forall\}$$
+
+$$\text{Step}_{\text{withdraw}} \Rightarrow \text{ACL} \land \tau\text{-valid} \land \text{Deposited} \quad (\text{for every } SystemState)$$
 
 $$\forall C' \supseteq C,\; T(C) \Rightarrow T(C.\text{toCommitmentsCtx})$$
 
