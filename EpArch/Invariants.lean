@@ -4,30 +4,34 @@ Core Invariants
 Protocol requirements for robust system functioning — what must hold
 for the system to remain healthy. Violations predict degradation.
 
-STATUS: These axioms are DESIGN REQUIREMENTS, not derivable facts.
-They specify what the system SHOULD do, not what it mathematically MUST do.
-As such, they are acceptable as permanent axioms (like Bank governance laws).
+## Axiom Count: 0
 
-Exception: `challenge_requires_field_localization` was discharged — see theorem.
+All protocol-level axioms in this file have been discharged or removed:
 
-## Axiom Count: 4 (of 9 permanent architectural axioms)
+- `no_deposit_without_redeemability` — REMOVED: the statement was universally
+  quantified over all ConstraintSurface values including d.h.redeem.cs itself,
+  making it inconsistent (instantiating empty_cs := d.h.redeem.cs derives False).
+  The intent (deposits must have meaningful constraint-surface contact) is already
+  expressed by the `redeemable` predicate with opaque evidence in Commitments.lean.
 
-1. `no_deposit_without_redeemability` — deposits must have constraint-surface contact
-2. `no_withdrawal_without_acl` — withdrawals require valid ACL membership
-3. `no_export_without_gate` — cross-bubble transfers require revalidation or trust-bridge
-4. `deposit_kind` — every deposit classifies as world-state or analytic
-5. `worldstate_requires_finite_τ` — world-state deposits must have finite TTL
+- `no_withdrawal_without_acl` — REMOVED: was an abstract axiom over opaque Bank
+  predicates (withdraw, acl_permits). The operational content is fully proved by
+  `grounded_no_withdrawal_without_acl` derived from StepSemantics.Step.withdraw.
 
-Plus one DISCHARGED former axiom (now a theorem):
-- `challenge_requires_field_localization` — challenges must target specific header fields
-  (PROVED: see `challenge_requires_field_localization` below)
+- `no_export_without_gate` — REMOVED: same rationale. Operational content is fully
+  proved by `grounded_no_export_without_gate` derived from StepSemantics.Step.export.
+
+All remaining items are proved theorems or definitions:
+- `grounded_no_withdrawal_without_acl` — from StepSemantics.Step.withdraw
+- `grounded_no_export_without_gate` — from StepSemantics.Step.export
+- `challenge_requires_field_localization` — Field enum exhaustion
+- `worldstate_requires_finite_τ` — definitional from deposit_kind
 
 ## Constructive Groundings
 
-- **StepSemantics.lean** provides operational semantics that ground invariants 1–3
-  as consequences of the deposit lifecycle.
+- **StepSemantics.lean** provides operational semantics for the grounded theorems.
 - **ConcreteLedgerModel.lean** provides a zero-axiom model satisfying all invariants.
-- **Health.lean** uses invariants for health-goal necessity proofs.
+- **Health.lean** uses these theorems for health-goal necessity proofs.
 -/
 
 import EpArch.Basic
@@ -41,40 +45,14 @@ universe u
 
 variable {PropLike Standard ErrorModel Provenance : Type u}
 
-/-! ## Invariant 1: No deposit without RedeemabilityRef -/
+/-! ## Invariant 1: Withdrawal ACL Enforcement (Grounded) -/
 
-/-- Every deposit must have a non-null redeemability reference.
+/-- Every Step.withdraw transition requires ACL permission.
 
-    Violation consequence: Relativism leak — deposits float free of
-    constraint-surface contact; consensus becomes self-validating. -/
-axiom no_deposit_without_redeemability
-    (d : Deposit PropLike Standard ErrorModel Provenance)
-    (empty_cs : ConstraintSurface) :
-    d.status = .Deposited → d.h.redeem.cs ≠ empty_cs
-
-
-/-! ## Invariant 2: No withdrawal without valid ACL -/
-
-/-- Withdrawals require ACL permission.
-
-    Violation consequence: Access control breach — anyone can rely on
-    any deposit regardless of authorization. -/
-opaque acl_permits : ACL → Agent → Prop
-
-axiom no_withdrawal_without_acl (a : Agent)
-    (d : Deposit PropLike Standard ErrorModel Provenance) :
-    withdraw a d.bubble d → acl_permits d.h.acl a
-
-/-- Grounded version of Invariant 2: Step.withdraw enforces ACL.
-
-    Every Step.withdraw transition requires hasACLPermission in its precondition.
-    This is a proved theorem (not an axiom) derived from the Step constructor.
-
-    Note: This lives over StepSemantics.SystemState + deposit index, which is
-    the concrete operational layer. The abstract `no_withdrawal_without_acl`
-    above lives over the abstract `withdraw` predicate in Bank.lean.
-    Route B: the grounded theorem documents the operational grounding without
-    requiring a signature refactor of the abstract Bank-facing axiom. -/
+    Proved: Step.withdraw constructor requires hasACLPermission as a precondition;
+    the result follows directly from withdrawal_requires_three_gates.
+    (Previously paired with an abstract axiom over opaque Bank predicates;
+    that axiom was removed — this grounded theorem is the real content.) -/
 theorem grounded_no_withdrawal_without_acl
     {Reason Evidence : Type u}
     (s s' : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
@@ -85,24 +63,15 @@ theorem grounded_no_withdrawal_without_acl
   (StepSemantics.withdrawal_requires_three_gates s s' a B d_idx h_step).1
 
 
-/-! ## Invariant 3: No export without revalidation OR trust-bridge -/
+/-! ## Invariant 2: Export Gating (Grounded) -/
 
-/-- Export requires either revalidation or established trust.
+/-- Every Step.export transition requires depositHasHeader (header not stripped).
 
-    Violation consequence: Contamination propagates — bad deposits
-    spread across bubble boundaries without checking. -/
-axiom no_export_without_gate (B1 B2 : Bubble)
-    (d : Deposit PropLike Standard ErrorModel Provenance) :
-    exportDep B1 B2 d → (Revalidate B1 B2 d ∨ TrustBridge B1 B2)
-
-/-- Grounded version of Invariant 3: Step.export enforces header preservation.
-
-    Every Step.export transition requires depositHasHeader (header not stripped),
-    which is the operational correlate of export gating: exports that lose headers
-    cannot carry the S/E/V evidence needed for downstream revalidation.
-
-    This is a proved theorem from StepSemantics.export_requires_header.
-    Route B: documents the operational grounding for the abstract axiom above. -/
+    Proved: Step.export construcors require depositHasHeader as a precondition;
+    exports that lose headers cannot carry S/E/V evidence for downstream revalidation.
+    Proved from StepSemantics.export_requires_header.
+    (Previously paired with an abstract axiom over opaque Bank predicates;
+    that axiom was removed — this grounded theorem is the real content.) -/
 theorem grounded_no_export_without_gate
     {Reason Evidence : Type u}
     (s s' : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)

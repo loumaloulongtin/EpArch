@@ -499,18 +499,24 @@ opaque sticky : Bubble → PropLike → Prop
 /-- A dispute produces "proxy battles" when the real issue cannot be identified. -/
 opaque proxy_battles : Bubble → PropLike → Prop
 
-/-- Commitment 7: Headerless claims produce systematically harder disputes.
+/-- Commitment 7, first conjunct: header-preserved deposits permit localization.
+    Discharged: localizes B P unfolds to header_preserved_diagnosability.score >
+    header_stripped_diagnosability.score = 3 > 0, provable by decide unconditionally.
+    The dispute and header_preserved hypotheses are structurally present but the
+    conclusion does not depend on them. -/
+theorem HeaderPreservation_implies_localization (B : Bubble) (P : PropLike)
+    (d : Deposit PropLike Standard ErrorModel Provenance) :
+    dispute B P → header_preserved d → localizes B P := by
+  intro _ _
+  unfold localizes header_preserved_diagnosability header_stripped_diagnosability
+  decide
 
-    The asymmetry:
-    - Header-preserved → higher diagnosability, can localize to fields
-    - Header-stripped → lower diagnosability, sticky disputes, proxy battles
-
-    "Harder" is a capacity/diagnosability claim, not a time claim. -/
+/-- Commitment 7, second conjunct: header-stripped deposits produce sticky disputes.
+    Axiom: sticky and proxy_battles are opaque predicates requiring external domain
+    evidence — they cannot be reduced to numerical comparisons like localizes. -/
 axiom HeaderPreservationAsymmetry (B : Bubble) (P : PropLike)
     (d : Deposit PropLike Standard ErrorModel Provenance) :
-  dispute B P →
-  (header_preserved d → localizes B P) ∧
-  (header_stripped d → (sticky B P ∧ proxy_battles B P))
+    dispute B P → header_stripped d → sticky B P ∧ proxy_battles B P
 
 
 /-! ## Commitment 8: Temporal Validity (τ / TTL) -/
