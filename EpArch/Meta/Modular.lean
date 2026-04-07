@@ -1,22 +1,26 @@
 /-
 EpArch/Meta/Modular.lean — Machine-Certified Modularity Meta-Theorem
 
-Answers the question: "Is EpArch 100% modular — can you drop any constraint
-(or health goal) and have the remaining forcing theorems still hold?"
+Answers the question: "Is EpArch modular on its six operational constraints —
+can you drop any constraint and have the remaining forcing theorems still hold?"
 
-This file provides the two missing pieces identified in the modularity audit:
+Scope: this file covers the six constraints in `Minimality.lean` only.
+Health-goal modularity (∀-transport of SafeWithdrawal, ReliableExport, etc.)
+is proved separately in `Meta/TheoremTransport.lean` and `Meta/Tier4Transport.lean`.
+
+This file provides two pieces:
 
   (1) `PartialWellFormed W S` — a WellFormed type parameterized by a subset S of
       the six constraints. You only supply the biconditionals for the constraints
       you care about; the rest are not required.
 
-  (2) `modular` — the universally-quantified meta-theorem:
+  (2) `projection_valid S W` — the named target predicate: the conjunction of six
+      guarded forcing implications, each guarded by "S selects this constraint."
+
+  (3) `modular` — the universally-quantified meta-theorem:
 
         ∀ (S : ConstraintSubset) (W : WorkingSystem),
           PartialWellFormed W S → projection_valid S W
-
-      where `projection_valid S W` is the conjunction of six guarded forcing
-      implications, each guarded by "S selects this constraint."
 
 ## Equivalence with WellFormed
 
@@ -139,38 +143,40 @@ theorem partial_all_is_wellformed (W : WorkingSystem)
    pwf.wf_truth_pressure  rfl⟩
 
 
+/-! ## The Modularity Target Predicate -/
+
+/-- `projection_valid S W` — the named target of the modularity meta-theorem.
+
+    For each constraint X in S (i.e., S.X = true), asserts that W satisfies
+    the forcing implication for X. Constraints outside S are not claimed.
+
+    This is a real exported definition, not just descriptive wording, so that
+    downstream code (e.g. configuration engines, product-profile checkers) can
+    reference the target by name. -/
+def projection_valid (S : ConstraintSubset) (W : WorkingSystem) : Prop :=
+  (S.distributed    = true → handles_distributed_agents W → HasBubbles W) ∧
+  (S.bounded_audit  = true → handles_bounded_audit W → HasTrustBridges W) ∧
+  (S.export_across  = true → handles_export W → HasHeaders W) ∧
+  (S.adversarial    = true → handles_adversarial W → HasRevocation W) ∧
+  (S.coordination   = true → handles_coordination W → HasBank W) ∧
+  (S.truth_pressure = true → handles_truth_pressure W → HasRedeemability W)
+
+
 /-! ## The Modularity Meta-Theorem -/
 
-/-- **`modular` — the EpArch modularity meta-theorem.**
+/-- **`modular` — the EpArch constraint-modularity meta-theorem.**
 
     For any subset S of the six constraints, any system with `PartialWellFormed W S`
-    satisfies the forcing theorem for each constraint in S, and makes no claim
-    about constraints outside S.
-
-    Formally:
-
-      ∀ (S : ConstraintSubset) (W : WorkingSystem),
-        PartialWellFormed W S →
-          (S.distributed    = true → handles_distributed_agents W → HasBubbles W) ∧
-          (S.bounded_audit  = true → handles_bounded_audit W → HasTrustBridges W) ∧
-          (S.export_across  = true → handles_export W → HasHeaders W) ∧
-          (S.adversarial    = true → handles_adversarial W → HasRevocation W) ∧
-          (S.coordination   = true → handles_coordination W → HasBank W) ∧
-          (S.truth_pressure = true → handles_truth_pressure W → HasRedeemability W)
+    satisfies `projection_valid S W`: the forcing theorem holds for each constraint
+    in S, and no claim is made about constraints outside S.
 
     Usage:
-    - To drop constraint X: set S.X := false. The X-conjunct becomes
-      `false = true → ...`, which is vacuously true.
+    - To drop constraint X: set S.X := false. The X-conjunct in `projection_valid`
+      becomes `false = true → ...`, which is vacuously true.
     - The remaining conjuncts are live forcing implications backed by the
       biconditionals in `PartialWellFormed W S`. -/
 theorem modular (S : ConstraintSubset) (W : WorkingSystem)
-    (pwf : PartialWellFormed W S) :
-    (S.distributed    = true → handles_distributed_agents W → HasBubbles W) ∧
-    (S.bounded_audit  = true → handles_bounded_audit W → HasTrustBridges W) ∧
-    (S.export_across  = true → handles_export W → HasHeaders W) ∧
-    (S.adversarial    = true → handles_adversarial W → HasRevocation W) ∧
-    (S.coordination   = true → handles_coordination W → HasBank W) ∧
-    (S.truth_pressure = true → handles_truth_pressure W → HasRedeemability W) :=
+    (pwf : PartialWellFormed W S) : projection_valid S W :=
   ⟨fun hd h => (pwf.wf_distributed    hd).mp h,
    fun hb h => (pwf.wf_bounded_audit   hb).mp h,
    fun he h => (pwf.wf_export          he).mp h,
@@ -181,19 +187,13 @@ theorem modular (S : ConstraintSubset) (W : WorkingSystem)
 
 /-! ## Corollary: WellFormed systems are modular on every subset -/
 
-/-- Every fully well-formed system is modular on every constraint subset.
+/-- Every fully well-formed system satisfies `projection_valid` for every constraint subset.
 
-    This is the corollary that directly answers "is EpArch 100% modular?":
+    This is the corollary that directly answers "is EpArch modular on its constraints?":
     any system with WellFormed W has machine-certified forcing theorems
     for every possible subset of the six constraints. -/
 theorem wellformed_is_modular (S : ConstraintSubset) (W : WorkingSystem)
-    (h_wf : WellFormed W) :
-    (S.distributed    = true → handles_distributed_agents W → HasBubbles W) ∧
-    (S.bounded_audit  = true → handles_bounded_audit W → HasTrustBridges W) ∧
-    (S.export_across  = true → handles_export W → HasHeaders W) ∧
-    (S.adversarial    = true → handles_adversarial W → HasRevocation W) ∧
-    (S.coordination   = true → handles_coordination W → HasBank W) ∧
-    (S.truth_pressure = true → handles_truth_pressure W → HasRedeemability W) :=
+    (h_wf : WellFormed W) : projection_valid S W :=
   modular S W (wellformed_implies_partial W h_wf S)
 
 end EpArch.Meta.Modular
