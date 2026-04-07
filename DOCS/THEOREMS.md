@@ -1,6 +1,6 @@
 # Theorem Inventory
 
-This document catalogs **473** proved theorems in the formalization, organized by argumentative role. The count covers all named theorems, lemmas, and equivalent definitions in the EpArch namespace; internal list-manipulation helpers are excluded.
+This document catalogs **469** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
 
 **What the architecture claims:** Decentralized epistemic authorization requires specific structural mechanisms — a lifecycle with type-separated stages, header-preserving export, a revision loop, temporal validity, and a Bank substrate. These aren't design preferences; they are forced by the combination of agent constraints and system health goals.
 
