@@ -179,44 +179,47 @@ axiom ConsensusNotSufficient (B : Bubble) (d : Deposit PropLike Standard ErrorMo
 
 /-! ## Commitment 5: Export Gating -/
 
-def unreliable_export (B1 B2 : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
-  exportDep B1 B2 d ∧ ¬Revalidate B2 B1 d ∧ ¬TrustBridge B1 B2
+/-- reliable_export: a cross-bubble transfer that went through the operational LTS.
+    Grounded in StepSemantics.Step.Export: reliability means the transfer actually
+    occurred via the Step machinery, which enforces gating preconditions
+    (depositHasHeader required by all export constructors, and either a trust bridge
+    OR forced revalidation to Candidate status by the LTS structure alone).
+    This mirrors reliably_self_corrects: grounded in the Step type, not in a
+    definitional conjunction over abstract predicates. -/
+def reliable_export {Reason Evidence : Type u} (B1 B2 : Bubble)
+    (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat) : Prop :=
+  ∃ s', StepSemantics.Step (Reason := Reason) (Evidence := Evidence) s (.Export B1 B2 d_idx) s'
 
-/-- reliable_export: a cross-bubble transfer that is not demonstrably unreliable.
-    An export is reliable iff it occurred AND it is NOT the case that both gate
-    conditions are absent (i.e., it does not satisfy unreliable_export).
-    The complement-relative definition separates "export happened" from
-    "gate was absent": reliability is the negation of provable unreliability. -/
-def reliable_export (B1 B2 : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
-  exportDep B1 B2 d ∧ ¬unreliable_export B1 B2 d
+/-- Reliable export implies the deposit was Deposited: Step.Export precondition. -/
+theorem reliable_implies_deposited {Reason Evidence : Type u} (B1 B2 : Bubble)
+    (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat) :
+    reliable_export (Reason := Reason) (Evidence := Evidence) B1 B2 s d_idx →
+    StepSemantics.isDeposited s d_idx := by
+  intro ⟨_, h_step⟩
+  cases h_step <;> assumption
 
-/-- Reliable export implies the deposit crossed the bubble boundary (exportDep).
-    Discharged: first component of the reliable_export conjunction. -/
-theorem reliable_implies_export (B1 B2 : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
-    reliable_export B1 B2 d → exportDep B1 B2 d := fun ⟨h, _⟩ => h
-
-/-- Reliable and unreliable export are mutually exclusive.
-    Proved: reliable_export embeds ¬unreliable_export, so the two are
-    definitionally contradictory: the negation in reliable_export directly
-    refutes the unreliable_export witness. -/
-theorem reliable_unreliable_exclusive (B1 B2 : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
-    reliable_export B1 B2 d → unreliable_export B1 B2 d → False :=
-  fun ⟨_, h_not_unrel⟩ h_unrel => h_not_unrel h_unrel
-
-/-- Commitment 5: Reliable export requires gating (revalidation or trust bridge).
-    Proved: reliable_export excludes unreliable_export by definition. unreliable_export
-    requires ¬Revalidate ∧ ¬TrustBridge; so if neither Revalidate nor TrustBridge holds
-    we can construct an unreliable_export witness and derive False via h_not_unrel. -/
-theorem ExportGating (B1 B2 : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
-    reliable_export B1 B2 d → (Revalidate B2 B1 d ∨ TrustBridge B1 B2) := by
-  intro ⟨h_exp, h_not_unrel⟩
-  cases Classical.em (Revalidate B2 B1 d) with
-  | inl h_reval => exact Or.inl h_reval
-  | inr h_no_reval =>
-    cases Classical.em (TrustBridge B1 B2) with
-    | inl h_trust => exact Or.inr h_trust
-    | inr h_no_trust =>
-      exact absurd ⟨h_exp, h_no_reval, h_no_trust⟩ h_not_unrel
+/-- Commitment 5: Every reliable export is gated by the operational LTS.
+    Discharged: direct corollary of StepSemantics.export_gating_forced.
+    The Step inductive has exactly two Export constructors:
+    - export_with_bridge: hasTrustBridge is a required precondition.
+    - export_revalidate: ¬hasTrustBridge, and the LTS forces .Candidate on the new entry.
+    Ungated export is structurally non-constructible.
+    Proof structure is identical to NoSelfCorrectionWithoutRevision:
+    extract the Step witness from reliable_export, then apply the StepSemantics theorem. -/
+theorem ExportGating {Reason Evidence : Type u} (B1 B2 : Bubble)
+    (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat) :
+    reliable_export (Reason := Reason) (Evidence := Evidence) B1 B2 s d_idx →
+    StepSemantics.hasTrustBridge s B1 B2 ∨
+    (¬StepSemantics.hasTrustBridge s B1 B2 ∧
+     ∃ sout : StepSemantics.SystemState PropLike Standard ErrorModel Provenance, ∃ d_new,
+       d_new ∈ sout.ledger ∧ d_new.status = .Candidate) := by
+  intro ⟨s', h_step⟩
+  cases EpArch.LinkingAxioms.export_gating_forced s s' B1 B2 d_idx h_step with
+  | inl h_bridge => exact Or.inl h_bridge
+  | inr h_inr =>
+      exact Or.inr (And.intro h_inr.1
+        (h_inr.2.elim (fun d_new h_spec =>
+          Exists.intro s' (Exists.intro d_new (And.intro h_spec.1 h_spec.2)))))
 
 
 /-! ## Commitment 6: Repair Loop (Contestability) -/
@@ -239,6 +242,26 @@ def lifecycle (_ : Bubble) (_ : Deposit PropLike Standard ErrorModel Provenance)
 theorem RepairLoopExists (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
     deposited B d → pushback d → ∃ trace, lifecycle B d trace :=
   fun _ _ => ⟨[.Challenge, .Quarantine, .RepairOrRevoke, .Redeposit], by decide, by decide⟩
+
+/-- Grounded version of RepairLoopExists: given a quarantined deposit in StepSemantics,
+    the Repair step is constructively available by applying the Step.repair constructor,
+    whose only precondition is isQuarantined.
+    Postcondition: the repair step produces a state where the deposit has .Candidate status,
+    forcing it back through the full validation cycle.
+    Proof: direct constructor application + rfl on the concrete state.
+    This grounds RepairLoopExists in the same way NoSelfCorrectionWithoutRevision is
+    grounded: both extract structural facts from the Step inductive itself. -/
+theorem grounded_RepairLoopExists
+    {Reason Evidence : Type u}
+    (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
+    (d_idx : Nat) (f : Field)
+    (h_quarantined : StepSemantics.isQuarantined s d_idx) :
+    let s' := { s with ledger :=
+          StepSemantics.updateDepositStatus s.ledger d_idx .Candidate }
+    ∃ _h_step : StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
+          s (.Repair d_idx f) s',
+      s'.ledger = StepSemantics.updateDepositStatus s.ledger d_idx .Candidate :=
+  ⟨StepSemantics.Step.repair s d_idx f h_quarantined, rfl⟩
 
 /-- A domain reliably self-corrects if there exist system states and a trace
     demonstrating that an erroneous deposit was caught and removed (Deposited → Revoked)
