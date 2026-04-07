@@ -18,22 +18,17 @@ It imports ONLY the paper-facing surface.
   - Conditional obligation theorems (World, AdversarialObligations)
   - Specification axioms (Health, Invariants, Commitments)
 
-## Axiom Count (Paper-Facing Surface)
+## Axiom Declarations (Paper-Facing Surface)
 
-| File | Count | Category |
-|------|-------|----------|
-| Bank.lean | 0 | All discharged |
-| Commitments.lean | 5 | Permanently architectural: TractionAuthorizationSplit, NoGlobalLedgerTradeoff, RedeemabilityExternal, by_consensus_creates_redeemability, ConsensusNotSufficient |
-| Invariants.lean | 4 | Gating invariants + no_deposit_without_redeemability |
-| **Total** | **9** | Permanently architectural axioms |
-
-Total discharged: 35 → 9 axioms (26 discharged).
+The paper-facing surface contains **zero `axiom` declarations**.
+All structural commitments are exposed as fields of `CommitmentsCtx`.
+Opaque domain primitives remain as uninterpreted constants.
 
 Health goals are definitional, not axioms.
-Agent design-forcing and WorldCtx transport are now proved theorems.
+Agent design-forcing and WorldCtx transport are proved theorems.
 -/
 
 import EpArch.PaperFacing
 
 def main : IO Unit :=
-  IO.println s!"EpArch: Paper-Facing Surface (9 axioms, 0 sorry)"
+  IO.println s!"EpArch: Paper-Facing Surface (0 axiom declarations, 0 sorry)"

@@ -8,7 +8,7 @@ This document catalogs **435** proved theorems in the formalization, organized b
 
 **Tier labels:** **A** = proved unconditionally, **B** = conditional on a W-bundle premise, **C** = design axiom.
 
-**All theorems are fully proved** — zero `sorry`, zero new axioms beyond the 35 listed in [AXIOMS.md](AXIOMS.md).
+**All theorems are fully proved** — zero `sorry`, zero `axiom` declarations. See [AXIOMS.md](AXIOMS.md) for the current assumption boundary.
 
 ## Notation Dictionary
 

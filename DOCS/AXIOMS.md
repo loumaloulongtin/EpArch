@@ -1,115 +1,112 @@
-# Axiom Inventory
+﻿# Axiom Declarations
 
-This document is the single authoritative list of intentionally postulated design and interface axioms in the formalization. Total: **35 axioms** across three files.
+The formalization contains **zero `axiom` declarations**.
 
----
-
-## How to Read This File
-
-These are not gaps or failures of the formalization. They are **intentionally postulated** at the specification and interface level.
-
-The three axiom classes each have a different conceptual role:
-
-- **Bank operators** are API postcondition contracts — they say what each operation produces, not how it works internally.
-- **Commitments** are the paper's architectural requirements — the design decisions being formalized.
-- **Invariants** are protocol constraints that must hold across all system states.
-
-The repo's theorem burden is to derive consequences from these axioms and minimize them where possible. When an axiom becomes definitional or derivable, it is removed from this inventory.
+This document records the current assumption boundary and how the prior axiom surface was resolved.
 
 ---
 
-## Bank Operators — 18 axioms
+## Current Assumption Boundary
 
-**File:** `EpArch/Bank.lean`
-
-These are operator postcondition contracts. They specify what each Bank operation produces — the required outcome of each action. They are not implementation details; they are the interface the rest of the formalization reasons against.
-
-| Axiom | Statement |
-|-------|-----------|
-| `KnowledgeIffDeposited` | Knowledge ↔ deposit relation |
-| `repair` | Repair action specification |
-| `Validate_B` | Validation produces a validated deposit |
-| `Accept_B` | Acceptance produces a deposited deposit |
-| `Challenge_B` | Challenge produces a quarantined deposit |
-| `Repair_B` | Repair produces a repaired deposit |
-| `Revoke_B` | Revoke produces a revoked deposit |
-| `Restore_B` | Restore produces a restored deposit |
-| `Export_B_C` | Export produces an export record |
-| `Import_C` | Import produces an imported deposit |
-| `validate_produces_validated` | Validate → Validated status |
-| `accept_produces_deposited` | Accept → Deposited status |
-| `challenge_produces_quarantined` | Challenge → Quarantined status |
-| `revoke_produces_revoked` | Revoke → Revoked status |
-| `τ_refresh` | τ refresh updates timestamp |
-| `deprecate` | Deprecate marks deposit stale |
-| `success_driven_bypass` | Success-driven verification bypass |
-| `blast_radius_scales_with_reliance` | Blast radius scales with reliance |
-
----
-
-## Commitments — 12 axioms
+### CommitmentsCtx — Structural Commitments as a Hypothesis Bundle
 
 **File:** `EpArch/Commitments.lean`
 
-These are the paper's architectural commitments — the design requirements being formally stated. They encode the structural choices that distinguish this architecture from alternatives. They are postulated because the repo is specifying a system class, not deriving it from first principles.
+The four structural commitments that define the conforming-architecture class
+are bundled as fields of `CommitmentsCtx` (modelled on `WorldCtx`). They are
+not `axiom` declarations; they are hypotheses that appear explicitly in theorem
+signatures:
 
-| Axiom | Commitment |
+    theorem T (C : CommitmentsCtx PropLike Standard ErrorModel Provenance) ...
+
+| Field | Commitment |
 |-------|------------|
-| `TractionAuthorizationSplit` | C1: Type separation — certainty_L ⊥ knowledge_B |
-| `NoGlobalLedgerTradeoff` | C2: No global ledger |
-| `redeemable_implies_path` | C3: Redeemability → path |
-| `RedeemabilityExternal` | C4: Redeemability is external |
-| `by_consensus_creates_redeemability` | C4a: Consensus pattern |
-| `ConsensusNotSufficient` | C4b: Consensus ≠ redeemability |
-| `reliable_implies_export` | C5: Reliable → exportable |
-| `reliable_unreliable_exclusive` | C5b: Exclusivity |
-| `RepairLoopExists` | C6: Repair loop exists |
-| `NoSelfCorrectionWithoutRevision` | C6b: Self-correction → revision |
-| `HeaderPreservationAsymmetry` | C7: Strip is asymmetric |
-| `TemporalValidity` | C8: τ creates pressure |
+| `traction_auth_split` | C1: certainty_L ⊥ knowledge_B (neither implies the other) |
+| `no_global_ledger` | C2: no ledger simultaneously supports innovation and coordination |
+| `consensus_not_sufficient` | C4b: consensus does not imply redeemability |
+| `header_asymmetry` | C7b: stripped disputes produce sticky ∧ proxy_battles |
+
+Forward theorems (`certainty_insufficient_for_authorization`, `no_universal_ledger`,
+`redeemability_requires_more_than_consensus`, `header_stripping_produces_pathology`,
+and their contradiction companions) are conditioned on `(C : CommitmentsCtx ...)`.
+
+### Opaque Domain Primitives
+
+Opaque constants (`opaque foo : T`) are uninterpreted domain predicates.
+They are not `axiom` declarations but are underspecified by design —
+their intended interpretation is given in comments, not derived.
+
+Key opaque primitives:
+
+| Primitive | File | Role |
+|-----------|------|------|
+| `certainty_L` | Basic.lean | Agent-side certainty (Ladder top) |
+| `hasDeposit` / `deposited` | Bank.lean | Deposit membership predicates |
+| `reliance_level` | Bank.lean | Quantitative reliance |
+| `blast_radius` | Bank.lean | Impact spread of deposit failure |
+| `success_driven_bypass` | Bank.lean | Behavioral claim over opaque reliance predicate |
+| `blast_radius_scales_with_reliance` | Bank.lean | Quantitative claim over opaque blast predicate |
+| `GlobalLedger` | Commitments.lean | Abstract ledger type |
+| `supports_innovation` / `supports_coordination` | Commitments.lean | Ledger capability predicates |
+| `dispute` / `sticky` / `proxy_battles` | Commitments.lean | Header-stripping consequence predicates |
+| `acl_permits` | Invariants.lean | Access-control permission predicate |
+
+All theorems that use these primitives state their dependence explicitly via
+`(C : CommitmentsCtx ...)`, `(C : WorldCtx)`, or direct premises.
 
 ---
 
-## Invariants — 5 axioms
+## Resolution of Former Axioms
 
-**File:** `EpArch/Invariants.lean`
+### Bank Operators (formerly 18 axioms → 0)
 
-These are protocol-level constraints. They do not describe what operations do — they constrain what system states are permissible. They must hold across all reachable states.
+The lifecycle operators (`Validate_B`, `Accept_B`, `Challenge_B`, `Repair_B`,
+`Revoke_B`, `Restore_B`, `Export_B_C`, `Import_C`, `repair`, `τ_refresh`,
+`deprecate`) and their status postcondition theorems are now concrete
+guarded struct-update definitions. Each operator is grounded in
+`StepSemantics.lean` and witnessed by `ConcreteLedgerModel.lean`.
 
-| Axiom | Statement |
-|-------|-----------|
-| `no_deposit_without_redeemability` | All deposits have redeemability |
-| `no_withdrawal_without_acl` | Withdrawal requires ACL |
-| `no_export_without_gate` | Export requires gate |
-| `deposit_kind` | Deposits have kinds |
-| `worldstate_requires_finite_τ` | World state has finite τ |
+`knowledge_B` is now a `def` (= `hasDeposit`); `KnowledgeIffDeposited` is
+proved as a theorem by `Iff.rfl`. Two behavioral claims remain as
+opaque-predicate theorems (`success_driven_bypass`, `blast_radius_scales_with_reliance`).
+
+### Structural Commitments (formerly up to 12 axioms → 0)
+
+Four commitments are now fields of `CommitmentsCtx`. The others were discharged as theorems:
+
+| Commitment | Resolution |
+|------------|------------|
+| C3 (`SEVFactorization`) | Proved by rfl |
+| C5 (`ExportGating`) | Proved from LTS export constructors |
+| C6b (`NoSelfCorrectionWithoutRevision`) | Proved from StepSemantics |
+| C8 (`TemporalValidity`) | Proved from header τ definition |
+| C1, C2, C4b, C7b | Bundled as CommitmentsCtx fields |
+
+### Invariants (formerly 5 axioms → 0)
+
+| Former Axiom | Resolution |
+|--------------|------------|
+| `no_deposit_without_redeemability` | Removed: universally-quantified form was inconsistent. Intent expressed by `redeemable` predicate. |
+| `no_withdrawal_without_acl` | Replaced by `grounded_no_withdrawal_without_acl`, proved from `StepSemantics.Step.withdraw`. |
+| `no_export_without_gate` | Replaced by `grounded_no_export_without_gate`, proved from `StepSemantics.Step.export`. |
+| `deposit_kind` | Now a definition in `Commitments.lean`. |
+| `worldstate_requires_finite_τ` | Proved from the `deposit_kind` definition. |
 
 ---
 
 ## Axiom-Free Modules
 
-These modules are theorem-bearing or definitional surfaces only; they introduce no new axioms. All results in them are derived from the 35 axioms above.
+No `axiom` declarations appear anywhere in the codebase. All modules introduce
+only theorems, definitions, and opaque constants.
 
-| Module | Description |
-|--------|-------------|
-| `Basic.lean` | Core types (Bubble, Agent, Claim, etc.) |
+| Module | Role |
+|--------|------|
+| `Basic.lean` | Core types |
 | `Header.lean` | S/E/V header structure |
-| `Health.lean` | Health goal definitions and necessity theorems |
-| `StepSemantics.lean` | LTS operational semantics |
+| `Bank.lean` | Bank substrate (concrete operators + opaque behavioral predicates) |
+| `Commitments.lean` | Structural commitments (proved + CommitmentsCtx bundle) |
+| `Invariants.lean` | Grounded operational invariants |
+| `StepSemantics.lean` | Concrete step semantics |
 | `Theorems.lean` | Derived theorems |
-| `Diagnosability.lean` | Observability predicates |
-| `World.lean` | World layer for obligation theorems |
-| `WorldCtx.lean` | WorldCtx signature with proved transport |
-| `AdversarialBase.lean` | Adversarial types and structures |
-| `AdversarialObligations.lean` | Obligation theorems |
-| `LTS.lean` | Generic LTS for revision safety |
-| `RevisionSafety.lean` | Revision safety meta-theorems |
-| `ScopeIrrelevance.lean` | Scope irrelevance theorems |
-| `Minimality.lean` | Minimality and convergence theorems |
-| `Feasibility.lean` | Existence and feasibility theorems |
-| `PaperFacing.lean` | Re-exports only |
 | `ConcreteLedgerModel.lean` | Constructive concrete model |
-| `Agent/Constraints.lean` | PRP constraint theorems |
-| `Agent/Imposition.lean` | Design-forcing theorems |
-| `Agent/Resilience.lean` | Containment invariants |
-| `Agent/Corroboration.lean` | Corroboration theorems |
+| All others | Theorem-bearing or definitional surfaces only |

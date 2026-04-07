@@ -106,26 +106,20 @@ Layer 9 (Surface):    PaperFacing
 
 | Surface | Import | Description |
 |---------|--------|-------------|
-| **Paper-Facing** | `MainPaper.lean` | Core-facing theorems only (9 axioms) |
-| **Full** | `Main.lean` | Full build (9 axioms) |
+| **Paper-Facing** | `MainPaper.lean` | Core-facing theorems only |
+| **Full** | `Main.lean` | Full build |
 
-## Axiom Breakdown
+## Axiom Declarations
 
-| Surface | Count | Notes |
-|---------|-------|-------|
-| Bank | 3 | KnowledgeIffDeposited, success_driven_bypass, blast_radius_scales_with_reliance |
-| Commitments | 8 | Design commitments over opaque external predicates |
-| Invariants | 5 | Protocol invariants (design requirements, not derivable) |
-| Agent Layer | 0 | Design-forcing now PROVED |
-| WorldCtx | 0 | transport_lies_possible now PROVED |
-| **Total** | **17** | Specification axioms remaining |
+The formalization contains **zero `axiom` declarations**. The four structural
+commitments are expressed as fields of `CommitmentsCtx` (a hypothesis bundle
+modelled on `WorldCtx`); forward theorems are stated as:
 
-Note: 26 axioms discharged total in this branch (+7 this pass).
-Remaining 9 are permanently architectural: 5 Commitments express the paper's
-substantive philosophical claims (traction/authorization split, no global ledger,
-redeemability external to consensus, consensus insufficiency); 4 Invariants
-(gating invariants + no_deposit_without_redeemability) require Route A
-(signature refactor) or express opaque real-world predicates (acl_permits).
+    theorem T (C : CommitmentsCtx ...) ...
+
+and hold for any conforming architecture. Opaque domain primitives
+(`certainty_L`, `knowledge_B`, `sticky`, etc.) are uninterpreted constants,
+not `axiom` declarations.
 -/
 
 import EpArch.Basic

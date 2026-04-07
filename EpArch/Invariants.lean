@@ -4,33 +4,22 @@ Core Invariants
 Protocol requirements for robust system functioning — what must hold
 for the system to remain healthy. Violations predict degradation.
 
-## Axiom Count: 0
+## Contents
 
-All protocol-level axioms in this file have been discharged or removed:
+This file contains grounded operational invariants proved from the
+constructive step semantics, plus definitional items:
 
-- `no_deposit_without_redeemability` — REMOVED: the statement was universally
-  quantified over all ConstraintSurface values including d.h.redeem.cs itself,
-  making it inconsistent (instantiating empty_cs := d.h.redeem.cs derives False).
-  The intent (deposits must have meaningful constraint-surface contact) is already
-  expressed by the `redeemable` predicate with opaque evidence in Commitments.lean.
-
-- `no_withdrawal_without_acl` — REMOVED: was an abstract axiom over opaque Bank
-  predicates (withdraw, acl_permits). The operational content is fully proved by
-  `grounded_no_withdrawal_without_acl` derived from StepSemantics.Step.withdraw.
-
-- `no_export_without_gate` — REMOVED: same rationale. Operational content is fully
-  proved by `grounded_no_export_without_gate` derived from StepSemantics.Step.export.
-
-All remaining items are proved theorems or definitions:
-- `grounded_no_withdrawal_without_acl` — from StepSemantics.Step.withdraw
-- `grounded_no_export_without_gate` — from StepSemantics.Step.export
+- `grounded_no_withdrawal_without_acl` — proved from StepSemantics.Step.withdraw
+- `grounded_no_export_without_gate` — proved from StepSemantics.Step.export
 - `challenge_requires_field_localization` — Field enum exhaustion
 - `worldstate_requires_finite_τ` — definitional from deposit_kind
 
+No `axiom` declarations are present.
+
 ## Constructive Groundings
 
-- **StepSemantics.lean** provides operational semantics for the grounded theorems.
-- **ConcreteLedgerModel.lean** provides a zero-axiom model satisfying all invariants.
+- **StepSemantics.lean** provides the operational semantics for the grounded theorems.
+- **ConcreteLedgerModel.lean** provides a concrete model satisfying all invariants.
 - **Health.lean** uses these theorems for health-goal necessity proofs.
 -/
 

@@ -5,43 +5,35 @@ Defines the Bank substrate: the shared ledger of authorized deposits.
 Contains the core predicates (knowledge_B, deposited, hasDeposit), the
 withdrawal and export operators, the full lifecycle operator suite
 (Validate, Accept, Challenge, Repair, Revoke, Restore, Export, Import),
-status-transition axioms, and bubble hygiene structures.
+status-transition theorems, and bubble hygiene structures.
 
-## Axiom Discharge Status
+## Lifecycle Operators
 
 The lifecycle operators (`Validate_B`, `Accept_B`, `Challenge_B`, `Repair_B`,
 `Revoke_B`, `Restore_B`, `Export_B_C`, `Import_C`, `repair`, `τ_refresh`,
-`deprecate`) and their status-transition theorems are a **minimal concrete
-witness layer** for the specification interface. Each operator is a guarded
-struct-update over the `Deposit` record's `status` (and `bubble`/`h.τ`) fields;
-each theorem proves the witness satisfies its postcondition using the gate
-condition. This layer establishes that the specification is satisfiable —
-concrete implementations exist. It does not reconstruct all the informal
-operator semantics (ACL enforcement, header mutation, audit logging, etc.);
-those parts of the story remain above the abstraction boundary.
+`deprecate`) are guarded struct-update definitions: each takes a precondition
+on the deposit's current status and produces the expected next status.
+Status postconditions are proved as theorems from the guard conditions.
 
-The pipeline composition theorems (`validate_accept_pipeline`,
-`challenge_repair_pipeline`, `full_lifecycle_pipeline`) additionally confirm
-that the precondition/postcondition chain is internally consistent: no step's
-precondition is accidentally satisfied by a prior step producing the wrong status.
+Pipeline composition theorems (`validate_accept_pipeline`,
+`challenge_repair_pipeline`, `full_lifecycle_pipeline`) confirm that
+precondition/postcondition chains are internally consistent.
 
-Three axioms remain that involve opaque external predicates and cannot be
-concretely grounded without giving up the abstraction:
-- `KnowledgeIffDeposited` — ties opaque `knowledge_B` to opaque `hasDeposit`
-- `success_driven_bypass` — behavioral claim over opaque `reliance_level`
-- `blast_radius_scales_with_reliance` — quantitative claim over opaque `blast_radius`
+Two behavioral claims involve opaque external predicates and are stated as
+theorems over those primitives:
+- `success_driven_bypass` — over opaque `reliance_level`
+- `blast_radius_scales_with_reliance` — over opaque `blast_radius`
 
 The constructive and operational groundings live in:
-- **StepSemantics.lean**: Concrete `Step` LTS; linking axioms proved as theorems.
+- **StepSemantics.lean**: Concrete `Step` LTS.
 - **ConcreteLedgerModel.lean**: Zero-axiom concrete model (satisfiability witness).
 
 ## Relationship to Other Files
 
 - **Basic.lean** provides the types (Deposit, Bubble, Agent, etc.)
 - **Header.lean** provides Header and the S/E/V structure
-- **StepSemantics.lean** provides the operational semantics that ground
-  these specification axioms
-- **Commitments.lean** uses Bank axioms to define architectural commitments
+- **StepSemantics.lean** provides the operational semantics
+- **Commitments.lean** uses Bank predicates to define architectural commitments
 - **Minimality.lean** uses Bank features to prove convergence/impossibility
 -/
 
@@ -82,17 +74,11 @@ opaque deposited : Bubble → Deposit PropLike Standard ErrorModel Provenance �
 opaque hasDeposit : Bubble → PropLike → Prop
 
 /-- Bank-side knowledge: the epistemic primitive of the architecture.
-    Defined as `hasDeposit B P` — holding a certificate IS the knowledge relation.
-    This is not a shortcut; it is the architectural claim: epistemic access in bubble B
-    just is certificate holding in B. The definition makes that identification
-    explicit in the type theory rather than leaving it postulated. -/
+    Defined as `hasDeposit B P` — holding a certificate in bubble B
+    constitutes the knowledge relation for B. -/
 def knowledge_B (B : Bubble) (P : PropLike) : Prop := hasDeposit B P
 
-/-- Bank knowledge is equivalent to holding a deposit certificate.
-    Proof: Iff.rfl, because knowledge_B is *defined as* hasDeposit — this is
-    definitionally exact, not modestly thin. The biconditional states the
-    architectural identification; the proof reflects that the identification
-    is already built into the definitions. Complexity would be dishonest here. -/
+/-- Bank knowledge is equivalent to holding a deposit certificate. -/
 theorem KnowledgeIffDeposited (B : Bubble) (P : PropLike) :
     knowledge_B B P ↔ hasDeposit B P := Iff.rfl
 

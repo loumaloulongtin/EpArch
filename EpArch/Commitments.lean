@@ -2,31 +2,30 @@
 EpArch/Commitments.lean — Architecture Commitments
 
 The 8 explicit architectural commitments that define what the EpArch
-framework requires of any conforming system.  Each commitment is stated
-as proved theorems or as fields of CommitmentsCtx (the 4 structural
-commitments).  The key design commitments are discharged into CommitmentsCtx
-following the WorldCtx pattern: theorems are stated as hypothetical results
-"for any conforming architecture C : CommitmentsCtx ..." rather than
-asserted unconditionally via axioms.  This gives zero global axioms while
-remaining honest — EpArch is a specification, and these ARE conditions on
-conforming systems, not universal claims about all systems.
+framework requires of any conforming system.
 
-Commitment 5's primary result (`ExportGating`) is a theorem derived from
-the operational LTS.  Commitment 3 (`SEVFactorization`) is a trivial theorem
-by rfl.  Commitment 6b (`NoSelfCorrectionWithoutRevision`) is a proved theorem
-grounded in StepSemantics.self_correcting_domain_permits_revision.
+Four structural commitments (C1, C2, C4b, C7b) are bundled as fields of
+`CommitmentsCtx`, a hypothesis structure modelled on `WorldCtx`. Theorems
+conditioned on `(C : CommitmentsCtx ...)` hold for any architecture satisfying
+all four fields simultaneously.
+
+The remaining four commitments are proved as standalone theorems:
+- C3 (`SEVFactorization`) — by rfl
+- C5 (`ExportGating`) — from the LTS export constructors
+- C6b (`NoSelfCorrectionWithoutRevision`) — from StepSemantics
+- C8 (`TemporalValidity`) — from the header τ definition
 
 ## What are Commitments?
 
 Commitments are the SPECIFICATION LAYER: they say WHAT a correct system
-must satisfy, not HOW it achieves it.  Think of them as architectural
+must satisfy, not HOW it achieves it. Think of them as architectural
 design requirements.
 
 - **Constructive witness:** ConcreteLedgerModel.lean provides a concrete
-  model satisfying ALL 8 commitments with zero axioms — proving they
-  are consistent and non-vacuous.
+  model satisfying ALL 8 commitments — proving they are consistent and
+  non-vacuous.
 - **Operational HOW:** StepSemantics.lean gives the constructive
-  lifecycle that grounds these specification axioms.
+  lifecycle that grounds the proved commitments.
 
 ## Commitment List
 
