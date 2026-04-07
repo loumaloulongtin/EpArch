@@ -77,6 +77,29 @@ axiom TractionAuthorizationSplit (a : Agent) (B : Bubble) (P : Claim) :
   does_not_imply (certainty_L a P) (knowledge_B B P) ∧
   does_not_imply (knowledge_B B P) (certainty_L a P)
 
+/-- Forward: certainty does not entail bank authorization.
+    An agent at Certainty on P may have no Bank deposit for P — the two are independent.
+    This is the paper's central claim: the Bank is necessary, not just the Ladder. -/
+theorem certainty_insufficient_for_authorization (a : Agent) (B : Bubble) (P : Claim) :
+    ∃ (_ : certainty_L a P), ¬knowledge_B B P :=
+  (TractionAuthorizationSplit a B P).1
+
+/-- Forward: bank authorization does not entail certainty.
+    A deposit may be publicly authorized in B while the agent remains at Ignorance or Belief. -/
+theorem authorization_insufficient_for_certainty (a : Agent) (B : Bubble) (P : Claim) :
+    ∃ (_ : knowledge_B B P), ¬certainty_L a P :=
+  (TractionAuthorizationSplit a B P).2
+
+/-- CommitmentsCtx (WeakCtx): coincidence of certainty and authorization is impossible.
+    If certainty_L a P ↔ knowledge_B B P held for all a, B, P, TractionAuthorizationSplit
+    would be violated: its witness gives certainty_L a P ∧ ¬knowledge_B B P, but
+    coincidence would force knowledge_B B P — contradiction. -/
+theorem WeakCtx_contradicts_TractionAuthorizationSplit
+    (coincidence : ∀ (a : Agent) (B : Bubble) (P : Claim), certainty_L a P ↔ knowledge_B B P) :
+    False :=
+  let ⟨ha, hnb⟩ := (TractionAuthorizationSplit (default : Agent) (default : Bubble) (default : Claim)).1
+  hnb ((coincidence default default default).mp ha)
+
 
 /-! ## Commitment 2: Scoped Bubbles (No Global Ledger)
 
@@ -101,6 +124,25 @@ opaque supports_coordination : GlobalLedger → Prop
     contradictory deposits, while coordination requires consistency. -/
 axiom NoGlobalLedgerTradeoff (G : GlobalLedger) :
     ¬(supports_innovation G ∧ supports_coordination G)
+
+/-- Forward: a ledger that supports innovation cannot also support coordination. -/
+theorem innovation_excludes_coordination (G : GlobalLedger) :
+    supports_innovation G → ¬supports_coordination G :=
+  fun hi hc => NoGlobalLedgerTradeoff G ⟨hi, hc⟩
+
+/-- Forward: no single ledger serves both innovation and coordination.
+    This is the formal statement of "bubbles are forced": the tradeoff cannot be
+    resolved by making the ledger larger or more sophisticated. -/
+theorem no_universal_ledger :
+    ¬∃ G : GlobalLedger, supports_innovation G ∧ supports_coordination G :=
+  fun ⟨G, h⟩ => NoGlobalLedgerTradeoff G h
+
+/-- CommitmentsCtx (GlobalCtx): a universal ledger that supports both innovation and
+    coordination is impossible — a direct restatement of no_universal_ledger as a
+    contradiction under explicit hypotheses. -/
+theorem GlobalCtx_contradicts_NoGlobalLedgerTradeoff
+    (G : GlobalLedger) (hi : supports_innovation G) (hc : supports_coordination G) : False :=
+  NoGlobalLedgerTradeoff G ⟨hi, hc⟩
 
 
 /-! ## Commitment 3: S/E/V Factorization -/
@@ -522,6 +564,30 @@ theorem HeaderPreservation_implies_localization (B : Bubble) (P : PropLike)
 axiom HeaderPreservationAsymmetry (B : Bubble) (P : PropLike)
     (d : Deposit PropLike Standard ErrorModel Provenance) :
     dispute B P → header_stripped d → sticky B P ∧ proxy_battles B P
+
+/-- Forward: header stripping produces both procedural pathology and diagnostic loss.
+    Joins the axiomatic sticky/proxy_battles claim with the proved diagnosability drop.
+    The full "systematically harder" case: not only fewer diagnostic moves (score 3→0)
+    but also stickiness (unresolvable by standard repair) and proxy battles (real issue
+    hidden, argument drifts to authority/framing). -/
+theorem header_stripping_produces_pathology (B : Bubble) (P : PropLike)
+    (d : Deposit PropLike Standard ErrorModel Provenance) :
+    dispute B P → header_stripped d →
+    sticky B P ∧ proxy_battles B P ∧
+    systematically_harder header_preserved_diagnosability header_stripped_diagnosability :=
+  fun h_disp h_strip =>
+    let ⟨hs, hp⟩ := HeaderPreservationAsymmetry B P d h_disp h_strip
+    ⟨hs, hp, header_stripping_harder⟩
+
+/-- CommitmentsCtx (StrippedCtx): "stripped disputes are never sticky" is impossible.
+    If ¬sticky B P held for some disputed stripped deposit, HeaderPreservationAsymmetry
+    would produce sticky B P directly — contradiction. -/
+theorem StrippedCtx_contradicts_HeaderPreservationAsymmetry
+    (B : Bubble) (P : PropLike)
+    (d : Deposit PropLike Standard ErrorModel Provenance)
+    (h_disp : dispute B P) (h_strip : header_stripped d)
+    (h_no_sticky : ¬sticky B P) : False :=
+  h_no_sticky (HeaderPreservationAsymmetry B P d h_disp h_strip).1
 
 
 /-! ## Commitment 8: Temporal Validity (τ / TTL) -/
