@@ -1,10 +1,10 @@
 # Theorem Inventory
 
-This document catalogs **469** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
+This document catalogs **478** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
 
 **What the architecture claims:** Decentralized epistemic authorization requires specific structural mechanisms — a lifecycle with type-separated stages, header-preserving export, a revision loop, temporal validity, and a Bank substrate. These aren't design preferences; they are forced by the combination of agent constraints and system health goals.
 
-**What this document is:** A bucketed theorem index (Buckets 1–23), grouped by the claim each cluster supports. Each bucket names the Lean file, the key theorems, and the paper claim they underwrite. This is broader than Appendix A of the paper, which covers only paper-cited theorems with full math notation; this file covers the full proof burden distribution across the repo. For deeper exposition of any area, the standalone DOCS files are the right place.
+**What this document is:** A bucketed theorem index (Buckets 1–24), grouped by the claim each cluster supports. Each bucket names the Lean file, the key theorems, and the paper claim they underwrite. This is broader than Appendix A of the paper, which covers only paper-cited theorems with full math notation; this file covers the full proof burden distribution across the repo. For deeper exposition of any area, the standalone DOCS files are the right place.
 
 **Tier labels:** **A** = proved unconditionally, **B** = conditional on a W-bundle premise, **C** = design commitment (context-bundled structural assumption).
 
@@ -840,3 +840,66 @@ $$\text{Entrenched}(a, P) \land \text{deposit-no-longer-active}(s, d) \Rightarro
 $$d_1.P = d_2.P \;\land\; d_1.h = d_2.h \;\land\; d_1.\text{bubble} = d_2.\text{bubble} \;\land\; d_1.\text{status} = d_2.\text{status} \implies d_1 = d_2$$
 
 $$\forall\, \text{Pred},\ d_1 = d_2 \implies \text{Pred}(d_1) \implies \text{Pred}(d_2)$$
+
+---
+
+## Bucket 24: Lattice-Stability / Graceful Scale-Down
+
+**Paper Role:** Proves EpArch is bidirectionally modular — the valid theorem set is monotone under bundle perturbation in both directions. Removing health goals leaves a valid sub-architecture; compatible extensions at any level preserve all prior results.
+
+**File:** `Modularity.lean`
+
+**The headline claim:** EpArch is a floor, not a cage. Any sub-bundle is a valid EpArch instantiation; any compatible extension of a sub-bundle is safe.
+
+### Decomposition
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `paperfacing_decomposition` | Modularity.lean | `PaperFacing M ↔ RevisionGate M` | PaperFacing = RevisionGate component |
+
+### Downward: Graceful Degradation
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `graceful_degradation` | Modularity.lean | `NoSelfCorrection M → PaperFacing M` | Vacuous gate: drop self-correction goal → PaperFacing survives |
+
+### OdometerModel — Concrete Minimal Sub-bundle
+
+A non-revisable system satisfying only `SoundDepositsGoal` (readings must be verifiable). Demonstrates that EpArch applies to systems far simpler than its full constraint envelope.
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `odometer_no_self_correction` | Modularity.lean | `NoSelfCorrection OdometerModel` | Odometer has no self-correction |
+| `odometer_paper_facing` | Modularity.lean | `PaperFacing OdometerModel` | Odometer satisfies paper-facing (vacuously) |
+| `odometer_sound_deposits` | Modularity.lean | `SoundDepositsGoal OdometerModel` | Readings are verifiable within effectiveTime |
+| `odometer_not_corrigible` | Modularity.lean | `¬CorrigibleLedgerGoal OdometerModel` | Correctly fails the revision goal it does not claim |
+
+### Sub-level RevisionSafety (Downward + Upward)
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `sub_revision_safety` | Modularity.lean | `Compatible E S.model → PaperFacing S.model → PaperFacing (forget E)` | RevisionSafety holds at every sub-bundle level |
+| `odometer_extension_safe` | Modularity.lean | `Compatible E OdometerModel → PaperFacing (forget E)` | Any compatible extension of the odometer is paper-facing |
+
+### Headline: ModularityPack
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `modularity_pack` | Modularity.lean | `GracefulDegradation ∧ SubRevisionSafety ∧ FullRevisionSafety` | Full bidirectional lattice-stability |
+
+### Math Form
+
+$$\text{NoSelfCorrection}(M) \Rightarrow \text{PaperFacing}(M)$$
+
+$$\text{Compatible}(E, S) \land \text{PaperFacing}(S) \Rightarrow \text{PaperFacing}(\text{forget}(E))$$
+
+$$\text{ModularityPack} := \text{GracefulDegradation} \land \text{SubRevisionSafety} \land \text{safe\_extension\_preserves}$$
+
+### Supporting Definitions
+
+| Definition | File | Purpose |
+|------------|------|---------|
+| `RevisionGate` | Modularity.lean | `∀ B, selfCorrects B → hasRevision B` — PaperFacing component |
+| `NoSelfCorrection` | Modularity.lean | Sub-bundle predicate: no bubble self-corrects |
+| `SubBundle` | Modularity.lean | CoreModel + active SubGoal predicate + satisfaction witness |
+| `OdometerModel` | Modularity.lean | Concrete sub-bundle: one bubble, append-only, SoundDepositsGoal only |
