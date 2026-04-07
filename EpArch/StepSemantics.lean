@@ -1838,6 +1838,23 @@ theorem grounded_no_bridge_forces_revalidation
     apply List.mem_append_of_mem_right
     exact List.Mem.head _
 
+/-- Export gating is forced by the LTS structure.
+    Every Step.Export either has a trust bridge (export_with_bridge constructor)
+    or forces the deposit into .Candidate status (export_revalidate constructor).
+    There is no third constructor; ungated export is structurally non-constructible.
+    This is the primary operational grounding for ExportGating in Commitments.lean. -/
+theorem export_gating_forced
+    (s s' : SystemState PropLike Standard ErrorModel Provenance)
+    (B1 B2 : Bubble) (d_idx : Nat)
+    (h_step : Step (Reason := Reason) (Evidence := Evidence) s (.Export B1 B2 d_idx) s') :
+    hasTrustBridge s B1 B2 ∨
+    (¬hasTrustBridge s B1 B2 ∧ ∃ d_new, d_new ∈ s'.ledger ∧ d_new.status = .Candidate) := by
+  cases Classical.em (hasTrustBridge s B1 B2) with
+  | inl h_bridge => exact Or.inl h_bridge
+  | inr h_no_bridge =>
+    exact Or.inr ⟨h_no_bridge,
+      grounded_no_bridge_forces_revalidation s s' B1 B2 d_idx h_step h_no_bridge⟩
+
 /-- Grounded version of adversarial_requires_revocation:
     Revocation is possible iff quarantine path exists. -/
 theorem grounded_revocation_requires_quarantine

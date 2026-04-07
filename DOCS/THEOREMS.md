@@ -1,14 +1,14 @@
 # Theorem Inventory
 
-This document catalogs **435** proved theorems in the formalization, organized by argumentative role. The count covers all named theorems, lemmas, and equivalent definitions in the EpArch namespace; internal list-manipulation helpers are excluded.
+This document catalogs **473** proved theorems in the formalization, organized by argumentative role. The count covers all named theorems, lemmas, and equivalent definitions in the EpArch namespace; internal list-manipulation helpers are excluded.
 
 **What the architecture claims:** Decentralized epistemic authorization requires specific structural mechanisms — a lifecycle with type-separated stages, header-preserving export, a revision loop, temporal validity, and a Bank substrate. These aren't design preferences; they are forced by the combination of agent constraints and system health goals.
 
 **What this document is:** A bucketed theorem index (Buckets 1–23), grouped by the claim each cluster supports. Each bucket names the Lean file, the key theorems, and the paper claim they underwrite. This is broader than Appendix A of the paper, which covers only paper-cited theorems with full math notation; this file covers the full proof burden distribution across the repo. For deeper exposition of any area, the standalone DOCS files are the right place.
 
-**Tier labels:** **A** = proved unconditionally, **B** = conditional on a W-bundle premise, **C** = design axiom.
+**Tier labels:** **A** = proved unconditionally, **B** = conditional on a W-bundle premise, **C** = design commitment (context-bundled structural assumption).
 
-**All theorems are fully proved** — zero `sorry`, zero new axioms beyond the 35 listed in [AXIOMS.md](AXIOMS.md).
+**All theorems are fully proved** — zero `sorry`, zero `axiom` declarations. See [AXIOMS.md](AXIOMS.md) for the current assumption boundary.
 
 ## Notation Dictionary
 

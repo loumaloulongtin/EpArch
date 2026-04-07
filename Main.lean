@@ -63,13 +63,13 @@ The formalization proves these claims:
 2. **Header.lean** — The S/E/V/τ/acl/redeem header structure and observational
    completeness theorems.
 3. **Bank.lean** — Bank substrate: lifecycle operators (Validate, Challenge,
-   Repair, Revoke, etc.) as specification axioms.
+   Repair, Revoke, etc.) as concrete guarded definitions.
 4. **LTS.lean** — Generic labeled transition systems, traces, invariants,
    refinement, and safety preservation.
 5. **StepSemantics.lean** — The constructive operational semantics: SystemState,
    Action, Step relation, competition gate theorem.
-6. **Commitments.lean** — Eight architectural commitments (design requirements the
-   paper claims any epistemic system must satisfy).
+6. **Commitments.lean** — Eight architectural commitments (structural requirements
+   for conforming epistemic systems, expressed as fields of `CommitmentsCtx`).
 7. **Minimality.lean** — The convergence/impossibility theorems: constraints force
    features, removal breaks properties.
 8. **WorldCtx.lean** — Parametric world semantics: the interface through which
@@ -106,22 +106,20 @@ Layer 9 (Surface):    PaperFacing
 
 | Surface | Import | Description |
 |---------|--------|-------------|
-| **Paper-Facing** | `MainPaper.lean` | Core-facing theorems only (35 axioms) |
-| **Full** | `Main.lean` | Full build (35 axioms) |
+| **Paper-Facing** | `MainPaper.lean` | Core-facing theorems only |
+| **Full** | `Main.lean` | Full build |
 
-## Axiom Breakdown
+## Axiom Declarations
 
-| Surface | Count | Notes |
-|---------|-------|-------|
-| Bank | 18 | Operator postconditions |
-| Commitments | 12 | Axioms implementing 8 architecture commitments |
-| Invariants | 5 | Protocol invariants |
-| Agent Layer | 0 | Design-forcing now PROVED |
-| WorldCtx | 0 | transport_lies_possible now PROVED |
-| **Total** | **35** | Specification axioms only |
+The formalization contains **zero `axiom` declarations**. The four structural
+commitments are expressed as fields of `CommitmentsCtx` (a hypothesis bundle
+modelled on `WorldCtx`); forward theorems are stated as:
 
-Note: 5 former axioms are now theorems (Agent design-forcing + WorldCtx transport
-+ Invariants challenge_requires_field_localization).
+    theorem T (C : CommitmentsCtx ...) ...
+
+and hold for any conforming architecture. Opaque domain primitives
+(`certainty_L`, `knowledge_B`, `sticky`, etc.) are uninterpreted constants,
+not `axiom` declarations.
 -/
 
 import EpArch.Basic

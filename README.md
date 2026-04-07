@@ -24,7 +24,7 @@ Machine-checked companion to **"Epistemic Architecture: A Constraints-and-Object
 
 This repository contains the Lean 4 formalization of EpArch — a constraints-and-objectives architecture for bounded epistemic agents under adversarial pressure. Starting from minimal operational constraints on agents and the world, the paper derives a cluster of required primitives: scoped authorization zones (Bubbles), a shared deposit ledger (Bank) with lifecycle gates, structured validation headers (S/E/V), and temporal validity (τ). This formalization machine-checks the key conditional necessity results, provides non-vacuity witnesses, and verifies revision safety.
 
-**435 theorems. 35 axioms. 0 sorries.**
+**473 theorems. 0 axiom declarations. 0 sorries.**
 
 ```bash
 lake build   # requires Lean 4.3.0, no Mathlib
@@ -73,7 +73,7 @@ lake build   # requires Lean 4.3.0, no Mathlib
 |---|---|
 | `Basic.lean` | Core types: `Agent`, `Claim`, `Bubble`, `Deposit`, `DepositStatus`, `LadderStage` |
 | `Header.lean` | S/E/V header structure and factorization |
-| `Bank.lean` | Bank substrate and lifecycle operators (18 axioms — API contracts) |
+| `Bank.lean` | Bank substrate and lifecycle operators |
 | `LTS.lean` | Generic labeled transition systems |
 | `StepSemantics.lean` | Concrete step semantics for all lifecycle operators |
 
@@ -97,11 +97,11 @@ lake build   # requires Lean 4.3.0, no Mathlib
 | `AdversarialBase.lean` | Adversarial type definitions |
 | `AdversarialObligations.lean` | Attack/defense obligation theorems under world bundles |
 | `Agent/Corroboration.lean` | k-of-n corroboration guarantees and independence conditions |
-| `Commitments.lean` | The paper's 8 structural commitments (12 axioms — definitional) |
+| `Commitments.lean` | The paper's 8 structural commitments; 4 structural ones bundled in `CommitmentsCtx` |
 | `Minimality.lean` | Minimality and forcing results |
 | `Feasibility.lean` | Feasibility witnesses |
 | `Health.lean` | Health goal predicates and necessity theorems |
-| `Invariants.lean` | System invariants (5 axioms — protocol requirements) |
+| `Invariants.lean` | System invariants (grounded operational theorems, 0 axiom declarations) |
 
 ### Safety and Scope
 
@@ -123,19 +123,22 @@ lake build   # requires Lean 4.3.0, no Mathlib
 
 ---
 
-## Axiom Inventory
+## Axiom Declarations
 
-The formalization uses 35 axioms, all design-constraint declarations:
+The formalization contains **zero `axiom` declarations**. The four structural
+commitments are bundled in `CommitmentsCtx` (a hypothesis structure); forward theorems
+are conditioned on `(C : CommitmentsCtx ...)`. Operational invariants are grounded in
+`StepSemantics`. Opaque domain primitives are declared with `opaque`,
+not `axiom`.
 
-| Category | Count | Role |
-|---|---|---|
-| Bank operators | 18 | System API contracts — specify what operators do, not how |
-| Commitments | 12 | The paper's 8 structural forcing constraints (some split into components) |
-| Invariants | 5 | Protocol requirements — properties that must hold across all states |
+> **Note:** “zero global axioms” does not mean “zero assumptions in an absolute sense.”
+> EpArch works with explicit base commitments and context-bundled conditions where appropriate;
+> those boundaries are made explicit rather than hidden.
+> That is intentional: the framework does not claim terminal epistemic closure,
+> and PRP rules out eliminating every assumption boundary altogether.
+> See [DOCS/AXIOMS.md](DOCS/AXIOMS.md) and [DOCS/WORLD.md](DOCS/WORLD.md).
 
-`ConcreteLedgerModel.lean` contains **zero axioms** — all witnesses are fully constructive.
-
-See [DOCS/AXIOMS.md](DOCS/AXIOMS.md) for the complete inventory with justifications.
+See [DOCS/AXIOMS.md](DOCS/AXIOMS.md) for the full account.
 
 ---
 
@@ -190,9 +193,9 @@ lake build
 Select-String -Path "EpArch\*.lean", "EpArch\**\*.lean" -Pattern "^\s*sorry\b"
 # Expected: no output
 
-# Verify axiom count
+# Verify axiom declarations (expect 0)
 (Select-String -Path "EpArch\*.lean", "EpArch\**\*.lean" -Pattern "^axiom\s" | Measure-Object).Count
-# Expected: 35
+# Expected: 0
 
 # Verify ConcreteLedgerModel has no axioms
 Select-String -Path "EpArch\ConcreteLedgerModel.lean" -Pattern "^axiom\s"

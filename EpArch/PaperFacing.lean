@@ -187,11 +187,10 @@ These are design requirements that define what the protocol SHOULD maintain.
 -/
 
 export EpArch (
-  no_deposit_without_redeemability
-  no_withdrawal_without_acl
-  no_export_without_gate
-  challenge_requires_field_localization  -- Proved theorem
-  worldstate_requires_finite_τ
+  grounded_no_withdrawal_without_acl    -- Proved theorem
+  grounded_no_export_without_gate       -- Proved theorem
+  challenge_requires_field_localization -- Proved theorem
+  worldstate_requires_finite_τ          -- Proved theorem
 )
 
 
@@ -478,7 +477,7 @@ export EpArch.Agent.Corroboration (
 | SEV structure | Header, SEVFactorization |
 | Withdrawal gates | withdrawal_gates, canWithdrawAt_* |
 | Gettier analysis | V-independence proxies in Theorems.lean |
-| Export gating | no_export_without_gate |
+| Export gating | grounded_no_export_without_gate |
 | Bounded audit | bounded_audit_fails |
 | Adversarial obligations | Obligation theorems |
 | Health invariants | Health → necessity theorems |

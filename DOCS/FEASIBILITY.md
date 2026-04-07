@@ -131,7 +131,7 @@ What these theorems do not establish:
 
 ## Strength and Axiom Impact
 
-**Tier A** — All theorems are fully proved by composing existing witnesses from `WorldWitness`, `ConcreteLedgerModel`, and `Minimality`. No new axioms are introduced. Paper-facing axiom count remains **35**.
+**Tier A** — All theorems are fully proved by composing existing witnesses from `WorldWitness`, `ConcreteLedgerModel`, and `Minimality`. No `axiom` declarations are introduced.
 
 **Semantic role:** Non-vacuity + forced-primitives — not world realism.
 

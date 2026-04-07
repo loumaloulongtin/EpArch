@@ -1,15 +1,15 @@
 # EpArch Lean Formalization — Documentation Index
 
-This folder documents the Lean formalization of the Epistemic Architecture (EpArch) framework — 435 proved theorems, 35 axioms, zero sorries.
+This folder documents the Lean formalization of the Epistemic Architecture (EpArch) framework — 473 proved theorems, 0 axiom declarations, zero sorries.
 
 **The core claim:** lifecycle gates, header-preserving export, a revision loop, and temporal validity are not design choices. They are *forced* by the combination of agent constraints (imperfect agents face permanent challenge pressure) and system health goals (safe withdrawal, reliable export, self-correction). The files below are the machine-checked record of that forcing argument.
 
 ## Build Surfaces
 
-| Surface | Entry Point | Axioms | Description |
+| Surface | Entry Point | Axiom decls | Description |
 |---------|-------------|--------|-------------|
-| **Paper-Facing** | `MainPaper.lean` | 35 | Only theorems cited by the paper |
-| **Full** | `Main.lean` | 35 | Full build (same axioms) |
+| **Paper-Facing** | `MainPaper.lean` | 0 | Only theorems cited by the paper |
+| **Full** | `Main.lean` | 0 | Full build |
 
 ## Documents
 
@@ -37,7 +37,7 @@ For the full paper-section-to-Lean-artifact mapping (with math notation, A.# lab
 | **Competition gate** | A theorem showing that a rival epistemic architecture *must* address some specific structural requirement to function — you cannot simply skip it. |
 | **PRP** | Permanent Redeemability Pressure — agents face a continuous challenge stream that cannot be fully discharged, preventing terminal epistemic closure. |
 | **W-bundle** | An explicit assumption package (e.g. `W_lies_possible`). Obligation theorems have shape `W_* → Conclusion`, making premises auditable. |
-| **Tier A / B / C** | Proved theorem / Conditional on W-bundle / Design axiom (intentionally postulated). |
+| **Tier A / B / C** | Proved theorem / Conditional on W-bundle / Design commitment (context-bundled structural assumption). |
 
 ---
 
@@ -73,7 +73,7 @@ For the full paper-section-to-Lean-artifact mapping (with math notation, A.# lab
 
 ### Key Files
 
-| Lean File | Role | Axioms |
+| Lean File | Role | Axiom decls |
 |-----------|------|--------|
 | `Basic.lean` | Core types (Claim, Agent, Bubble, Field, etc.) | 0 |
 | `Header.lean` | S/E/V header structure + Deposit records | 0 |
@@ -83,10 +83,10 @@ For the full paper-section-to-Lean-artifact mapping (with math notation, A.# lab
 | `AdversarialObligations.lean` | Adversarial axioms → obligation theorems | 0 |
 | `RevisionSafety.lean` | Premise strengthening + compatible extensions | 0 |
 | `ScopeIrrelevance.lean` | Scope irrelevance theorems | 0 |
-| `Bank.lean` | Bank substrate, lifecycle operators | 18 |
-| `Commitments.lean` | Paper's 8 commitments | 13 |
+| `Bank.lean` | Bank substrate, lifecycle operators | 0 |
+| `Commitments.lean` | Paper's 8 commitments | 0 |
 | `Health.lean` | Health predicates + necessity theorems | 0 |
-| `Invariants.lean` | Protocol requirements | 5 |
+| `Invariants.lean` | Protocol requirements | 0 |
 | `ConcreteLedgerModel.lean` | Non-vacuity witness (constructive) | 0 |
 
 ## Build & Verification
@@ -95,7 +95,7 @@ For the full paper-section-to-Lean-artifact mapping (with math notation, A.# lab
 lake build
 ```
 
-**Current Status:** Zero errors, zero sorries, 35 axioms (paper-facing surface).
+**Current Status:** Zero errors, zero sorries, zero axiom declarations.
 
 ## See Also
 

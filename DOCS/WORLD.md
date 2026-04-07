@@ -212,9 +212,5 @@ World.lean (re-exports)    AdversarialObligations.lean (W-bundles → obligation
 
 ---
 
-## Maintainer Notes
-
-- `EpArch.Claim` (defined in `Basic.lean`) is the canonical claim type across the codebase. `WorldCtx.Claim` is a type parameter instantiated to `EpArch.Claim`. Do not define new claim/proposition types in other modules.
-- The deprecated `PropLike` alias in `World.lean` equals `EpArch.Claim`; it exists only for backward compatibility and should not be used in new code.
-- New world-side claims should prefer the `W_*` / `_of_W` pattern over unconditional assertion.
+`EpArch.Claim` (defined in `Basic.lean`) is the canonical claim type across the codebase. `WorldCtx.Claim` is a type parameter instantiated to `EpArch.Claim`. The deprecated `PropLike` alias in `World.lean` equals `EpArch.Claim` and exists only for backward compatibility. New world-side claims should follow the `W_*` / `_of_W` pattern.
 
