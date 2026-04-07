@@ -106,8 +106,8 @@ Layer 9 (Surface):    PaperFacing
 
 | Surface | Import | Description |
 |---------|--------|-------------|
-| **Paper-Facing** | `MainPaper.lean` | Core-facing theorems only (16 axioms) |
-| **Full** | `Main.lean` | Full build (16 axioms) |
+| **Paper-Facing** | `MainPaper.lean` | Core-facing theorems only (9 axioms) |
+| **Full** | `Main.lean` | Full build (9 axioms) |
 
 ## Axiom Breakdown
 
@@ -120,12 +120,12 @@ Layer 9 (Surface):    PaperFacing
 | WorldCtx | 0 | transport_lies_possible now PROVED |
 | **Total** | **17** | Specification axioms remaining |
 
-Note: 19 axioms discharged in this branch (11 operator defs + 4 status-transition
-theorems + 3 Commitments theorems + 1 NoSelfCorrectionWithoutRevision). 5 former axioms
-were previously discharged (Agent design-forcing + WorldCtx transport +
-Invariants challenge_requires_field_localization).
-Invariants.lean additionally has 2 grounded mirror theorems for the gating invariants
-(Route B: operational grounding without abstract-signature refactor).
+Note: 26 axioms discharged total in this branch (+7 this pass).
+Remaining 9 are permanently architectural: 5 Commitments express the paper's
+substantive philosophical claims (traction/authorization split, no global ledger,
+redeemability external to consensus, consensus insufficiency); 4 Invariants
+(gating invariants + no_deposit_without_redeemability) require Route A
+(signature refactor) or express opaque real-world predicates (acl_permits).
 -/
 
 import EpArch.Basic

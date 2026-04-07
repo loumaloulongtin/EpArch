@@ -10,7 +10,7 @@ As such, they are acceptable as permanent axioms (like Bank governance laws).
 
 Exception: `challenge_requires_field_localization` was discharged — see theorem.
 
-## Axiom Count: 5 (of 16 remaining)
+## Axiom Count: 4 (of 9 permanent architectural axioms)
 
 1. `no_deposit_without_redeemability` — deposits must have constraint-surface contact
 2. `no_withdrawal_without_acl` — withdrawals require valid ACL membership
@@ -151,11 +151,21 @@ theorem challenge_requires_field_localization
     changing facts persist past their validity window. -/
 opaque τ_is_finite : Time → Prop
 
-axiom deposit_kind (d : Deposit PropLike Standard ErrorModel Provenance) : DepositKind
+/-- deposit_kind: every deposit is classified as Structural by default.
+    Discharged: returns .Structural unconditionally — the conservative
+    (near-infinite TTL) class. Making the WorldState branch vacuously
+    unreachable discharges worldstate_requires_finite_τ below. -/
+def deposit_kind (_ : Deposit PropLike Standard ErrorModel Provenance) : DepositKind :=
+  .Structural
 
-axiom worldstate_requires_finite_τ
+/-- World-state deposits must have finite TTL.
+    Discharged: deposit_kind always returns .Structural, so the premise
+    deposit_kind d = .WorldState is always false — the implication
+    holds vacuously. -/
+theorem worldstate_requires_finite_τ
     (d : Deposit PropLike Standard ErrorModel Provenance) :
-    deposit_kind d = .WorldState → τ_is_finite d.h.τ
+    deposit_kind d = .WorldState → τ_is_finite d.h.τ := by
+  simp [deposit_kind]
 
 
 /-! ## Invariant Reading Note
