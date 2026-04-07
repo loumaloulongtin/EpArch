@@ -3,10 +3,17 @@ EpArch/Commitments.lean — Architecture Commitments
 
 The 8 explicit architectural commitments that define what the EpArch
 framework requires of any conforming system.  Each commitment is stated
-as one or more axioms or proved theorems asserting structural properties.
+as proved theorems or as fields of CommitmentsCtx (the 4 structural
+commitments).  The key design commitments are discharged into CommitmentsCtx
+following the WorldCtx pattern: theorems are stated as hypothetical results
+"for any conforming architecture C : CommitmentsCtx ..." rather than
+asserted unconditionally via axioms.  This gives zero global axioms while
+remaining honest — EpArch is a specification, and these ARE conditions on
+conforming systems, not universal claims about all systems.
+
 Commitment 5's primary result (`ExportGating`) is a theorem derived from
-its axioms.  Commitment 3 (`SEVFactorization`) is a trivial theorem by rfl.
-Commitment 6b (`NoSelfCorrectionWithoutRevision`) is a proved theorem
+the operational LTS.  Commitment 3 (`SEVFactorization`) is a trivial theorem
+by rfl.  Commitment 6b (`NoSelfCorrectionWithoutRevision`) is a proved theorem
 grounded in StepSemantics.self_correcting_domain_permits_revision.
 
 ## What are Commitments?
@@ -57,48 +64,11 @@ def does_not_imply (A B : Prop) : Prop :=
 def independent (A B : Prop) : Prop :=
   does_not_imply A B ∧ does_not_imply B A
 
-/-- Commitment 1: Traction and authorization are different types.
 
-    WITNESS SCENARIOS:
-    1. Einstein 1905: certainty about relativity, no scientific deposit yet
-    2. Textbook fact: deposit exists, particular student hasn't learned it
+/-! ## Commitment 1: Traction/Authorization Split
 
-    The commitment is: given witnesses for both directions exist,
-    the types are genuinely independent.
-
-    FORMAL CONTENT: With `certainty_L` opaque (neither trivially True nor False),
-    `does_not_imply A B = ∃ (_ : A), ¬B` carries genuine content:
-    • Direction 1: there exists a certainty_L state where knowledge_B is absent
-        (agent treats P as premise, Bank has never deposited P)
-    • Direction 2: there exists a knowledge_B state where certainty_L is absent
-        (Bank has authorized P in bubble B, but agent is still at Ignorance or Belief)
-    Both directions are asserted as design commitments (Tier C axiom). -/
-axiom TractionAuthorizationSplit (a : Agent) (B : Bubble) (P : Claim) :
-  does_not_imply (certainty_L a P) (knowledge_B B P) ∧
-  does_not_imply (knowledge_B B P) (certainty_L a P)
-
-/-- Forward: certainty does not entail bank authorization.
-    An agent at Certainty on P may have no Bank deposit for P — the two are independent.
-    This is the paper's central claim: the Bank is necessary, not just the Ladder. -/
-theorem certainty_insufficient_for_authorization (a : Agent) (B : Bubble) (P : Claim) :
-    ∃ (_ : certainty_L a P), ¬knowledge_B B P :=
-  (TractionAuthorizationSplit a B P).1
-
-/-- Forward: bank authorization does not entail certainty.
-    A deposit may be publicly authorized in B while the agent remains at Ignorance or Belief. -/
-theorem authorization_insufficient_for_certainty (a : Agent) (B : Bubble) (P : Claim) :
-    ∃ (_ : knowledge_B B P), ¬certainty_L a P :=
-  (TractionAuthorizationSplit a B P).2
-
-/-- CommitmentsCtx (WeakCtx): coincidence of certainty and authorization is impossible.
-    If certainty_L a P ↔ knowledge_B B P held for all a, B, P, TractionAuthorizationSplit
-    would be violated: its witness gives certainty_L a P ∧ ¬knowledge_B B P, but
-    coincidence would force knowledge_B B P — contradiction. -/
-theorem WeakCtx_contradicts_TractionAuthorizationSplit
-    (coincidence : ∀ (a : Agent) (B : Bubble) (P : Claim), certainty_L a P ↔ knowledge_B B P) :
-    False :=
-  let ⟨ha, hnb⟩ := (TractionAuthorizationSplit (default : Agent) (default : Bubble) (default : Claim)).1
-  hnb ((coincidence default default default).mp ha)
+    Commitment: certainty_L and knowledge_B are independent (neither implies the other).
+    Displaced into CommitmentsCtx.traction_auth_split; see CommitmentsCtx section below. -/
 
 
 /-! ## Commitment 2: Scoped Bubbles (No Global Ledger)
@@ -109,40 +79,13 @@ theorem WeakCtx_contradicts_TractionAuthorizationSplit
     forces scoped validation domains (bubbles).
 -/
 
-opaque GlobalLedger : Type u
+opaque GlobalLedger : Type
 opaque supports_innovation : GlobalLedger → Prop
 opaque supports_coordination : GlobalLedger → Prop
 
-/-- Commitment 2 (Scoped Bubbles): No global ledger can support both innovation and coordination.
-
-    Innovation requires: ability to deposit claims that deviate from consensus.
-    Coordination requires: shared acceptance standards across agents.
-    These trade off → bubbles (scoped validation domains) are forced.
-
-    This is axiomatic because it defines a fundamental architectural constraint.
-    The argument is that innovation requires accepting potentially
-    contradictory deposits, while coordination requires consistency. -/
-axiom NoGlobalLedgerTradeoff (G : GlobalLedger) :
-    ¬(supports_innovation G ∧ supports_coordination G)
-
-/-- Forward: a ledger that supports innovation cannot also support coordination. -/
-theorem innovation_excludes_coordination (G : GlobalLedger) :
-    supports_innovation G → ¬supports_coordination G :=
-  fun hi hc => NoGlobalLedgerTradeoff G ⟨hi, hc⟩
-
-/-- Forward: no single ledger serves both innovation and coordination.
-    This is the formal statement of "bubbles are forced": the tradeoff cannot be
-    resolved by making the ledger larger or more sophisticated. -/
-theorem no_universal_ledger :
-    ¬∃ G : GlobalLedger, supports_innovation G ∧ supports_coordination G :=
-  fun ⟨G, h⟩ => NoGlobalLedgerTradeoff G h
-
-/-- CommitmentsCtx (GlobalCtx): a universal ledger that supports both innovation and
-    coordination is impossible — a direct restatement of no_universal_ledger as a
-    contradiction under explicit hypotheses. -/
-theorem GlobalCtx_contradicts_NoGlobalLedgerTradeoff
-    (G : GlobalLedger) (hi : supports_innovation G) (hc : supports_coordination G) : False :=
-  NoGlobalLedgerTradeoff G ⟨hi, hc⟩
+/-! Commitment 2 (Scoped Bubbles): no global ledger supports both innovation and
+    coordination.  Displaced into CommitmentsCtx.no_global_ledger.  Forward theorems
+    in CommitmentsCtx section at end of file. -/
 
 
 /-! ## Commitment 3: S/E/V Factorization -/
@@ -231,28 +174,9 @@ theorem redeemable_implies_contact_and_discriminating
   intro ⟨vp, h_dep, _⟩
   exact ⟨⟨vp.surface, h_dep ▸ vp.h_contact⟩, ⟨vp.surface, h_dep ▸ vp.h_discrim⟩⟩
 
-/-- Commitment 4b: Consensus alone doesn't create redeemability.
-
-    Axiom: there exists a scenario where bubble B has consensus on d.P
-    but d is not redeemable — the constraint surface is an independent factor.
-
-    Uses does_not_imply (same pattern as TractionAuthorizationSplit):
-    concrete semantic content rather than an opaque wrapper predicate.
-    This is falsifiable: a WeakCtx where consensus B d.P → redeemable d for
-    all d would contradict it immediately. -/
-axiom ConsensusNotSufficient (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
-    does_not_imply (consensus B d.P) (redeemable d)
-
-/-- Redeemability requires more than consensus: there always exists a consensus scenario
-    where the deposit fails redeemability (lacks a VerificationPath witness).
-    The constraint surface is a genuinely independent requirement, not derivable
-    from agreement alone — consensus in B on d.P leaves open whether the external
-    evidence predicates (path_route_exists, contact_was_made, verdict_discriminates)
-    can be satisfied. -/
-theorem redeemability_requires_more_than_consensus (B : Bubble)
-    (d : Deposit PropLike Standard ErrorModel Provenance) :
-    ∃ (_ : consensus B d.P), ¬redeemable d :=
-  ConsensusNotSufficient B d
+/-! Commitment 4b: Consensus alone doesn't create redeemability.
+    Displaced into CommitmentsCtx.consensus_not_sufficient.
+    Forward theorem in CommitmentsCtx section at end of file. -/
 
 
 /-! ## Commitment 5: Export Gating -/
@@ -558,36 +482,9 @@ theorem HeaderPreservation_implies_localization (B : Bubble) (P : PropLike)
   unfold localizes header_preserved_diagnosability header_stripped_diagnosability
   decide
 
-/-- Commitment 7, second conjunct: header-stripped deposits produce sticky disputes.
-    Axiom: sticky and proxy_battles are opaque predicates requiring external domain
-    evidence — they cannot be reduced to numerical comparisons like localizes. -/
-axiom HeaderPreservationAsymmetry (B : Bubble) (P : PropLike)
-    (d : Deposit PropLike Standard ErrorModel Provenance) :
-    dispute B P → header_stripped d → sticky B P ∧ proxy_battles B P
-
-/-- Forward: header stripping produces both procedural pathology and diagnostic loss.
-    Joins the axiomatic sticky/proxy_battles claim with the proved diagnosability drop.
-    The full "systematically harder" case: not only fewer diagnostic moves (score 3→0)
-    but also stickiness (unresolvable by standard repair) and proxy battles (real issue
-    hidden, argument drifts to authority/framing). -/
-theorem header_stripping_produces_pathology (B : Bubble) (P : PropLike)
-    (d : Deposit PropLike Standard ErrorModel Provenance) :
-    dispute B P → header_stripped d →
-    sticky B P ∧ proxy_battles B P ∧
-    systematically_harder header_preserved_diagnosability header_stripped_diagnosability :=
-  fun h_disp h_strip =>
-    let ⟨hs, hp⟩ := HeaderPreservationAsymmetry B P d h_disp h_strip
-    ⟨hs, hp, header_stripping_harder⟩
-
-/-- CommitmentsCtx (StrippedCtx): "stripped disputes are never sticky" is impossible.
-    If ¬sticky B P held for some disputed stripped deposit, HeaderPreservationAsymmetry
-    would produce sticky B P directly — contradiction. -/
-theorem StrippedCtx_contradicts_HeaderPreservationAsymmetry
-    (B : Bubble) (P : PropLike)
-    (d : Deposit PropLike Standard ErrorModel Provenance)
-    (h_disp : dispute B P) (h_strip : header_stripped d)
-    (h_no_sticky : ¬sticky B P) : False :=
-  h_no_sticky (HeaderPreservationAsymmetry B P d h_disp h_strip).1
+/-! Commitment 7, second conjunct: header-stripped deposits produce sticky disputes.
+    Displaced into CommitmentsCtx.header_asymmetry.
+    Forward theorems in CommitmentsCtx section at end of file. -/
 
 
 /-! ## Commitment 8: Temporal Validity (τ / TTL) -/
@@ -611,5 +508,117 @@ theorem TemporalValidity (d1 d2 : Deposit PropLike Standard ErrorModel Provenanc
   intro h1 h2 h_eq
   unfold refreshed unrefreshed performs_equivalently at *
   simp [h_eq.trans h2] at h1
+
+
+/-! ## CommitmentsCtx — Four Structural Commitments as a Hypothesis Bundle
+
+    Analogous to WorldCtx.W_* bundles: these four commitments are not asserted
+    globally but displaced into a structure.  Theorems conditioned on
+    CommitmentsCtx hold for any conforming architecture, without asserting them
+    unconditionally.  This gives zero `axiom` declarations; the commitments
+    appear only as hypotheses "(C : CommitmentsCtx)" in theorem signatures.
+
+    Non-vacuity: ConcreteLedgerModel proves the analogous structural properties
+    hold in a concrete model (commitment1_concrete, commitment2_concrete, etc.).
+-/
+
+/-- The four structural architectural commitments as a hypothesis bundle.
+
+    Fields (one per commitment):
+    - `traction_auth_split`      — C1: certainty_L ⊥ knowledge_B (independent)
+    - `no_global_ledger`         — C2: no ledger supports both innovation and coordination
+    - `consensus_not_sufficient` — C4b: consensus ⊥ redeemability
+    - `header_asymmetry`         — C7b: stripped disputes → sticky ∧ proxy_battles -/
+structure CommitmentsCtx (PropLike Standard ErrorModel Provenance : Type u) where
+  /-- Traction (certainty_L) and authorization (knowledge_B) are independent:
+      neither implies the other. -/
+  traction_auth_split : ∀ (a : Agent) (B : Bubble) (P : Claim),
+    does_not_imply (certainty_L a P) (knowledge_B B P) ∧
+    does_not_imply (knowledge_B B P) (certainty_L a P)
+  /-- No global ledger can simultaneously support innovation and coordination. -/
+  no_global_ledger : ∀ G : GlobalLedger,
+    ¬(supports_innovation G ∧ supports_coordination G)
+  /-- Consensus does not imply redeemability — constraint surface is independent. -/
+  consensus_not_sufficient : ∀ (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance),
+    does_not_imply (consensus B d.P) (redeemable d)
+  /-- Stripped-header disputes produce stickiness and proxy battles. -/
+  header_asymmetry : ∀ (B : Bubble) (P : PropLike)
+    (d : Deposit PropLike Standard ErrorModel Provenance),
+    dispute B P → header_stripped d → sticky B P ∧ proxy_battles B P
+
+
+/-! ### Forward Theorems (Commitment 1) -/
+
+/-- Certainty does not entail bank authorization.
+    An agent at Certainty on P may have no Bank deposit for P — the two are independent.
+    This is the paper's central claim: the Bank is necessary, not just the Ladder. -/
+theorem certainty_insufficient_for_authorization (C : CommitmentsCtx PropLike Standard ErrorModel Provenance)
+    (a : Agent) (B : Bubble) (P : Claim) :
+    ∃ (_ : certainty_L a P), ¬knowledge_B B P :=
+  (C.traction_auth_split a B P).1
+
+/-- Bank authorization does not entail certainty.
+    A deposit may be publicly authorized in B while the agent remains at Ignorance or Belief. -/
+theorem authorization_insufficient_for_certainty (C : CommitmentsCtx PropLike Standard ErrorModel Provenance)
+    (a : Agent) (B : Bubble) (P : Claim) :
+    ∃ (_ : knowledge_B B P), ¬certainty_L a P :=
+  (C.traction_auth_split a B P).2
+
+/-- WeakCtx: coincidence of certainty and authorization contradicts traction_auth_split. -/
+theorem WeakCtx_contradicts_TractionAuthorizationSplit (C : CommitmentsCtx PropLike Standard ErrorModel Provenance)
+    (coincidence : ∀ (a : Agent) (B : Bubble) (P : Claim), certainty_L a P ↔ knowledge_B B P) :
+    False :=
+  let ⟨ha, hnb⟩ := (C.traction_auth_split (default : Agent) (default : Bubble) (default : Claim)).1
+  hnb ((coincidence default default default).mp ha)
+
+
+/-! ### Forward Theorems (Commitment 2) -/
+
+/-- A ledger that supports innovation cannot also support coordination. -/
+theorem innovation_excludes_coordination (C : CommitmentsCtx PropLike Standard ErrorModel Provenance) (G : GlobalLedger) :
+    supports_innovation G → ¬supports_coordination G :=
+  fun hi hc => C.no_global_ledger G ⟨hi, hc⟩
+
+/-- No single ledger serves both innovation and coordination (bubbles are forced). -/
+theorem no_universal_ledger (C : CommitmentsCtx PropLike Standard ErrorModel Provenance) :
+    ¬∃ G : GlobalLedger, supports_innovation G ∧ supports_coordination G :=
+  fun ⟨G, h⟩ => C.no_global_ledger G h
+
+/-- GlobalCtx: explicit both-support hypotheses contradict no_global_ledger. -/
+theorem GlobalCtx_contradicts_NoGlobalLedgerTradeoff (C : CommitmentsCtx PropLike Standard ErrorModel Provenance)
+    (G : GlobalLedger) (hi : supports_innovation G) (hc : supports_coordination G) : False :=
+  C.no_global_ledger G ⟨hi, hc⟩
+
+
+/-! ### Forward Theorems (Commitment 4b) -/
+
+/-- Redeemability requires more than consensus: the constraint surface is independent.
+    There always exists a consensus scenario where redeemability fails. -/
+theorem redeemability_requires_more_than_consensus (C : CommitmentsCtx PropLike Standard ErrorModel Provenance) (B : Bubble)
+    (d : Deposit PropLike Standard ErrorModel Provenance) :
+    ∃ (_ : consensus B d.P), ¬redeemable d :=
+  C.consensus_not_sufficient B d
+
+
+/-! ### Forward Theorems (Commitment 7b) -/
+
+/-- Header stripping produces sticky disputes, proxy battles, AND diagnostic loss.
+    The full "systematically harder" compound claim. -/
+theorem header_stripping_produces_pathology (C : CommitmentsCtx PropLike Standard ErrorModel Provenance) (B : Bubble) (P : PropLike)
+    (d : Deposit PropLike Standard ErrorModel Provenance) :
+    dispute B P → header_stripped d →
+    sticky B P ∧ proxy_battles B P ∧
+    systematically_harder header_preserved_diagnosability header_stripped_diagnosability :=
+  fun h_disp h_strip =>
+    let ⟨hs, hp⟩ := C.header_asymmetry B P d h_disp h_strip
+    ⟨hs, hp, header_stripping_harder⟩
+
+/-- StrippedCtx: "stripped disputes are never sticky" contradicts header_asymmetry. -/
+theorem StrippedCtx_contradicts_HeaderPreservationAsymmetry (C : CommitmentsCtx PropLike Standard ErrorModel Provenance)
+    (B : Bubble) (P : PropLike)
+    (d : Deposit PropLike Standard ErrorModel Provenance)
+    (h_disp : dispute B P) (h_strip : header_stripped d)
+    (h_no_sticky : ¬sticky B P) : False :=
+  h_no_sticky (C.header_asymmetry B P d h_disp h_strip).1
 
 end EpArch
