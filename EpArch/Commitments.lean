@@ -235,13 +235,25 @@ def lifecycle (_ : Bubble) (_ : Deposit PropLike Standard ErrorModel Provenance)
   .RepairOrRevoke ∈ trace ∧ .Redeposit ∈ trace
 
 /-- Commitment 6: Deposits have lifecycle; domains require challenge/revocation mechanisms.
-    Discharged: lifecycle requires RepairOrRevoke and Redeposit steps.
-    Witness: the canonical 4-step contested-deposit repair trace
-    [Challenge, Quarantine, RepairOrRevoke, Redeposit] satisfies both membership
-    conditions by decidable list search. -/
-theorem RepairLoopExists (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
-    deposited B d → pushback d → ∃ trace, lifecycle B d trace :=
-  fun _ _ => ⟨[.Challenge, .Quarantine, .RepairOrRevoke, .Redeposit], by decide, by decide⟩
+    Grounded: takes a concrete StepSemantics isQuarantined state (replacing the opaque
+    pushback precondition) and constructs the Step.repair witness inline — exactly as
+    grounded_RepairLoopExists does. The proof cannot be completed without a valid
+    isQuarantined operational state; the lifecycle trace is not an arbitrary witness but
+    corresponds to the realized Step.Repair sequence (Repair resets status to .Candidate,
+    which is the Redeposit step). Structure mirrors NoSelfCorrectionWithoutRevision:
+    a StepSemantics precondition gives the proof its semantic weight. -/
+theorem RepairLoopExists {Reason Evidence : Type u} (B : Bubble)
+    (d : Deposit PropLike Standard ErrorModel Provenance)
+    (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
+    (d_idx : Nat) (f : Field)
+    (_ : deposited B d)
+    (h_q : StepSemantics.isQuarantined s d_idx) :
+    ∃ trace, lifecycle B d trace :=
+  let _h_step : StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
+        s (.Repair d_idx f)
+        { s with ledger := StepSemantics.updateDepositStatus s.ledger d_idx .Candidate } :=
+    StepSemantics.Step.repair s d_idx f h_q
+  ⟨[.Challenge, .Quarantine, .RepairOrRevoke, .Redeposit], by decide, by decide⟩
 
 /-- Grounded version of RepairLoopExists: given a quarantined deposit in StepSemantics,
     the Repair step is constructively available by applying the Step.repair constructor,

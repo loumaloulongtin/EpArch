@@ -141,47 +141,58 @@ opaque consensus : Bubble → PropLike → Prop
     Postcondition: header attached; last_validated timestamp set
     Note: The acceptance step is split into Validate_B (evidence → header)
     and Accept_B (header → ledger entry) for finer-grained lifecycle control.
-    Discharged: sets status to Validated, preserving all header fields. -/
+    Grounded: guards on d.status = .Candidate — only transitions when the precondition
+    holds, returning d unchanged otherwise. Proof uses if_pos on the precondition. -/
 def Validate_B (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
-    Deposit PropLike Standard ErrorModel Provenance := { d with status := .Validated }
+    Deposit PropLike Standard ErrorModel Provenance :=
+  if d.status = .Candidate then { d with status := .Validated } else d
 
 /-- Accept_B: Validated → Deposited(meta)
     Precondition: bubble acceptance function satisfied
     Postcondition: ledger entry created; ACL instantiated; export class assigned
-    Discharged: sets status to Deposited, making the deposit withdrawable. -/
+    Grounded: guards on d.status = .Validated — only transitions to Deposited when the
+    deposit has passed validation; returns d unchanged otherwise. -/
 def Accept_B (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
-    Deposit PropLike Standard ErrorModel Provenance := { d with status := .Deposited }
+    Deposit PropLike Standard ErrorModel Provenance :=
+  if d.status = .Validated then { d with status := .Deposited } else d
 
 /-- Challenge_B: Deposited → Quarantined(field)
     Precondition: contestation channel open; challenger specifies field
     Postcondition: withdrawal/export permissions tightened; repair clock starts
-    Discharged: sets status to Quarantined (challenge suspends the deposit). -/
+    Grounded: guards on d.status = .Deposited — only active deposits can be
+    challenged; returns d unchanged otherwise. -/
 def Challenge_B (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) (f : Field) :
-    Deposit PropLike Standard ErrorModel Provenance := { d with status := .Quarantined }
+    Deposit PropLike Standard ErrorModel Provenance :=
+  if d.status = .Deposited then { d with status := .Quarantined } else d
 
 /-- Repair_B: Quarantined → Candidate(S',E',V')
     Precondition: new evidence addresses challenged field
     Postcondition: updated header; returns to Candidate for revalidation
-    Discharged: resets status to Candidate (re-enters the validation cycle). -/
+    Grounded: guards on d.status = .Quarantined — only quarantined deposits
+    can be repaired; returns d unchanged otherwise. -/
 def Repair_B (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
-    Deposit PropLike Standard ErrorModel Provenance := { d with status := .Candidate }
+    Deposit PropLike Standard ErrorModel Provenance :=
+  if d.status = .Quarantined then { d with status := .Candidate } else d
 
 /-- Revoke_B: Quarantined or Deposited → Revoked
     Precondition: repair failed OR challenge upheld OR constraint-surface disconfirmation
     Postcondition: revocation propagation; marked non-withdrawable
-    Note: Permits Revoke from both Quarantined and Deposited, allowing
-    direct revocation without requiring a prior challenge step.
-    Discharged: sets status to Revoked (permanently removed from circulation). -/
+    Note: Permits Revoke from both Quarantined and Deposited.
+    Grounded: guards on d.status = .Quarantined ∨ d.status = .Deposited — the disjunction
+    is decidable via DepositStatus.DecidableEq; returns d unchanged otherwise. -/
 def Revoke_B (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
-    Deposit PropLike Standard ErrorModel Provenance := { d with status := .Revoked }
+    Deposit PropLike Standard ErrorModel Provenance :=
+  if d.status = .Quarantined ∨ d.status = .Deposited then { d with status := .Revoked } else d
 
 /-- Restore_B: Revoked → Candidate
     Precondition: new evidence reopens case
     Postcondition: starts fresh validation cycle
     Note: Extension operator for post-revocation re-entry into the lifecycle.
-    Discharged: resets status to Candidate (opens a fresh validation cycle). -/
+    Grounded: guards on d.status = .Revoked — only revoked deposits can be
+    restored; returns d unchanged otherwise. -/
 def Restore_B (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
-    Deposit PropLike Standard ErrorModel Provenance := { d with status := .Candidate }
+    Deposit PropLike Standard ErrorModel Provenance :=
+  if d.status = .Revoked then { d with status := .Candidate } else d
 
 /-- Export_B_C: DepositState_B → ImportState_C
     Precondition: revalidation under C's standards OR TrustBridge(B,C)
@@ -202,32 +213,79 @@ def Import_C (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) 
 
 /-! ## Operator Status Transitions -/
 
-/-- Status after validation.
-    Discharged: Validate_B B d := { d with status := .Validated }, so status = .Validated by rfl. -/
+/-- Status after validation: the precondition gates the if-branch in Validate_B.
+    Proof: unfold the guarded definition, then rw [if_pos h] activates the then-branch
+    and rfl closes { d with status := .Validated }.status = .Validated. -/
 theorem validate_produces_validated (B : Bubble)
     (d : Deposit PropLike Standard ErrorModel Provenance) :
-    d.status = .Candidate → (Validate_B B d).status = .Validated := fun _ => rfl
+    d.status = .Candidate → (Validate_B B d).status = .Validated := by
+  intro h; unfold Validate_B; rw [if_pos h]
 
-/-- Status after acceptance.
-    Discharged: Accept_B B d := { d with status := .Deposited }, so status = .Deposited by rfl. -/
+/-- Status after acceptance: the precondition gates the if-branch in Accept_B. -/
 theorem accept_produces_deposited (B : Bubble)
     (d : Deposit PropLike Standard ErrorModel Provenance) :
-    d.status = .Validated → (Accept_B B d).status = .Deposited := fun _ => rfl
+    d.status = .Validated → (Accept_B B d).status = .Deposited := by
+  intro h; unfold Accept_B; rw [if_pos h]
 
-/-- Status after challenge.
-    Discharged: Challenge_B B d f := { d with status := .Quarantined }, so status = .Quarantined by rfl. -/
+/-- Status after challenge: the precondition gates the if-branch in Challenge_B. -/
 theorem challenge_produces_quarantined (B : Bubble)
     (d : Deposit PropLike Standard ErrorModel Provenance) (f : Field) :
-    d.status = .Deposited → (Challenge_B B d f).status = .Quarantined := fun _ => rfl
+    d.status = .Deposited → (Challenge_B B d f).status = .Quarantined := by
+  intro h; unfold Challenge_B; rw [if_pos h]
 
-/-- Status after revocation.
-    Discharged: Revoke_B B d := { d with status := .Revoked }, so status = .Revoked by rfl.
-    Precondition (Quarantined ∨ Deposited) is preserved in the signature for API compatibility
-    but is not needed by the proof — revocation is unconditional in the concrete witness. -/
+/-- Status after repair: the precondition gates the if-branch in Repair_B. -/
+theorem Repair_B_produces_candidate (B : Bubble)
+    (d : Deposit PropLike Standard ErrorModel Provenance) :
+    d.status = .Quarantined → (Repair_B B d).status = .Candidate := by
+  intro h; unfold Repair_B; rw [if_pos h]
+
+/-- Status after revocation: the disjunctive precondition gates the if-branch in Revoke_B.
+    The disjunction is decidable because DepositStatus derives DecidableEq;
+    if_pos genuinely uses h — the proof cannot discard it. -/
 theorem revoke_produces_revoked (B : Bubble)
     (d : Deposit PropLike Standard ErrorModel Provenance) :
     d.status = .Quarantined ∨ d.status = .Deposited →
-    (Revoke_B B d).status = .Revoked := fun _ => rfl
+    (Revoke_B B d).status = .Revoked := by
+  intro h; unfold Revoke_B; rw [if_pos h]
+
+/-- Status after restoration: the precondition gates the if-branch in Restore_B. -/
+theorem restore_produces_candidate (B : Bubble)
+    (d : Deposit PropLike Standard ErrorModel Provenance) :
+    d.status = .Revoked → (Restore_B B d).status = .Candidate := by
+  intro h; unfold Restore_B; rw [if_pos h]
+
+/-! ## Lifecycle Pipeline Theorems -/
+
+-- These composition theorems chain individual operator steps to prove the full lifecycle
+-- sequence is internally consistent. Each step's postcondition is exactly the next
+-- step's precondition, so no discharge is coincidental.
+
+/-- Validation pipeline: Candidate → Validated → Deposited.
+    Composes validate_produces_validated with accept_produces_deposited:
+    the Validated postcondition of Validate_B is precisely the precondition of Accept_B. -/
+theorem validate_accept_pipeline (B : Bubble)
+    (d : Deposit PropLike Standard ErrorModel Provenance) :
+    d.status = .Candidate → (Accept_B B (Validate_B B d)).status = .Deposited :=
+  fun h => accept_produces_deposited B (Validate_B B d) (validate_produces_validated B d h)
+
+/-- Challenge-repair pipeline: Deposited → Quarantined → Candidate.
+    Composes challenge_produces_quarantined with repair_produces_candidate:
+    the Quarantined postcondition of Challenge_B is precisely the precondition of Repair_B. -/
+theorem challenge_repair_pipeline (B : Bubble)
+    (d : Deposit PropLike Standard ErrorModel Provenance) (f : Field) :
+    d.status = .Deposited → (Repair_B B (Challenge_B B d f)).status = .Candidate :=
+  fun h => Repair_B_produces_candidate B (Challenge_B B d f) (challenge_produces_quarantined B d f h)
+
+/-- Full contested-deposit pipeline: Candidate → Validated → Deposited → Quarantined → Candidate.
+    Composes validate_accept_pipeline with challenge_repair_pipeline over the complete
+    four-operator lifecycle sequence. No step discharges its precondition by coincidence:
+    each postcondition is structurally required by the next operator's guard. -/
+theorem full_lifecycle_pipeline (B : Bubble)
+    (d : Deposit PropLike Standard ErrorModel Provenance) (f : Field) :
+    d.status = .Candidate →
+    (Repair_B B (Challenge_B B (Accept_B B (Validate_B B d)) f)).status = .Candidate :=
+  fun h => challenge_repair_pipeline B (Accept_B B (Validate_B B d)) f
+             (validate_accept_pipeline B d h)
 
 
 /-! ## Bubble Hygiene -/
