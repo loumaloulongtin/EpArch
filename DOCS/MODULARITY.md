@@ -62,7 +62,19 @@ They are not bundled — disabling one constraint does not affect the others.
 
 **Relation to world bundles:** `adversarial_pressure` is downstream of `W_lies_possible` (lies possible + imperfect gate → adversarial deposits pass). They operate at different layers and are not interchangeable.
 
-**Gap:** None for the forcing layer itself. The theorems already compose modularly.
+**Gap:** ✅ Closed by `Meta/Modular.lean`. The two previously missing pieces are now proved:
+
+1. **`PartialWellFormed W S`** — a `WellFormed`-fragment type parameterized by a `ConstraintSubset` (6-Bool vector). For each constraint X with `S.X = false`, nothing is required. For `S.X = true`, the biconditional `handles_X W ↔ HasFeature_X W` is required. `WellFormed W ↔ PartialWellFormed W allConstraints`.
+
+2. **`modular`** — the universally-quantified meta-theorem:
+   ```
+   ∀ (S : ConstraintSubset) (W : WorkingSystem),
+     PartialWellFormed W S →
+       (S.distributed = true → handles_distributed_agents W → HasBubbles W) ∧ ...
+   ```
+   This is a machine-checked proof, not a structural observation. Dropping constraint X = setting `S.X := false`; the X-conjunct becomes vacuously true.
+
+3. **`wellformed_is_modular`** — every fully well-formed system is modular on every constraint subset.
 
 ---
 
@@ -168,7 +180,7 @@ This is the real Cluster C result — not just the competition gate but the full
 | Layer | Mechanism | Current status | Certifying file |
 |---|---|---|---|
 | World bundles (`W_*`) | Explicit hypothesis — not providing proof disables | ✅ Complete | `WorldCtx.lean`, `AdversarialObligations.lean` |
-| Constraints (6 forcing results) | Independent conjuncts — cherry-pick freely | ✅ Complete | `Minimality.lean` |
+| Constraints (6 forcing results) | Independent conjuncts + `PartialWellFormed`/`modular` meta-theorem | ✅ Complete | `Minimality.lean`, `Meta/Modular.lean` |
 | `PaperFacing` / competition gate | `transport_core` + `sub_revision_safety` | ✅ Complete | `RevisionSafety.lean`, `Modularity.lean` |
 | Health goals (5 predicates) | `CoreModel`-parameterized + individual transport theorems | ✅ Complete | `Health.lean`, `Meta/TheoremTransport.lean` |
 | Main theorem library (109+) | Four-part schema: CommitmentsCtx transport, structural unconditional, LTS-universal operational, all-five-health-goals bank bridge | ✅ Complete | `Meta/Tier4Transport.lean` |

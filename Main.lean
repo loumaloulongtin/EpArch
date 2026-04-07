@@ -154,6 +154,7 @@ import EpArch.Meta.TheoryCoreClaim  -- Optional stretch: theory_core claim token
 import EpArch.Meta.TheoremTransport  -- Generic theorem transport schema (Tier 3 closure)
 import EpArch.Meta.Tier4Transport    -- Main theorem library transport (Tier 4 closure)
 import EpArch.Modularity  -- Lattice-stability: graceful scale-down + sub-level RevisionSafety
+import EpArch.Meta.Modular     -- Modularity meta-theorem: ∀ S ⊆ constraints, projection_valid S
 
 def main : IO Unit :=
   IO.println s!"EpArch: Epistemic Architecture Formalization"

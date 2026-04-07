@@ -1,6 +1,6 @@
 # Theorem Inventory
 
-This document catalogs **500** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
+This document catalogs **505** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
 
 **What the architecture claims:** Decentralized epistemic authorization requires specific structural mechanisms — a lifecycle with type-separated stages, header-preserving export, a revision loop, temporal validity, and a Bank substrate. These aren't design preferences; they are forced by the combination of agent constraints and system health goals.
 
@@ -730,7 +730,7 @@ $$\text{PRP} \Rightarrow \neg\exists t_{\text{final}}.\, \forall t \geq t_{\text
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
 | `tier4_transport_pack` | Meta/Tier4Transport.lean | Cluster A ∧ Cluster B ∧ Cluster C (legacy) | Legacy Tier 4 certification |
-| `tier4_full_pack` | Meta/Tier4Transport.lean | CommitmentsCtx ∧ SEV ∧ LTS-withdrawal ∧ SafeWithdrawal ∧ ReliableExport ∧ SoundDeposits ∧ SelfCorrection | Headline four-cluster Tier 4 certification |
+| `tier4_full_pack` | Meta/Tier4Transport.lean | CommitmentsCtx ∧ SEV ∧ LTS-withdrawal ∧ SafeWithdrawal ∧ ReliableExport ∧ SoundDeposits ∧ SelfCorrection ∧ universal-corrigibility | Headline four-cluster Tier 4 certification (8 conjuncts) |
 
 ### Supporting Definitions
 
@@ -1014,3 +1014,46 @@ $$\text{ModularityPack} := \text{GracefulDegradation} \land \text{SubRevisionSaf
 | `NoSelfCorrection` | Modularity.lean | Sub-bundle predicate: no bubble self-corrects |
 | `SubBundle` | Modularity.lean | CoreModel + active SubGoal predicate + satisfaction witness |
 | `OdometerModel` | Modularity.lean | Concrete sub-bundle: one bubble, append-only, SoundDepositsGoal only |
+
+---
+
+## Bucket 27: Modularity Meta-Theorem — ∀ S ⊆ Constraints, projection_valid S
+
+**Paper Role:** Machine-certifies that EpArch is fully modular: there exists a single
+universally-quantified theorem over all subsets of the six constraints, and a
+`PartialWellFormed` type that lets users opt into exactly k ≤ 6 constraints.
+
+**File:** `Meta/Modular.lean`
+
+### Definitions
+
+| Definition | File | Purpose |
+|------------|------|---------|
+| `ConstraintSubset` | Meta/Modular.lean | 6-Bool vector selecting which constraints are active |
+| `PartialWellFormed W S` | Meta/Modular.lean | Fragment of WellFormed for subset S; requires only the biconditionals for selected constraints |
+| `allConstraints` | Meta/Modular.lean | `⟨true,true,true,true,true,true⟩` — full WellFormed recovered |
+| `noConstraints` | Meta/Modular.lean | `⟨false,false,false,false,false,false⟩` — nothing required |
+
+### Theorems
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `partial_no_constraints` | Meta/Modular.lean | `PartialWellFormed W noConstraints` holds for every W | Base case: empty subset |
+| `wellformed_implies_partial` | Meta/Modular.lean | `WellFormed W → ∀ S, PartialWellFormed W S` | Full → partial for any subset |
+| `partial_all_is_wellformed` | Meta/Modular.lean | `PartialWellFormed W allConstraints → WellFormed W` | Partial at full subset → full |
+| `modular` | Meta/Modular.lean | `∀ S W, PartialWellFormed W S → projection_valid S W` | **The meta-theorem** |
+| `wellformed_is_modular` | Meta/Modular.lean | `∀ S W, WellFormed W → projection_valid S W` | Corollary: WF systems modular on every subset |
+
+### Math Form
+
+$$\text{PartialWellFormed}(W, S) :\equiv \bigwedge_{X \in S} (\text{handles}_X(W) \leftrightarrow \text{HasFeature}_X(W))$$
+
+$$\texttt{modular}: \forall S \subseteq \text{Constraints},\; \forall W,\; \text{PartialWellFormed}(W, S) \Rightarrow \bigwedge_{X \in S} (\text{handles}_X(W) \Rightarrow \text{HasFeature}_X(W))$$
+
+$$\text{WellFormed}(W) \iff \text{PartialWellFormed}(W, \text{allConstraints})$$
+
+### Design Note
+
+Dropping constraint X = setting `S.X := false`. The X-conjunct in `modular`'s conclusion
+becomes `false = true → ...`, which is vacuously true. The forcing theorems for all
+other selected constraints remain live implications backed by the required biconditionals.

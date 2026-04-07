@@ -1,6 +1,6 @@
 # EpArch Lean Formalization — Documentation Index
 
-This folder documents the Lean formalization of the Epistemic Architecture (EpArch) framework — 500 proved theorems, 0 axiom declarations, zero sorries.
+This folder documents the Lean formalization of the Epistemic Architecture (EpArch) framework — 505 proved theorems, 0 axiom declarations, zero sorries.
 
 **The core claim:** lifecycle gates, header-preserving export, a revision loop, and temporal validity are not design choices. They are *forced* by the combination of agent constraints (imperfect agents face permanent challenge pressure) and system health goals (safe withdrawal, reliable export, self-correction). The files below are the machine-checked record of that forcing argument.
 
