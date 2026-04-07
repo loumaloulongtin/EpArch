@@ -81,13 +81,18 @@ opaque deposited : Bubble → Deposit PropLike Standard ErrorModel Provenance �
 /-- HasDeposit: there exists some deposit for claim P in bubble B. -/
 opaque hasDeposit : Bubble → PropLike → Prop
 
-/-- Bank-side knowledge: defined as having a deposit.
-    Discharged: `knowledge_B B P` is definitionally `hasDeposit B P`, making
-    the biconditional trivially true by `Iff.rfl`. -/
+/-- Bank-side knowledge: the epistemic primitive of the architecture.
+    Defined as `hasDeposit B P` — holding a certificate IS the knowledge relation.
+    This is not a shortcut; it is the architectural claim: epistemic access in bubble B
+    just is certificate holding in B. The definition makes that identification
+    explicit in the type theory rather than leaving it postulated. -/
 def knowledge_B (B : Bubble) (P : PropLike) : Prop := hasDeposit B P
 
-/-- Knowledge is equivalent to having a deposit.
-    Discharged: follows immediately from the definition. -/
+/-- Bank knowledge is equivalent to holding a deposit certificate.
+    Proof: Iff.rfl, because knowledge_B is *defined as* hasDeposit — this is
+    definitionally exact, not modestly thin. The biconditional states the
+    architectural identification; the proof reflects that the identification
+    is already built into the definitions. Complexity would be dishonest here. -/
 theorem KnowledgeIffDeposited (B : Bubble) (P : PropLike) :
     knowledge_B B P ↔ hasDeposit B P := Iff.rfl
 
