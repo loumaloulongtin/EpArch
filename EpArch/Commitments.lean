@@ -198,14 +198,19 @@ axiom RedeemabilityExternal (B : Bubble) (d : Deposit PropLike Standard ErrorMod
 
 /-- Commitment 4b: Consensus alone doesn't create redeemability.
 
-    If redeemability were by consensus alone, then consensus would suffice.
-    But bubbles CAN agree on non-redeemable claims (conspiracy theories, etc.).
-    Therefore, consensus alone doesn't suffice. -/
-axiom by_consensus_creates_redeemability (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
-    by_consensus_alone (redeemable d) → consensus B d.P → redeemable d
-
+    Axiom: consensus B d.P entails that redeemability cannot hold by
+    consensus alone — the constraint surface is always an independent factor. -/
 axiom ConsensusNotSufficient (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
     consensus B d.P → ¬(by_consensus_alone (redeemable d))
+
+/-- Redeemability by consensus alone would still require consensus.
+    Discharged: the premise by_consensus_alone (redeemable d) is vacuously
+    false whenever consensus B d.P holds (by ConsensusNotSufficient), so
+    the implication is trivially satisfied by contradiction. -/
+theorem by_consensus_creates_redeemability (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
+    by_consensus_alone (redeemable d) → consensus B d.P → redeemable d := by
+  intro h_alone h_consensus
+  exact absurd h_alone (ConsensusNotSufficient B d h_consensus)
 
 
 /-! ## Commitment 5: Export Gating -/
