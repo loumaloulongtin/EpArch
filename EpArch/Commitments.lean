@@ -259,38 +259,30 @@ def lifecycle (_ : Bubble) (_ : Deposit PropLike Standard ErrorModel Provenance)
   .RepairOrRevoke ∈ trace ∧ .Redeposit ∈ trace
 
 /-- Commitment 6: Deposits have lifecycle; domains require challenge/revocation mechanisms.
-    This is a constructive witness theorem: given a concrete isQuarantined state in
-    StepSemantics, it constructs the Step.repair witness inline and then supplies the
-    explicit trace [Challenge, Quarantine, RepairOrRevoke, Redeposit] as the lifecycle
-    witness. The proof cannot be completed without a valid isQuarantined operational
-    state (the Step.repair let-binding is type-checked), which makes the precondition
-    genuinely load-bearing.
-    Note: the real semantic content — that repair resets the deposit to Candidate and
-    forces it back through the validation cycle — lives in grounded_RepairLoopExists
-    and repair_produces_candidate (StepSemantics). This theorem witnesses that such
-    a trace exists; it does not derive its conclusion from a deep emergent property
-    of the system in the way NoSelfCorrectionWithoutRevision does. -/
+    Proven as a conjunction: the abstract lifecycle trace is exhibited alongside a concrete
+    Step.repair from the operational LTS. h_q (isQuarantined) is genuinely load-bearing:
+    it is passed directly to Step.repair, whose constructor requires it as a precondition.
+    Removing h_q causes the second conjunct to fail — it is structurally necessary,
+    not merely type-checked and discarded. -/
 theorem RepairLoopExists {Reason Evidence : Type u} (B : Bubble)
     (d : Deposit PropLike Standard ErrorModel Provenance)
     (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
     (d_idx : Nat) (f : Field)
     (_ : deposited B d)
     (h_q : StepSemantics.isQuarantined s d_idx) :
-    ∃ trace, lifecycle B d trace :=
-  let _h_step : StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
-        s (.Repair d_idx f)
-        { s with ledger := StepSemantics.updateDepositStatus s.ledger d_idx .Candidate } :=
-    StepSemantics.Step.repair s d_idx f h_q
-  ⟨[.Challenge, .Quarantine, .RepairOrRevoke, .Redeposit], by decide, by decide⟩
+    (∃ trace, lifecycle B d trace) ∧
+    (∃ s', StepSemantics.Step (Reason := Reason) (Evidence := Evidence) s (.Repair d_idx f) s' ∧
+           s'.ledger = StepSemantics.updateDepositStatus s.ledger d_idx .Candidate) := by
+  constructor
+  · exact ⟨[.Challenge, .Quarantine, .RepairOrRevoke, .Redeposit], by decide, by decide⟩
+  · exact ⟨{ s with ledger := StepSemantics.updateDepositStatus s.ledger d_idx .Candidate },
+      StepSemantics.Step.repair s d_idx f h_q, rfl⟩
 
-/-- Grounded version of RepairLoopExists: given a quarantined deposit in StepSemantics,
-    the Repair step is constructively available by applying the Step.repair constructor,
-    whose only precondition is isQuarantined.
-    Postcondition: the repair step produces a state where the deposit has .Candidate status,
-    forcing it back through the full validation cycle.
-    Proof: direct constructor application + rfl on the concrete state.
-    This grounds RepairLoopExists in the same way NoSelfCorrectionWithoutRevision is
-    grounded: both extract structural facts from the Step inductive itself. -/
+/-- Standalone operational grounding: Step.repair is available from any quarantined state,
+    and resets the deposit to Candidate status.
+    The second conjunct of RepairLoopExists above is a direct application of this theorem's
+    content; grounded_RepairLoopExists is kept as a standalone lemma for contexts that need
+    only the Step-level fact without the lifecycle-trace component. -/
 theorem grounded_RepairLoopExists
     {Reason Evidence : Type u}
     (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
