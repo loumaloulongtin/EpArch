@@ -100,6 +100,7 @@ Layer 6 (Witness):    WorldWitness, ConcreteLedgerModel, Realizer, Feasibility
 Layer 7 (Adversarial): AdversarialBase, AdversarialObligations
 Layer 8 (Meta):       Meta/*
 Layer 9 (Surface):    PaperFacing
+Layer 10 (Modularity): Modularity
 ```
 
 ## Build Surfaces
@@ -150,6 +151,7 @@ import EpArch.Realizer  -- Feasibility: System realizer interface
 import EpArch.Feasibility  -- Feasibility: Joint non-vacuity theorem
 import EpArch.Meta.FalsifiableNotAuthorizable  -- Meta-status proof pack
 import EpArch.Meta.TheoryCoreClaim  -- Optional stretch: theory_core claim token
+import EpArch.Modularity  -- Lattice-stability: graceful scale-down + sub-level RevisionSafety
 
 def main : IO Unit :=
   IO.println s!"EpArch: Epistemic Architecture Formalization"
