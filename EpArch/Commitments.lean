@@ -189,23 +189,28 @@ theorem redeemable_implies_contact_and_discriminating
   intro ⟨vp, h_dep, _⟩
   exact ⟨⟨vp.surface, h_dep ▸ vp.h_contact⟩, ⟨vp.surface, h_dep ▸ vp.h_discrim⟩⟩
 
-opaque by_consensus_alone : Prop → Prop
-
 /-- Commitment 4b: Consensus alone doesn't create redeemability.
 
-    Axiom: consensus B d.P entails that redeemability cannot hold by
-    consensus alone — the constraint surface is always an independent factor. -/
-axiom ConsensusNotSufficient (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
-    consensus B d.P → ¬(by_consensus_alone (redeemable d))
+    Axiom: there exists a scenario where bubble B has consensus on d.P
+    but d is not redeemable — the constraint surface is an independent factor.
 
-/-- Redeemability by consensus alone would still require consensus.
-    Discharged: the premise by_consensus_alone (redeemable d) is vacuously
-    false whenever consensus B d.P holds (by ConsensusNotSufficient), so
-    the implication is trivially satisfied by contradiction. -/
-theorem by_consensus_creates_redeemability (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
-    by_consensus_alone (redeemable d) → consensus B d.P → redeemable d := by
-  intro h_alone h_consensus
-  exact absurd h_alone (ConsensusNotSufficient B d h_consensus)
+    Uses does_not_imply (same pattern as TractionAuthorizationSplit):
+    concrete semantic content rather than an opaque wrapper predicate.
+    This is falsifiable: a WeakCtx where consensus B d.P → redeemable d for
+    all d would contradict it immediately. -/
+axiom ConsensusNotSufficient (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
+    does_not_imply (consensus B d.P) (redeemable d)
+
+/-- Redeemability requires more than consensus: there always exists a consensus scenario
+    where the deposit fails redeemability (lacks a VerificationPath witness).
+    The constraint surface is a genuinely independent requirement, not derivable
+    from agreement alone — consensus in B on d.P leaves open whether the external
+    evidence predicates (path_route_exists, contact_was_made, verdict_discriminates)
+    can be satisfied. -/
+theorem redeemability_requires_more_than_consensus (B : Bubble)
+    (d : Deposit PropLike Standard ErrorModel Provenance) :
+    ∃ (_ : consensus B d.P), ¬redeemable d :=
+  ConsensusNotSufficient B d
 
 
 /-! ## Commitment 5: Export Gating -/
