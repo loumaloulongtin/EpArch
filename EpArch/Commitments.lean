@@ -122,65 +122,72 @@ theorem SEVFactorization (d : Deposit PropLike Standard ErrorModel Provenance) :
 
 /-! ## Commitment 4: Redeemability External to Consensus -/
 
-/-- A verification path: connects deposit to constraint surface. -/
-structure VerificationPath where
-  deposit : Deposit PropLike Standard ErrorModel Provenance
-  surface : ConstraintSurface
-  path_exists : Bool
-  contact_made : Bool
-  discriminating : Bool
+/-- Three opaque evidence predicates for VerificationPath.
+    Being opaque, these cannot be constructed inside the formalization by
+    trivial means -- external evidence is required to produce witnesses. -/
+opaque path_route_exists : Deposit PropLike Standard ErrorModel Provenance →
+    ConstraintSurface → Prop
+opaque contact_was_made : Deposit PropLike Standard ErrorModel Provenance →
+    ConstraintSurface → Prop
+opaque verdict_discriminates : Deposit PropLike Standard ErrorModel Provenance →
+    ConstraintSurface → Prop
 
-/-- Redeemable: the deposit can be "cashed in" against the constraint surface. -/
+/-- A verification path: connects deposit to constraint surface.
+    The three evidence fields carry opaque Prop witnesses -- they cannot be
+    satisfied by constructing a record with trivially true Bool fields.
+    External evidence is required to inhabit path_route_exists, contact_was_made,
+    and verdict_discriminates. -/
+structure VerificationPath where
+  deposit   : Deposit PropLike Standard ErrorModel Provenance
+  surface   : ConstraintSurface
+  h_path    : path_route_exists deposit surface
+  h_contact : contact_was_made deposit surface
+  h_discrim : verdict_discriminates deposit surface
+
+/-- Redeemable: the deposit can be “cashed in” against the constraint surface.
+    Requires a full VerificationPath witness -- opaque evidence fields ensure
+    this cannot be trivially satisfied. -/
 def redeemable (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
   ∃ (vp : VerificationPath (PropLike := PropLike) (Standard := Standard)
       (ErrorModel := ErrorModel) (Provenance := Provenance)),
-    vp.deposit = d ∧
-    vp.surface = d.h.redeem.cs ∧
-    vp.path_exists ∧
-    vp.contact_made ∧
-    vp.discriminating
+    vp.deposit = d ∧ vp.surface = d.h.redeem.cs
 
-/-- path_exists_for_deposit: a deposit has a VerificationPath where path_exists is set.
-    This is strictly WEAKER than redeemable: redeemable additionally requires surface
-    alignment, contact_made, and discriminating. A path can be structurally present
-    (the route exists) before the constraint surface has been fully contacted. -/
+/-- path_exists_for_deposit: a deposit has a route to some constraint surface.
+    Strictly WEAKER than redeemable: redeemable additionally requires the surface
+    to be d.h.redeem.cs and all evidence fields to be instantiated. -/
 def path_exists_for_deposit (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
-  ∃ (vp : VerificationPath (PropLike := PropLike) (Standard := Standard)
-      (ErrorModel := ErrorModel) (Provenance := Provenance)),
-    vp.deposit = d ∧ vp.path_exists
+  ∃ cs, path_route_exists (PropLike := PropLike) (Standard := Standard)
+      (ErrorModel := ErrorModel) (Provenance := Provenance) d cs
 
 /-- Redeemability implies that a verification path exists.
-    redeemable d provides a VerificationPath satisfying 5 conditions:
-    deposit identity, surface alignment, path_exists, contact_made, discriminating.
-    This theorem projects conditions 1 and 3 (deposit identity + path existence),
-    dropping surface alignment, contact, and discriminability. -/
+    Projects h_path from the VerificationPath witness, retyped over d via h_dep. -/
 theorem redeemable_implies_path (d : Deposit PropLike Standard ErrorModel Provenance) :
     redeemable d → path_exists_for_deposit d := by
-  intro ⟨vp, h_dep, _, h_pe, _, _⟩
-  exact ⟨vp, h_dep, h_pe⟩
+  intro ⟨vp, h_dep, _⟩
+  exact ⟨vp.surface, h_dep ▸ vp.h_path⟩
 
-/-- Redeemability implies surface alignment: the verification path is aimed at the
-    deposit’s own constraint surface, not an arbitrary one.
-    Projects condition 2 from the 5-condition redeemable witness. -/
+/-- Redeemability implies surface alignment: the verification path targets d's own
+    constraint surface, not an arbitrary one. -/
 theorem redeemable_implies_surface_aligned (d : Deposit PropLike Standard ErrorModel Provenance) :
     redeemable d → ∃ (vp : VerificationPath (PropLike := PropLike) (Standard := Standard)
         (ErrorModel := ErrorModel) (Provenance := Provenance)),
       vp.deposit = d ∧ vp.surface = d.h.redeem.cs := by
-  intro ⟨vp, h_dep, h_surf, _, _, _⟩
+  intro ⟨vp, h_dep, h_surf⟩
   exact ⟨vp, h_dep, h_surf⟩
 
-/-- Redeemability implies contact and discriminability: the constraint surface was
+/-- Redeemability implies contact and discriminating evidence: the constraint surface was
     actually reached and returned a claim-specific verdict.
-    Projects conditions 4 and 5 from the 5-condition redeemable witness.
-    These are the conditions path_exists_for_deposit does NOT provide —
-    establishing the strict gap between structural path and genuine redeemability. -/
+    These conditions are absent from path_exists_for_deposit, establishing the strict
+    gap between structural path and genuine redeemability. -/
 theorem redeemable_implies_contact_and_discriminating
     (d : Deposit PropLike Standard ErrorModel Provenance) :
-    redeemable d → ∃ (vp : VerificationPath (PropLike := PropLike) (Standard := Standard)
-        (ErrorModel := ErrorModel) (Provenance := Provenance)),
-      vp.deposit = d ∧ vp.contact_made ∧ vp.discriminating := by
-  intro ⟨vp, h_dep, _, _, h_cm, h_disc⟩
-  exact ⟨vp, h_dep, h_cm, h_disc⟩
+    redeemable d →
+      (∃ cs, contact_was_made (PropLike := PropLike) (Standard := Standard)
+          (ErrorModel := ErrorModel) (Provenance := Provenance) d cs) ∧
+      (∃ cs, verdict_discriminates (PropLike := PropLike) (Standard := Standard)
+          (ErrorModel := ErrorModel) (Provenance := Provenance) d cs) := by
+  intro ⟨vp, h_dep, _⟩
+  exact ⟨⟨vp.surface, h_dep ▸ vp.h_contact⟩, ⟨vp.surface, h_dep ▸ vp.h_discrim⟩⟩
 
 opaque depends_on : Prop → ConstraintSurface → Prop
 opaque by_consensus_alone : Prop → Prop
