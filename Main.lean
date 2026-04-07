@@ -68,8 +68,8 @@ The formalization proves these claims:
    refinement, and safety preservation.
 5. **StepSemantics.lean** — The constructive operational semantics: SystemState,
    Action, Step relation, competition gate theorem.
-6. **Commitments.lean** — Eight architectural commitments (design requirements the
-   paper claims any epistemic system must satisfy).
+6. **Commitments.lean** — Eight architectural commitments (structural requirements
+   for conforming epistemic systems, expressed as fields of `CommitmentsCtx`).
 7. **Minimality.lean** — The convergence/impossibility theorems: constraints force
    features, removal breaks properties.
 8. **WorldCtx.lean** — Parametric world semantics: the interface through which

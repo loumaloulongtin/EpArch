@@ -6,7 +6,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 
 ## Build Surfaces
 
-| Surface | Entry Point | Axioms | Description |
+| Surface | Entry Point | Axiom decls | Description |
 |---------|-------------|--------|-------------|
 | **Paper-Facing** | `MainPaper.lean` | 0 | Only theorems cited by the paper |
 | **Full** | `Main.lean` | 0 | Full build |
@@ -73,7 +73,7 @@ For the full paper-section-to-Lean-artifact mapping (with math notation, A.# lab
 
 ### Key Files
 
-| Lean File | Role | Axioms |
+| Lean File | Role | Axiom decls |
 |-----------|------|--------|
 | `Basic.lean` | Core types (Claim, Agent, Bubble, Field, etc.) | 0 |
 | `Header.lean` | S/E/V header structure + Deposit records | 0 |

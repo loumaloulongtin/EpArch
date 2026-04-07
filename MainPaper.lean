@@ -9,7 +9,7 @@ It imports ONLY the paper-facing surface.
 | Surface | Import | Description |
 |---------|--------|-------------|
 | **Paper-Facing** | `MainPaper.lean` | Core-facing theorems only |
-| **Full** | `Main.lean` | Full build (same axioms, more modules) |
+| **Full** | `Main.lean` | Full build |
 
 ## What This Surface Includes
 

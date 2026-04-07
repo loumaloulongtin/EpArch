@@ -48,8 +48,6 @@ Key opaque primitives:
 |-----------|------|------|
 | `certainty_L` | Basic.lean | Agent-side certainty (Ladder top) |
 | `hasDeposit` / `deposited` | Bank.lean | Deposit membership predicates |
-| `reliance_level` | Bank.lean | Quantitative reliance |
-| `blast_radius` | Bank.lean | Impact spread of deposit failure |
 | `GlobalLedger` | Commitments.lean | Abstract ledger type |
 | `supports_innovation` / `supports_coordination` | Commitments.lean | Ledger capability predicates |
 | `dispute` / `sticky` / `proxy_battles` | Commitments.lean | Header-stripping consequence predicates |
@@ -70,8 +68,9 @@ guarded struct-update definitions. Each operator is grounded in
 `StepSemantics.lean` and witnessed by `ConcreteLedgerModel.lean`.
 
 `knowledge_B` is now a `def` (= `hasDeposit`); `KnowledgeIffDeposited` is
-proved as a theorem by `Iff.rfl`. Two behavioral theorems over opaque predicates
-(`success_driven_bypass`, `blast_radius_scales_with_reliance`) complete the surface.
+proved as a theorem by `Iff.rfl`. Two behavioral theorems over concrete definitions
+(`success_driven_bypass` over `reliance_level`; `blast_radius_scales_with_reliance` over `blast_radius`)
+ground the reliance/cascade surface in `DepositDynamics` fields.
 
 ### Structural Commitments (formerly up to 12 axioms → 0)
 
