@@ -26,14 +26,14 @@ Key theorem: `structural_theorems_unconditional`.
 
 Two sub-results:
 
-**§3b — LTS-Universal Operational Theorems**  
+**§3b — LTS-Universal Operational Theorems**
 The withdrawal/repair/submit theorems from `Theorems.lean` are Cluster-B-style:
 they hold for every `SystemState`/`Step` instance by virtue of constructor
 preconditions. No model parameter varies, so no transport is needed.
 
 Key theorem: `lts_theorems_step_universal`.
 
-**§3c — All Five Health Goals Transport**  
+**§3c — All Five Health Goals Transport**
 All five ∀-health goals (`SafeWithdrawalGoal`, `ReliableExportGoal`,
 `SoundDepositsGoal`, `SelfCorrectionGoal`, universal `CorrigibleLedgerGoal`)
 are preserved by any compatible extension of `ConcreteBankModel`.
@@ -361,13 +361,16 @@ theorem tier4_transport_pack
 
 /-- `tier4_full_pack` — complete Tier 4 transport certification.
 
-    Packages all three clusters:
+    Packages all four clusters:
     (1) CommitmentsCtx (Cluster A): four canonical forward theorems survive commitment extension.
-    (2) Structural + LTS-Universal (Cluster B extended): SEVFactorization and all
-        operational LTS theorems (withdrawal gates, repair, submit) are universally valid.
-    (3) All five health goals (Cluster C): SafeWithdrawalGoal, ReliableExportGoal,
-        SoundDepositsGoal, SelfCorrectionGoal, and corrigible revision all transport
-        through any compatible extension of ConcreteBankModel. -/
+    (2) Structural (Cluster B): SEVFactorization is unconditionally valid.
+        LTS-universal (B extended): withdrawal gates are universally valid for every Step.
+        (The full four-fact LTS pack is in `lts_theorems_step_universal`.)
+    (3) Four full ∀-health goals (Cluster C): SafeWithdrawalGoal, ReliableExportGoal,
+        SoundDepositsGoal, SelfCorrectionGoal transport through any Compatible extension.
+    (4) Universal corrigibility clause (Cluster C): the ∀-part of CorrigibleLedgerGoal
+        (hasRevision → revision preserves truth) also transports under plain Compatible.
+        (The ∃-part of CorrigibleLedgerGoal requires SurjectiveCompatible.) -/
 theorem tier4_full_pack
     {Extra : Prop} {Reason Evidence : Type}
     (CE : ExtCommitmentsCtx PropLike Standard ErrorModel Provenance Extra)
@@ -419,7 +422,12 @@ theorem tier4_full_pack
     -- (C3) SoundDepositsGoal transports
     SoundDepositsGoal (forget E_bank) ∧
     -- (C4) SelfCorrectionGoal (= PaperFacing) transports
-    SelfCorrectionGoal (forget E_bank) :=
+    SelfCorrectionGoal (forget E_bank) ∧
+    -- (C5) Universal CorrigibleLedgerGoal: hasRevision → revision preserves truth (∀-part)
+    --     The ∃-part requires SurjectiveCompatible; this is what Compatible alone guarantees.
+    (∀ B_E : (forget E_bank).sig.Bubble, (forget E_bank).ops.hasRevision B_E →
+     ∀ d_E d'_E : (forget E_bank).sig.Deposit,
+     (forget E_bank).ops.revise B_E d_E d'_E → (forget E_bank).ops.truth B_E d'_E) :=
   let lts   := @lts_theorems_step_universal PropLike Standard ErrorModel Provenance Reason Evidence
   let goals := concrete_bank_all_goals_transport
         truth_pred obs_pred verify_pred etime
@@ -431,6 +439,7 @@ theorem tier4_full_pack
    goals.1,
    goals.2.1,
    goals.2.2.1,
-   goals.2.2.2.1⟩
+   goals.2.2.2.1,
+   goals.2.2.2.2⟩
 
 end EpArch.Meta.Tier4Transport
