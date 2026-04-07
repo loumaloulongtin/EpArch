@@ -50,8 +50,6 @@ Key opaque primitives:
 | `hasDeposit` / `deposited` | Bank.lean | Deposit membership predicates |
 | `reliance_level` | Bank.lean | Quantitative reliance |
 | `blast_radius` | Bank.lean | Impact spread of deposit failure |
-| `success_driven_bypass` | Bank.lean | Behavioral claim over opaque reliance predicate |
-| `blast_radius_scales_with_reliance` | Bank.lean | Quantitative claim over opaque blast predicate |
 | `GlobalLedger` | Commitments.lean | Abstract ledger type |
 | `supports_innovation` / `supports_coordination` | Commitments.lean | Ledger capability predicates |
 | `dispute` / `sticky` / `proxy_battles` | Commitments.lean | Header-stripping consequence predicates |
@@ -73,8 +71,8 @@ guarded struct-update definitions. Each operator is grounded in
 `StepSemantics.lean` and witnessed by `ConcreteLedgerModel.lean`.
 
 `knowledge_B` is now a `def` (= `hasDeposit`); `KnowledgeIffDeposited` is
-proved as a theorem by `Iff.rfl`. Two behavioral claims remain as
-opaque-predicate theorems (`success_driven_bypass`, `blast_radius_scales_with_reliance`).
+proved as a theorem by `Iff.rfl`. Two behavioral theorems over opaque predicates
+(`success_driven_bypass`, `blast_radius_scales_with_reliance`) complete the surface.
 
 ### Structural Commitments (formerly up to 12 axioms → 0)
 

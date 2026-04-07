@@ -16,7 +16,7 @@ It imports ONLY the paper-facing surface.
 - **PaperFacing.lean** — Canonical exports for core-facing claims
   - Derived theorems (RevisionSafety, ScopeIrrelevance, Gates)
   - Conditional obligation theorems (World, AdversarialObligations)
-  - Specification axioms (Health, Invariants, Commitments)
+  - Health goals, structural invariants, and architectural commitments
 
 ## Axiom Declarations (Paper-Facing Surface)
 

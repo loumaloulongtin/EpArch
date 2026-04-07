@@ -193,9 +193,9 @@ lake build
 Select-String -Path "EpArch\*.lean", "EpArch\**\*.lean" -Pattern "^\s*sorry\b"
 # Expected: no output
 
-# Verify axiom count
+# Verify axiom declarations (expect 0)
 (Select-String -Path "EpArch\*.lean", "EpArch\**\*.lean" -Pattern "^axiom\s" | Measure-Object).Count
-# Expected: 35
+# Expected: 0
 
 # Verify ConcreteLedgerModel has no axioms
 Select-String -Path "EpArch\ConcreteLedgerModel.lean" -Pattern "^axiom\s"

@@ -63,7 +63,7 @@ The formalization proves these claims:
 2. **Header.lean** — The S/E/V/τ/acl/redeem header structure and observational
    completeness theorems.
 3. **Bank.lean** — Bank substrate: lifecycle operators (Validate, Challenge,
-   Repair, Revoke, etc.) as specification axioms.
+   Repair, Revoke, etc.) as concrete guarded definitions.
 4. **LTS.lean** — Generic labeled transition systems, traces, invariants,
    refinement, and safety preservation.
 5. **StepSemantics.lean** — The constructive operational semantics: SystemState,
