@@ -140,15 +140,23 @@ def redeemable (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
     vp.contact_made ∧
     vp.discriminating
 
-/-- path_exists_for_deposit: a deposit has a verification path.
-    Discharged: defined as `redeemable d` — a deposit has a path iff it is
-    redeemable (which is defined by the existence of a VerificationPath above). -/
-def path_exists_for_deposit (d : Deposit PropLike Standard ErrorModel Provenance) : Prop := redeemable d
+/-- path_exists_for_deposit: a deposit has a VerificationPath where path_exists is set.
+    This is strictly WEAKER than redeemable: redeemable additionally requires surface
+    alignment, contact_made, and discriminating. A path can be structurally present
+    (the route exists) before the constraint surface has been fully contacted. -/
+def path_exists_for_deposit (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
+  ∃ (vp : VerificationPath (PropLike := PropLike) (Standard := Standard)
+      (ErrorModel := ErrorModel) (Provenance := Provenance)),
+    vp.deposit = d ∧ vp.path_exists
 
-/-- Redeemability implies verification path exists.
-    Discharged: path_exists_for_deposit is defined as redeemable, so this is id. -/
+/-- Redeemability implies that a verification path exists.
+    Discharged: redeemable d provides a VerificationPath satisfying 5 conditions
+    (deposit identity, surface alignment, path_exists, contact_made, discriminating).
+    We project out deposit identity and path_exists, dropping the other three. -/
 theorem redeemable_implies_path (d : Deposit PropLike Standard ErrorModel Provenance) :
-    redeemable d → path_exists_for_deposit d := id
+    redeemable d → path_exists_for_deposit d := by
+  intro ⟨vp, h_dep, _, h_pe, _, _⟩
+  exact ⟨vp, h_dep, h_pe⟩
 
 opaque depends_on : Prop → ConstraintSurface → Prop
 opaque by_consensus_alone : Prop → Prop
@@ -171,14 +179,16 @@ axiom ConsensusNotSufficient (B : Bubble) (d : Deposit PropLike Standard ErrorMo
 
 /-! ## Commitment 5: Export Gating -/
 
-/-- reliable_export: a cross-bubble transfer that carries its gate certificate.
-    Discharged: defined as `exportDep B1 B2 d ∧ (Revalidate B2 B1 d ∨ TrustBridge B1 B2)` —
-    an export is reliable iff it occurred AND was gated (revalidation or trust bridge). -/
-def reliable_export (B1 B2 : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
-  exportDep B1 B2 d ∧ (Revalidate B2 B1 d ∨ TrustBridge B1 B2)
-
 def unreliable_export (B1 B2 : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
   exportDep B1 B2 d ∧ ¬Revalidate B2 B1 d ∧ ¬TrustBridge B1 B2
+
+/-- reliable_export: a cross-bubble transfer that is not demonstrably unreliable.
+    An export is reliable iff it occurred AND it is NOT the case that both gate
+    conditions are absent (i.e., it does not satisfy unreliable_export).
+    The complement-relative definition separates "export happened" from
+    "gate was absent": reliability is the negation of provable unreliability. -/
+def reliable_export (B1 B2 : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
+  exportDep B1 B2 d ∧ ¬unreliable_export B1 B2 d
 
 /-- Reliable export implies the deposit crossed the bubble boundary (exportDep).
     Discharged: first component of the reliable_export conjunction. -/
@@ -186,45 +196,49 @@ theorem reliable_implies_export (B1 B2 : Bubble) (d : Deposit PropLike Standard 
     reliable_export B1 B2 d → exportDep B1 B2 d := fun ⟨h, _⟩ => h
 
 /-- Reliable and unreliable export are mutually exclusive.
-    Discharged: if reliable, there is a gate (Revalidate ∨ TrustBridge); if unreliable,
-    both are absent — the gate cases are exhaustive and each contradicts its absence. -/
+    Proved: reliable_export embeds ¬unreliable_export, so the two are
+    definitionally contradictory: the negation in reliable_export directly
+    refutes the unreliable_export witness. -/
 theorem reliable_unreliable_exclusive (B1 B2 : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
-    reliable_export B1 B2 d → unreliable_export B1 B2 d → False := by
-  intro ⟨_, h_gate⟩ ⟨_, h_no_reval, h_no_trust⟩
-  cases h_gate with
-  | inl h_reval => exact h_no_reval h_reval
-  | inr h_trust => exact h_no_trust h_trust
+    reliable_export B1 B2 d → unreliable_export B1 B2 d → False :=
+  fun ⟨_, h_not_unrel⟩ h_unrel => h_not_unrel h_unrel
 
-/-- Commitment 5: Reliable export requires gating (revalidation or trust bridge). -/
+/-- Commitment 5: Reliable export requires gating (revalidation or trust bridge).
+    Proved: reliable_export excludes unreliable_export by definition. unreliable_export
+    requires ¬Revalidate ∧ ¬TrustBridge; so if neither Revalidate nor TrustBridge holds
+    we can construct an unreliable_export witness and derive False via h_not_unrel. -/
 theorem ExportGating (B1 B2 : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
     reliable_export B1 B2 d → (Revalidate B2 B1 d ∨ TrustBridge B1 B2) := by
-  intro h_reliable
-  have h_em := Classical.em (Revalidate B2 B1 d ∨ TrustBridge B1 B2)
-  cases h_em with
-  | inl h_gate => exact h_gate
-  | inr h_no_gate =>
-    have h_no_reval : ¬Revalidate B2 B1 d := fun hr => h_no_gate (Or.inl hr)
-    have h_no_trust : ¬TrustBridge B1 B2 := fun ht => h_no_gate (Or.inr ht)
-    have h_unreliable : unreliable_export B1 B2 d := by
-      unfold unreliable_export
-      exact ⟨reliable_implies_export B1 B2 d h_reliable, h_no_reval, h_no_trust⟩
-    exact absurd h_unreliable (fun hu => reliable_unreliable_exclusive B1 B2 d h_reliable hu)
+  intro ⟨h_exp, h_not_unrel⟩
+  cases Classical.em (Revalidate B2 B1 d) with
+  | inl h_reval => exact Or.inl h_reval
+  | inr h_no_reval =>
+    cases Classical.em (TrustBridge B1 B2) with
+    | inl h_trust => exact Or.inr h_trust
+    | inr h_no_trust =>
+      exact absurd ⟨h_exp, h_no_reval, h_no_trust⟩ h_not_unrel
 
 
 /-! ## Commitment 6: Repair Loop (Contestability) -/
 
 opaque pushback : Deposit PropLike Standard ErrorModel Provenance → Prop
 
-/-- lifecycle: every deposit trivially has a trace (possibly empty).
-    Discharged: defined as True, so any list of steps witnesses the existential. -/
+/-- lifecycle: a deposit trace that contains at least a repair and a re-entry step.
+    A trace constitutes a genuine repair loop only when RepairOrRevoke (the field-level
+    fix) and Redeposit (return to Candidate for revalidation) both appear. The empty
+    trace and traces missing either step do not witness the repair loop commitment. -/
 def lifecycle (_ : Bubble) (_ : Deposit PropLike Standard ErrorModel Provenance)
-    (_ : List LifecycleStep) : Prop := True
+    (trace : List LifecycleStep) : Prop :=
+  .RepairOrRevoke ∈ trace ∧ .Redeposit ∈ trace
 
 /-- Commitment 6: Deposits have lifecycle; domains require challenge/revocation mechanisms.
-    Discharged: lifecycle always holds (= True), so ⟨[], trivial⟩ witnesses. -/
+    Discharged: lifecycle requires RepairOrRevoke and Redeposit steps.
+    Witness: the canonical 4-step contested-deposit repair trace
+    [Challenge, Quarantine, RepairOrRevoke, Redeposit] satisfies both membership
+    conditions by decidable list search. -/
 theorem RepairLoopExists (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
     deposited B d → pushback d → ∃ trace, lifecycle B d trace :=
-  fun _ _ => ⟨[], trivial⟩
+  fun _ _ => ⟨[.Challenge, .Quarantine, .RepairOrRevoke, .Redeposit], by decide, by decide⟩
 
 /-- A domain reliably self-corrects if there exist system states and a trace
     demonstrating that an erroneous deposit was caught and removed (Deposited → Revoked)

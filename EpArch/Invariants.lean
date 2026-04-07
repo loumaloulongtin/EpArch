@@ -145,27 +145,38 @@ theorem challenge_requires_field_localization
 
 /-! ## Invariant 5: τ (TTL) finite for world-state deposits -/
 
-/-- World-state deposits must have finite TTL.
+/-- Maximum TTL for world-state (empirical / schedule / position) deposits.
+    365 time units corresponds to one year; empirical facts not refreshed
+    within this window are considered stale for banking purposes. -/
+def maxWorldStateTTL : Time := 365
 
-    Violation consequence: Staleness invisible — deposits about
-    changing facts persist past their validity window. -/
-opaque τ_is_finite : Time → Prop
+/-- τ_is_finite: a TTL value is within the world-state refresh bound.
+    Replaces the previous opaque declaration with a concrete upper-bound definition:
+    a TTL is "finite" (in the world-state sense) iff it is at most maxWorldStateTTL.
+    Structural deposits (proofs, definitions) have τ > 365 and are excluded. -/
+def τ_is_finite (t : Time) : Prop := t ≤ maxWorldStateTTL
 
-/-- deposit_kind: every deposit is classified as Structural by default.
-    Discharged: returns .Structural unconditionally — the conservative
-    (near-infinite TTL) class. Making the WorldState branch vacuously
-    unreachable discharges worldstate_requires_finite_τ below. -/
-def deposit_kind (_ : Deposit PropLike Standard ErrorModel Provenance) : DepositKind :=
-  .Structural
+/-- deposit_kind: classify a deposit by its TTL characteristic.
+    Deposits with τ ≤ maxWorldStateTTL are WorldState (empirical facts, schedules,
+    positions — require periodic refresh); deposits with τ > maxWorldStateTTL are
+    Structural (proofs, definitions — near-infinite shelf life).
+    This restores the WorldState/Structural distinction erased by an unconditional
+    .Structural assignment, grounding it in the actual τ value. -/
+def deposit_kind (d : Deposit PropLike Standard ErrorModel Provenance) : DepositKind :=
+  if d.h.τ ≤ maxWorldStateTTL then .WorldState else .Structural
 
-/-- World-state deposits must have finite TTL.
-    Discharged: deposit_kind always returns .Structural, so the premise
-    deposit_kind d = .WorldState is always false — the implication
-    holds vacuously. -/
+/-- World-state deposits have finite TTL (within the refresh bound).
+    Discharged: deposit_kind d = .WorldState iff d.h.τ ≤ maxWorldStateTTL (by if_pos);
+    that is exactly τ_is_finite d.h.τ. The .Structural branch is handled by contradiction. -/
 theorem worldstate_requires_finite_τ
     (d : Deposit PropLike Standard ErrorModel Provenance) :
     deposit_kind d = .WorldState → τ_is_finite d.h.τ := by
-  simp [deposit_kind]
+  intro h
+  unfold deposit_kind at h
+  unfold τ_is_finite
+  cases Classical.em (d.h.τ ≤ maxWorldStateTTL) with
+  | inl h_le => rw [if_pos h_le] at h; exact h_le
+  | inr h_gt => rw [if_neg h_gt] at h; exact absurd h (by decide)
 
 
 /-! ## Invariant Reading Note
