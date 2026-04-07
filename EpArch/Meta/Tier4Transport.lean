@@ -327,6 +327,63 @@ theorem concrete_bank_all_goals_transport
    transport_corrigible_universal E _ h_compat h_cl⟩
 
 
+/-! ## §3d  Full CorrigibleLedgerGoal Transport (SurjectiveCompatible)
+
+`concrete_bank_all_goals_transport` (§3c) returns only the ∀-part of
+`CorrigibleLedgerGoal` because plain `Compatible` cannot pull back the existence
+witness `∃ B, hasRevision B` — the projection πBubble goes E → C, not C → E.
+
+`SurjectiveCompatible` adds `bubbleSurj` (every C-bubble has a preimage in E),
+which is exactly the missing pullback. With it, `transport_corrigible_ledger`
+constructs the full `CorrigibleLedgerGoal (forget E)`. -/
+
+/-- All five health goals transport through surjective-compatible extensions of
+    `ConcreteBankModel`, with **full** `CorrigibleLedgerGoal` (∃ + ∀ components).
+
+    Strengthens `concrete_bank_all_goals_transport`: the only change is the
+    compatibility hypothesis (SurjectiveCompatible instead of Compatible) and the
+    return type replaces the bare ∀-clause with `CorrigibleLedgerGoal (forget E)`. -/
+theorem concrete_bank_all_goals_transport_surj
+    (truth_pred    : Bubble → Deposit PropLike Standard ErrorModel Provenance → Prop)
+    (obs_pred      : Deposit PropLike Standard ErrorModel Provenance → Prop)
+    (verify_pred   : Bubble → Deposit PropLike Standard ErrorModel Provenance → Time → Prop)
+    (etime         : Bubble → Time)
+    (submit_pred   : Agent → Bubble → Deposit PropLike Standard ErrorModel Provenance → Prop)
+    (revise_pred   : Bubble → Deposit PropLike Standard ErrorModel Provenance →
+                     Deposit PropLike Standard ErrorModel Provenance → Prop)
+    (hasRev_pred   : Bubble → Prop)
+    (selfCorr_pred : Bubble → Prop)
+    (E : ExtModel)
+    (h_compat : SurjectiveCompatible E
+        (ConcreteBankModel truth_pred obs_pred verify_pred etime
+           submit_pred revise_pred hasRev_pred selfCorr_pred))
+    (h_sw : SafeWithdrawalGoal
+        (ConcreteBankModel truth_pred obs_pred verify_pred etime
+           submit_pred revise_pred hasRev_pred selfCorr_pred))
+    (h_re : ReliableExportGoal
+        (ConcreteBankModel truth_pred obs_pred verify_pred etime
+           submit_pred revise_pred hasRev_pred selfCorr_pred))
+    (h_sd : SoundDepositsGoal
+        (ConcreteBankModel truth_pred obs_pred verify_pred etime
+           submit_pred revise_pred hasRev_pred selfCorr_pred))
+    (h_sc : SelfCorrectionGoal
+        (ConcreteBankModel truth_pred obs_pred verify_pred etime
+           submit_pred revise_pred hasRev_pred selfCorr_pred))
+    (h_cl : CorrigibleLedgerGoal
+        (ConcreteBankModel truth_pred obs_pred verify_pred etime
+           submit_pred revise_pred hasRev_pred selfCorr_pred)) :
+    SafeWithdrawalGoal (forget E) ∧
+    ReliableExportGoal (forget E) ∧
+    SoundDepositsGoal (forget E) ∧
+    SelfCorrectionGoal (forget E) ∧
+    CorrigibleLedgerGoal (forget E) :=
+  ⟨transport_safe_withdrawal E _ h_compat.toCompatible h_sw,
+   transport_reliable_export E _ h_compat.toCompatible h_re,
+   transport_sound_deposits E _ h_compat.toCompatible h_sd,
+   transport_self_correction E _ h_compat.toCompatible h_sc,
+   transport_corrigible_ledger E _ h_compat h_cl⟩
+
+
 /-! ## §4  Full Tier 4 Certification -/
 
 /-- `tier4_transport_pack` — legacy pack (PaperFacing only, vacuous base).
@@ -430,6 +487,83 @@ theorem tier4_full_pack
      (forget E_bank).ops.revise B_E d_E d'_E → (forget E_bank).ops.truth B_E d'_E) :=
   let lts   := @lts_theorems_step_universal PropLike Standard ErrorModel Provenance Reason Evidence
   let goals := concrete_bank_all_goals_transport
+        truth_pred obs_pred verify_pred etime
+        submit_pred revise_pred hasRev_pred selfCorr_pred
+        E_bank h_compat h_sw h_re h_sd h_sc h_cl
+  ⟨fun a B P => certainty_insufficient_for_authorization CE.toCommitmentsCtx a B P,
+   SEVFactorization,
+   lts.1,
+   goals.1,
+   goals.2.1,
+   goals.2.2.1,
+   goals.2.2.2.1,
+   goals.2.2.2.2⟩
+
+/-- `tier4_full_pack_surj` — headline theorem with full CorrigibleLedgerGoal.
+
+    Identical to `tier4_full_pack` except:
+    - Takes `SurjectiveCompatible` instead of `Compatible`.
+    - Conjunct (C5) is `CorrigibleLedgerGoal (forget E_bank)` (∃ + ∀),
+      not just the universal clause.
+
+    This is the maximal Tier 4 certification: all five health goals transport
+    completely, with no residual ∃-witness caveat. -/
+theorem tier4_full_pack_surj
+    {Extra : Prop} {Reason Evidence : Type}
+    (CE : ExtCommitmentsCtx PropLike Standard ErrorModel Provenance Extra)
+    (truth_pred    : Bubble → Deposit PropLike Standard ErrorModel Provenance → Prop)
+    (obs_pred      : Deposit PropLike Standard ErrorModel Provenance → Prop)
+    (verify_pred   : Bubble → Deposit PropLike Standard ErrorModel Provenance → Time → Prop)
+    (etime         : Bubble → Time)
+    (submit_pred   : Agent → Bubble → Deposit PropLike Standard ErrorModel Provenance → Prop)
+    (revise_pred   : Bubble → Deposit PropLike Standard ErrorModel Provenance →
+                     Deposit PropLike Standard ErrorModel Provenance → Prop)
+    (hasRev_pred   : Bubble → Prop)
+    (selfCorr_pred : Bubble → Prop)
+    (E_bank        : ExtModel)
+    (h_compat      : SurjectiveCompatible E_bank
+        (ConcreteBankModel truth_pred obs_pred verify_pred etime
+           submit_pred revise_pred hasRev_pred selfCorr_pred))
+    (h_sw : SafeWithdrawalGoal
+        (ConcreteBankModel truth_pred obs_pred verify_pred etime
+           submit_pred revise_pred hasRev_pred selfCorr_pred))
+    (h_re : ReliableExportGoal
+        (ConcreteBankModel truth_pred obs_pred verify_pred etime
+           submit_pred revise_pred hasRev_pred selfCorr_pred))
+    (h_sd : SoundDepositsGoal
+        (ConcreteBankModel truth_pred obs_pred verify_pred etime
+           submit_pred revise_pred hasRev_pred selfCorr_pred))
+    (h_sc : SelfCorrectionGoal
+        (ConcreteBankModel truth_pred obs_pred verify_pred etime
+           submit_pred revise_pred hasRev_pred selfCorr_pred))
+    (h_cl : CorrigibleLedgerGoal
+        (ConcreteBankModel truth_pred obs_pred verify_pred etime
+           submit_pred revise_pred hasRev_pred selfCorr_pred)) :
+    -- (A) CommitmentsCtx: certainty ≠ authorization survives extension
+    (∀ (a : Agent) (B : Bubble) (P : Claim),
+        ∃ (_ : certainty_L a P), ¬knowledge_B B P) ∧
+    -- (B1) Structural: SEV factorization holds unconditionally
+    (∀ (d : Deposit PropLike Standard ErrorModel Provenance),
+        ∃ (s : Standard) (e : ErrorModel) (v : Provenance),
+          d.h.S = s ∧ d.h.E = e ∧ d.h.V = v) ∧
+    -- (B2) LTS-universal: withdrawal requires all three gates for every Step
+    (∀ (s s' : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
+       (B : Bubble) (a : Agent) (d_idx : Nat),
+       StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
+         s (StepSemantics.Action.Withdraw a B d_idx) s' →
+       ACL_OK_At s a B d_idx ∧ Current_At s d_idx ∧ ConsultedBank_At s d_idx) ∧
+    -- (C1) SafeWithdrawalGoal transports
+    SafeWithdrawalGoal (forget E_bank) ∧
+    -- (C2) ReliableExportGoal transports
+    ReliableExportGoal (forget E_bank) ∧
+    -- (C3) SoundDepositsGoal transports
+    SoundDepositsGoal (forget E_bank) ∧
+    -- (C4) SelfCorrectionGoal (= PaperFacing) transports
+    SelfCorrectionGoal (forget E_bank) ∧
+    -- (C5) Full CorrigibleLedgerGoal transports (∃-witness pulled back via bubbleSurj)
+    CorrigibleLedgerGoal (forget E_bank) :=
+  let lts   := @lts_theorems_step_universal PropLike Standard ErrorModel Provenance Reason Evidence
+  let goals := concrete_bank_all_goals_transport_surj
         truth_pred obs_pred verify_pred etime
         submit_pred revise_pred hasRev_pred selfCorr_pred
         E_bank h_compat h_sw h_re h_sd h_sc h_cl

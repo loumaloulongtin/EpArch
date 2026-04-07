@@ -1,6 +1,6 @@
 # Theorem Inventory
 
-This document catalogs **505** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
+This document catalogs **507** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
 
 **What the architecture claims:** Decentralized epistemic authorization requires specific structural mechanisms — a lifecycle with type-separated stages, header-preserving export, a revision loop, temporal validity, and a Bank substrate. These aren't design preferences; they are forced by the combination of agent constraints and system health goals.
 
@@ -723,14 +723,25 @@ $$\text{PRP} \Rightarrow \neg\exists t_{\text{final}}.\, \forall t \geq t_{\text
 
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
-| `concrete_bank_all_goals_transport` | Meta/Tier4Transport.lean | SafeWithdrawalGoal ∧ ReliableExportGoal ∧ SoundDepositsGoal ∧ SelfCorrectionGoal ∧ CorrigibleLedgerGoal all transport through Compatible ConcreteBankModel extensions | Full health-goal transport certification |
+| `concrete_bank_all_goals_transport` | Meta/Tier4Transport.lean | SafeWithdrawalGoal ∧ ReliableExportGoal ∧ SoundDepositsGoal ∧ SelfCorrectionGoal ∧ CorrigibleLedgerGoal (universal ∀-part) all transport through Compatible ConcreteBankModel extensions | Full health-goal transport certification (plain Compatible) |
+
+### Cluster C Extended: Full CorrigibleLedgerGoal Transport (SurjectiveCompatible)
+
+The \u2203-component of `CorrigibleLedgerGoal` (`\u2203 B, hasRevision B`) needs a preimage
+pullback that `Compatible` alone cannot provide. `SurjectiveCompatible` adds
+`bubbleSurj` (every C-bubble has a preimage in E), enabling full transport.
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `concrete_bank_all_goals_transport_surj` | Meta/Tier4Transport.lean | SafeWithdrawalGoal ∧ ReliableExportGoal ∧ SoundDepositsGoal ∧ SelfCorrectionGoal ∧ **full** CorrigibleLedgerGoal (∃+∀) transport through SurjectiveCompatible extensions | Full corrigibility: no residual ∃-witness caveat |
 
 ### Full Pack
 
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
 | `tier4_transport_pack` | Meta/Tier4Transport.lean | Cluster A ∧ Cluster B ∧ Cluster C (legacy) | Legacy Tier 4 certification |
-| `tier4_full_pack` | Meta/Tier4Transport.lean | CommitmentsCtx ∧ SEV ∧ LTS-withdrawal ∧ SafeWithdrawal ∧ ReliableExport ∧ SoundDeposits ∧ SelfCorrection ∧ universal-corrigibility | Headline four-cluster Tier 4 certification (8 conjuncts) |
+| `tier4_full_pack` | Meta/Tier4Transport.lean | CommitmentsCtx ∧ SEV ∧ LTS-withdrawal ∧ SafeWithdrawal ∧ ReliableExport ∧ SoundDeposits ∧ SelfCorrection ∧ universal-corrigibility | Headline Tier 4 pack (plain Compatible; ∀-corrigibility only) |
+| `tier4_full_pack_surj` | Meta/Tier4Transport.lean | Same 8 conjuncts with **full** CorrigibleLedgerGoal (∃+∀) in place of universal-corrigibility | Maximal Tier 4 pack (SurjectiveCompatible; no residual caveat) |
 
 ### Supporting Definitions
 
