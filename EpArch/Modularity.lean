@@ -1,8 +1,9 @@
 /-
 EpArch/Modularity.lean — Lattice-Stability / Graceful Scale-Down
 
-This module proves that EpArch is **lattice-stable**: the valid theorem set is
-monotone in both directions under bundle perturbation.
+This module proves that EpArch is **lattice-stable** at the `PaperFacing` /
+competition-gate layer: the `PaperFacing` predicate is preserved in both
+directions under bundle perturbation.
 
 ## The Two Directions
 
@@ -11,8 +12,10 @@ monotone in both directions under bundle perturbation.
   `safe_extension_preserves : PaperFacing C → PaperFacing (forget E)`
 
 **Downward (this file):**
-  Sub-bundle model → theorems whose proof terms don't reference dropped goals
-  remain valid. Formalised by:
+  Sub-bundle model → `PaperFacing` is preserved. If a model drops
+  self-correction, the competition gate holds vacuously; compatible extensions
+  of such sub-bundles preserve `PaperFacing` through the existing transport
+  machinery. Formalised by:
   1. Decomposing `PaperFacing` into per-goal propositions
   2. Showing each component is independently preserved by `forget`
   3. Building `OdometerModel` — a concrete minimal sub-bundle instance
@@ -38,10 +41,11 @@ monotone in both directions under bundle perturbation.
 ## Odometer sub-model
 
 An odometer satisfies only `SoundDepositsGoal` (readings must be verifiable) and
-none of the revision/export/adversarial goals. The Tier-A theorems that hold in
-OdometerModel are exactly those whose proofs don't mention revision or self-correction.
-The competition gate (PaperFacing) applies vacuously — a non-self-correcting system
-trivially satisfies `selfCorrects B → hasRevision B`.
+none of the revision/export/adversarial goals. The competition gate (`PaperFacing`)
+applies vacuously — a non-self-correcting system trivially satisfies
+`selfCorrects B → hasRevision B`. This module establishes that `PaperFacing` and
+sub-level `RevisionSafety` are preserved for such sub-bundles; it does not claim
+a general theorem-transport schema over arbitrary theorem families.
 
 -/
 
@@ -112,7 +116,7 @@ The model:
 - verification: reading ≤ current value is instantly verifiable (time = Unit)
 - No self-correction: an odometer reading is not revisable
 - No export: readings are local
-- truth: reading matches state (correct odometer)
+- truth: reading does not exceed current count (`reading ≤ count`)
 
 -/
 

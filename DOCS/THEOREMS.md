@@ -845,7 +845,7 @@ $$\forall\, \text{Pred},\ d_1 = d_2 \implies \text{Pred}(d_1) \implies \text{Pre
 
 ## Bucket 24: Lattice-Stability / Graceful Scale-Down
 
-**Paper Role:** Proves EpArch is bidirectionally modular — the valid theorem set is monotone under bundle perturbation in both directions. Removing health goals leaves a valid sub-architecture; compatible extensions at any level preserve all prior results.
+**Paper Role:** Proves EpArch is bidirectionally modular at the `PaperFacing` / competition-gate layer: the `PaperFacing` predicate is preserved in both directions under bundle perturbation. Removing the self-correction health goal leaves a valid sub-architecture where `PaperFacing` holds vacuously; compatible extensions at any level preserve `PaperFacing` through the existing transport machinery.
 
 **File:** `Modularity.lean`
 
