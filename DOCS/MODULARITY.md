@@ -87,7 +87,7 @@ This means they are already halfway to being transport-safe — the predicate mo
 `sub_revision_safety` (Modularity.lean) transports `PaperFacing` at sub-bundle level.
 `graceful_degradation` (Modularity.lean) shows dropping `SelfCorrectionGoal` → `PaperFacing` holds vacuously.
 
-**Gap:** The necessity theorems in `Health.lean` are `CoreModel`-parameterized but not yet individually wrapped in a transport schema. A generic `transport_health_goal` theorem stating `HealthGoal C → Compatible E C → HealthGoal (forget E)` per goal would close this. Currently each goal must be manually checked against the `CoreOps` fields of the sub-bundle.
+**Gap:** ~~None~~ Closed. `transport_safe_withdrawal`, `transport_reliable_export`, `transport_sound_deposits`, `transport_self_correction` (and the full `transport_corrigible_ledger` via `SurjectiveCompatible`) are proved in `Meta/TheoremTransport.lean`. The `health_goal_transport_pack` headline theorem packages all five.
 
 ---
 
@@ -135,8 +135,8 @@ Use the operation dependency map above to manually read off which theorem cluste
 |---|---|---|---|
 | World bundles (`W_*`) | Explicit hypothesis — not providing proof disables | ✅ Complete | `WorldCtx.lean`, `AdversarialObligations.lean` |
 | Constraints (6 forcing results) | Independent conjuncts — cherry-pick freely | ✅ Complete | `Minimality.lean` |
-| Health goals (5 predicates) | `CoreModel`-parameterized | ⚠️ Partial — no generic transport yet | `Health.lean`, `Modularity.lean` |
 | `PaperFacing` / competition gate | `transport_core` + `sub_revision_safety` | ✅ Complete | `RevisionSafety.lean`, `Modularity.lean` |
+| Health goals (5 predicates) | `CoreModel`-parameterized + individual transport theorems | ✅ Complete | `Health.lean`, `Meta/TheoremTransport.lean` |
 | Main theorem library (109+) | Needs `CoreModel` re-parameterization | ❌ Not yet — operation map available for manual use | `Meta/TheoremTransport.lean` (planned) |
 
 ---
