@@ -10,7 +10,7 @@ As such, they are acceptable as permanent axioms (like Bank governance laws).
 
 Exception: `challenge_requires_field_localization` was discharged — see theorem.
 
-## Axiom Count: 5 (of 36 total)
+## Axiom Count: 5 (of 17 total remaining)
 
 1. `no_deposit_without_redeemability` — deposits must have constraint-surface contact
 2. `no_withdrawal_without_acl` — withdrawals require valid ACL membership

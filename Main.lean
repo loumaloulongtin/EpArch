@@ -106,22 +106,23 @@ Layer 9 (Surface):    PaperFacing
 
 | Surface | Import | Description |
 |---------|--------|-------------|
-| **Paper-Facing** | `MainPaper.lean` | Core-facing theorems only (35 axioms) |
-| **Full** | `Main.lean` | Full build (35 axioms) |
+| **Paper-Facing** | `MainPaper.lean` | Core-facing theorems only (17 axioms) |
+| **Full** | `Main.lean` | Full build (17 axioms) |
 
 ## Axiom Breakdown
 
 | Surface | Count | Notes |
 |---------|-------|-------|
-| Bank | 18 | Operator postconditions |
-| Commitments | 12 | Axioms implementing 8 architecture commitments |
-| Invariants | 5 | Protocol invariants |
+| Bank | 3 | KnowledgeIffDeposited, success_driven_bypass, blast_radius_scales_with_reliance |
+| Commitments | 9 | Design commitments over opaque external predicates |
+| Invariants | 5 | Protocol invariants (design requirements, not derivable) |
 | Agent Layer | 0 | Design-forcing now PROVED |
 | WorldCtx | 0 | transport_lies_possible now PROVED |
-| **Total** | **35** | Specification axioms only |
+| **Total** | **17** | Specification axioms remaining |
 
-Note: 5 former axioms are now theorems (Agent design-forcing + WorldCtx transport
-+ Invariants challenge_requires_field_localization).
+Note: 18 axioms discharged in this branch (11 operator defs + 4 status-transition
+theorems + 3 Commitments theorems). 5 former axioms were previously discharged
+(Agent design-forcing + WorldCtx transport + Invariants challenge_requires_field_localization).
 -/
 
 import EpArch.Basic

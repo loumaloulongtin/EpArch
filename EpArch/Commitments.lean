@@ -141,9 +141,15 @@ def redeemable (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
     vp.contact_made ∧
     vp.discriminating
 
-opaque path_exists_for_deposit : Deposit PropLike Standard ErrorModel Provenance → Prop
-axiom redeemable_implies_path (d : Deposit PropLike Standard ErrorModel Provenance) :
-    redeemable d → path_exists_for_deposit d
+/-- path_exists_for_deposit: a deposit has a verification path.
+    Discharged: defined as `redeemable d` — a deposit has a path iff it is
+    redeemable (which is defined by the existence of a VerificationPath above). -/
+def path_exists_for_deposit (d : Deposit PropLike Standard ErrorModel Provenance) : Prop := redeemable d
+
+/-- Redeemability implies verification path exists.
+    Discharged: path_exists_for_deposit is defined as redeemable, so this is id. -/
+theorem redeemable_implies_path (d : Deposit PropLike Standard ErrorModel Provenance) :
+    redeemable d → path_exists_for_deposit d := id
 
 opaque depends_on : Prop → ConstraintSurface → Prop
 opaque by_consensus_alone : Prop → Prop
@@ -166,16 +172,29 @@ axiom ConsensusNotSufficient (B : Bubble) (d : Deposit PropLike Standard ErrorMo
 
 /-! ## Commitment 5: Export Gating -/
 
-opaque reliable_export : Bubble → Bubble → Deposit PropLike Standard ErrorModel Provenance → Prop
+/-- reliable_export: a cross-bubble transfer that carries its gate certificate.
+    Discharged: defined as `exportDep B1 B2 d ∧ (Revalidate B2 B1 d ∨ TrustBridge B1 B2)` —
+    an export is reliable iff it occurred AND was gated (revalidation or trust bridge). -/
+def reliable_export (B1 B2 : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
+  exportDep B1 B2 d ∧ (Revalidate B2 B1 d ∨ TrustBridge B1 B2)
 
 def unreliable_export (B1 B2 : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
   exportDep B1 B2 d ∧ ¬Revalidate B2 B1 d ∧ ¬TrustBridge B1 B2
 
-axiom reliable_implies_export (B1 B2 : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
-    reliable_export B1 B2 d → exportDep B1 B2 d
+/-- Reliable export implies the deposit crossed the bubble boundary (exportDep).
+    Discharged: first component of the reliable_export conjunction. -/
+theorem reliable_implies_export (B1 B2 : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
+    reliable_export B1 B2 d → exportDep B1 B2 d := fun ⟨h, _⟩ => h
 
-axiom reliable_unreliable_exclusive (B1 B2 : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
-    reliable_export B1 B2 d → unreliable_export B1 B2 d → False
+/-- Reliable and unreliable export are mutually exclusive.
+    Discharged: if reliable, there is a gate (Revalidate ∨ TrustBridge); if unreliable,
+    both are absent — the gate cases are exhaustive and each contradicts its absence. -/
+theorem reliable_unreliable_exclusive (B1 B2 : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
+    reliable_export B1 B2 d → unreliable_export B1 B2 d → False := by
+  intro ⟨_, h_gate⟩ ⟨_, h_no_reval, h_no_trust⟩
+  cases h_gate with
+  | inl h_reval => exact h_no_reval h_reval
+  | inr h_trust => exact h_no_trust h_trust
 
 /-- Commitment 5: Reliable export requires gating (revalidation or trust bridge). -/
 theorem ExportGating (B1 B2 : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
