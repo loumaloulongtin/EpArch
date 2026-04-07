@@ -189,12 +189,7 @@ theorem redeemable_implies_contact_and_discriminating
   intro ⟨vp, h_dep, _⟩
   exact ⟨⟨vp.surface, h_dep ▸ vp.h_contact⟩, ⟨vp.surface, h_dep ▸ vp.h_discrim⟩⟩
 
-opaque depends_on : Prop → ConstraintSurface → Prop
 opaque by_consensus_alone : Prop → Prop
-
-/-- Commitment 4a: Redeemability tracks constraint surface, not consensus. -/
-axiom RedeemabilityExternal (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
-    depends_on (redeemable d) d.h.redeem.cs
 
 /-- Commitment 4b: Consensus alone doesn't create redeemability.
 
