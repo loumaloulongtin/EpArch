@@ -2,6 +2,12 @@
 
 The formalization contains **zero `axiom` declarations**.
 
+> **Note:** “zero global axioms” does not mean “zero assumptions in an absolute sense.”
+> EpArch works with explicit base commitments and context-bundled conditions where appropriate;
+> those boundaries are made explicit rather than hidden.
+> That is intentional: the framework does not claim terminal epistemic closure,
+> and PRP rules out eliminating every assumption boundary altogether.
+
 This document records the current assumption boundary and how the prior axiom surface was resolved.
 
 ---
@@ -19,12 +25,12 @@ signatures:
 
     theorem T (C : CommitmentsCtx PropLike Standard ErrorModel Provenance) ...
 
-| Field | Commitment |
-|-------|------------|
-| `traction_auth_split` | C1: certainty_L ⊥ knowledge_B (neither implies the other) |
-| `no_global_ledger` | C2: no ledger simultaneously supports innovation and coordination |
-| `consensus_not_sufficient` | C4b: consensus does not imply redeemability |
-| `header_asymmetry` | C7b: stripped disputes produce sticky ∧ proxy_battles |
+| Field | Commitment | Plain reading |
+|-------|------------|---------------|
+| `traction_auth_split` | C1: certainty_L ⊥ knowledge_B (neither implies the other) | An agent can be certain of P without any bank deposit for P, and a bank deposit can exist without the agent being certain. Feeling sure and being authorized are different kinds of things. |
+| `no_global_ledger` | C2: no ledger simultaneously supports innovation and coordination | A single shared ledger cannot simultaneously allow heterodox claims (innovation) and enforce shared acceptance standards (coordination). Scoped validation domains (bubbles) are forced by this tradeoff. |
+| `consensus_not_sufficient` | C4b: consensus does not imply redeemability | A deposit that everyone agrees on in a bubble can still fail against the external constraint surface. Group agreement does not discharge the evidence requirement. |
+| `header_asymmetry` | C7b: stripped disputes produce sticky ∧ proxy_battles | Removing the S/E/V metadata from a deposit before it reaches a dispute makes the dispute harder to resolve and harder to diagnose. The asymmetry is directional: stripping is not a neutral operation. |
 
 Forward theorems (`certainty_insufficient_for_authorization`, `no_universal_ledger`,
 `redeemability_requires_more_than_consensus`, `header_stripping_produces_pathology`,

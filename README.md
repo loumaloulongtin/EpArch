@@ -131,6 +131,13 @@ are conditioned on `(C : CommitmentsCtx ...)`. Operational invariants are ground
 `StepSemantics`. Opaque domain primitives are declared with `opaque`,
 not `axiom`.
 
+> **Note:** “zero global axioms” does not mean “zero assumptions in an absolute sense.”
+> EpArch works with explicit base commitments and context-bundled conditions where appropriate;
+> those boundaries are made explicit rather than hidden.
+> That is intentional: the framework does not claim terminal epistemic closure,
+> and PRP rules out eliminating every assumption boundary altogether.
+> See [DOCS/AXIOMS.md](DOCS/AXIOMS.md) and [DOCS/WORLD.md](DOCS/WORLD.md).
+
 See [DOCS/AXIOMS.md](DOCS/AXIOMS.md) for the full account.
 
 ---
