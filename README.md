@@ -73,7 +73,7 @@ lake build   # requires Lean 4.3.0, no Mathlib
 |---|---|
 | `Basic.lean` | Core types: `Agent`, `Claim`, `Bubble`, `Deposit`, `DepositStatus`, `LadderStage` |
 | `Header.lean` | S/E/V header structure and factorization |
-| `Bank.lean` | Bank substrate and lifecycle operators (18 axioms — API contracts) |
+| `Bank.lean` | Bank substrate and lifecycle operators |
 | `LTS.lean` | Generic labeled transition systems |
 | `StepSemantics.lean` | Concrete step semantics for all lifecycle operators |
 

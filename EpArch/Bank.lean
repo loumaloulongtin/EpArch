@@ -115,9 +115,7 @@ opaque Revalidate : Bubble → Bubble → Deposit PropLike Standard ErrorModel P
 opaque RepairAction : Type u
 
 /-- Repair: apply a repair action to a deposit, targeting a specific field.
-    Returns the repaired deposit re-entering as Candidate for revalidation.
-    Discharged: the concrete witness simply resets status to Candidate,
-    which is what all repair semantics require regardless of field targeted. -/
+    Returns the repaired deposit re-entering as Candidate for revalidation. -/
 def repair (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance)
     (f : Field) (r : RepairAction) : Deposit PropLike Standard ErrorModel Provenance :=
   { d with status := .Candidate }
@@ -142,7 +140,7 @@ opaque consensus : Bubble → PropLike → Prop
     Note: The acceptance step is split into Validate_B (evidence → header)
     and Accept_B (header → ledger entry) for finer-grained lifecycle control.
     Grounded: guards on d.status = .Candidate — only transitions when the precondition
-    holds, returning d unchanged otherwise. Proof uses if_pos on the precondition. -/
+    holds, returning d unchanged otherwise. -/
 def Validate_B (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
     Deposit PropLike Standard ErrorModel Provenance :=
   if d.status = .Candidate then { d with status := .Validated } else d
@@ -197,16 +195,14 @@ def Restore_B (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance)
 /-- Export_B_C: DepositState_B → ImportState_C
     Precondition: revalidation under C's standards OR TrustBridge(B,C)
     Postcondition: header may mutate (V lengthens, E adds proxy-trust risk)
-    Discharged: reassigns bubble membership to C, preserving deposit status
-    (concrete header mutation over abstract V/E types is not representable
-    without payload access — bubble reassignment is the minimal correct witness). -/
+    Concrete witness: reassigns bubble membership to C, preserving deposit status. -/
 def Export_B_C (B C : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
     Deposit PropLike Standard ErrorModel Provenance := { d with bubble := C }
 
 /-- Import_C: External → Candidate or Deposited
-    Outcome depends on trust-bridge strength and header preservation
-    Discharged: conservative witness — imported deposit enters as Candidate
-    in bubble B, requiring the importing bubble to run its own validation. -/
+    Outcome depends on trust-bridge strength and header preservation.
+    Imported deposit enters as Candidate in bubble B, requiring the importing
+    bubble to run its own validation. -/
 def Import_C (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
     Deposit PropLike Standard ErrorModel Provenance := { d with bubble := B, status := .Candidate }
 
@@ -244,8 +240,7 @@ theorem Repair_B_produces_candidate (B : Bubble)
   intro h; unfold Repair_B; rw [if_pos h]
 
 /-- Status after revocation: the disjunctive precondition gates the if-branch in Revoke_B.
-    The disjunction is decidable because DepositStatus derives DecidableEq;
-    if_pos genuinely uses h — the proof cannot discard it. -/
+    The disjunction is decidable because DepositStatus derives DecidableEq. -/
 theorem revoke_produces_revoked (B : Bubble)
     (d : Deposit PropLike Standard ErrorModel Provenance) :
     d.status = .Quarantined ∨ d.status = .Deposited →
@@ -262,7 +257,7 @@ theorem restore_produces_candidate (B : Bubble)
 
 -- These composition theorems chain individual operator steps to prove the full lifecycle
 -- sequence is internally consistent. Each step's postcondition is exactly the next
--- step's precondition, so no discharge is coincidental.
+-- step's precondition.
 
 /-- Validation pipeline: Candidate → Validated → Deposited.
     Composes validate_produces_validated with accept_produces_deposited:
@@ -282,8 +277,7 @@ theorem challenge_repair_pipeline (B : Bubble)
 
 /-- Full contested-deposit pipeline: Candidate → Validated → Deposited → Quarantined → Candidate.
     Composes validate_accept_pipeline with challenge_repair_pipeline over the complete
-    four-operator lifecycle sequence. No step discharges its precondition by coincidence:
-    each postcondition is structurally required by the next operator's guard. -/
+    four-operator lifecycle sequence. -/
 theorem full_lifecycle_pipeline (B : Bubble)
     (d : Deposit PropLike Standard ErrorModel Provenance) (f : Field) :
     d.status = .Candidate →
@@ -297,16 +291,13 @@ theorem full_lifecycle_pipeline (B : Bubble)
 -- Operations for maintaining deposit freshness: τ refresh, deprecation, auditing.
 
 /-- τ refresh: update the currentness marker on a deposit.
-    Discharged: updates the τ field in the header (creates new Header record
-    with τ replaced, all other header fields preserved). -/
+    Updates the τ field in the header; all other header fields are preserved. -/
 def τ_refresh (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) (t : Time) :
     Deposit PropLike Standard ErrorModel Provenance := { d with h := { d.h with τ := t } }
 
 /-- Deprecation: mark deposit as stale (past TTL).
-    Discharged: sets status to Revoked — the closest abstract analogue to
-    "no longer withdrawable" when DepositStatus carries no Stale variant.
-    (The concrete model's CDepositStatus has Stale/Aging; the abstract
-    layer collapses these into Revoked for the purpose of lifecycle closure.) -/
+    Sets status to Revoked. DepositStatus carries no Stale variant at this
+    abstraction level; the concrete model's CDepositStatus has Stale/Aging. -/
 def deprecate (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
     Deposit PropLike Standard ErrorModel Provenance := { d with status := .Revoked }
 
@@ -350,8 +341,8 @@ def challenge_frequency (dd : DepositDynamics) : Nat :=
   if dd.relying_agents > 100 then 9 else 15
 
 /-- Success-driven bypass: high-reliance deposits face attenuated challenge pressure.
-    Discharged: challenge_frequency returns 9 when relying_agents > 100 (by if_pos);
-    hypothesis h gates the then-branch; 9 < 10 is decidable. -/
+    `challenge_frequency` returns 9 when reliance > 100 and 15 otherwise;
+    the hypothesis gates the then-branch. -/
 theorem success_driven_bypass (dd : DepositDynamics) :
     reliance_level dd > 100 → challenge_frequency dd < 10 := by
   intro h
@@ -365,8 +356,7 @@ theorem success_driven_bypass (dd : DepositDynamics) :
 def blast_radius (dd : DepositDynamics) : Nat := dd.cascade_agents
 
 /-- Blast radius scales with reliance: failures cascade beyond direct reliers.
-    Discharged: by DepositDynamics.h_cascade structural constraint, which encodes
-    the real claim that cascading failures always reach at least the direct reliers. -/
+    Follows from `DepositDynamics.h_cascade` — cascade_agents ≥ relying_agents by construction. -/
 theorem blast_radius_scales_with_reliance (dd : DepositDynamics) :
     blast_radius dd ≥ reliance_level dd := dd.h_cascade
 

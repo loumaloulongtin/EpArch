@@ -39,9 +39,7 @@ variable {PropLike Standard ErrorModel Provenance : Type u}
 /-- Every Step.withdraw transition requires ACL permission.
 
     Proved: Step.withdraw constructor requires hasACLPermission as a precondition;
-    the result follows directly from withdrawal_requires_three_gates.
-    (Previously paired with an abstract axiom over opaque Bank predicates;
-    that axiom was removed — this grounded theorem is the real content.) -/
+    the result follows directly from withdrawal_requires_three_gates. -/
 theorem grounded_no_withdrawal_without_acl
     {Reason Evidence : Type u}
     (s s' : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
@@ -56,11 +54,9 @@ theorem grounded_no_withdrawal_without_acl
 
 /-- Every Step.export transition requires depositHasHeader (header not stripped).
 
-    Proved: Step.export construcors require depositHasHeader as a precondition;
+    Proved: Step.export constructors require depositHasHeader as a precondition;
     exports that lose headers cannot carry S/E/V evidence for downstream revalidation.
-    Proved from StepSemantics.export_requires_header.
-    (Previously paired with an abstract axiom over opaque Bank predicates;
-    that axiom was removed — this grounded theorem is the real content.) -/
+    Proved from StepSemantics.export_requires_header. -/
 theorem grounded_no_export_without_gate
     {Reason Evidence : Type u}
     (s s' : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
@@ -89,10 +85,8 @@ def challenge_well_formed (c : WellFormedChallenge (PropLike := PropLike)
 
 /-- All challenges are well-formed by construction.
 
-    This holds because the Field enum has exactly 6 cases, and WellFormedChallenge
-    requires suspected_field : Field. By exhaustion, it must be one of them.
-
-    This was previously an axiom; now it's a theorem. -/
+    The Field enum has exactly 6 cases, and WellFormedChallenge requires
+    suspected_field : Field; by exhaustion it must be one of them. -/
 theorem challenge_requires_field_localization
     (c : WellFormedChallenge (PropLike := PropLike)
         (Standard := Standard) (ErrorModel := ErrorModel) (Provenance := Provenance)) :

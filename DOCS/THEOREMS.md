@@ -6,7 +6,7 @@ This document catalogs **473** proved theorems in the formalization, organized b
 
 **What this document is:** A bucketed theorem index (Buckets 1–23), grouped by the claim each cluster supports. Each bucket names the Lean file, the key theorems, and the paper claim they underwrite. This is broader than Appendix A of the paper, which covers only paper-cited theorems with full math notation; this file covers the full proof burden distribution across the repo. For deeper exposition of any area, the standalone DOCS files are the right place.
 
-**Tier labels:** **A** = proved unconditionally, **B** = conditional on a W-bundle premise, **C** = design axiom.
+**Tier labels:** **A** = proved unconditionally, **B** = conditional on a W-bundle premise, **C** = design commitment (context-bundled structural assumption).
 
 **All theorems are fully proved** — zero `sorry`, zero `axiom` declarations. See [AXIOMS.md](AXIOMS.md) for the current assumption boundary.
 

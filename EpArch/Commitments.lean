@@ -67,7 +67,7 @@ def independent (A B : Prop) : Prop :=
 /-! ## Commitment 1: Traction/Authorization Split
 
     Commitment: certainty_L and knowledge_B are independent (neither implies the other).
-    Displaced into CommitmentsCtx.traction_auth_split; see CommitmentsCtx section below. -/
+    Bundled in CommitmentsCtx.traction_auth_split; see CommitmentsCtx section below. -/
 
 
 /-! ## Commitment 2: Scoped Bubbles (No Global Ledger)
@@ -83,7 +83,7 @@ opaque supports_innovation : GlobalLedger → Prop
 opaque supports_coordination : GlobalLedger → Prop
 
 /-! Commitment 2 (Scoped Bubbles): no global ledger supports both innovation and
-    coordination.  Displaced into CommitmentsCtx.no_global_ledger.  Forward theorems
+    coordination.  Bundled in CommitmentsCtx.no_global_ledger.  Forward theorems
     in CommitmentsCtx section at end of file. -/
 
 
@@ -91,13 +91,9 @@ opaque supports_coordination : GlobalLedger → Prop
 
 /-- Commitment 3: S/E/V structure — every deposit carries S, E, V header fields.
 
-    NOTE: This statement is trivially provable by reflexivity (witness s := d.h.S,
-    e := d.h.E, v := d.h.V).  It was previously declared as an `axiom` but requires
-    no extra assumptions — it follows directly from the definition of `Deposit`.
-    The stronger architectural commitment (validation *failures* localize to exactly
-    one of S, E, V) is expressed by `has_strong_SEV_factorization` in
-    StepSemantics.lean.  This is retained as a `theorem` for documentation and
-    cross-reference purposes. -/
+    Follows directly from the Deposit record structure (witness is d.h.S, d.h.E, d.h.V).
+    The stronger architectural commitment — that validation failures localize to exactly
+    one of S, E, V — is expressed by `has_strong_SEV_factorization` in StepSemantics.lean. -/
 theorem SEVFactorization (d : Deposit PropLike Standard ErrorModel Provenance) :
   ∃ (s : Standard) (e : ErrorModel) (v : Provenance),
     d.h.S = s ∧ d.h.E = e ∧ d.h.V = v :=
@@ -174,7 +170,7 @@ theorem redeemable_implies_contact_and_discriminating
   exact ⟨⟨vp.surface, h_dep ▸ vp.h_contact⟩, ⟨vp.surface, h_dep ▸ vp.h_discrim⟩⟩
 
 /-! Commitment 4b: Consensus alone doesn't create redeemability.
-    Displaced into CommitmentsCtx.consensus_not_sufficient.
+    Bundled in CommitmentsCtx.consensus_not_sufficient.
     Forward theorem in CommitmentsCtx section at end of file. -/
 
 
@@ -200,13 +196,10 @@ theorem reliable_implies_deposited {Reason Evidence : Type u} (B1 B2 : Bubble)
   cases h_step <;> assumption
 
 /-- Commitment 5: Every reliable export is gated by the operational LTS.
-    Discharged: direct corollary of StepSemantics.export_gating_forced.
     The Step inductive has exactly two Export constructors:
     - export_with_bridge: hasTrustBridge is a required precondition.
     - export_revalidate: ¬hasTrustBridge, and the LTS forces .Candidate on the new entry.
-    Ungated export is structurally non-constructible.
-    Proof structure is identical to NoSelfCorrectionWithoutRevision:
-    extract the Step witness from reliable_export, then apply the StepSemantics theorem. -/
+    Ungated export is structurally non-constructible. -/
 theorem ExportGating {Reason Evidence : Type u} (B1 B2 : Bubble)
     (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat) :
     reliable_export (Reason := Reason) (Evidence := Evidence) B1 B2 s d_idx →
@@ -291,12 +284,8 @@ def structurally_prohibits_revision {Reason Evidence : Type u} (_ : Domain)
 
 /-- Commitment 6b: Self-correcting domains cannot prohibit revision.
 
-    Discharged: direct corollary of
-    StepSemantics.self_correcting_domain_permits_revision.
-
-    Proof: if domain D has a self-correction trace from s, then by
-    self_correcting_domain_permits_revision, s does not prohibit revision,
-    contradicting structurally_prohibits_revision D s. -/
+    Corollary of StepSemantics.self_correcting_domain_permits_revision:
+    if domain D has a self-correction trace from s, then s does not prohibit revision. -/
 theorem NoSelfCorrectionWithoutRevision {Reason Evidence : Type u} (D : Domain)
     (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance) :
     reliably_self_corrects (Reason := Reason) (Evidence := Evidence) D s →
@@ -470,10 +459,8 @@ opaque sticky : Bubble → PropLike → Prop
 opaque proxy_battles : Bubble → PropLike → Prop
 
 /-- Commitment 7, first conjunct: header-preserved deposits permit localization.
-    Discharged: localizes B P unfolds to header_preserved_diagnosability.score >
-    header_stripped_diagnosability.score = 3 > 0, provable by decide unconditionally.
-    The dispute and header_preserved hypotheses are structurally present but the
-    conclusion does not depend on them. -/
+    `localizes B P` unfolds to a score comparison provable by decide; the conclusion
+    holds unconditionally given the header_preserved_diagnosability definition. -/
 theorem HeaderPreservation_implies_localization (B : Bubble) (P : PropLike)
     (d : Deposit PropLike Standard ErrorModel Provenance) :
     dispute B P → header_preserved d → localizes B P := by
@@ -482,7 +469,7 @@ theorem HeaderPreservation_implies_localization (B : Bubble) (P : PropLike)
   decide
 
 /-! Commitment 7, second conjunct: header-stripped deposits produce sticky disputes.
-    Displaced into CommitmentsCtx.header_asymmetry.
+    Bundled in CommitmentsCtx.header_asymmetry.
     Forward theorems in CommitmentsCtx section at end of file. -/
 
 
@@ -500,8 +487,7 @@ def performs_equivalently (d1 d2 : Deposit PropLike Standard ErrorModel Provenan
   d1.h.τ = d2.h.τ
 
 /-- Commitment 8: Deposits have shelf life; staleness is a structural failure mode.
-    Discharged: if d1.h.τ > 0 (refreshed) and d2.h.τ = 0 (unrefreshed),
-    then d1.h.τ ≠ d2.h.τ (they differ), so ¬performs_equivalently. -/
+    Refreshed and unrefreshed deposits differ in τ, so they are not performatively equivalent. -/
 theorem TemporalValidity (d1 d2 : Deposit PropLike Standard ErrorModel Provenance) :
     refreshed d1 → unrefreshed d2 → ¬performs_equivalently d1 d2 := by
   intro h1 h2 h_eq
@@ -512,7 +498,7 @@ theorem TemporalValidity (d1 d2 : Deposit PropLike Standard ErrorModel Provenanc
 /-! ## CommitmentsCtx — Four Structural Commitments as a Hypothesis Bundle
 
     Analogous to WorldCtx.W_* bundles: these four commitments are not asserted
-    globally but displaced into a structure.  Theorems conditioned on
+    globally but bundled in a hypothesis structure.  Theorems conditioned on
     CommitmentsCtx hold for any conforming architecture, without asserting them
     unconditionally.  This gives zero `axiom` declarations; the commitments
     appear only as hypotheses "(C : CommitmentsCtx)" in theorem signatures.
