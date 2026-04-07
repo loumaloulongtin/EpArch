@@ -53,7 +53,6 @@ Key opaque primitives:
 | `GlobalLedger` | Commitments.lean | Abstract ledger type |
 | `supports_innovation` / `supports_coordination` | Commitments.lean | Ledger capability predicates |
 | `dispute` / `sticky` / `proxy_battles` | Commitments.lean | Header-stripping consequence predicates |
-| `acl_permits` | Invariants.lean | Access-control permission predicate |
 
 All theorems that use these primitives state their dependence explicitly via
 `(C : CommitmentsCtx ...)`, `(C : WorldCtx)`, or direct premises.
