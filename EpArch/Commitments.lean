@@ -3,13 +3,11 @@ EpArch/Commitments.lean — Architecture Commitments
 
 The 8 explicit architectural commitments that define what the EpArch
 framework requires of any conforming system.  Each commitment is stated
-as one or more axioms asserting structural properties (12 axioms + 1 trivially
-provable theorem total).
-For example: "traction ≠ authorization", "deposits must live in scoped
-bubbles", "header stripping makes disputes harder".  Commitment 5's
-primary result (`ExportGating`) is a theorem derived from its axioms.
-Commitment 3 (`SEVFactorization`) is a theorem, not an axiom, because
-the statement follows directly from the definition of Deposit by reflexivity.
+as one or more axioms or proved theorems asserting structural properties.
+Commitment 5's primary result (`ExportGating`) is a theorem derived from
+its axioms.  Commitment 3 (`SEVFactorization`) is a trivial theorem by rfl.
+Commitment 6b (`NoSelfCorrectionWithoutRevision`) is a proved theorem
+grounded in StepSemantics.self_correcting_domain_permits_revision.
 
 ## What are Commitments?
 
@@ -38,6 +36,7 @@ design requirements.
 import EpArch.Basic
 import EpArch.Header
 import EpArch.Bank
+import EpArch.StepSemantics
 
 namespace EpArch
 
@@ -221,11 +220,37 @@ opaque lifecycle : Bubble → Deposit PropLike Standard ErrorModel Provenance �
 axiom RepairLoopExists (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
   deposited B d → pushback d → ∃ trace, lifecycle B d trace
 
-opaque reliably_self_corrects : Domain → Prop
-opaque structurally_prohibits_revision : Domain → Prop
+/-- A domain reliably self-corrects if there exist system states and a trace
+    demonstrating that an erroneous deposit was caught and removed (Deposited → Revoked)
+    via revision actions.
+    Grounded in StepSemantics.Trace.demonstratesSelfCorrection. -/
+def reliably_self_corrects {Reason Evidence : Type u} (_ : Domain)
+    (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance) : Prop :=
+  ∃ (s' : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
+    (t : StepSemantics.Trace (Reason := Reason) (Evidence := Evidence) s s')
+    (d_idx : Nat), t.demonstratesSelfCorrection d_idx
 
-axiom NoSelfCorrectionWithoutRevision (D : Domain) :
-  reliably_self_corrects D → ¬structurally_prohibits_revision D
+/-- A domain structurally prohibits revision at state s if no trace from s
+    ever contains Challenge or Revoke actions.
+    Grounded in StepSemantics.prohibits_revision. -/
+def structurally_prohibits_revision {Reason Evidence : Type u} (_ : Domain)
+    (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance) : Prop :=
+  StepSemantics.prohibits_revision (Reason := Reason) (Evidence := Evidence) s
+
+/-- Commitment 6b: Self-correcting domains cannot prohibit revision.
+
+    Discharged: direct corollary of
+    StepSemantics.self_correcting_domain_permits_revision.
+
+    Proof: if domain D has a self-correction trace from s, then by
+    self_correcting_domain_permits_revision, s does not prohibit revision,
+    contradicting structurally_prohibits_revision D s. -/
+theorem NoSelfCorrectionWithoutRevision {Reason Evidence : Type u} (D : Domain)
+    (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance) :
+    reliably_self_corrects (Reason := Reason) (Evidence := Evidence) D s →
+    ¬structurally_prohibits_revision (Reason := Reason) (Evidence := Evidence) D s := by
+  intro ⟨s', t, d_idx, h_sc⟩
+  exact StepSemantics.self_correcting_domain_permits_revision s ⟨s', t, d_idx, h_sc⟩
 
 
 /-! ## Commitment 7: Header Stripping → Harder Disputes -/

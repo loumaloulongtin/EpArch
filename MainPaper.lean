@@ -23,12 +23,12 @@ It imports ONLY the paper-facing surface.
 | File | Count | Category |
 |------|-------|----------|
 | Bank.lean | 3 | Remaining: KnowledgeIffDeposited, success_driven_bypass, blast_radius_scales_with_reliance |
-| Commitments.lean | 9 | Design commitments over opaque external predicates |
+| Commitments.lean | 8 | Design commitments over opaque external predicates |
 | Invariants.lean | 5 | Protocol requirements (design requirements, not derivable) |
-| **Total** | **17** | Remaining specification axioms |
+| **Total** | **16** | Remaining specification axioms |
 
 Discharged in `discharge-axioms` branch: 11 operator defs + 4 status-transition
-theorems + 3 Commitments theorems = **18 discharged** (35 → 17 axioms).
+theorems + 3 Commitments theorems + 1 NoSelfCorrectionWithoutRevision = **19 discharged** (35 → 16 axioms).
 
 Health goals are definitional, not axioms.
 Agent design-forcing and WorldCtx transport are now proved theorems.
@@ -37,4 +37,4 @@ Agent design-forcing and WorldCtx transport are now proved theorems.
 import EpArch.PaperFacing
 
 def main : IO Unit :=
-  IO.println s!"EpArch: Paper-Facing Surface (17 axioms, 0 sorry)"
+  IO.println s!"EpArch: Paper-Facing Surface (16 axioms, 0 sorry)"

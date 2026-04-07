@@ -10,7 +10,7 @@ As such, they are acceptable as permanent axioms (like Bank governance laws).
 
 Exception: `challenge_requires_field_localization` was discharged — see theorem.
 
-## Axiom Count: 5 (of 17 total remaining)
+## Axiom Count: 5 (of 16 remaining)
 
 1. `no_deposit_without_redeemability` — deposits must have constraint-surface contact
 2. `no_withdrawal_without_acl` — withdrawals require valid ACL membership
@@ -33,6 +33,7 @@ Plus one DISCHARGED former axiom (now a theorem):
 import EpArch.Basic
 import EpArch.Header
 import EpArch.Bank
+import EpArch.StepSemantics
 
 namespace EpArch
 
@@ -64,6 +65,25 @@ axiom no_withdrawal_without_acl (a : Agent)
     (d : Deposit PropLike Standard ErrorModel Provenance) :
     withdraw a d.bubble d → acl_permits d.h.acl a
 
+/-- Grounded version of Invariant 2: Step.withdraw enforces ACL.
+
+    Every Step.withdraw transition requires hasACLPermission in its precondition.
+    This is a proved theorem (not an axiom) derived from the Step constructor.
+
+    Note: This lives over StepSemantics.SystemState + deposit index, which is
+    the concrete operational layer. The abstract `no_withdrawal_without_acl`
+    above lives over the abstract `withdraw` predicate in Bank.lean.
+    Route B: the grounded theorem documents the operational grounding without
+    requiring a signature refactor of the abstract Bank-facing axiom. -/
+theorem grounded_no_withdrawal_without_acl
+    {Reason Evidence : Type u}
+    (s s' : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
+    (a : Agent) (B : Bubble) (d_idx : Nat)
+    (h_step : StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
+        s (.Withdraw a B d_idx) s') :
+    StepSemantics.hasACLPermission s a B d_idx :=
+  (StepSemantics.withdrawal_requires_three_gates s s' a B d_idx h_step).1
+
 
 /-! ## Invariant 3: No export without revalidation OR trust-bridge -/
 
@@ -74,6 +94,23 @@ axiom no_withdrawal_without_acl (a : Agent)
 axiom no_export_without_gate (B1 B2 : Bubble)
     (d : Deposit PropLike Standard ErrorModel Provenance) :
     exportDep B1 B2 d → (Revalidate B1 B2 d ∨ TrustBridge B1 B2)
+
+/-- Grounded version of Invariant 3: Step.export enforces header preservation.
+
+    Every Step.export transition requires depositHasHeader (header not stripped),
+    which is the operational correlate of export gating: exports that lose headers
+    cannot carry the S/E/V evidence needed for downstream revalidation.
+
+    This is a proved theorem from StepSemantics.export_requires_header.
+    Route B: documents the operational grounding for the abstract axiom above. -/
+theorem grounded_no_export_without_gate
+    {Reason Evidence : Type u}
+    (s s' : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
+    (B1 B2 : Bubble) (d_idx : Nat)
+    (h_step : StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
+        s (.Export B1 B2 d_idx) s') :
+    StepSemantics.depositHasHeader s d_idx :=
+  StepSemantics.export_requires_header s s' B1 B2 d_idx h_step
 
 
 /-! ## Invariant 4: Challenge must specify suspected field -/
