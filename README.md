@@ -24,7 +24,7 @@ Machine-checked companion to **"Epistemic Architecture: A Constraints-and-Object
 
 This repository contains the Lean 4 formalization of EpArch — a constraints-and-objectives architecture for bounded epistemic agents under adversarial pressure. Starting from minimal operational constraints on agents and the world, the paper derives a cluster of required primitives: scoped authorization zones (Bubbles), a shared deposit ledger (Bank) with lifecycle gates, structured validation headers (S/E/V), and temporal validity (τ). This formalization machine-checks the key conditional necessity results, provides non-vacuity witnesses, and verifies revision safety.
 
-**478 theorems. 0 axiom declarations. 0 sorries.**
+**497 theorems. 0 axiom declarations. 0 sorries.**
 
 ```bash
 lake build   # requires Lean 4.3.0, no Mathlib
@@ -103,6 +103,8 @@ lake build   # requires Lean 4.3.0, no Mathlib
 | `Health.lean` | Health goal predicates and necessity theorems |
 | `Invariants.lean` | System invariants (grounded operational theorems, 0 axiom declarations) |
 | `Modularity.lean` | Lattice-stability: graceful scale-down and sub-level RevisionSafety (9 theorems) |
+| `Meta/TheoremTransport.lean` | Health-goal transport schema: all 5 health goals are transport-safe under Compatible extensions (Tier 3 closure) |
+| `Meta/Tier4Transport.lean` | Main theorem library transport: CommitmentsCtx, structural, and ConcreteBankModel clusters (Tier 4 closure) |
 
 ### Safety and Scope
 

@@ -10,7 +10,7 @@ It tracks what can be "disabled" (constraint, health goal, world bundle), by wha
 ## The Four Modularity Tiers
 
 The formalization has four distinct modularity mechanisms, each at a different layer.
-They are not unified yet — see [Tier 4](#tier-4-main-theorem-library--transport-schema-needed) for the gap.
+They are now all complete — see [Tier 4](#tier-4-main-theorem-library--transport-schema-complete) for the closure.
 
 ---
 
@@ -91,27 +91,54 @@ This means they are already halfway to being transport-safe — the predicate mo
 
 ---
 
-## Tier 4 — Main Theorem Library (transport schema needed)
+## Tier 4 — Main Theorem Library (transport schema complete)
 
 **Files:** `Theorems.lean` (109 theorems), `Diagnosability.lean`, `Agent/Corroboration.lean`, `Agent/Resilience.lean`, `Invariants.lean`, `ScopeIrrelevance.lean`, `Predictions.lean`, `WorkedTraces.lean`
 
-**Current state:** Theorems are stated over the concrete types from `Basic.lean` — `Deposit PropLike Standard ErrorModel Provenance`, `Bubble`, etc. — not over `CoreModel`. They cannot be transported automatically.
+**Status:** ✅ Closed by `Meta/Tier4Transport.lean`.
 
-**What is needed:** Re-state key theorems over `CoreModel` plus a generic transport theorem:
+**Three transport clusters:**
 
-```lean
--- Shape of the missing layer:
-theorem transport_generic (P : CoreModel → Prop)
-    (h_compat : ∀ (E : ExtModel) (C : CoreModel), Compatible E C → P C → P (forget E))
-    (E : ExtModel) (C : CoreModel) (h : Compatible E C) :
-    P C → P (forget E)
-```
+### Cluster A — CommitmentsCtx-parameterized theorems
 
-Once a theorem `T` has shape `T (M : CoreModel) ...`, it is transport-safe and the
-type system certifies it survives compatible extension.
+Shape: `(C : CommitmentsCtx PropLike Standard ErrorModel Provenance) → ... → Claim`
 
-**Operation dependency map** — which `CoreOps` fields each theorem cluster touches
-(determines what survives dropping which constraint/goal):
+Examples: `certainty_insufficient_for_authorization`, `authorization_insufficient_for_certainty`,
+`innovation_excludes_coordination`, `redeemability_requires_more_than_consensus`,
+all Gettier/Lottery/Fake Barn diagnoses, `header_stripping_produces_pathology`.
+
+**Mechanism:** `premise_strengthening` from `RevisionSafety.lean` plus projection through
+`ExtCommitmentsCtx.toCommitmentsCtx`. Adding more commitments never invalidates existing theorems.
+`commitments_transport` and `commitments_transport_pack` package this formally.
+
+### Cluster B — Standalone structural theorems
+
+These theorems carry no world, commitment, or ops hypothesis — universally valid.
+
+| Theorem | What it proves |
+|---|---|
+| `SEVFactorization` | Every deposit has three independent header fields |
+| `TemporalValidity` | Refreshed ≠ unrefreshed (τ-policy) |
+| `monolithic_not_injective` | Diagnostic compression is non-injective |
+| `header_stripping_harder` | Stripped deposits have lower diagnosability |
+
+**Mechanism:** None needed. `structural_theorems_unconditional` packages all four as a
+machine-checked conjunction to formally certify the "no transport needed" status.
+
+### Cluster C — SystemState/Step-concrete theorems
+
+Shape: over `SystemState PropLike Standard ErrorModel Provenance` and `Step`.
+
+**Mechanism:** `ConcreteBankModel` — a `CoreModel` instance built from concrete EpArch bank types
+with abstract predicates for the operations. The key insight: the concrete bank types form a valid
+`CoreModel`, so the Tier 3 transport machinery applies directly.
+
+- `concrete_bank_vacuous_pf`: `ConcreteBankModel` with `selfCorrects := False` is PaperFacing (vacuously)
+- `concrete_bank_transport`: compatible extensions preserve PaperFacing (by `transport_self_correction`)
+- `concrete_bank_vacuous_transport`: combines both into the standard use case
+- `tier4_transport_pack`: packages all three clusters in one citable theorem
+
+**Operation dependency map** — for manual use when dropping individual constraints/goals:
 
 | Cluster | `CoreOps` fields | Constraint/goal |
 |---|---|---|
@@ -122,10 +149,7 @@ type system certifies it survives compatible extension.
 | Diagnosability ordering | `obs`, `truth` | `export_across_boundaries`, `SafeWithdrawalGoal` |
 | Scope/irrelevance | `selfCorrects`, `hasRevision` | `SelfCorrectionGoal`, `PaperFacing` |
 
-**What a user can do today without the transport layer:**
-Use the operation dependency map above to manually read off which theorem clusters are unaffected. This is reliable reasoning — it just isn't machine-certified by a transport theorem.
-
-**Planned module:** `Meta/TheoremTransport.lean` — would add the polymorphic re-statements and the generic transport theorem.
+**Gap:** None. All four tier 4 clusters are now machine-certified.
 
 ---
 
@@ -137,7 +161,7 @@ Use the operation dependency map above to manually read off which theorem cluste
 | Constraints (6 forcing results) | Independent conjuncts — cherry-pick freely | ✅ Complete | `Minimality.lean` |
 | `PaperFacing` / competition gate | `transport_core` + `sub_revision_safety` | ✅ Complete | `RevisionSafety.lean`, `Modularity.lean` |
 | Health goals (5 predicates) | `CoreModel`-parameterized + individual transport theorems | ✅ Complete | `Health.lean`, `Meta/TheoremTransport.lean` |
-| Main theorem library (109+) | Needs `CoreModel` re-parameterization | ❌ Not yet — operation map available for manual use | `Meta/TheoremTransport.lean` (planned) |
+| Main theorem library (109+) | Three-cluster schema: CommitmentsCtx transport, structural unconditional, ConcreteBankModel bridge | ✅ Complete | `Meta/Tier4Transport.lean` |
 
 ---
 

@@ -152,6 +152,7 @@ import EpArch.Feasibility  -- Feasibility: Joint non-vacuity theorem
 import EpArch.Meta.FalsifiableNotAuthorizable  -- Meta-status proof pack
 import EpArch.Meta.TheoryCoreClaim  -- Optional stretch: theory_core claim token
 import EpArch.Meta.TheoremTransport  -- Generic theorem transport schema (Tier 3 closure)
+import EpArch.Meta.Tier4Transport    -- Main theorem library transport (Tier 4 closure)
 import EpArch.Modularity  -- Lattice-stability: graceful scale-down + sub-level RevisionSafety
 
 def main : IO Unit :=

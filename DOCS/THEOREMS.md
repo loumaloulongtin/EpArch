@@ -1,10 +1,10 @@
 # Theorem Inventory
 
-This document catalogs **478** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
+This document catalogs **497** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
 
 **What the architecture claims:** Decentralized epistemic authorization requires specific structural mechanisms — a lifecycle with type-separated stages, header-preserving export, a revision loop, temporal validity, and a Bank substrate. These aren't design preferences; they are forced by the combination of agent constraints and system health goals.
 
-**What this document is:** A bucketed theorem index (Buckets 1–24), grouped by the claim each cluster supports. Each bucket names the Lean file, the key theorems, and the paper claim they underwrite. This is broader than Appendix A of the paper, which covers only paper-cited theorems with full math notation; this file covers the full proof burden distribution across the repo. For deeper exposition of any area, the standalone DOCS files are the right place. For the modularity story — what survives disabling a constraint, health goal, or world bundle, and by what formal mechanism — see [MODULARITY.md](MODULARITY.md).
+**What this document is:** A bucketed theorem index (Buckets 1–26), grouped by the claim each cluster supports. Each bucket names the Lean file, the key theorems, and the paper claim they underwrite. This is broader than Appendix A of the paper, which covers only paper-cited theorems with full math notation; this file covers the full proof burden distribution across the repo. For deeper exposition of any area, the standalone DOCS files are the right place. For the modularity story — what survives disabling a constraint, health goal, or world bundle, and by what formal mechanism — see [MODULARITY.md](MODULARITY.md).
 
 **Tier labels:** **A** = proved unconditionally, **B** = conditional on a W-bundle premise, **C** = design commitment (context-bundled structural assumption).
 
@@ -635,6 +635,102 @@ $$\text{Compatible} := \forall B.\, E.\text{selfCorrects}(B) \Leftrightarrow C.\
 ### Math Form (PRP Theorems)
 
 $$\text{PRP} \Rightarrow \neg\exists t_{\text{final}}.\, \forall t \geq t_{\text{final}}.\, \forall c.\, \text{cost}(c) \leq \text{budget}(a, t)$$
+
+---
+
+## Bucket 25: Theorem Transport — Health Goal Layer (Tier 3 Closure)
+
+**Paper Role:** Machine-certifies that every health-goal predicate is transport-safe under compatible model extensions. Forms the lattice-stability guarantee for the health goal layer.
+
+**File:** `Meta/TheoremTransport.lean`
+
+### Transport Theorems (∀-predicates — plain `Compatible`)
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `transport_safe_withdrawal` | Meta/TheoremTransport.lean | `Compatible E C → SafeWithdrawalGoal C → SafeWithdrawalGoal (forget E)` | Withdrawal gates preserved |
+| `transport_reliable_export` | Meta/TheoremTransport.lean | `Compatible E C → ReliableExportGoal C → ReliableExportGoal (forget E)` | Export gates preserved |
+| `transport_sound_deposits` | Meta/TheoremTransport.lean | `Compatible E C → SoundDepositsGoal C → SoundDepositsGoal (forget E)` | Deposit soundness preserved |
+| `transport_self_correction` | Meta/TheoremTransport.lean | `Compatible E C → SelfCorrectionGoal C → SelfCorrectionGoal (forget E)` | Competition gate preserved |
+| `transport_corrigible_universal` | Meta/TheoremTransport.lean | `Compatible E C → CorrigibleLedgerGoal C → ∀ B, hasRevision B → revise-soundness` | Universal part of corrigibility |
+| `transport_corrigible_ledger` | Meta/TheoremTransport.lean | `SurjectiveCompatible E C → CorrigibleLedgerGoal C → CorrigibleLedgerGoal (forget E)` | Full corrigibility (needs surjectivity) |
+
+### Vacuous Operation Theorems
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `vacuous_selfCorrects_paper_facing` | Meta/TheoremTransport.lean | `VacuousSelfCorrects M → PaperFacing M` | Disabled self-correction → PaperFacing vacuous |
+| `vacuous_revision_corrigible_universal` | Meta/TheoremTransport.lean | `VacuousRevise M → universal corrigibility` | Disabled revise → revision part trivial |
+| `vacuous_submit_safe_withdrawal` | Meta/TheoremTransport.lean | `VacuousSubmit M → SafeWithdrawalGoal M` | Disabled submit → safe withdrawal vacuous |
+| `vacuous_truth_sound_deposits` | Meta/TheoremTransport.lean | `VacuousTruth M → SoundDepositsGoal M` | Disabled truth → sound deposits vacuous |
+| `vacuous_truth_reliable_export` | Meta/TheoremTransport.lean | `VacuousTruth M → ReliableExportGoal M` | Disabled truth → reliable export vacuous |
+
+### Headline Pack
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `health_goal_transport_pack` | Meta/TheoremTransport.lean | All five ∀-transports packaged | Full Tier 3 certification |
+
+### Supporting Definitions
+
+| Definition | File | Purpose |
+|------------|------|---------|
+| `OperationMask` | Meta/TheoremTransport.lean | 8-bool operation dependency record |
+| `mask_selfCorrection` | Meta/TheoremTransport.lean | Mask for PaperFacing |
+| `mask_safeWithdrawal` | Meta/TheoremTransport.lean | Mask for SafeWithdrawalGoal |
+| `mask_reliableExport` | Meta/TheoremTransport.lean | Mask for ReliableExportGoal |
+| `mask_soundDeposits` | Meta/TheoremTransport.lean | Mask for SoundDepositsGoal |
+| `mask_corrigibleLedger` | Meta/TheoremTransport.lean | Mask for CorrigibleLedgerGoal |
+| `SurjectiveCompatible` | Meta/TheoremTransport.lean | Compatible + πBubble/πDeposit surjective |
+| `VacuousSelfCorrects`/`VacuousHasRevision`/`VacuousRevise`/`VacuousSubmit`/`VacuousTruth` | Meta/TheoremTransport.lean | Disabled-operation predicates |
+
+---
+
+## Bucket 26: Theorem Transport — Main Library Layer (Tier 4 Closure)
+
+**Paper Role:** Machine-certifies that the three theorem clusters in the main library are transport-safe. Closes the Tier 4 gap in DOCS/MODULARITY.md.
+
+**File:** `Meta/Tier4Transport.lean`
+
+### Cluster A: CommitmentsCtx Transport
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `commitments_transport` | Meta/Tier4Transport.lean | `(C → Claim) → ExtCommitmentsCtx Extra → Claim` | Generic CommitmentsCtx transport |
+| `commitments_transport_pack` | Meta/Tier4Transport.lean | All four forward theorems survive commitment extension | Cluster A certification |
+
+### Cluster B: Structural Unconditional
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `structural_theorems_unconditional` | Meta/Tier4Transport.lean | SEVFactorization ∧ TemporalValidity ∧ monolithic_not_injective ∧ header_stripping_harder | Cluster B certification |
+
+### Cluster C: Concrete Bank Bridge
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `concrete_bank_vacuous_pf` | Meta/Tier4Transport.lean | `ConcreteBankModel` with `selfCorrects := False` is PaperFacing | Base case |
+| `concrete_bank_transport` | Meta/Tier4Transport.lean | `Compatible E ConcreteBankModel → PaperFacing base → PaperFacing (forget E)` | Extension safety |
+| `concrete_bank_vacuous_transport` | Meta/Tier4Transport.lean | Combines base + transport for the vacuous case | Convenience theorem |
+
+### Full Pack
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `tier4_transport_pack` | Meta/Tier4Transport.lean | Cluster A ∧ Cluster B ∧ Cluster C | Full Tier 4 certification |
+
+### Supporting Definitions
+
+| Definition | File | Purpose |
+|------------|------|---------|
+| `ExtCommitmentsCtx` | Meta/Tier4Transport.lean | CommitmentsCtx + one extra commitment field |
+| `ConcreteBankModel` | Meta/Tier4Transport.lean | CoreModel instance from concrete EpArch bank types |
+
+### Math Form
+
+$$\forall E \supseteq C_{\text{base}},\; \text{PaperFacing}(C_{\text{base}}) \Rightarrow \text{PaperFacing}(\text{forget}(E))$$
+
+$$\forall C' \supseteq C,\; T(C) \Rightarrow T(C.\text{toCommitmentsCtx})$$
 
 ### Design-Imposition Theorems (Tier A — Proved)
 
