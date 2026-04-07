@@ -235,13 +235,17 @@ def lifecycle (_ : Bubble) (_ : Deposit PropLike Standard ErrorModel Provenance)
   .RepairOrRevoke ∈ trace ∧ .Redeposit ∈ trace
 
 /-- Commitment 6: Deposits have lifecycle; domains require challenge/revocation mechanisms.
-    Grounded: takes a concrete StepSemantics isQuarantined state (replacing the opaque
-    pushback precondition) and constructs the Step.repair witness inline — exactly as
-    grounded_RepairLoopExists does. The proof cannot be completed without a valid
-    isQuarantined operational state; the lifecycle trace is not an arbitrary witness but
-    corresponds to the realized Step.Repair sequence (Repair resets status to .Candidate,
-    which is the Redeposit step). Structure mirrors NoSelfCorrectionWithoutRevision:
-    a StepSemantics precondition gives the proof its semantic weight. -/
+    This is a constructive witness theorem: given a concrete isQuarantined state in
+    StepSemantics, it constructs the Step.repair witness inline and then supplies the
+    explicit trace [Challenge, Quarantine, RepairOrRevoke, Redeposit] as the lifecycle
+    witness. The proof cannot be completed without a valid isQuarantined operational
+    state (the Step.repair let-binding is type-checked), which makes the precondition
+    genuinely load-bearing.
+    Note: the real semantic content — that repair resets the deposit to Candidate and
+    forces it back through the validation cycle — lives in grounded_RepairLoopExists
+    and repair_produces_candidate (StepSemantics). This theorem witnesses that such
+    a trace exists; it does not derive its conclusion from a deep emergent property
+    of the system in the way NoSelfCorrectionWithoutRevision does. -/
 theorem RepairLoopExists {Reason Evidence : Type u} (B : Bubble)
     (d : Deposit PropLike Standard ErrorModel Provenance)
     (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)

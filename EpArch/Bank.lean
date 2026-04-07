@@ -11,10 +11,19 @@ status-transition axioms, and bubble hygiene structures.
 
 The lifecycle operators (`Validate_B`, `Accept_B`, `Challenge_B`, `Repair_B`,
 `Revoke_B`, `Restore_B`, `Export_B_C`, `Import_C`, `repair`, `τ_refresh`,
-`deprecate`) and their four status-transition consequences were previously
-axioms. They are now **concrete definitions** and **proved theorems** —
-discharged by providing minimal struct-update witnesses over the `Deposit`
-record's `status` (and `bubble`/`h.τ`) fields.
+`deprecate`) and their status-transition theorems are a **minimal concrete
+witness layer** for the specification interface. Each operator is a guarded
+struct-update over the `Deposit` record's `status` (and `bubble`/`h.τ`) fields;
+each theorem proves the witness satisfies its postcondition using the gate
+condition. This layer establishes that the specification is satisfiable —
+concrete implementations exist. It does not reconstruct all the informal
+operator semantics (ACL enforcement, header mutation, audit logging, etc.);
+those parts of the story remain above the abstraction boundary.
+
+The pipeline composition theorems (`validate_accept_pipeline`,
+`challenge_repair_pipeline`, `full_lifecycle_pipeline`) additionally confirm
+that the precondition/postcondition chain is internally consistent: no step's
+precondition is accidentally satisfied by a prior step producing the wrong status.
 
 Three axioms remain that involve opaque external predicates and cannot be
 concretely grounded without giving up the abstraction:
@@ -213,9 +222,13 @@ def Import_C (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) 
 
 /-! ## Operator Status Transitions -/
 
-/-- Status after validation: the precondition gates the if-branch in Validate_B.
-    Proof: unfold the guarded definition, then rw [if_pos h] activates the then-branch
-    and rfl closes { d with status := .Validated }.status = .Validated. -/
+-- The theorems below are minimal witness proofs: each confirms that the concrete
+-- guarded operator satisfies its postcondition when its precondition holds.
+-- They establish satisfiability of the specification interface, not a full
+-- reconstruction of the underlying operational semantics (which lives in StepSemantics).
+
+/-- Status after validation: the if-guard in Validate_B is activated by h.
+    if_pos h selects the then-branch; rfl closes the resulting equality. -/
 theorem validate_produces_validated (B : Bubble)
     (d : Deposit PropLike Standard ErrorModel Provenance) :
     d.status = .Candidate → (Validate_B B d).status = .Validated := by
