@@ -1,6 +1,6 @@
 # Theorem Inventory
 
-This document catalogs **522** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
+This document catalogs **529** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
 
 **What the architecture claims:** Decentralized epistemic authorization requires specific structural mechanisms — a lifecycle with type-separated stages, header-preserving export, a revision loop, temporal validity, and a Bank substrate. These aren't design preferences; they are forced by the combination of agent constraints and system health goals.
 
@@ -1073,17 +1073,24 @@ other selected constraints remain live implications backed by the required bicon
 
 ## Bucket 28: Configurable Certification Engine — `EpArchConfig → ClusterTag → certified proof`
 
-**Paper Role:** Closes the claim that the 17 theorem clusters are individually selectable and
+**Paper Role:** Closes the claim that the 24 theorem clusters are individually selectable and
 certifiable: given any user-specified `EpArchConfig` (which constraints, goals, and world
 bundles are operative), the engine computes exactly which theorem clusters apply and provides
-machine-checked justification for each enabled cluster.
+machine-checked justification for each enabled cluster.  This includes 7 world-bundle
+obligation clusters that wire `EpArchConfig.worlds` to proved obligation theorems in
+`WorldCtx.lean` and `AdversarialObligations.lean`.
+
+**Note on `.partial_observability`:** The `WorldTag.partial_observability` value is collected
+but has no proved obligation theorem yet (`W_partial_observability` structure exists in
+`WorldCtx.lean` but no theorem uses it). It is informational.
 
 **File:** `Meta/Config.lean`
 
 **Design:** `clusterEnabled cfg c : Bool` is the computable routing function. `showConfig cfg`
 is `#eval`-able and returns human-readable cluster descriptions. `certify cfg` returns a
 `CertifiedProjection` that names every enabled cluster. Named proof witnesses (`cluster_forcing_*`,
-`cluster_goal_*`, `cluster_tier4_*`) state and prove the exact proposition for each cluster.
+`cluster_goal_*`, `cluster_tier4_*`, `cluster_world_*`) state and prove the exact proposition
+for each cluster.
 
 ### Definitions / Configuration Language
 
@@ -1093,8 +1100,8 @@ is `#eval`-able and returns human-readable cluster descriptions. `certify cfg` r
 | `GoalTag` | Meta/Config.lean | 5 health-goal tags (safeWithdrawal … selfCorrection) |
 | `WorldTag` | Meta/Config.lean | 8 world-bundle tags (lies_possible … ddos) |
 | `EpArchConfig` | Meta/Config.lean | User-supplied config: lists of active constraints/goals/worlds |
-| `ClusterTag` | Meta/Config.lean | 17 cluster tags spanning Tiers 2–4 |
-| `allClusters` | Meta/Config.lean | Canonical ordered list of all 17 ClusterTags |
+| `ClusterTag` | Meta/Config.lean | 24 cluster tags spanning Tiers 2–4 and world obligations |
+| `allClusters` | Meta/Config.lean | Canonical ordered list of all 24 ClusterTags |
 | `clusterEnabled` | Meta/Config.lean | `EpArchConfig → ClusterTag → Bool` (computable routing) |
 | `explainConfig` | Meta/Config.lean | `EpArchConfig → List ClusterTag` — enabled clusters |
 | `clusterValid` | Meta/Config.lean | `ClusterTag → Prop` — always `True` (every cluster is proved) |
@@ -1102,7 +1109,7 @@ is `#eval`-able and returns human-readable cluster descriptions. `certify cfg` r
 | `showConfig` | Meta/Config.lean | `EpArchConfig → List String` — `#eval`-able routing report |
 | `CertifiedProjection` | Meta/Config.lean | Proof-carrying record: enabled clusters + soundness |
 | `certify` | Meta/Config.lean | `EpArchConfig → CertifiedProjection cfg` |
-| `fullConfig` | Meta/Config.lean | Sample: all 6 constraints, 5 goals, 4 worlds |
+| `fullConfig` | Meta/Config.lean | Sample: all 6 constraints, 5 goals, 8 worlds |
 | `minimalConfig` | Meta/Config.lean | Sample: 1 constraint, 1 goal, no worlds |
 | `goalsOnlyConfig` | Meta/Config.lean | Sample: no constraints, all 5 goals |
 
@@ -1143,5 +1150,26 @@ is `#eval`-able and returns human-readable cluster descriptions. `certify cfg` r
 | `cluster_tier4_bank_goals_compat` | Meta/Config.lean | All 5 ∀-goals + universal corrigibility via Compatible | Witness for `.tier4_bank_goals_compat` |
 | `cluster_tier4_bank_goals_surj` | Meta/Config.lean | All 5 goals + full CorrigibleLedgerGoal via SurjectiveCompatible | Witness for `.tier4_bank_goals_surj` |
 
-### Grand Total: +15 new theorems (507 + 15 = 522)
+#### World-Bundle Named Proof Witnesses (Obligation Theorems)
+
+7 of the 8 `WorldTag` values have proved obligation theorems. `.partial_observability` is
+collected but not yet wired (no obligation theorem exists).
+
+| Theorem | File | Statement | World Bundle | Underlying Theorem |
+|---------|------|-----------|--------------|--------------------|
+| `cluster_world_lies_possible` | Meta/Config.lean | `C.W_lies_possible → ∃ w a P, C.Lie w a P` | `.lies_possible` | `WorldCtx.lie_possible_of_W` |
+| `cluster_world_bounded_audit` | Meta/Config.lean | `C.RequiresSteps w P k → t < k → ¬C.VerifyWithin w P t` | `.bounded_verification` | `WorldCtx.bounded_audit_fails` |
+| `cluster_world_asymmetric_costs` | Meta/Config.lean | `C.W_asymmetric_costs → W.export_cost < W.defense_cost` | `.asymmetric_costs` | `WorldCtx.cost_asymmetry_of_W` |
+| `cluster_world_spoofed_v` | Meta/Config.lean | `W_spoofedV → is_V_spoofed v → ¬has_path p` | `.spoofedV` | `AdversarialObligations.spoofed_V_blocks_path_of_W` |
+| `cluster_world_lies_scale` | Meta/Config.lean | `W_lies_scale → W.costs.export_cost < W.costs.defense_cost` | `.lies_scale` | `AdversarialObligations.lies_scale_of_W` |
+| `cluster_world_rolex_ddos` | Meta/Config.lean | `W_rolex_ddos → same_structure W.rolex_structure W.ddos_structure` | `.rolex_ddos` | `AdversarialObligations.rolex_ddos_structural_equivalence_of_W` |
+| `cluster_world_ddos` | Meta/Config.lean | `W_ddos → some_vector_overwhelmed s → is_collapsed c` | `.ddos` | `AdversarialObligations.ddos_causes_verification_collapse_of_W` |
+
+### Grand Total: +22 new theorems (507 + 22 = 529)
+
+- 1 soundness theorem (`clusterEnabled_sound`)
+- 6 Tier 2 forcing witnesses
+- 6 Tier 3 goal-transport witnesses
+- 2 Tier 4-C bank-bundle witnesses
+- 7 world-bundle obligation witnesses
 

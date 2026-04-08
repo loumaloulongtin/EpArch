@@ -32,6 +32,8 @@ import EpArch.Minimality
 import EpArch.Health
 import EpArch.Meta.TheoremTransport
 import EpArch.Meta.Tier4Transport
+import EpArch.WorldCtx
+import EpArch.AdversarialObligations
 
 namespace EpArch.Meta.Config
 
@@ -39,10 +41,12 @@ open EpArch
 open RevisionSafety
 open EpArch.Meta.TheoremTransport
 open EpArch.Meta.Tier4Transport
+open EpArch.AdversarialObligations
 
 -- Universe parameter shared across all theorem-level propositions in this file.
 -- Allows theorem declarations in §5b to reference universe-polymorphic types
--- (WorkingSystem, CoreModel, ExtModel) — standard for Lean 4 theorem declarations.
+-- (WorkingSystem, CoreModel, ExtModel, W_spoofedV) — standard for Lean 4 theorem declarations.
+universe u
 
 
 /-! ## §1  Configuration Language -/
@@ -90,7 +94,7 @@ structure EpArchConfig where
 
 /-! ## §2  Cluster Tags -/
 
-/-- The 17 theorem clusters certified in EpArch Tiers 2–4. -/
+/-- The 24 theorem clusters certified in EpArch Tiers 2–4 plus world-bundle obligations. -/
 inductive ClusterTag where
   -- Tier 2: constraint-forcing theorems (6 clusters)
   | forcing_distributed_agents
@@ -112,19 +116,30 @@ inductive ClusterTag where
   | tier4_lts_universal         -- Cluster B+: LTS withdrawal/repair/submit gates
   | tier4_bank_goals_compat     -- Cluster C  (Compatible): 4 goals + universal corrigible
   | tier4_bank_goals_surj       -- Cluster C+ (SurjectiveCompatible): full CorrigibleLedgerGoal
+  -- World-bundle obligation clusters (7 of 8 world tags have proved obligations;
+  -- .partial_observability is defined but has no obligation theorem yet)
+  | world_lies_possible         -- W_lies_possible: lying is possible
+  | world_bounded_audit         -- W_bounded_verification: audit can fail before deadline
+  | world_asymmetric_costs      -- W_asymmetric_costs: export_cost < defense_cost
+  | world_spoofed_v             -- W_spoofedV: spoofed provenance blocks path
+  | world_lies_scale            -- W_lies_scale: lies scale (cost asymmetry)
+  | world_rolex_ddos            -- W_rolex_ddos: individual & population attacks structurally same
+  | world_ddos                  -- W_ddos: DDoS causes verification collapse
   deriving DecidableEq, BEq, Repr
 
 
 /-! ## §3  Routing Function -/
 
-/-- All 17 cluster tags, in canonical order.  Used by `explainConfig`. -/
+/-- All 24 cluster tags, in canonical order.  Used by `explainConfig`. -/
 def allClusters : List ClusterTag := [
   .forcing_distributed_agents, .forcing_bounded_audit, .forcing_export,
   .forcing_adversarial, .forcing_coordination, .forcing_truth,
   .goal_safeWithdrawal, .goal_reliableExport, .goal_soundDeposits,
   .goal_selfCorrection, .goal_corrigible_universal, .goal_corrigible_full,
   .tier4_commitments, .tier4_structural, .tier4_lts_universal,
-  .tier4_bank_goals_compat, .tier4_bank_goals_surj]
+  .tier4_bank_goals_compat, .tier4_bank_goals_surj,
+  .world_lies_possible, .world_bounded_audit, .world_asymmetric_costs,
+  .world_spoofed_v, .world_lies_scale, .world_rolex_ddos, .world_ddos]
 
 /-- Decide whether cluster `c` is applicable for config `cfg`.
 
@@ -160,6 +175,14 @@ def clusterEnabled (cfg : EpArchConfig) : ClusterTag → Bool
       cfg.goals.contains .soundDeposits &&
       cfg.goals.contains .selfCorrection &&
       cfg.goals.contains .corrigibleLedger
+  -- World-bundle obligations: gated on worlds field
+  | .world_lies_possible    => cfg.worlds.contains .lies_possible
+  | .world_bounded_audit    => cfg.worlds.contains .bounded_verification
+  | .world_asymmetric_costs => cfg.worlds.contains .asymmetric_costs
+  | .world_spoofed_v        => cfg.worlds.contains .spoofedV
+  | .world_lies_scale       => cfg.worlds.contains .lies_scale
+  | .world_rolex_ddos       => cfg.worlds.contains .rolex_ddos
+  | .world_ddos             => cfg.worlds.contains .ddos
 
 /-- The clusters enabled by `cfg`, in canonical order. -/
 def explainConfig (cfg : EpArchConfig) : List ClusterTag :=
@@ -178,7 +201,7 @@ machine-proved unconditionally. The actual propositions are documented by the
 named witnesses in §5b below, which are ordinary Lean theorems (permitted to be
 universe-polymorphic). -/
 
-/-- Every cluster is valid: holds unconditionally (all 17 are machine-proved). -/
+/-- Every cluster is valid: holds unconditionally (all 24 are machine-proved). -/
 @[simp] def clusterValid : ClusterTag → Prop := fun _ => True
 
 
@@ -228,6 +251,20 @@ def clusterDescription : ClusterTag → String
       "[Tier 4-C] All ∀-health goals + universal corrigibility via Compatible  (concrete_bank_all_goals_transport)"
   | .tier4_bank_goals_surj =>
       "[Tier 4-C+] All health goals + full CorrigibleLedgerGoal via SurjectiveCompatible  (concrete_bank_all_goals_transport_surj)"
+  | .world_lies_possible =>
+      "[World] W_lies_possible: lying is structurally possible  (WorldCtx.lie_possible_of_W)"
+  | .world_bounded_audit =>
+      "[World] W_bounded_verification: audit can fail before deadline  (WorldCtx.bounded_audit_fails)"
+  | .world_asymmetric_costs =>
+      "[World] W_asymmetric_costs: export cost < defense cost  (WorldCtx.cost_asymmetry_of_W)"
+  | .world_spoofed_v =>
+      "[World] W_spoofedV: spoofed-V blocks provenance path  (AdversarialObligations.spoofed_V_blocks_path_of_W)"
+  | .world_lies_scale =>
+      "[World] W_lies_scale: lies scale (export < defense cost)  (AdversarialObligations.lies_scale_of_W)"
+  | .world_rolex_ddos =>
+      "[World] W_rolex_ddos: individual and population attacks structurally equivalent  (AdversarialObligations.rolex_ddos_structural_equivalence_of_W)"
+  | .world_ddos =>
+      "[World] W_ddos: DDoS causes verification collapse  (AdversarialObligations.ddos_causes_verification_collapse_of_W)"
 
 /-- Human-readable list of all cluster descriptions enabled by `cfg`. -/
 def showConfig (cfg : EpArchConfig) : List String :=
@@ -374,19 +411,65 @@ theorem cluster_tier4_bank_goals_surj
    transport_self_correction E C h.toCompatible h_sc,
    transport_corrigible_ledger E C h h_cl⟩
 
+-- ── World-bundle obligation theorems ─────────────────────────────────────
+-- Each theorem names and proves the machine-checked obligation associated with
+-- its WorldTag.  (.partial_observability has no obligation theorem yet.)
+
+/-- Cluster `.world_lies_possible`: lying is structurally possible when W_lies_possible holds. -/
+theorem cluster_world_lies_possible
+    (C : WorldCtx) (W : C.W_lies_possible) : ∃ w a P, C.Lie w a P :=
+  WorldCtx.lie_possible_of_W C W
+
+/-- Cluster `.world_bounded_audit`: audit cannot complete before deadline under W_bounded_verification. -/
+theorem cluster_world_bounded_audit
+    (C : WorldCtx) (w : C.World) (P : C.Claim) (k t : Nat) :
+    C.RequiresSteps w P k → t < k → ¬C.VerifyWithin w P t :=
+  WorldCtx.bounded_audit_fails C w P k t
+
+/-- Cluster `.world_asymmetric_costs`: export cost strictly less than defense cost under W_asymmetric_costs. -/
+theorem cluster_world_asymmetric_costs
+    (C : WorldCtx) (W : C.W_asymmetric_costs) : W.export_cost < W.defense_cost :=
+  WorldCtx.cost_asymmetry_of_W C W
+
+/-- Cluster `.world_spoofed_v`: spoofed provenance blocks any verification path. -/
+theorem cluster_world_spoofed_v
+    {PropLike Standard ErrorModel Provenance : Type u}
+    (W : W_spoofedV (PropLike := PropLike) (Standard := Standard)
+         (ErrorModel := ErrorModel) (Provenance := Provenance))
+    (d : Deposit PropLike Standard ErrorModel Provenance)
+    (v : V_Spoofed_State d) (p : PathExists d) :
+    is_V_spoofed v → ¬has_path p :=
+  spoofed_V_blocks_path_of_W W d v p
+
+/-- Cluster `.world_lies_scale`: lies scale — export cost < defense cost under W_lies_scale. -/
+theorem cluster_world_lies_scale (W : W_lies_scale) :
+    W.costs.export_cost < W.costs.defense_cost :=
+  lies_scale_of_W W
+
+/-- Cluster `.world_rolex_ddos`: individual and population attacks are structurally equivalent. -/
+theorem cluster_world_rolex_ddos (W : W_rolex_ddos) :
+    same_structure W.rolex_structure W.ddos_structure :=
+  rolex_ddos_structural_equivalence_of_W W
+
+/-- Cluster `.world_ddos`: DDoS causes verification collapse under W_ddos. -/
+theorem cluster_world_ddos
+    (W : W_ddos) (a : Agent) (s : DDoSState a) (c : CollapsedState a) :
+    some_vector_overwhelmed s → is_collapsed c :=
+  ddos_causes_verification_collapse_of_W W a s c
+
 
 /-! ## §8  Sample Configurations
 
 Uncomment `#eval` lines to inspect routing interactively. -/
 
-/-- Full EpArch configuration: all six constraints, all five goals, four worlds. -/
+/-- Full EpArch configuration: all six constraints, all five goals, all eight worlds. -/
 def fullConfig : EpArchConfig where
   constraints := [.distributed_agents, .bounded_audit, .export_across_boundaries,
                   .adversarial_pressure, .coordination_need, .truth_pressure]
   goals       := [.safeWithdrawal, .reliableExport, .corrigibleLedger,
                   .soundDeposits, .selfCorrection]
   worlds      := [.lies_possible, .bounded_verification, .partial_observability,
-                  .asymmetric_costs]
+                  .asymmetric_costs, .spoofedV, .lies_scale, .rolex_ddos, .ddos]
 
 /-- Minimal configuration: one constraint, one goal, no worlds. -/
 def minimalConfig : EpArchConfig where
