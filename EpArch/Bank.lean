@@ -19,10 +19,9 @@ Pipeline composition theorems (`validate_accept_pipeline`,
 `challenge_repair_pipeline`, `full_lifecycle_pipeline`) confirm that
 precondition/postcondition chains are internally consistent.
 
-Two behavioral claims involve opaque external predicates and are stated as
-theorems over those primitives:
-- `success_driven_bypass` — over opaque `reliance_level`
-- `blast_radius_scales_with_reliance` — over opaque `blast_radius`
+Two behavioral claims are stated as theorems over `DepositDynamics`-grounded defs:
+- `success_driven_bypass` — over `reliance_level` (a `def` on `DepositDynamics`)
+- `blast_radius_scales_with_reliance` — over `blast_radius` (a `def` on `DepositDynamics`)
 
 The constructive and operational groundings live in:
 - **StepSemantics.lean**: Concrete `Step` LTS.

@@ -42,7 +42,7 @@ are active, this module computes and certifies:
   is universe-polymorphic — avoiding the isolation rule that blocks `def` bodies.
 
 **Proof-content layer** (`cluster_*` witnesses in §5b):
-  Universe-polymorphic Lean theorems covering all 25 clusters.  These are the
+  Universe-polymorphic Lean theorems covering all 30 clusters.  These are the
   standalone named witnesses usable via `#check cluster_goal_safeWithdrawal`, etc.
 
 ## Usage
@@ -120,7 +120,7 @@ The certification engine has **four layers** (mirroring the file header):
    universe level.  The constructors package the real transport theorems as args.
 
 4. **Proof-content layer** — the `cluster_*` witnesses in §5b.
-   Universe-polymorphic Lean theorems covering all 25 clusters.  Goal/Tier4/World
+   Universe-polymorphic Lean theorems covering all 30 clusters.  Goal/Tier4/World
    clusters reference `ExtModel.{u₁,u₂}`, `CoreModel.{u₃}`, `WorldCtx.{u}` and
    cannot be packed into a monomorphic def; the §5b witnesses are the authoritative
    standalone form.  Inspect with `#check cluster_goal_safeWithdrawal`, etc.
@@ -129,14 +129,16 @@ The certification engine has **four layers** (mirroring the file header):
 
 Lean 4's **universe isolation rule** prohibits a `def f : A → B` whose body
 references universe levels that do not appear in the declared type `A → B`.
-The 25 cluster theorems span four independent universe families:
+The 30 cluster theorems span six independent universe families:
 
 | Family              | Source module           | Representative type      |
-|---------------------|-------------------------|--------------------------|
+|---------------------|-------------------------|---------------------------|
 | Forcing             | `EpArch.Minimality`     | `WorkingSystem.{u}`      |
 | Goal transport      | `EpArch.Meta.TheoremTransport` | `ExtModel.{u₁,u₂}`, `CoreModel.{u₃}` |
 | World bundles       | `EpArch.WorldCtx`       | `WorldCtx.{u}`           |
 | Adversarial         | `EpArch.AdversarialObligations` | `W_spoofedV.{u}`  |
+| Meta-modularity     | `EpArch.Meta.Modular`   | `EpArchConfig`           |
+| Lattice-stability   | `EpArch.Modularity`     | `CoreModel.{u}`          |
 
 None of these universe levels surface in `ClusterTag → ClusterProof` when
 `ClusterProof : Type 1` is a fixed-universe record.  Resolving this would
@@ -145,7 +147,7 @@ require either monomorphising all source types to universe 0 or parameterising
 of modules outside this file, and neither is needed: the indexed witnesses (§4c–§4e)
 and §5b witnesses already provide all proof content in the most natural Lean 4 form. -/
 
-/-- Every cluster is valid: holds unconditionally (all 25 are machine-proved).
+/-- Every cluster is valid: holds unconditionally (all 30 are machine-proved).
     See the `cluster_*` witnesses in §5b for real typed propositions. -/
 @[simp] def clusterValid : ClusterTag → Prop := fun _ => True
 

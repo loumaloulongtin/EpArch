@@ -28,14 +28,14 @@ directions under bundle perturbation.
      ┌──┴──┴──┐
      │ SubModel │          ← any valid sub-bundle (CoreModel with fewer active goals)
      └──┬──┬──┘
-        ↓  ↓              ← sub_extension_preserves (this file)
+        ↓  ↓              ← sub_revision_safety (this file)
    Extended-Sub models
 
   At every level: what is proved stays proved. Extensions are safe at every level.
 
 ## Key Theorem
 
-`modularity_pack`: GracefulDegradation ∧ SubRevisionSafety
+`modularity_pack`: GracefulDegradation ∧ SubRevisionSafety ∧ FullRevisionSafety
   = "EpArch is a floor, not a cage."
 
 ## Odometer sub-model
@@ -69,9 +69,10 @@ For sub-bundles that DO have self-correction, all the commuting-law machinery
 from RevisionSafety carries through identically. We prove `SubRevisionSafety`
 to package that.
 
-The decomposition theorem shows `PaperFacing` is the conjunction of a
-`RevisionGate` component and a structural non-triviality component (hasBubble),
-so the predicate is cleanly factored per goal cluster.
+The decomposition theorem shows `PaperFacing M ↔ RevisionGate M` (`Iff.rfl`) —
+the predicate is identical to its `RevisionGate` component at this abstraction
+level. Extended bundles add further conjuncts; within the core layer `PaperFacing`
+is cleanly factored as a single-component goal cluster.
 -/
 
 /-- RevisionGate: the competition-gate component of PaperFacing.

@@ -116,9 +116,12 @@ The formalization contains **zero `axiom` declarations**. All 8 structural commi
 are proved standalone theorems.  C1 (Traction/Authorization Split) is proved by
 `innovation_allows_traction_without_authorization` and
 `caveated_authorization_does_not_force_certainty`.  `CommitmentsCtx` is an empty
-structure retained for backward compatibility.  Opaque domain primitives
-(`certainty_L`, `knowledge_B`, `sticky`, etc.) are uninterpreted constants,
-not `axiom` declarations.
+structure retained for backward compatibility.  Some domain primitives are
+`opaque` constants (e.g., `agentTraction`, `ignores_bank_signal`, `pushback`,
+`τ_compress`, `V_spoof`, and the performance/adversarial-pressure opaques in
+`Theorems.lean` / `AdversarialBase.lean`); others, including `certainty_L` and
+`knowledge_B`, are ordinary `def`s grounded in their respective types.
+None are `axiom` declarations.
 -/
 
 import EpArch.Basic
