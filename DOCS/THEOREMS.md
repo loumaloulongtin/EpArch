@@ -390,10 +390,11 @@ Applications of the safety/sensitivity framework to specific epistemological cas
 
 | Theorem | File | Statement | Paper Claim |
 |---------|------|-----------|-------------|
-| `lie_possible_of_W` | World.lean | W_lies_possible → ∃ w a P, Lie w a P | Adversarial: lies exist |
-| `all_agents_can_lie_of_W` | World.lean | W_lies_possible → ∀ a, can_lie a | Adversarial: universal capability |
-| `bounded_audit_fails` | World.lean | RequiresSteps w P k → t < k → ¬VerifyWithin | §14: Bounded audit |
-| `cost_asymmetry_of_W` | World.lean | W_asymmetric_costs → export < defense | Adversarial: cost asymmetry |
+| `lie_possible_of_W` | WorldCtx.lean | W_lies_possible → ∃ w a P, Lie w a P | Adversarial: lies exist |
+| `all_agents_can_lie_of_W` | WorldCtx.lean | W_lies_possible → ∀ a, can_lie a | Adversarial: universal capability |
+| `bounded_audit_fails` | WorldCtx.lean | RequiresSteps w P k → t < k → ¬VerifyWithin | §14: Bounded audit |
+| `cost_asymmetry_of_W` | WorldCtx.lean | W_asymmetric_costs → export < defense | Adversarial: cost asymmetry |
+| `partial_obs_no_omniscience` | WorldCtx.lean | W_partial_observability → ∃ P, NotDeterminedByObs P | No omniscience: obs underdetermines truth |
 
 ### Adversarial Obligation Theorems (AdversarialObligations.lean)
 
@@ -418,7 +419,7 @@ Applications of the safety/sensitivity framework to specific epistemological cas
 | `E_inclusion_closes_expertise_gap_of_W` | AdversarialObligations.lean | W_E_inclusion → E includes threat → ¬gap_exploited | `E_inclusion_closes_expertise_gap` |
 | `cheap_constraint_blocks_V_spoof_of_W` | AdversarialObligations.lean | W_cheap_constraint → cheap test → ¬V_attack | `cheap_constraint_blocks_V_spoof` |
 
-**World Assumption Bundles:** 15 `W_*` bundles (`W_lies_possible` through `W_cheap_constraint`) each gate exactly one obligation theorem above; full definitions in World.lean and WorldCtx.lean.
+**World Assumption Bundles:** 16 `W_*` bundles (`W_lies_possible` through `W_cheap_constraint`) each gate exactly one obligation theorem above; full definitions in WorldCtx.lean and AdversarialObligations.lean.
 
 ### Math Form
 
