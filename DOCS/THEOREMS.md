@@ -786,10 +786,28 @@ File: `Agent/Imposition.lean`
 
 ### Fault Containment Theorems (Tier A)
 
-| Theorem | Statement | Paper Claim |
-|---------|-----------|-------------|
-| `lie_containment_principle` | Lies create untrusted deposits, don't flip truth | Epistemic sandbox |
-| `no_gate_bypass` | Gate enforcement is architectural, not agent-dependent | Gate invariance |
+**File:** `Agent/Resilience.lean`
+
+| Theorem | File | Statement | Paper Claim |
+|---------|------|-----------|-------------|
+| `lie_containment_principle` | Agent/Resilience.lean | Lies create untrusted deposits, don't flip truth | Epistemic sandbox |
+| `no_gate_bypass` | Agent/Resilience.lean | Gate enforcement is architectural, not agent-dependent | Gate invariance |
+
+### AgentLTS Simulation Theorems (Tier A)
+
+**File:** `Agent/Resilience.lean`
+
+`AgentLTS` is a proof-oriented abstraction of `StepSemantics` that packages containment invariants as an LTS with a simulation relation. Theorems here prove that StepSemantics preserves these invariants via the simulation.
+
+| Theorem | File | Statement | Paper Claim |
+|---------|------|-----------|-------------|
+| `truth_invariant_preserved` | Agent/Resilience.lean | Single step preserves truth invariant | Containment: truth is stable |
+| `truth_preserved_along_trace` | Agent/Resilience.lean | Full trace preserves truth invariant | Containment: trace-level truth |
+| `gate_invariant_preserved` | Agent/Resilience.lean | Single step preserves gate invariant | Containment: gate is stable |
+| `gate_preserved_along_trace` | Agent/Resilience.lean | Full trace preserves gate invariant | Containment: trace-level gate |
+| `agent_containment` | Agent/Resilience.lean | Agent actions are contained within the epistemic sandbox | Fault containment |
+| `invariants_transfer_via_simulation` | Agent/Resilience.lean | If `AgentLTS` preserves invariant I, then `StepSemantics` preserves I | Simulation correctness |
+| `stepsemantics_preserves_containment_invariants` | Agent/Resilience.lean | StepSemantics directly preserves truth + gate invariants | Headline containment closure |
 
 ---
 

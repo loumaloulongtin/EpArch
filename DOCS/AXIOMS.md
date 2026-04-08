@@ -103,8 +103,15 @@ Key opaque primitives:
 |-----------|------|------|
 | `agentTraction` | Basic.lean | Agent's private traction assignment (Claim → LadderStage); hook for psychology/cognition |
 | `ignores_bank_signal` | Basic.lean | Whether agent's review channel is closed (separate from `certainty_L`) |
-| `redeemable` / `path_route_exists` etc. | Commitments.lean | External constraint-surface contact evidence |
-| `reliance_level` / `blast_radius` | Bank.lean | Behavioral cascade predicates |
+| `header_preserved` | Header.lean | Deposit has header intact (vs. stripped in transmission); `header_stripped` is a def: `¬header_preserved` |
+| `path_route_exists` / `contact_was_made` / `verdict_discriminates` | Commitments.lean | Opaque evidence predicates for VerificationPath (C4: redeemability external to consensus) |
+| `pushback` | Commitments.lean | Agent-level contestation of a deposit; used in C6 repair-loop machinery |
+| `withdraw` / `exportDep` / `TrustBridge` / `Revalidate` / `RepairAction` | Bank.lean | Abstract behavioral hooks (withdrawal reliance, cross-bubble export, trust bridge, revalidation, repair action type) |
+| AdversarialBase.lean opaques | AdversarialBase.lean | 21 opaques constituting the adversarial model: attack channel (`AuditChannel`, `channel_capacity`, `attack_volume`), DDoS state (`ladder_overloaded`, `V_channel_exhausted`, etc.), countermeasures (`cheap_validator_reachable`, `trust_bridge_on_hand`, etc.), cost primitives (`export_cost`, `import_defense_cost`) — see §Adversarial Model in THEOREMS.md |
+
+Note: `reliance_level` and `blast_radius` are **`def`s** (not opaques), grounded in `DepositDynamics` struct fields (`dd.relying_agents` and `dd.cascade_agents` respectively). The behavioral theorems `success_driven_bypass` and `blast_radius_scales_with_reliance` are proved over these defs.
+
+Note: `certainty_L`, `hasDeposit`, and `deposited` are now **`def`s**, not opaques:
 
 Note: `certainty_L`, `hasDeposit`, and `deposited` are now **`def`s**, not opaques:
 - `certainty_L a P := ladder_stage a P = .Certainty` (Basic.lean)
@@ -170,7 +177,7 @@ only theorems, definitions, and opaque constants.
 |--------|------|
 | `Basic.lean` | Core types |
 | `Header.lean` | S/E/V header structure |
-| `Bank.lean` | Bank substrate (concrete operators; `deposited`/`hasDeposit` are defs; opaque: `reliance_level`, `blast_radius`) |
+| `Bank.lean` | Bank substrate (concrete operators; `deposited`/`hasDeposit`/`knowledge_B`/`reliance_level`/`blast_radius` are defs; opaque: `withdraw`, `exportDep`, `TrustBridge`, `Revalidate`, `RepairAction`) |
 | `Commitments.lean` | Structural commitments (all 8 proved; CommitmentsCtx is empty) |
 | `Invariants.lean` | Grounded operational invariants |
 | `StepSemantics.lean` | Concrete step semantics |
