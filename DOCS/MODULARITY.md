@@ -13,8 +13,9 @@ certify that?
 ## 1. What Modularity Means in This Repo
 
 EpArch's theorem corpus is sliced into **30 certified clusters** across six families.
-Each cluster is independently selectable — a user or product can accept or reject it
-without invalidating the others.
+Constraint, goal, and world clusters are config-driven — activated by the `EpArchConfig`
+a user provides. Meta-modularity, lattice-stability, and Tier 4 structural clusters are
+always-on: they hold unconditionally and require no configuration.
 
 | Family | Count | What it covers |
 |---|---|---|
@@ -37,22 +38,26 @@ does what prevents confusion about where to look and where to edit.
 ### User-facing surface
 - **`EpArchConfig`** — user-supplied record of `constraints`, `goals`, `worlds` lists.
 - **`ClusterTag`** — the 30 cluster identifiers; what a user cites when requesting certification.
-- **`certify`** — the proof-carrying function; given a `ClusterTag` and evidence, returns the
-  certified theorem statement.
+- **`certify`** — `certify : EpArchConfig → CertifiedProjection cfg`; returns a record with
+  one indexed witness per family. Access proof content via:
+  `(certify myConfig).goalWitnesses`, `.tier4Witnesses`, `.worldWitnesses`,
+  `.metaModularWitnesses`, `.latticeWitnesses`.
 - **`showConfig`** / `#eval` output — human-readable display; what appears when a user runs
   `#eval EpArch.Meta.Config.showConfig myConfig`.
 
 ### Routing/metadata layer — `Meta/ClusterRegistry.lean`
 - Owns `ClusterTag`, all `EnabledXxxCluster` enumerations, `clusterDescription`,
-  `clusterFamily`, `clusterEnabled`, and every `toClusterTag` mapping.
+  `clusterEnabled`, and every `toClusterTag` mapping.
 - **No EpArch-specific imports.** It is pure metadata — all types are self-contained.
 - Changing a cluster's description, family, or enabled status: edit here only.
 
 ### Proof-carrying layer — `Meta/Config.lean`
-- Owns the indexed witness inductives (`ConstraintWitness`, `GoalWitness`,
-  `Tier4Witness`, `WorldWitness`, `MetaModularWitness`, `LatticeWitness`).
-- Each constructor holds the actual Lean type of the theorem being certified.
-- Owns the `tier4Witness`, `worldWitness`, etc. match arms that wire tags to proofs.
+- Owns the Tier 2 proof carriers (`ConstraintProof`, `ConstraintClusterSpec`) and the
+  indexed witness inductives (`GoalWitness`, `Tier4Witness`, `WorldWitness`,
+  `MetaModularWitness`, `LatticeWitness`).
+- Each carrier/constructor holds the actual Lean type of the theorem being certified.
+- Owns the `constraintSpec`, `goalWitness`, `worldWitness`, `tier4Witness`, etc. match arms
+  that wire tags to proofs.
 - Changing what a cluster certifies (its type or proof term): edit here.
 
 ### Theorem modules — source of actual proof content
@@ -63,8 +68,6 @@ does what prevents confusion about where to look and where to edit.
 - `WorldCtx.lean`, `AdversarialObligations.lean`, `WorldWitness.lean` — Tier 1 / world.
 - `Meta/Modular.lean` — meta-modularity; `Modularity.lean` — lattice-stability.
 - **Editing here does not change the cluster surface** unless Config.lean is updated too.
-
----
 
 ---
 
@@ -86,7 +89,7 @@ theorem my_constraint_requires_feature (W : WorkingSystem)
 ### Step 2 — Update `ClusterRegistry.lean`
 
 Add a new `ClusterTag` constructor, the corresponding `EnabledXxxCluster` value,
-`clusterDescription`, `clusterFamily`, `clusterEnabled`, and `toClusterTag` routing.
+`clusterDescription`, `clusterEnabled`, and `toClusterTag` routing.
 
 ```lean
 -- In ClusterTag inductive:
@@ -104,13 +107,10 @@ Add a constructor to the appropriate witness inductive and a match arm
 in the certifying function.
 
 ```lean
--- In ConstraintWitness inductive:
-| my_constraint :
-    (∀ W, WellFormed W → handles_my_constraint W → HasMyFeature W) →
-    ConstraintWitness .forcing_my_constraint
-
--- In constraintWitness match:
-| .forcing_my_constraint => .my_constraint my_constraint_requires_feature
+-- In constraintSpec match (constraintProof is derived from this):
+| .forcing_my_constraint => {
+    statement := ∀ W, WellFormed W → handles_my_constraint W → HasMyFeature W
+    proof     := my_constraint_requires_feature }
 ```
 
 ### Step 4 — Update `MODULARITY.md`
@@ -209,13 +209,10 @@ theorem my_constraint_requires_feature (W : WorkingSystem)
 -- ClusterRegistry.lean — add row in constraintMeta:
 | .my_constraint => { globalTag := .forcing_my_constraint, ... }
 
--- Config.lean — add to ConstraintWitness:
-| my_constraint :
-    (∀ W, WellFormed W → handles_my_constraint W → HasMyFeature W) →
-    ConstraintWitness .forcing_my_constraint
-
--- Config.lean — add match arm:
-| .forcing_my_constraint => .my_constraint my_constraint_requires_feature
+-- Config.lean — add arm to constraintSpec match:
+| .forcing_my_constraint => {
+    statement := ∀ W, WellFormed W → handles_my_constraint W → HasMyFeature W
+    proof     := my_constraint_requires_feature }
 ```
 
 ### New goal / world / Tier 4 cluster
@@ -259,7 +256,7 @@ These rules prevent the registry, config, and docs from drifting apart.
 
 | # | Invariant |
 |---|---|
-| **I1** | `ClusterRegistry.lean` owns all routing and display. No other file defines `clusterDescription`, `clusterFamily`, or `clusterEnabled`. |
+| **I1** | `ClusterRegistry.lean` owns all routing and display. No other file defines `clusterDescription` or `clusterEnabled`. |
 | **I2** | `Config.lean` owns all proof carriers. Witness inductive constructors are the only place where theorem types are formally encoded against a `ClusterTag`. |
 | **I3** | Named `cluster_*` pack theorems (e.g. `commitments_pack`, `structural_theorems_unconditional`, `lts_theorems_step_universal`) remain the authoritative typed witnesses. Config.lean match arms must reference them by name, not re-prove inline. |
 | **I4** | Every `ClusterTag` constructor that exists must have a matching witness constructor in `Config.lean` and a description in `ClusterRegistry.lean`. Orphaned tags are a build-time bug. |
@@ -268,10 +265,10 @@ These rules prevent the registry, config, and docs from drifting apart.
 
 ---
 
+## 8. Reference: Tier Detail Tables
 
-
-The formalization has four distinct modularity mechanisms, each at a different layer.
-They are now all complete — see [Tier 4](#tier-4-main-theorem-library--transport-schema-complete) for the closure.
+The following tables describe each tier in depth. For the summary view, see §1.
+For contributor instructions, see §§3–7 above.
 
 ---
 
@@ -429,7 +426,8 @@ This is the real Cluster C result — not just the competition gate but the full
   - `SoundDepositsGoal (forget E)`
   - `SelfCorrectionGoal / PaperFacing (forget E)`
   - Universal `CorrigibleLedgerGoal (forget E)` (the ∃ component requires `SurjectiveCompatible`)
-- `tier4_full_pack`: headline theorem — Clusters A + B + LTS-universal + all five health goals
+- `tier4_full_pack`: headline theorem — Clusters B + C only (structural + LTS-universal + all
+  five health goals); Cluster A (`commitments_pack`) is certified separately.
 
 **Gap:** None. All four tier 4 clusters are machine-certified:
 - Cluster A: all 8 commitments proved as standalone theorems; `commitments_pack` bundles the unconditional ones.
@@ -447,11 +445,11 @@ This is the real Cluster C result — not just the competition gate but the full
 | `PaperFacing` / competition gate | `transport_core` + `sub_revision_safety` | ✅ Complete | `RevisionSafety.lean`, `Modularity.lean` |
 | Health goals (5 predicates) | `CoreModel`-parameterized + individual transport theorems | ✅ Complete | `Health.lean`, `Meta/TheoremTransport.lean` |
 | Main theorem library (109+) | Four-part schema: standalone commitments, structural unconditional, LTS-universal operational, all-five-health-goals bank bridge | ✅ Complete | `Meta/Tier4Transport.lean` |
-| Certified cluster surface (30 clusters) | `EpArchConfig → ClusterTag → Bool` routing + indexed witness carriers; all 5 cluster families (constraint, goal, Tier 4, world, meta-modular, lattice) are individually selectable and proof-carrying | ✅ Complete | `Meta/ClusterRegistry.lean`, `Meta/Config.lean` |
+| Certified cluster surface (30 clusters) | `EpArchConfig → ClusterTag → Bool` routing + indexed witness carriers; all 6 cluster families (constraint, goal, Tier 4, world, meta-modular, lattice) are individually selectable and proof-carrying | ✅ Complete | `Meta/ClusterRegistry.lean`, `Meta/Config.lean` |
 
 ---
 
-## How to Use This Document
+## 9. Product / User Handbook
 
 **"I want to disable constraint X for my product."**
 → Go to Tier 2. Find X in the constraint table. The k forcing theorems not involving X all still apply. The global `convergence_under_constraints'` no longer applies.
