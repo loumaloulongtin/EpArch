@@ -9,7 +9,7 @@ Commitments.lean) are machine-checked and transport-safe.
 ### Cluster A — Standalone commitments theorem family
 
 All 8 architectural commitments are proved standalone theorems in Commitments.lean.
-`commitments_pack` bundles the unconditional ones (C3/C7b/C8); C1, C2, C4b, C5, C6b
+`commitments_pack` bundles the unconditional ones (C3/C4b/C7b/C8); C1, C2, C5, C6b
 are proved as separately named theorems.  Cluster A is an unconditional theorem
 family — no transport machinery needed, no hypothesis context to extend.
 
