@@ -69,6 +69,8 @@ are active, this module computes and certifies:
 #check cluster_forcing_distributed_agents
 #check cluster_goal_safeWithdrawal
 #check cluster_world_partial_observability
+#check cluster_meta_modular
+#check cluster_lattice_graceful
 ```
 -/
 
@@ -702,6 +704,10 @@ polymorphic theorems, not match arms of a monomorphic `Prop`-valued def).
 
 Usage:  `#check cluster_forcing_distributed_agents`
          → `∀ (W : WorkingSystem), WellFormed W → handles_distributed_agents W → HasBubbles W`
+         `#check cluster_meta_modular`
+         → `∀ (S : ConstraintSubset) (W : WorkingSystem), PartialWellFormed W S → projection_valid S W`
+         `#check cluster_lattice_graceful`
+         → `∀ (M : CoreModel), NoSelfCorrection M → PaperFacing M`
 
 -- ── Tier 2 forcing ──────────────────────────────────────────────────────── -/
 
