@@ -4,16 +4,30 @@ EpArch/Commitments.lean — Architecture Commitments
 The 8 explicit architectural commitments that define what the EpArch
 framework requires of any conforming system.
 
-Four structural commitments (C1, C2, C4b, C7b) are bundled as fields of
-`CommitmentsCtx`, a hypothesis structure modelled on `WorldCtx`. Theorems
-conditioned on `(C : CommitmentsCtx ...)` hold for any architecture satisfying
-all four fields simultaneously.
+## Assumption boundary
 
-The remaining four commitments are proved as standalone theorems:
-- C3 (`SEVFactorization`) — by rfl
-- C5 (`ExportGating`) — from the LTS export constructors
+Two structural commitments remain as fields of `CommitmentsCtx`, a hypothesis
+structure modelled on `WorldCtx`.  Theorems conditioned on `(C : CommitmentsCtx …)`
+hold for any architecture satisfying both fields simultaneously:
+
+- C1 (`traction_auth_split`) — certainty_L ⊥ knowledge_B (neither implies the other)
+- C7b (`header_asymmetry`)   — stripped disputes → sticky ∧ proxy_battles
+
+## Proved commitments (no CommitmentsCtx field needed)
+
+Six commitments are derived as standalone theorems:
+
+- C2 (`no_universal_ledger`) — `WorldCtx.no_ledger_tradeoff` (EpArch CAP Theorem):
+    proved from `W_partial_observability` + `obs_based`; for bubble-local ledgers
+    `hObs` is automatic via `WorldCtx.localLedger_is_obs_based` (see WorldCtx.lean).
+- C3 (`SEVFactorization`)    — by rfl
+- C4b (`redeemability_requires_more_than_consensus`) — proved from `intra_bubble_only`
+    and the definitional gap between `consensus` (True) and `redeemable`
+    (requires opaque external evidence: path_route_exists, contact_was_made,
+    verdict_discriminates).
+- C5 (`ExportGating`)        — from the LTS export constructors
 - C6b (`NoSelfCorrectionWithoutRevision`) — from StepSemantics
-- C8 (`TemporalValidity`) — from the header τ definition
+- C8 (`TemporalValidity`)    — from the header τ definition
 
 ## What are Commitments?
 
@@ -29,14 +43,14 @@ design requirements.
 
 ## Commitment List
 
-1. Traction/Authorization Split — certainty ≠ knowledge
-2. Scoped Bubbles — no global ledger; validation is local
-3. S/E/V Factorization — three independent header fields
-4. Redeemability External — constraint surface outside consensus
-5. Export Gating — cross-bubble transfer requires validation
-6. Repair Loop — challenged deposits can be revised
-7. Header Stripping → Harder Disputes — less metadata = less diagnosable
-8. Temporal Validity — deposits expire (τ/TTL marks)
+1. Traction/Authorization Split — certainty ≠ knowledge              [CommitmentsCtx field]
+2. Scoped Bubbles — no global ledger; validation is local             [proved: CAP theorem]
+3. S/E/V Factorization — three independent header fields              [proved: by rfl]
+4. Redeemability External — constraint surface outside consensus      [proved: structural]
+5. Export Gating — cross-bubble transfer requires validation          [proved: LTS]
+6. Repair Loop — challenged deposits can be revised                   [proved: StepSemantics]
+7. Header Stripping → Harder Disputes — less metadata = less diagnosable [CommitmentsCtx field]
+8. Temporal Validity — deposits expire (τ/TTL marks)                  [proved: header def]
 -/
 
 import EpArch.Basic
