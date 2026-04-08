@@ -175,10 +175,13 @@ constraint means adding one `constraintMeta` case (routing + display) and one
 `constraintSpec` match arm (proof witness), and updating `allConstraintClusters`.
 No other tables need touching.
 
-All other families (Tier 3 goal transport, Tier 4 bank bundles, world clusters)
-reference `ExtModel.{u₁,u₂}`, `CoreModel.{u₃}`, `WorldCtx.{u}` — universe-
-polymorphic types — so their real propositions live as `cluster_*` witnesses
-in §5b only. -/
+All other families (Tier 3 goal transport, Tier 4 bank bundles, world clusters,
+meta-modularity, and lattice-stability) carry real proof content via the indexed
+witness carriers defined in §4c–§4e’ below (`GoalWitness`, `WorldWitness`,
+`Tier4Witness`, `MetaModularWitness`, `LatticeWitness`).  The standalone `cluster_*`
+theorems in §5b are the universe-polymorphic authoritative form for families whose
+underlying types reference `ExtModel`, `CoreModel`, or `WorldCtx`; the indexed
+witness constructors package those same theorems as Prop-valued arguments. -/
 
 /-- Proof-carrying record for a Tier 2 constraint-forcing cluster:
     the actual Lean forcing proposition and its machine-checked proof. -/
