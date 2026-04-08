@@ -740,7 +740,9 @@ theorem TemporalValidity (d1 d2 : Deposit PropLike Standard ErrorModel Provenanc
     C7b (header stripping → harder disputes) → proved via completion-space model
         (`metadata_stripping_strictly_enlarges`); `sticky` (admissible multiplicity)
         and `proxy_battles` (cross-field underdetermination) proved from
-        `has_cross_field_alternatives` — no opaque constants.
+        `has_cross_field_alternatives` — no opaque constants, but the full
+        pathology theorem holds under the mild structural assumption that Standard
+        and ErrorModel each admit at least one value distinct from d's header fields.
 
     Non-vacuity: ConcreteLedgerModel proves analogous structural properties in a
     concrete model.
@@ -852,11 +854,14 @@ theorem redeemability_requires_more_than_consensus
 /-! ### Forward Theorems (Commitment 7b) -/
 
 /-- Header stripping produces sticky disputes, proxy battles, AND diagnostic loss.
-    All three conclusions are now proved structurally from
-    `has_cross_field_alternatives d` — no opaque hypotheses:
+    The pathology is structural under mild cross-field nontriviality:
+    given `has_cross_field_alternatives d` (Standard and ErrorModel admit values
+    distinct from d.h.S and d.h.E), all three conclusions follow from definitions:
     - `sticky B P d`        ← `stripped_dispute_is_sticky`        (admissible-space multiplicity)
     - `proxy_battles B P d` ← `stripped_dispute_has_proxy_battles` (cross-field underdetermination)
-    - `systematically_harder ...` ← `header_stripping_harder`      (numeric summary 0 < 3) -/
+    - `systematically_harder ...` ← `header_stripping_harder`      (numeric summary 0 < 3)
+    Zero opaque hypotheses; `h_cross` is a type-universe nontriviality premise, not an
+    architectural assumption. -/
 theorem header_stripping_produces_pathology
     (B : Bubble) (P : PropLike)
     (d : Deposit PropLike Standard ErrorModel Provenance)
