@@ -221,19 +221,52 @@ def EnabledWorldCluster.toClusterTag : EnabledWorldCluster → ClusterTag
 /-! ## §3  Routing
 
 `clusterEnabled` is the single source of truth for which clusters a given
-`EpArchConfig` activates.  `explainConfig`/`showConfig` are derived from it. -/
+`EpArchConfig` activates.  `explainConfig`/`showConfig` are derived from it.
 
-/-- All 25 cluster tags, in canonical order.  Used by `explainConfig`. -/
-def allClusters : List ClusterTag := [
-  .forcing_distributed_agents, .forcing_bounded_audit, .forcing_export,
-  .forcing_adversarial, .forcing_coordination, .forcing_truth,
-  .goal_safeWithdrawal, .goal_reliableExport, .goal_soundDeposits,
-  .goal_selfCorrection, .goal_corrigible_universal, .goal_corrigible_full,
-  .tier4_commitments, .tier4_structural, .tier4_lts_universal,
-  .tier4_bank_goals_compat, .tier4_bank_goals_surj,
-  .world_lies_possible, .world_bounded_audit, .world_asymmetric_costs,
-  .world_partial_observability,
-  .world_spoofed_v, .world_lies_scale, .world_rolex_ddos, .world_ddos]
+The per-family canonical lists live here (not in `Config.lean`) because they
+are metadata objects — pure enumeration facts, no proofs.  The global
+`allClusters` list is derived from them so ordering stays consistent
+automatically.  `constraintClusterOfTag?` enables Tier 2 routing and display
+to dispatch through `constraintMeta` without re-enumerating the six
+forcing constructors. -/
+
+/-- All six Tier 2 constraint-forcing clusters, in canonical order. -/
+def allConstraintClusters : List EnabledConstraintCluster :=
+  [.forcing_distributed_agents, .forcing_bounded_audit, .forcing_export,
+   .forcing_adversarial, .forcing_coordination, .forcing_truth]
+
+/-- All six Tier 3 health-goal transport clusters, in canonical order. -/
+def allGoalClusters : List EnabledGoalCluster :=
+  [.goal_safeWithdrawal, .goal_reliableExport, .goal_soundDeposits,
+   .goal_selfCorrection, .goal_corrigible_universal, .goal_corrigible_full]
+
+/-- All five Tier 4 library clusters, in canonical order. -/
+def allTier4Clusters : List EnabledTier4Cluster :=
+  [.tier4_commitments, .tier4_structural, .tier4_lts_universal,
+   .tier4_bank_goals_compat, .tier4_bank_goals_surj]
+
+/-- All eight world-bundle clusters, in canonical order. -/
+def allWorldClusters : List EnabledWorldCluster :=
+  [.world_lies_possible, .world_bounded_audit, .world_asymmetric_costs,
+   .world_partial_observability, .world_spoofed_v,
+   .world_lies_scale, .world_rolex_ddos, .world_ddos]
+
+/-- All 25 cluster tags, in canonical order.  Derived from the per-family lists
+    so ordering stays consistent with those lists automatically.
+    Used by `explainConfig`. -/
+def allClusters : List ClusterTag :=
+  (allConstraintClusters.map EnabledConstraintCluster.toClusterTag) ++
+  (allGoalClusters.map      EnabledGoalCluster.toClusterTag) ++
+  (allTier4Clusters.map     EnabledTier4Cluster.toClusterTag) ++
+  (allWorldClusters.map     EnabledWorldCluster.toClusterTag)
+
+/-- Reverse lookup: given a `ClusterTag`, return the matching
+    `EnabledConstraintCluster` if it is a Tier 2 forcing tag, or `none`
+    otherwise.  Used by `clusterEnabled` and `clusterDescription` to dispatch
+    Tier 2 cases through `constraintMeta` without re-enumerating the
+    six forcing constructors. -/
+def constraintClusterOfTag? (t : ClusterTag) : Option EnabledConstraintCluster :=
+  allConstraintClusters.find? fun c => c.toClusterTag == t
 
 /-- Decide whether cluster `c` is applicable for config `cfg`.
 
@@ -242,19 +275,14 @@ def allClusters : List ClusterTag := [
     Goal-transport clusters are gated on the goal being listed.
     Bank-goal bundles require the full goal set. -/
 def clusterEnabled (cfg : EpArchConfig) : ClusterTag → Bool
-  -- Tier 2: constraint-forcing clusters — routing derived from constraintMeta
-  | .forcing_distributed_agents => (constraintMeta .forcing_distributed_agents).enabledBy cfg
-  | .forcing_bounded_audit      => (constraintMeta .forcing_bounded_audit).enabledBy cfg
-  | .forcing_export             => (constraintMeta .forcing_export).enabledBy cfg
-  | .forcing_adversarial        => (constraintMeta .forcing_adversarial).enabledBy cfg
-  | .forcing_coordination       => (constraintMeta .forcing_coordination).enabledBy cfg
-  | .forcing_truth              => (constraintMeta .forcing_truth).enabledBy cfg
+  -- Tier 3: health-goal transport clusters
   | .goal_safeWithdrawal        => cfg.goals.contains .safeWithdrawal
   | .goal_reliableExport        => cfg.goals.contains .reliableExport
   | .goal_soundDeposits         => cfg.goals.contains .soundDeposits
   | .goal_selfCorrection        => cfg.goals.contains .selfCorrection
   | .goal_corrigible_universal  => cfg.goals.contains .corrigibleLedger
   | .goal_corrigible_full       => cfg.goals.contains .corrigibleLedger
+  -- Tier 4: structural clusters always enabled; bank bundles require all goals
   | .tier4_commitments          => true
   | .tier4_structural           => true
   | .tier4_lts_universal        => true
@@ -279,6 +307,10 @@ def clusterEnabled (cfg : EpArchConfig) : ClusterTag → Bool
   | .world_lies_scale            => cfg.worlds.contains .lies_scale
   | .world_rolex_ddos            => cfg.worlds.contains .rolex_ddos
   | .world_ddos                  => cfg.worlds.contains .ddos
+  -- Tier 2: only forcing tags reach this arm; dispatch through constraintMeta
+  | t => match constraintClusterOfTag? t with
+         | some c => (constraintMeta c).enabledBy cfg
+         | none   => false  -- unreachable
 
 /-- The clusters enabled by `cfg`, in canonical order. -/
 def explainConfig (cfg : EpArchConfig) : List ClusterTag :=
@@ -289,13 +321,7 @@ def explainConfig (cfg : EpArchConfig) : List ClusterTag :=
 
 /-- One-line description of each cluster (theorem name in parentheses). -/
 def clusterDescription : ClusterTag → String
-  -- Tier 2: descriptions derived from constraintMeta
-  | .forcing_distributed_agents => (constraintMeta .forcing_distributed_agents).description
-  | .forcing_bounded_audit      => (constraintMeta .forcing_bounded_audit).description
-  | .forcing_export             => (constraintMeta .forcing_export).description
-  | .forcing_adversarial        => (constraintMeta .forcing_adversarial).description
-  | .forcing_coordination       => (constraintMeta .forcing_coordination).description
-  | .forcing_truth              => (constraintMeta .forcing_truth).description
+  -- Tier 3: health-goal transport clusters
   | .goal_safeWithdrawal =>
       "[Tier 3] SafeWithdrawalGoal transports via Compatible  (transport_safe_withdrawal)"
   | .goal_reliableExport =>
@@ -334,6 +360,10 @@ def clusterDescription : ClusterTag → String
       "[World] W_rolex_ddos: individual and population attacks structurally equivalent  (AdversarialObligations.rolex_ddos_structural_equivalence_of_W)"
   | .world_ddos =>
       "[World] W_ddos: DDoS causes verification collapse  (AdversarialObligations.ddos_causes_verification_collapse_of_W)"
+  -- Tier 2: only forcing tags reach this arm; dispatch through constraintMeta
+  | t => match constraintClusterOfTag? t with
+         | some c => (constraintMeta c).description
+         | none   => ""  -- unreachable
 
 /-- Human-readable list of all cluster descriptions enabled by `cfg`. -/
 def showConfig (cfg : EpArchConfig) : List String :=

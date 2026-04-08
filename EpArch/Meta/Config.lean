@@ -405,34 +405,14 @@ def tier4Witness : (c : EnabledTier4Cluster) → Tier4Witness c
 
 /-! ## §4f  Correspondence Lemmas (support lemmas)
 
-Private helpers used by the three `mem_enabledXxxWitnesses_of_enabled` completeness
-theorems defined immediately after `certify` (which they reference).  The `filterMap_mem_of_pos`
-helper is also private and fills the gap left by the absent `List.mem_filterMap` in Lean 4.3.0.
+The `allXxxClusters` canonical lists used by `certify` and the membership
+lemmas below are defined in `ClusterRegistry.lean` (they are metadata objects,
+not proof objects).  The `filterMap_mem_of_pos` helper fills the gap left by
+the absent `List.mem_filterMap` in Lean 4.3.0.
 
 For ergonomic extraction of the schema carried by a witness, use the `cluster_*`
 named theorems in §5b, or pattern-match directly:
 `match w with | .safeWithdrawal f => f E C h hg`. -/
-
-/-- All six constraint-forcing clusters in canonical order. -/
-private def allConstraintClusters : List EnabledConstraintCluster :=
-  [.forcing_distributed_agents, .forcing_bounded_audit, .forcing_export,
-   .forcing_adversarial, .forcing_coordination, .forcing_truth]
-
-/-- All six goal-transport clusters in canonical order. -/
-private def allGoalClusters : List EnabledGoalCluster :=
-  [.goal_safeWithdrawal, .goal_reliableExport, .goal_soundDeposits,
-   .goal_selfCorrection, .goal_corrigible_universal, .goal_corrigible_full]
-
-/-- All eight world-bundle clusters in canonical order. -/
-private def allWorldClusters : List EnabledWorldCluster :=
-  [.world_lies_possible, .world_bounded_audit, .world_asymmetric_costs,
-   .world_partial_observability, .world_spoofed_v,
-   .world_lies_scale, .world_rolex_ddos, .world_ddos]
-
-/-- All five Tier 4 clusters in canonical order. -/
-private def allTier4Clusters : List EnabledTier4Cluster :=
-  [.tier4_commitments, .tier4_structural, .tier4_lts_universal,
-   .tier4_bank_goals_compat, .tier4_bank_goals_surj]
 
 private theorem filterMap_mem_of_pos {α : Type} {β : Type 1}
     (f : α → Option β) : ∀ (l : List α) (a : α) (b : β),
