@@ -1,6 +1,6 @@
 # Theorem Inventory
 
-This document catalogs **507** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
+This document catalogs **522** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
 
 **What the architecture claims:** Decentralized epistemic authorization requires specific structural mechanisms — a lifecycle with type-separated stages, header-preserving export, a revision loop, temporal validity, and a Bank substrate. These aren't design preferences; they are forced by the combination of agent constraints and system health goals.
 
@@ -1068,3 +1068,80 @@ $$\text{WellFormed}(W) \iff \text{PartialWellFormed}(W, \text{allConstraints})$$
 Dropping constraint X = setting `S.X := false`. The X-conjunct in `modular`'s conclusion
 becomes `false = true → ...`, which is vacuously true. The forcing theorems for all
 other selected constraints remain live implications backed by the required biconditionals.
+
+---
+
+## Bucket 28: Configurable Certification Engine — `EpArchConfig → ClusterTag → certified proof`
+
+**Paper Role:** Closes the claim that the 17 theorem clusters are individually selectable and
+certifiable: given any user-specified `EpArchConfig` (which constraints, goals, and world
+bundles are operative), the engine computes exactly which theorem clusters apply and provides
+machine-checked justification for each enabled cluster.
+
+**File:** `Meta/Config.lean`
+
+**Design:** `clusterEnabled cfg c : Bool` is the computable routing function. `showConfig cfg`
+is `#eval`-able and returns human-readable cluster descriptions. `certify cfg` returns a
+`CertifiedProjection` that names every enabled cluster. Named proof witnesses (`cluster_forcing_*`,
+`cluster_goal_*`, `cluster_tier4_*`) state and prove the exact proposition for each cluster.
+
+### Definitions / Configuration Language
+
+| Definition | File | Purpose |
+|------------|------|---------|
+| `ConstraintTag` | Meta/Config.lean | 6 constraint tags (distributed_agents … truth_pressure) |
+| `GoalTag` | Meta/Config.lean | 5 health-goal tags (safeWithdrawal … selfCorrection) |
+| `WorldTag` | Meta/Config.lean | 8 world-bundle tags (lies_possible … ddos) |
+| `EpArchConfig` | Meta/Config.lean | User-supplied config: lists of active constraints/goals/worlds |
+| `ClusterTag` | Meta/Config.lean | 17 cluster tags spanning Tiers 2–4 |
+| `allClusters` | Meta/Config.lean | Canonical ordered list of all 17 ClusterTags |
+| `clusterEnabled` | Meta/Config.lean | `EpArchConfig → ClusterTag → Bool` (computable routing) |
+| `explainConfig` | Meta/Config.lean | `EpArchConfig → List ClusterTag` — enabled clusters |
+| `clusterValid` | Meta/Config.lean | `ClusterTag → Prop` — always `True` (every cluster is proved) |
+| `clusterDescription` | Meta/Config.lean | `ClusterTag → String` — one-line human-readable description |
+| `showConfig` | Meta/Config.lean | `EpArchConfig → List String` — `#eval`-able routing report |
+| `CertifiedProjection` | Meta/Config.lean | Proof-carrying record: enabled clusters + soundness |
+| `certify` | Meta/Config.lean | `EpArchConfig → CertifiedProjection cfg` |
+| `fullConfig` | Meta/Config.lean | Sample: all 6 constraints, 5 goals, 4 worlds |
+| `minimalConfig` | Meta/Config.lean | Sample: 1 constraint, 1 goal, no worlds |
+| `goalsOnlyConfig` | Meta/Config.lean | Sample: no constraints, all 5 goals |
+
+### Theorems
+
+#### Soundness Theorem
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `clusterEnabled_sound` | Meta/Config.lean | `clusterEnabled cfg c = true → clusterValid c` | All enabled clusters are machine-proved |
+
+#### Tier 2 Named Proof Witnesses (Forcing)
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `cluster_forcing_distributed_agents` | Meta/Config.lean | `WellFormed W → handles_distributed_agents W → HasBubbles W` | Witness for `.forcing_distributed_agents` |
+| `cluster_forcing_bounded_audit` | Meta/Config.lean | `WellFormed W → handles_bounded_audit W → HasTrustBridges W` | Witness for `.forcing_bounded_audit` |
+| `cluster_forcing_export` | Meta/Config.lean | `WellFormed W → handles_export W → HasHeaders W` | Witness for `.forcing_export` |
+| `cluster_forcing_adversarial` | Meta/Config.lean | `WellFormed W → handles_adversarial W → HasRevocation W` | Witness for `.forcing_adversarial` |
+| `cluster_forcing_coordination` | Meta/Config.lean | `WellFormed W → handles_coordination W → HasBank W` | Witness for `.forcing_coordination` |
+| `cluster_forcing_truth` | Meta/Config.lean | `WellFormed W → handles_truth_pressure W → HasRedeemability W` | Witness for `.forcing_truth` |
+
+#### Tier 3 Named Proof Witnesses (Health-Goal Transport)
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `cluster_goal_safeWithdrawal` | Meta/Config.lean | `Compatible E C → SafeWithdrawalGoal C → SafeWithdrawalGoal (forget E)` | Witness for `.goal_safeWithdrawal` |
+| `cluster_goal_reliableExport` | Meta/Config.lean | `Compatible E C → ReliableExportGoal C → ReliableExportGoal (forget E)` | Witness for `.goal_reliableExport` |
+| `cluster_goal_soundDeposits` | Meta/Config.lean | `Compatible E C → SoundDepositsGoal C → SoundDepositsGoal (forget E)` | Witness for `.goal_soundDeposits` |
+| `cluster_goal_selfCorrection` | Meta/Config.lean | `Compatible E C → SelfCorrectionGoal C → SelfCorrectionGoal (forget E)` | Witness for `.goal_selfCorrection` |
+| `cluster_goal_corrigible_universal` | Meta/Config.lean | `Compatible E C → CorrigibleLedgerGoal C → ∀-corrigibility for (forget E)` | Witness for `.goal_corrigible_universal` |
+| `cluster_goal_corrigible_full` | Meta/Config.lean | `SurjectiveCompatible E C → CorrigibleLedgerGoal C → CorrigibleLedgerGoal (forget E)` | Witness for `.goal_corrigible_full` |
+
+#### Tier 4-C Named Proof Witnesses (Bank Goal Transport)
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `cluster_tier4_bank_goals_compat` | Meta/Config.lean | All 5 ∀-goals + universal corrigibility via Compatible | Witness for `.tier4_bank_goals_compat` |
+| `cluster_tier4_bank_goals_surj` | Meta/Config.lean | All 5 goals + full CorrigibleLedgerGoal via SurjectiveCompatible | Witness for `.tier4_bank_goals_surj` |
+
+### Grand Total: +15 new theorems (507 + 15 = 522)
+

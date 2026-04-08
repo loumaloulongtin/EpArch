@@ -155,6 +155,7 @@ import EpArch.Meta.TheoremTransport  -- Generic theorem transport schema (Tier 3
 import EpArch.Meta.Tier4Transport    -- Main theorem library transport (Tier 4 closure)
 import EpArch.Modularity  -- Lattice-stability: graceful scale-down + sub-level RevisionSafety
 import EpArch.Meta.Modular     -- Modularity meta-theorem: ∀ S ⊆ constraints, projection_valid S
+import EpArch.Meta.Config      -- Configurable certification engine: EpArchConfig → ClusterTag → certified proof
 
 def main : IO Unit :=
   IO.println s!"EpArch: Epistemic Architecture Formalization"
