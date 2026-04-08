@@ -1,24 +1,19 @@
 /-
 EpArch/Meta/Tier4Transport.lean — Tier 4 Transport Closure
 
-Closes the DOCS/MODULARITY.md Tier 4 gap: all three theorem clusters
-in the main library (Theorems.lean, Commitments.lean) are machine-certified
-as transport-safe.
+Certifies that all theorem clusters in the main library (Theorems.lean,
+Commitments.lean) are machine-checked and transport-safe.
 
-## The Three Clusters
+## The Clusters
 
-### Cluster A — CommitmentsCtx-parameterized theorems
+### Cluster A — Standalone commitments theorem family
 
-`CommitmentsCtx` is now an **empty structure** — all commitments are proved theorems.
-Transport is trivially vacuous: any predicate provable under CommitmentsCtx (i.e.,
-under zero hypotheses) is trivially transportable.
+All 8 architectural commitments are proved standalone theorems in Commitments.lean.
+`commitments_pack` bundles the unconditional ones (C3/C7b/C8); C1, C2, C4b, C5, C6b
+are proved as separately named theorems.  Cluster A is an unconditional theorem
+family — no transport machinery needed, no hypothesis context to extend.
 
-C1 is now expressed by two mechanism-grounded named theorems in Commitments.lean:
-- `innovation_allows_traction_without_authorization` — `certainty_L ⊄ knowledge_B`
-- `caveated_authorization_does_not_force_certainty` — `knowledge_B ⊄ certainty_L`
-These are not `∀ a B P` universal claims; each is scoped to its named scenario witness.
-
-Key theorems: `commitments_transport`, `commitments_transport_pack` (trivially vacuous).
+Key theorem family: `commitments_pack` (Commitments.lean).
 
 ### Cluster B — Standalone structural theorems
 
@@ -49,10 +44,10 @@ Key theorem: `concrete_bank_all_goals_transport`.
 
 | Cluster | Mechanism | Theorem |
 |---|---|---|
-| CommitmentsCtx (trivially vacuous) | All commitments proved; CommitmentsCtx empty | `commitments_transport_pack` |
-| Standalone structural | Unconditional (no transport needed) | `structural_theorems_unconditional` |
-| LTS-universal operational | Step constructor completeness | `lts_theorems_step_universal` |
-| All five health goals (bank) | `transport_*` applied to ConcreteBankModel | `concrete_bank_all_goals_transport` |
+| Standalone commitments (A) | All 8 commitments proved | `commitments_pack` |
+| Standalone structural (B) | Unconditional (no transport needed) | `structural_theorems_unconditional` |
+| LTS-universal operational (B+) | Step constructor completeness | `lts_theorems_step_universal` |
+| All five health goals (C) | `transport_*` applied to ConcreteBankModel | `concrete_bank_all_goals_transport` |
 | Full Tier 4 pack | Clusters B + C combined | `tier4_full_pack` |
 
 -/
@@ -69,39 +64,11 @@ open EpArch.Meta.TheoremTransport
 variable {PropLike Standard ErrorModel Provenance : Type}
 
 
-/-! ## §1  Cluster A: CommitmentsCtx Transport -/
+/-! ## §1  Cluster A: Standalone Commitments Family -/
 
-/-- An extended CommitmentsCtx: the original four fields plus one additional
-    architectural commitment (proof-relevant). -/
-structure ExtCommitmentsCtx
-    (PropLike Standard ErrorModel Provenance : Type u) (Extra : Prop)
-    extends CommitmentsCtx PropLike Standard ErrorModel Provenance where
-  /-- The extra commitment -/
-  extra : Extra
-
-/-- Generic CommitmentsCtx transport:
-    any predicate proved under CommitmentsCtx survives extension. -/
-theorem commitments_transport
-    {Claim : Prop}
-    {Extra : Prop}
-    (h_proof : CommitmentsCtx PropLike Standard ErrorModel Provenance → Claim)
-    (E : ExtCommitmentsCtx PropLike Standard ErrorModel Provenance Extra) :
-    Claim :=
-  h_proof E.toCommitmentsCtx
-
-/-- CommitmentsCtx transport pack — CommitmentsCtx is now an empty structure.
-    All 8 architectural commitments are proved standalone theorems.
-    C1 in particular is proved via mechanism-grounded named witnesses:
-    `innovation_allows_traction_without_authorization` (Direction 1)
-    `caveated_authorization_does_not_force_certainty` (Direction 2)
-
-    Transport is trivially vacuous: any predicate provable under the empty
-    CommitmentsCtx is provable without any hypothesis.  This theorem is
-    retained as a structural marker for Tier 4 Cluster A. -/
-theorem commitments_transport_pack
-    {Extra : Prop}
-    (_E : ExtCommitmentsCtx PropLike Standard ErrorModel Provenance Extra) : True :=
-  trivial
+/-! All 8 architectural commitments are proved standalone theorems in `Commitments.lean`.
+    `commitments_pack` certifies the unconditional conjunct (C3/C7b/C8).
+    No transport structure is needed: the theorems are unconditional. -/
 
 
 /-! ## §2  Cluster B: Standalone Structural Theorems -/

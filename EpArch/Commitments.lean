@@ -6,8 +6,8 @@ framework requires of any conforming system.
 
 ## Assumption boundary
 
-All 8 commitments are now **proved standalone theorems** — `CommitmentsCtx`
-is an empty structure retained only for backward compatibility.
+All 8 commitments are **proved standalone theorems** — no axioms, no empty
+hypothesis bundles.
 
 ## Proved commitments
 
@@ -183,7 +183,7 @@ theorem ladder_bank_split_from_innovation_and_headers
     innovation and coordination.  This is now a **proved theorem** derived from
     `W_partial_observability` and `obs_based` in WorldCtx.lean:
     `WorldCtx.no_ledger_tradeoff` — the EpArch CAP Theorem.
-    It is no longer a field of CommitmentsCtx; see §Ledger Tradeoff in WorldCtx.lean. -/
+    See §Ledger Tradeoff in WorldCtx.lean. -/
 
 
 /-! ## Commitment 3: S/E/V Factorization -/
@@ -271,8 +271,7 @@ theorem redeemable_implies_contact_and_discriminating
 /-! Commitment 4b: Consensus alone doesn't create redeemability.
     Proved structurally below: `intra_bubble_only` deposits cannot be redeemable
     because redeemability requires `path_route_exists` (opaque external evidence)
-    while intra-bubble deposits provably have no such route.
-    No longer a CommitmentsCtx field. -/
+    while intra-bubble deposits provably have no such route. -/
 
 /-- A deposit is intra-bubble-only if it has no external route to any constraint surface.
     This is the structural condition that separates consensus from redeemability:
@@ -852,37 +851,32 @@ theorem TemporalValidity (d1 d2 : Deposit PropLike Standard ErrorModel Provenanc
   simp [h_eq.trans h2] at h1
 
 
-/-! ## CommitmentsCtx — All Commitments Now Proved
+/-! ## Commitments Pack
 
-    `CommitmentsCtx` is now an **empty structure** (no hypothesis fields).
-
-    History: it previously carried one field, `traction_auth_split` (C1).
-    C1 has been replaced by two mechanism-grounded theorems:
-    - `innovation_allows_traction_without_authorization` (Direction 1 — innovation)
-    - `caveated_authorization_does_not_force_certainty` (Direction 2 — header burden)
-
-    All 8 architectural commitments are now proved standalone theorems:
-    - C1 → `innovation_allows_traction_without_authorization` + `caveated_authorization_does_not_force_certainty`
-    - C2 → `WorldCtx.no_ledger_tradeoff`
-    - C3 → `SEVFactorization`
-    - C4b → `redeemability_requires_more_than_consensus`
-    - C5 → `ExportGating`
-    - C6b → `NoSelfCorrectionWithoutRevision`
-    - C7b → `header_stripping_harder`
-    - C8 → `TemporalValidity`
-
-    `CommitmentsCtx` is retained as an empty structure for backward compatibility
-    with `ExtCommitmentsCtx` (Tier4Transport) — architectures parameterized by
-    `(C : CommitmentsCtx ...)` continue to typecheck, C is trivially `⟨⟩`.
-
-    Non-vacuity: ConcreteLedgerModel proves analogous structural properties in
-    a concrete model.
+All 8 commitments are proved standalone theorems.
+`commitments_pack` bundles the three that are universally valid with no
+witness or model parameters: C3 (SEVFactorization), C7b (header_stripping_harder),
+and C8 (TemporalValidity).  The remaining commitments are proved as named theorems:
+- C1 — `innovation_allows_traction_without_authorization` + `caveated_authorization_does_not_force_certainty`
+- C2 — `WorldCtx.no_ledger_tradeoff`
+- C4b — `redeemability_requires_more_than_consensus`
+- C5 — `ExportGating`
+- C6b — `NoSelfCorrectionWithoutRevision`
 -/
 
-/-- Empty hypothesis bundle — all commitments have been derived as proved theorems.
-    Retained for backward compatibility with `ExtCommitmentsCtx` (Tier4Transport).
-    Trivially inhabited by `⟨⟩`; no structural information is carried. -/
-structure CommitmentsCtx (PropLike Standard ErrorModel Provenance : Type u) where
+/-- Standalone commitments pack: the unconditional commitment theorems.
+    - C3: `SEVFactorization` — every deposit carries independent S/E/V fields.
+    - C7b: `header_stripping_harder` — stripped disputes are systematically harder to diagnose.
+    - C8: `TemporalValidity` — refreshed and unrefreshed deposits are not equivalent.
+    C1, C2, C4b, C5, C6b are proved as named theorems (see their respective sections). -/
+theorem commitments_pack :
+    (∀ (d : Deposit PropLike Standard ErrorModel Provenance),
+        ∃ (s : Standard) (e : ErrorModel) (v : Provenance),
+          d.h.S = s ∧ d.h.E = e ∧ d.h.V = v) ∧
+    systematically_harder header_preserved_diagnosability header_stripped_diagnosability ∧
+    (∀ (d1 d2 : Deposit PropLike Standard ErrorModel Provenance),
+        refreshed d1 → unrefreshed d2 → ¬performs_equivalently d1 d2) :=
+  ⟨SEVFactorization, header_stripping_harder, TemporalValidity⟩
 
 
 /-! ### Forward Theorems (Commitment 1)
@@ -922,9 +916,8 @@ theorem WeakCtx_contradicts_TractionAuthorizationSplit
 
 /-! ### Forward Theorems (Commitment 2) — EpArch CAP Theorem
 
-    C2 is now derived from WorldCtx, not a CommitmentsCtx hypothesis.
-    `WorldCtx.no_ledger_tradeoff` is the core result; the theorems below restate
-    it in convenient forms.
+    C2 is derived from WorldCtx: `WorldCtx.no_ledger_tradeoff` is the core result;
+    the theorems below restate it in convenient forms.
 
     Dependency profiles:
     - `no_universal_ledger`, `innovation_excludes_coordination`:
@@ -977,7 +970,7 @@ theorem GlobalCtx_contradicts_NoGlobalLedgerTradeoff (C : WorldCtx) (L : C.Ledge
 /-- Redeemability requires more than consensus: the constraint surface is independent.
     For intra-bubble deposits, consensus (trivially true for any bubble) and redeemability
     (requiring external path, contact, and verdict evidence) are structurally separated.
-    Proved without CommitmentsCtx: the separation follows from definitions alone. -/
+    Proved structurally: the separation follows from definitions alone. -/
 theorem redeemability_requires_more_than_consensus
     (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance)
     (h_intra : intra_bubble_only d) :

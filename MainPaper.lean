@@ -21,7 +21,8 @@ It imports ONLY the paper-facing surface.
 ## Axiom Declarations (Paper-Facing Surface)
 
 The paper-facing surface contains **zero `axiom` declarations**.
-All 8 structural commitments are proved standalone theorems; `CommitmentsCtx` is empty.
+All 8 structural commitments are proved standalone theorems; `commitments_pack` bundles
+the unconditional ones (C3/C7b/C8).
 Opaque domain primitives remain as uninterpreted constants.
 
 Health goals are definitional, not axioms.

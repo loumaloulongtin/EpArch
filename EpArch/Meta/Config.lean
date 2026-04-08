@@ -1,4 +1,4 @@
-﻿/-
+/-
 EpArch/Meta/Config.lean — Configurable Certification Engine
 
 Given an `EpArchConfig` specifying which constraints, goals, and world bundles
@@ -261,10 +261,14 @@ All constructor args are Prop-valued by Prop impredicativity. -/
 /-- Indexed proof carrier for Tier 4 clusters. -/
 inductive Tier4Witness : EnabledTier4Cluster → Type 1 where
   | commitments :
-      -- CommitmentsCtx is now empty; all commitments are proved theorems.
-      -- The argument is trivially True — retained as a structural Cluster A marker.
-      (∀ {PL SL EL PrL : Type} {Extra : Prop}
-        (_E : ExtCommitmentsCtx PL SL EL PrL Extra), True) →
+      -- Standalone commitments pack: C3 (SEVFactorization), C7b (header_stripping_harder),
+      -- C8 (TemporalValidity) unconditionally proved; C1/C2/C4b/C5/C6b separately named.
+      (∀ {PL SL EL PrL : Type},
+        (∀ (d : Deposit PL SL EL PrL),
+            ∃ (s : SL) (e : EL) (v : PrL), d.h.S = s ∧ d.h.E = e ∧ d.h.V = v) ∧
+        systematically_harder header_preserved_diagnosability header_stripped_diagnosability ∧
+        (∀ (d1 d2 : Deposit PL SL EL PrL),
+            refreshed d1 → unrefreshed d2 → ¬performs_equivalently d1 d2)) →
       Tier4Witness .tier4_commitments
   | structural :
       (∀ {PL SL EL PrL : Type},
@@ -321,7 +325,7 @@ inductive Tier4Witness : EnabledTier4Cluster → Type 1 where
 
 /-- For every Tier 4 cluster, deliver its `Tier4Witness`. -/
 def tier4Witness : (c : EnabledTier4Cluster) → Tier4Witness c
-  | .tier4_commitments       => .commitments   (fun _ => trivial)
+  | .tier4_commitments       => .commitments   commitments_pack
   | .tier4_structural        => .structural    structural_theorems_unconditional
   | .tier4_lts_universal     => .ltsUniversal  lts_theorems_step_universal
   | .tier4_bank_goals_compat => .bankGoalsCompat

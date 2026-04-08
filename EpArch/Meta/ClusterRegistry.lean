@@ -77,7 +77,7 @@ inductive ClusterTag where
   | goal_corrigible_universal   -- ∀-part only, plain Compatible
   | goal_corrigible_full        -- full ∃+∀, requires SurjectiveCompatible
   -- Tier 4: main library clusters (5 clusters)
-  | tier4_commitments           -- Cluster A: CommitmentsCtx-parameterized
+  | tier4_commitments           -- Cluster A: standalone commitments theorem family
   | tier4_structural            -- Cluster B: SEV/Temporal/Monolithic/Header
   | tier4_lts_universal         -- Cluster B+: LTS withdrawal/repair/submit gates
   | tier4_bank_goals_compat     -- Cluster C  (Compatible): 4 goals + universal corrigible
@@ -372,7 +372,7 @@ def clusterDescription : ClusterTag → String
   | .goal_corrigible_full =>
       "[Tier 3] CorrigibleLedgerGoal full ∃+∀ transports via SurjectiveCompatible  (transport_corrigible_ledger)"
   | .tier4_commitments =>
-      "[Tier 4-A] All commitments proved as standalone theorems; CommitmentsCtx is empty  (commitments_transport_pack)"
+      "[Tier 4-A] All 8 commitments proved as standalone theorems; C3/C7b/C8 unconditional  (commitments_pack)"
   | .tier4_structural =>
       "[Tier 4-B] Structural theorems unconditional: SEV/Temporal/Monolithic/Header  (structural_theorems_unconditional)"
   | .tier4_lts_universal =>

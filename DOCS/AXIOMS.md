@@ -14,12 +14,12 @@ This document records the current assumption boundary and how the prior axiom su
 
 ## Current Assumption Boundary
 
-### CommitmentsCtx — All Commitments Now Proved
+### All 8 Commitments Proved — Standalone Theorems
 
 **File:** `EpArch/Commitments.lean`
 
-`CommitmentsCtx` is now an **empty structure** — all 8 architectural commitments have
-been derived as standalone theorems.  No hypothesis fields remain.
+All 8 architectural commitments are proved as standalone theorems.  No empty
+hypothesis bundle or backward-compat wrapper remains.
 
 C1 (Traction/Authorization Split) was the last remaining field.  It is now expressed
 by two mechanism-grounded named theorems:
@@ -33,21 +33,17 @@ Neither theorem makes a universal `∀ a B P` claim; each is scoped to its named
 scenario witness.  This eliminates the single black-box `traction_auth_split` hypothesis
 and replaces it with two structurally grounded, independently falsiﬁable theorems.
 
-**C2 is no longer a hypothesis.** `no_global_ledger` was removed from `CommitmentsCtx`
-and replaced by the proved theorem `WorldCtx.no_ledger_tradeoff` (EpArch CAP Theorem)
-in `WorldCtx.lean`. It is derived from `W_partial_observability` and `obs_based`;
+**C2 is proved.** `WorldCtx.no_ledger_tradeoff` (EpArch CAP Theorem)
+in `WorldCtx.lean` derives the result from `W_partial_observability` and `obs_based`;
 see §Proved Theorems below.
 
-**C4b is no longer a hypothesis.** `consensus_not_sufficient` was removed from
-`CommitmentsCtx` and replaced by the proved theorem
-`redeemability_requires_more_than_consensus` in `Commitments.lean`. It is derived
-from `intra_bubble_only` (structural predicate: ∀ cs, ¬path_route_exists d cs)
+**C4b is proved.** `redeemability_requires_more_than_consensus` in `Commitments.lean`
+is derived from `intra_bubble_only` (structural predicate: ∀ cs, ¬path_route_exists d cs)
 and the definitional gap between `consensus` (intra-bubble, formally `True`) and
 `redeemable` (requires opaque external evidence: `path_route_exists`, `contact_was_made`,
 `verdict_discriminates`); see §Proved Theorems below.
 
-**C7b is no longer a hypothesis.** `header_asymmetry` was removed from `CommitmentsCtx`.
-The diagnosability / hardness result (`header_stripping_harder`,
+**C7b is proved.** The diagnosability / hardness result (`header_stripping_harder`,
 `metadata_stripping_strictly_enlarges`) is proved via the admissible completion-space
 model: stripping removes all (S, E, V) admissibility constraints, strictly enlarging
 the completion space, which is the structural ground for the score ordering 0 < 3.
@@ -88,8 +84,7 @@ are used (see above).
 Forward theorems (`innovation_allows_traction_without_authorization`,
 `caveated_authorization_does_not_force_certainty`, `no_universal_ledger`,
 `redeemability_requires_more_than_consensus`, `header_stripping_produces_pathology`,
-and their contradiction companions) are all proved standalone theorems — none
-are conditioned on `(C : CommitmentsCtx ...)` fields, as CommitmentsCtx is empty.
+and their contradiction companions) are all proved standalone theorems — unconditional.
 
 ### Opaque Domain Primitives
 
@@ -141,7 +136,7 @@ ground the reliance/cascade surface in `DepositDynamics` fields.
 
 ### Structural Commitments (formerly up to 12 axioms → 0)
 
-All 8 commitments are now **proved**. `CommitmentsCtx` is fully empty. The table below records each commitment and how it was discharged:
+All 8 commitments are now **proved**.  The table below records each commitment and how it was discharged:
 
 | Commitment | Resolution |
 |------------|------------|
@@ -152,7 +147,7 @@ All 8 commitments are now **proved**. `CommitmentsCtx` is fully empty. The table
 | C2 (`NoGlobalLedger`) | **Proved** as `WorldCtx.no_ledger_tradeoff` (EpArch CAP Theorem) from `W_partial_observability` + `obs_based` in `WorldCtx.lean` |
 | C4b (`ConsensusNotSufficient`) | **Proved** as `redeemability_requires_more_than_consensus` from `intra_bubble_only` + definitional gap between `consensus` (`True`) and `redeemable` (opaque external evidence) in `Commitments.lean` |
 | C7b (`HeaderStrippingHarder`) | **Proved** via admissible completion-space model: `metadata_stripping_strictly_enlarges` establishes strict inclusion admissible_full ⊂ admissible_stripped; `header_stripping_harder` is its numeric corollary (0 < 3 fields). `dispute_about B d` — an incoming same-type counter-deposit d' disagreeing on ≥1 header field — directly witnesses `has_alternative_completion d` via `dispute_about_to_alternative` (no type-universe condition). `cross_axis_dispute_about B d` — two counter-deposits dS, dE blaming S and E respectively — directly witnesses both axes for `proxy_battles`. `sticky B P d` (admissible-space multiplicity) proved by `stripped_dispute_is_sticky` from `dispute_about B d` alone; `proxy_battles B P d` (cross-axis underdetermination) proved by `stripped_dispute_has_proxy_battles` from `cross_axis_dispute_about B d` alone. **`has_cross_field_alternatives` premise entirely eliminated** — replaced by event-level export structure. `header_stripping_produces_pathology` takes `dispute_about` + `cross_axis_dispute_about`; zero opaque or type-universe hypotheses. |
-| C1 (`TractionAuthSplit`) | **Proved** as two mechanism-grounded theorems: `innovation_allows_traction_without_authorization` (`PreAuthTractionWitness`) + `caveated_authorization_does_not_force_certainty` (`BurdensomeAuthWitness`). `CommitmentsCtx` is now an **empty structure**. |
+| C1 (`TractionAuthSplit`) | **Proved** as two mechanism-grounded theorems: `innovation_allows_traction_without_authorization` (`PreAuthTractionWitness`) + `caveated_authorization_does_not_force_certainty` (`BurdensomeAuthWitness`). |
 
 ### Invariants (formerly 5 axioms → 0)
 
@@ -176,7 +171,7 @@ only theorems, definitions, and opaque constants.
 | `Basic.lean` | Core types |
 | `Header.lean` | S/E/V header structure |
 | `Bank.lean` | Bank substrate (concrete operators; `deposited`/`hasDeposit`/`knowledge_B`/`reliance_level`/`blast_radius` are defs; opaque: `withdraw`, `exportDep`, `TrustBridge`, `Revalidate`, `RepairAction`) |
-| `Commitments.lean` | Structural commitments (all 8 proved; CommitmentsCtx is empty) |
+| `Commitments.lean` | Structural commitments (all 8 proved as standalone theorems) |
 | `Invariants.lean` | Grounded operational invariants |
 | `StepSemantics.lean` | Concrete step semantics |
 | `Theorems.lean` | Derived theorems |

@@ -701,14 +701,15 @@ $$\text{PRP} \Rightarrow \neg\exists t_{\text{final}}.\, \forall t \geq t_{\text
 
 **File:** `Meta/Tier4Transport.lean`
 
-### Cluster A: CommitmentsCtx Transport
+### Cluster A: Standalone Commitments Family
 
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
-| `commitments_transport` | Meta/Tier4Transport.lean | `(C → Claim) → ExtCommitmentsCtx Extra → Claim` | Generic CommitmentsCtx transport |
-| `commitments_transport_pack` | Meta/Tier4Transport.lean | All four forward theorems survive commitment extension | Cluster A certification |
+| `commitments_pack` | Commitments.lean | SEVFactorization ∧ header_stripping_harder ∧ TemporalValidity | Unconditional commitment bundle (C3/C7b/C8) |
 
-> **Note (current status):** `CommitmentsCtx` is now an **empty structure** — all 8 commitments are proved standalone theorems, so `commitments_transport_pack` holds vacuously. It is retained as a structural marker certifying that the CommitmentsCtx premise-strengthening schema remains valid; no theorems are currently conditioned on `CommitmentsCtx` fields, so Cluster A is trivially satisfied.
+C1, C2, C4b, C5, C6b are proved as named theorems in `Commitments.lean`
+(see `innovation_allows_traction_without_authorization`, `WorldCtx.no_ledger_tradeoff`,
+`redeemability_requires_more_than_consensus`, `ExportGating`, `NoSelfCorrectionWithoutRevision`).
 
 ### Cluster B: Structural Unconditional
 
@@ -750,15 +751,13 @@ pullback that `Compatible` alone cannot provide. `SurjectiveCompatible` adds
 
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
-| `tier4_transport_pack` | Meta/Tier4Transport.lean | Cluster A ∧ Cluster B ∧ Cluster C (legacy) | Legacy Tier 4 certification |
-| `tier4_full_pack` | Meta/Tier4Transport.lean | CommitmentsCtx ∧ SEV ∧ LTS-withdrawal ∧ SafeWithdrawal ∧ ReliableExport ∧ SoundDeposits ∧ SelfCorrection ∧ universal-corrigibility | Headline Tier 4 pack (plain Compatible; ∀-corrigibility only) |
+| `tier4_full_pack` | Meta/Tier4Transport.lean | SEV ∧ LTS-withdrawal ∧ SafeWithdrawal ∧ ReliableExport ∧ SoundDeposits ∧ SelfCorrection ∧ universal-corrigibility | Headline Tier 4 pack (plain Compatible; ∀-corrigibility only) |
 | `tier4_full_pack_surj` | Meta/Tier4Transport.lean | Same 8 conjuncts with **full** CorrigibleLedgerGoal (∃+∀) in place of universal-corrigibility | Maximal Tier 4 pack (SurjectiveCompatible; no residual caveat) |
 
 ### Supporting Definitions
 
 | Definition | File | Purpose |
 |------------|------|---------|
-| `ExtCommitmentsCtx` | Meta/Tier4Transport.lean | CommitmentsCtx + one extra commitment field |
 | `ConcreteBankModel` | Meta/Tier4Transport.lean | CoreModel instance from concrete EpArch bank types |
 
 ### Math Form
@@ -766,8 +765,6 @@ pullback that `Compatible` alone cannot provide. `SurjectiveCompatible` adds
 $$\forall E \supseteq C_{\text{bank}},\; G(C_{\text{bank}}) \Rightarrow G(\text{forget}(E)) \text{ for } G \in \{\text{SafeWithdrawal, ReliableExport, SoundDeposits, SelfCorrection, Corrigible}_\forall\}$$
 
 $$\text{Step}_{\text{withdraw}} \Rightarrow \text{ACL} \land \tau\text{-valid} \land \text{Deposited} \quad (\text{for every } SystemState)$$
-
-$$\forall C' \supseteq C,\; T(C) \Rightarrow T(C.\text{toCommitmentsCtx})$$
 
 ### Design-Imposition Theorems (Tier A — Proved)
 

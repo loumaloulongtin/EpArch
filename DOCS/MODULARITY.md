@@ -111,19 +111,17 @@ This means they are already halfway to being transport-safe — the predicate mo
 
 **Three transport clusters:**
 
-### Cluster A — CommitmentsCtx-parameterized theorems
+### Cluster A — Standalone commitments theorem family
 
-Shape: `(C : CommitmentsCtx PropLike Standard ErrorModel Provenance) → ... → Claim`
+All 8 architectural commitments are proved as standalone theorems in `Commitments.lean`.
+`commitments_pack` bundles the unconditional ones (C3/C7b/C8); C1, C2, C4b, C5, C6b
+are proved as separately named theorems.  Cluster A is an unconditional theorem
+family — no transport machinery needed.
 
-> **Current status:** `CommitmentsCtx` is now an **empty structure** — all 8 commitments are proved standalone theorems, so no theorem is still conditioned on `CommitmentsCtx` fields. `commitments_transport` and `commitments_transport_pack` are retained as structural markers certifying that the premise-strengthening schema remains valid if fields were ever re-added. Cluster A is trivially satisfied.
-
-Examples (all now standalone theorems, no `CommitmentsCtx` premise): `certainty_insufficient_for_authorization`, `authorization_insufficient_for_certainty`,
-`innovation_excludes_coordination`, `redeemability_requires_more_than_consensus`,
-all Gettier/Lottery/Fake Barn diagnoses, `header_stripping_produces_pathology`.
-
-**Mechanism:** `premise_strengthening` from `RevisionSafety.lean` plus projection through
-`ExtCommitmentsCtx.toCommitmentsCtx`. Adding more commitments never invalidates existing theorems.
-`commitments_transport` and `commitments_transport_pack` package this formally.
+Examples: `commitments_pack`, `innovation_allows_traction_without_authorization`,
+`caveated_authorization_does_not_force_certainty`, `innovation_excludes_coordination`,
+`redeemability_requires_more_than_consensus`, all Gettier/Lottery/Fake Barn diagnoses,
+`header_stripping_produces_pathology`.
 
 ### Cluster B — Standalone structural theorems
 
@@ -171,7 +169,7 @@ This is the real Cluster C result — not just the competition gate but the full
 - `tier4_full_pack`: headline theorem — Clusters A + B + LTS-universal + all five health goals
 
 **Gap:** None. All four tier 4 clusters are machine-certified:
-- Cluster A: CommitmentsCtx-parameterized theorems transport via premise strengthening.
+- Cluster A: all 8 commitments proved as standalone theorems; `commitments_pack` bundles the unconditional ones.
 - Cluster B + §3b LTS-universal: structural and operational LTS theorems are universally valid.
 - Cluster C §3c: all five ∀-health goals transport through compatible `ConcreteBankModel` extensions.
 
@@ -185,7 +183,7 @@ This is the real Cluster C result — not just the competition gate but the full
 | Constraints (6 forcing results) | Independent conjuncts + `PartialWellFormed`/`modular` meta-theorem | ✅ Complete | `Minimality.lean`, `Meta/Modular.lean` |
 | `PaperFacing` / competition gate | `transport_core` + `sub_revision_safety` | ✅ Complete | `RevisionSafety.lean`, `Modularity.lean` |
 | Health goals (5 predicates) | `CoreModel`-parameterized + individual transport theorems | ✅ Complete | `Health.lean`, `Meta/TheoremTransport.lean` |
-| Main theorem library (109+) | Four-part schema: CommitmentsCtx transport, structural unconditional, LTS-universal operational, all-five-health-goals bank bridge | ✅ Complete | `Meta/Tier4Transport.lean` |
+| Main theorem library (109+) | Four-part schema: standalone commitments, structural unconditional, LTS-universal operational, all-five-health-goals bank bridge | ✅ Complete | `Meta/Tier4Transport.lean` |
 | Certified cluster surface (30 clusters) | `EpArchConfig → ClusterTag → Bool` routing + indexed witness carriers; all 5 cluster families (constraint, goal, Tier 4, world, meta-modular, lattice) are individually selectable and proof-carrying | ✅ Complete | `Meta/ClusterRegistry.lean`, `Meta/Config.lean` |
 
 ---

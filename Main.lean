@@ -69,7 +69,7 @@ The formalization proves these claims:
 5. **StepSemantics.lean** — The constructive operational semantics: SystemState,
    Action, Step relation, competition gate theorem.
 6. **Commitments.lean** — Eight architectural commitments (all proved as standalone
-   theorems; `CommitmentsCtx` is now an empty structure).
+   theorems; `commitments_pack` bundles the unconditional ones).
 7. **Minimality.lean** — The convergence/impossibility theorems: constraints force
    features, removal breaks properties.
 8. **WorldCtx.lean** — Parametric world semantics: the interface through which
@@ -115,8 +115,7 @@ Layer 10 (Modularity): Modularity
 The formalization contains **zero `axiom` declarations**. All 8 structural commitments
 are proved standalone theorems.  C1 (Traction/Authorization Split) is proved by
 `innovation_allows_traction_without_authorization` and
-`caveated_authorization_does_not_force_certainty`.  `CommitmentsCtx` is an empty
-structure retained for backward compatibility.  Some domain primitives are
+`caveated_authorization_does_not_force_certainty`.  Some domain primitives are
 `opaque` constants (e.g., `agentTraction`, `ignores_bank_signal`, `pushback`,
 `τ_compress`, `V_spoof`, and the performance/adversarial-pressure opaques in
 `Theorems.lean` / `AdversarialBase.lean`); others, including `certainty_L` and
