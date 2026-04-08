@@ -1,38 +1,65 @@
-# Epistemic Architecture — Lean Formalization
+# EpArch — Machine-Checked Epistemic Architecture
 
-Machine-checked companion to **"Epistemic Architecture: A Constraints-and-Objectives Framework for Bounded Agents Under Adversarial Pressure"**
+Standalone Lean 4 framework for reasoning about bounded epistemic systems under adversarial pressure.
 
 [![CI](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml/badge.svg)](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml)
-
-> **Paper:** Longtin, L.-M. (2026). *Epistemic Architecture: A Constraints-and-Objectives Framework for Bounded Agents Under Adversarial Pressure.* PhilArchive: <https://philarchive.org/rec/LONEAA-7>
-
----
-
-## Where to Start
-
-| If you are... | Start here |
-|---|---|
-| A **Lean / formal methods reader** | [Quick Start for Lean Readers](#quick-start-for-lean-readers) below — core types, theorem names, direct file links |
-| A **philosopher or epistemologist** | `EpArch/Theorems.lean` — `gettier_is_V_failure`, `fake_barn_is_E_failure`, `LotteryIsTypeError`; `EpArch/Header.lean` — `observational_completeness_full` for the no-hidden-degrees-of-freedom result; then [Relationship to the Paper](#relationship-to-the-paper) for the combined completeness argument |
-| An **AI safety / LLM evaluation reader** | `EpArch/Theorems.lean` — `confabulation_is_type_error` (hallucination is the lottery problem instantiated in generative systems: high fluency-traction, no Bank grounding); `EpArch/AdversarialObligations.lean` for V-spoof and trust-bridge obligations |
-| Interested in **why these primitives are forced** | `EpArch/Agent/Imposition.lean` (mechanism necessity proofs), `EpArch/Minimality.lean` (forcing results), `EpArch/WorldWitness.lean` (non-vacuity witnesses) |
-| A **skeptic** wanting non-vacuity first | `EpArch/ConcreteLedgerModel.lean` — zero axioms, fully constructive trace from initial state to revoked |
-
----
-
-## What This Is
-
-This repository contains the Lean 4 formalization of EpArch — a constraints-and-objectives architecture for bounded epistemic agents under adversarial pressure. Starting from minimal operational constraints on agents and the world, the paper derives a cluster of required primitives: scoped authorization zones (Bubbles), a shared deposit ledger (Bank) with lifecycle gates, structured validation headers (S/E/V), and temporal validity (τ). This formalization machine-checks the key conditional necessity results, provides non-vacuity witnesses, and verifies revision safety.
 
 **539 theorems. 0 axiom declarations. 0 sorries.**
 
 ```bash
-lake build   # requires Lean 4.3.0, no Mathlib
+lake build   # Lean 4.3.0, no Mathlib
 ```
 
 ---
 
-## Quick Start for Lean Readers
+## What EpArch Does
+
+| Goal | Entry point |
+|---|---|
+| **Certify a system configuration** — proof-carrying record for up to 30 theorem clusters | `EpArch.Meta.Config.certify myConfig` |
+| **Inspect which theorems apply** — human-readable routing report per constraint/goal/world | `#eval EpArch.Meta.Config.showConfig myConfig` |
+| **See why primitives are structurally forced** — constraint-to-feature necessity proofs | `EpArch/Minimality.lean`, `EpArch/Agent/Imposition.lean` |
+| **Transport theorems through compatible extensions** — Tier 3–4 closure | `EpArch/Meta/TheoremTransport.lean`, `EpArch/Meta/Tier4Transport.lean` |
+| **Extend or adapt the framework** — 30-cluster registry + contributor recipes | [`DOCS/MODULARITY.md`](DOCS/MODULARITY.md) |
+| **Verify a constructive witness** — zero-axiom trace from initial state to revoked | `EpArch/ConcreteLedgerModel.lean` |
+| **Localize an epistemic puzzle** (Gettier, Lottery, Fake Barn, confabulation) | `EpArch/Theorems.lean` — `gettier_is_V_failure`, `lottery_paradox_dissolved_architecturally`, `confabulation_is_type_error` |
+
+---
+
+## Quick Example
+
+```lean
+def myConfig : EpArchConfig := {
+  constraints := [.distributed_agents, .truth_pressure, .adversarial_pressure]
+  goals       := [.safeWithdrawal, .corrigibleLedger]
+  worlds      := [.lies_possible, .partial_observability]
+}
+
+-- Which of the 30 clusters are active for this configuration:
+#eval EpArch.Meta.Config.showConfig myConfig
+
+-- Proof-carrying record: one machine-checked witness per cluster family:
+#check EpArch.Meta.Config.certify myConfig
+
+-- Typed proof content for a specific cluster:
+-- (certify myConfig).goalWitnesses .goal_safeWithdrawal   -- GoalWitness
+-- (certify myConfig).tier4Witnesses .tier4_commitments    -- Tier4Witness
+```
+
+---
+
+## The EpArch Framework
+
+EpArch is a machine-checked framework for reasoning about bounded epistemic systems under adversarial pressure. Starting from minimal operational constraints on agents and the world, it derives a cluster of structurally forced primitives: scoped authorization zones (**Bubbles**), a shared deposit ledger (**Bank**) with lifecycle gates, structured validation headers (**S/E/V**), and temporal validity (**τ**). These are not design choices — they are machine-proved forced features.
+
+The framework has three layers:
+- **Formal architecture** — core types, lifecycle semantics, commitments, forcing results, adversarial obligations, revision safety.
+- **Configurable certification surface** — `EpArchConfig` selects active constraints, goals, and world bundles; `certify` returns a `CertifiedProjection` for exactly the applicable theorem clusters.
+- **Modular extension substrate** — 30-cluster registry with explicit routing, proof-carrier layers, and contributor-facing extension recipes.
+
+---
+
+## Exploring the Formalization
 
 | What you want | Where to look |
 |---|---|
@@ -97,7 +124,7 @@ lake build   # requires Lean 4.3.0, no Mathlib
 | `AdversarialBase.lean` | Adversarial type definitions |
 | `AdversarialObligations.lean` | Attack/defense obligation theorems under world bundles |
 | `Agent/Corroboration.lean` | k-of-n corroboration guarantees and independence conditions |
-| `Commitments.lean` | The paper's 8 structural commitments; all proved as standalone theorems; `commitments_pack` bundles C3/C7b/C8 |
+| `Commitments.lean` | The paper's 8 structural commitments; all proved as standalone theorems; `commitments_pack` bundles the unconditional ones (C3/C4b/C7b/C8) |
 | `Minimality.lean` | Minimality and forcing results |
 | `Feasibility.lean` | Feasibility witnesses |
 | `Health.lean` | Health goal predicates and necessity theorems |
@@ -131,7 +158,7 @@ lake build   # requires Lean 4.3.0, no Mathlib
 
 ## Axiom Declarations
 
-The formalization contains **zero `axiom` declarations**. All 8 structural commitments are proved standalone theorems; `commitments_pack` bundles the unconditional ones (C3/C7b/C8). Operational invariants are grounded in `StepSemantics`. Opaque domain primitives are declared with `opaque`, not `axiom`.
+The formalization contains **zero `axiom` declarations**. All 8 structural commitments are proved standalone theorems; `commitments_pack` bundles the unconditional ones (C3/C4b/C7b/C8). Operational invariants are grounded in `StepSemantics`. Opaque domain primitives are declared with `opaque`, not `axiom`.
 
 > **Note:** “zero global axioms” does not mean “zero assumptions in an absolute sense.”
 > EpArch works with explicit base commitments and context-bundled conditions where appropriate;
@@ -174,6 +201,8 @@ Some paper concepts are explicitly out of scope for this formalization:
 ---
 
 ## Relationship to the Paper
+
+> Longtin, L.-M. (2026). *Epistemic Architecture: A Constraints-and-Objectives Framework for Bounded Agents Under Adversarial Pressure.* PhilArchive: <https://philarchive.org/rec/LONEAA-7>
 
 The formalization serves three purposes:
 

@@ -91,7 +91,7 @@ For the full paper-section-to-Lean-artifact mapping (with math notation, A.# lab
 | `RevisionSafety.lean` | Premise strengthening + compatible extensions | 0 |
 | `ScopeIrrelevance.lean` | Scope irrelevance theorems | 0 |
 | `Bank.lean` | Bank substrate, lifecycle operators | 0 |
-| `Commitments.lean` | Paper's 8 commitments (all proved as standalone theorems; `commitments_pack` bundles C3/C7b/C8) | 0 |
+| `Commitments.lean` | Paper's 8 commitments (all proved as standalone theorems; `commitments_pack` bundles C3/C4b/C7b/C8) | 0 |
 | `Meta/ClusterRegistry.lean` | 30-cluster tag registry, routing, per-family canonical lists | 0 |
 | `Meta/Config.lean` | Certification engine: `certify`, proof witnesses, completeness theorems | 0 |
 | `Health.lean` | Health predicates + necessity theorems | 0 |
