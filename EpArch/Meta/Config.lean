@@ -289,17 +289,26 @@ def explainConfig (cfg : EpArchConfig) : List ClusterTag :=
 
 ### Why `clusterValid c := True`
 
-The certification engine has **two layers**:
+The certification engine has **three layers** (mirroring the file header):
 
-1. **Routing layer** — `clusterEnabled`, `CertifiedProjection`, `certify`.
-   These work with `clusterValid c := True` so that routing is decidable and
+1. **Routing layer** — `clusterEnabled`, `enabled`, `complete`, `sound`.
+   Works with `clusterValid c := True` so routing is decidable and
    `certify` type-checks without universe complications.
 
-2. **Proof-content layer** — the `cluster_*` witnesses in §5b.
-   Each is a universe-polymorphic Lean `theorem` whose *type* directly states
-   the real certified proposition (e.g.
-   `∀ W : WorkingSystem, WellFormed W → handles_distributed_agents W → HasBubbles W`).
-   These are the authoritative typed witnesses; inspect them with `#check`.
+2. **Constraint proof layer** — `constraintProof`, `constraintWitnesses`,
+   `enabledConstraintWitnesses` (§4b).
+   `WorkingSystem` is monomorphic (fields: `SystemSpec`, `Bool`; no free
+   universe levels), so Lean 4's isolation rule does not block a
+   `def constraintProof : EnabledConstraintCluster → ConstraintProof`.
+   Tier 2 forcing clusters carry a genuine `statement : Prop` / `proof : statement`
+   pair.  `enabledConstraintWitnesses` filters this to only the clusters
+   enabled by a given `EpArchConfig`.
+
+3. **Proof-content layer** — the `cluster_*` witnesses in §5b.
+   Universe-polymorphic Lean theorems covering all 25 clusters.  Goal/Tier4/World
+   clusters reference `ExtModel.{u₁,u₂}`, `CoreModel.{u₃}`, `WorldCtx.{u}` and
+   cannot be packed into a monomorphic def; the §5b witnesses are the authoritative
+   form.  Inspect with `#check cluster_goal_safeWithdrawal`, etc.
 
 ### Why a uniform `ClusterTag → ClusterProof` def is blocked
 
@@ -447,21 +456,29 @@ cluster and holds machine-checked evidence that each one is valid. -/
 
 /-- A certified bundle: the enabled clusters for `cfg`, with proofs.
 
-    Constraint clusters (Tier 2 forcing) carry a genuine `ConstraintProof`
-    with the real Lean proposition and its machine-checked proof.
-    Goal, Tier 4, and world clusters: routing only (`clusterValid c = True`);
-    their real propositions are the `cluster_*` witnesses in §5b. -/
+    **Layer 1 (routing):** `enabled`, `complete`, `sound` — all 25 cluster tags,
+    routing only, `clusterValid c = True`.
+
+    **Layer 2 (constraint proofs):** `constraintWitnesses` — full `ConstraintProof`
+    for all six Tier 2 forcing clusters (total, config-independent).
+    `enabledConstraintWitnesses` — filtered to only the clusters enabled by `cfg`.
+
+    **Layer 3 (proof-content):** `cluster_*` witnesses in §5b cover all 25 clusters. -/
 structure CertifiedProjection (cfg : EpArchConfig) where
   /-- The list of enabled clusters (equal to `explainConfig cfg`). -/
-  enabled             : List ClusterTag
+  enabled                   : List ClusterTag
   /-- Faithfully mirrors `explainConfig`. -/
-  complete            : enabled = explainConfig cfg
+  complete                  : enabled = explainConfig cfg
   /-- Every enabled cluster is machine-proved (`clusterValid c = True`). -/
-  sound               : ∀ c, c ∈ enabled → clusterValid c
-  /-- For each Tier 2 forcing cluster: the real proposition and proof.
-      `constraintProof` is total — available for all six forcing clusters,
-      regardless of which are enabled by `cfg`. -/
-  constraintWitnesses : (c : EnabledConstraintCluster) → ConstraintProof
+  sound                     : ∀ c, c ∈ enabled → clusterValid c
+  /-- Tier 2 proof carriers (all six, config-independent).
+      `constraintWitnesses c` delivers the real proposition and proof for
+      forcing cluster `c` regardless of which constraints `cfg` enables. -/
+  constraintWitnesses       : (c : EnabledConstraintCluster) → ConstraintProof
+  /-- Filtered Tier 2 proof carriers: only the constraint clusters enabled
+      by `cfg`.  Each entry pairs the sub-tag with its `ConstraintProof`,
+      so callers get proposition + proof for exactly the active clusters. -/
+  enabledConstraintWitnesses : List (EnabledConstraintCluster × ConstraintProof)
 
 /-- Compute and certify the full projection for any `EpArchConfig`. -/
 def certify (cfg : EpArchConfig) : CertifiedProjection cfg where
@@ -469,6 +486,14 @@ def certify (cfg : EpArchConfig) : CertifiedProjection cfg where
   complete            := rfl
   sound               := fun _ _ => trivial
   constraintWitnesses := constraintProof
+  enabledConstraintWitnesses :=
+    let allCC : List EnabledConstraintCluster :=
+      [.forcing_distributed_agents, .forcing_bounded_audit, .forcing_export,
+       .forcing_adversarial, .forcing_coordination, .forcing_truth]
+    allCC.filterMap fun c =>
+      if clusterEnabled cfg c.toClusterTag
+      then some (c, constraintProof c)
+      else none
 
 
 /-! ## §5b  Named Proof Witnesses
