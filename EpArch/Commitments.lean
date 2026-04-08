@@ -333,8 +333,25 @@ theorem NoSelfCorrectionWithoutRevision {Reason Evidence : Type u} (D : Domain)
 
 /-! ## Commitment 7: Header Stripping → Harder Disputes -/
 
-/-- A dispute exists over claim P in bubble B. -/
-opaque dispute : Bubble → PropLike → Prop
+/-- A dispute exists over claim P in bubble B.
+
+    **Definition via cross-bubble export conflict:**
+    Bubble B exports deposit d1 to bubble B2; B2 exports deposit d2 back to B.
+    Both deposits are for the same claim P but disagree on at least one header
+    field (S, E, or V).  This cross-bubble header conflict creates an
+    adjudication obligation — neither deposit can simply be accepted.
+
+    Structural connection to `sticky`/`proxy_battles`:
+    The field disagreement between d1 and d2 is exactly the source of
+    completion-space multiplicity: a dispute resolver sees one completion
+    matching d1's headers and another matching d2's, with no metadata to
+    collapse them.  This is `has_alternative_completion` instantiated with
+    the actual export witnesses, not a type-universe side condition. -/
+def dispute (B : Bubble) (P : PropLike) : Prop :=
+  ∃ (Std Em Prov : Type u) (B2 : Bubble) (d1 d2 : Deposit PropLike Std Em Prov),
+    exportDep B B2 d1 ∧ exportDep B2 B d2 ∧
+    d1.P = P ∧ d2.P = P ∧
+    (d1.h.S ≠ d2.h.S ∨ d1.h.E ≠ d2.h.E ∨ d1.h.V ≠ d2.h.V)
 
 /-! ### Admissible Completion Model
 
