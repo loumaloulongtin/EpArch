@@ -40,6 +40,7 @@ design requirements.
 -/
 
 import EpArch.Basic
+import EpArch.WorldCtx
 import EpArch.Header
 import EpArch.Bank
 import EpArch.StepSemantics
@@ -78,13 +79,11 @@ def independent (A B : Prop) : Prop :=
     forces scoped validation domains (bubbles).
 -/
 
-opaque GlobalLedger : Type
-opaque supports_innovation : GlobalLedger → Prop
-opaque supports_coordination : GlobalLedger → Prop
-
-/-! Commitment 2 (Scoped Bubbles): no global ledger supports both innovation and
-    coordination.  Bundled in CommitmentsCtx.no_global_ledger.  Forward theorems
-    in CommitmentsCtx section at end of file. -/
+/-! Commitment 2 (Scoped Bubbles): no global ledger can simultaneously support
+    innovation and coordination.  This is now a **proved theorem** derived from
+    `W_partial_observability` and `obs_based` in WorldCtx.lean:
+    `WorldCtx.no_ledger_tradeoff` — the EpArch CAP Theorem.
+    It is no longer a field of CommitmentsCtx; see §Ledger Tradeoff in WorldCtx.lean. -/
 
 
 /-! ## Commitment 3: S/E/V Factorization -/
@@ -495,23 +494,28 @@ theorem TemporalValidity (d1 d2 : Deposit PropLike Standard ErrorModel Provenanc
   simp [h_eq.trans h2] at h1
 
 
-/-! ## CommitmentsCtx — Four Structural Commitments as a Hypothesis Bundle
+/-! ## CommitmentsCtx — Three Structural Commitments as a Hypothesis Bundle
 
-    Analogous to WorldCtx.W_* bundles: these four commitments are not asserted
+    Analogous to WorldCtx.W_* bundles: these three commitments are not asserted
     globally but bundled in a hypothesis structure.  Theorems conditioned on
     CommitmentsCtx hold for any conforming architecture, without asserting them
     unconditionally.  This gives zero `axiom` declarations; the commitments
     appear only as hypotheses "(C : CommitmentsCtx)" in theorem signatures.
 
+    C2 (no global ledger supports both innovation and coordination) was previously
+    in this bundle; it is now the proved theorem `WorldCtx.no_ledger_tradeoff`
+    derived from `W_partial_observability` and `obs_based` (see WorldCtx.lean).
+
     Non-vacuity: ConcreteLedgerModel proves the analogous structural properties
     hold in a concrete model (commitment1_concrete, commitment2_concrete, etc.).
 -/
 
-/-- The four structural architectural commitments as a hypothesis bundle.
+/-- The three structural architectural commitments remaining as a hypothesis bundle.
+    (C2 — no global ledger supports both innovation and coordination — is now
+    the proved theorem `WorldCtx.no_ledger_tradeoff`; see WorldCtx.lean.)
 
-    Fields (one per commitment):
+    Fields:
     - `traction_auth_split`      — C1: certainty_L ⊥ knowledge_B (independent)
-    - `no_global_ledger`         — C2: no ledger supports both innovation and coordination
     - `consensus_not_sufficient` — C4b: consensus ⊥ redeemability
     - `header_asymmetry`         — C7b: stripped disputes → sticky ∧ proxy_battles -/
 structure CommitmentsCtx (PropLike Standard ErrorModel Provenance : Type u) where
@@ -520,9 +524,6 @@ structure CommitmentsCtx (PropLike Standard ErrorModel Provenance : Type u) wher
   traction_auth_split : ∀ (a : Agent) (B : Bubble) (P : Claim),
     does_not_imply (certainty_L a P) (knowledge_B B P) ∧
     does_not_imply (knowledge_B B P) (certainty_L a P)
-  /-- No global ledger can simultaneously support innovation and coordination. -/
-  no_global_ledger : ∀ G : GlobalLedger,
-    ¬(supports_innovation G ∧ supports_coordination G)
   /-- Consensus does not imply redeemability — constraint surface is independent. -/
   consensus_not_sufficient : ∀ (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance),
     does_not_imply (consensus B d.P) (redeemable d)
@@ -557,22 +558,31 @@ theorem WeakCtx_contradicts_TractionAuthorizationSplit (C : CommitmentsCtx PropL
   hnb ((coincidence default default default).mp ha)
 
 
-/-! ### Forward Theorems (Commitment 2) -/
+/-! ### Forward Theorems (Commitment 2) — EpArch CAP Theorem
 
-/-- A ledger that supports innovation cannot also support coordination. -/
-theorem innovation_excludes_coordination (C : CommitmentsCtx PropLike Standard ErrorModel Provenance) (G : GlobalLedger) :
-    supports_innovation G → ¬supports_coordination G :=
-  fun hi hc => C.no_global_ledger G ⟨hi, hc⟩
+    C2 is now derived from WorldCtx, not a CommitmentsCtx hypothesis.
+    `WorldCtx.no_ledger_tradeoff` is the core result; these theorems restate
+    it in convenient forms.  All three take a WorldCtx + W_partial_observability
+    + an obs-based ledger instead of a CommitmentsCtx. -/
 
-/-- No single ledger serves both innovation and coordination (bubbles are forced). -/
-theorem no_universal_ledger (C : CommitmentsCtx PropLike Standard ErrorModel Provenance) :
-    ¬∃ G : GlobalLedger, supports_innovation G ∧ supports_coordination G :=
-  fun ⟨G, h⟩ => C.no_global_ledger G h
+/-- A ledger that supports innovation cannot also support coordination.
+    Restates `WorldCtx.no_ledger_tradeoff` in implication form. -/
+theorem innovation_excludes_coordination (C : WorldCtx) (L : C.Ledger)
+    (hObs : C.obs_based L) (W : C.W_partial_observability) :
+    C.supports_innovation L → ¬C.supports_coordination L :=
+  fun hI hC => WorldCtx.no_ledger_tradeoff C L hObs W ⟨hI, hC⟩
 
-/-- GlobalCtx: explicit both-support hypotheses contradict no_global_ledger. -/
-theorem GlobalCtx_contradicts_NoGlobalLedgerTradeoff (C : CommitmentsCtx PropLike Standard ErrorModel Provenance)
-    (G : GlobalLedger) (hi : supports_innovation G) (hc : supports_coordination G) : False :=
-  C.no_global_ledger G ⟨hi, hc⟩
+/-- No single obs-based ledger serves both innovation and coordination (bubbles forced). -/
+theorem no_universal_ledger (C : WorldCtx) (L : C.Ledger)
+    (hObs : C.obs_based L) (W : C.W_partial_observability) :
+    ¬(C.supports_innovation L ∧ C.supports_coordination L) :=
+  WorldCtx.no_ledger_tradeoff C L hObs W
+
+/-- Explicit both-support witnesses contradict the CAP tradeoff. -/
+theorem GlobalCtx_contradicts_NoGlobalLedgerTradeoff (C : WorldCtx) (L : C.Ledger)
+    (hObs : C.obs_based L) (W : C.W_partial_observability)
+    (hI : C.supports_innovation L) (hC : C.supports_coordination L) : False :=
+  WorldCtx.no_ledger_tradeoff C L hObs W ⟨hI, hC⟩
 
 
 /-! ### Forward Theorems (Commitment 4b) -/

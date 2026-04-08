@@ -186,6 +186,93 @@ theorem WorldCtx.partial_obs_no_omniscience (C : WorldCtx) (W : C.W_partial_obse
   W.obs_underdetermines
 
 
+/-! ## Ledger Tradeoff: EpArch CAP Theorem (Commitment C2 Derived)
+
+These definitions ground Commitment C2 ("no global ledger supports both innovation
+and coordination") as a **proved theorem** rather than a hypothesis.  The key
+insight is CAP-theoretic: under partial observability, no obs-based ledger can
+simultaneously accept all locally-true claims (innovation / availability) and
+reject all locally-false claims (coordination / consistency).
+
+Replaces the former opaque `GlobalLedger`, `supports_innovation`,
+`supports_coordination` with WorldCtx-grounded concrete definitions. -/
+
+/-- An abstract ledger over a WorldCtx: maps each (world, claim) pair to a verdict.
+    Replaces the former opaque `GlobalLedger` — now grounded in WorldCtx semantics. -/
+def WorldCtx.Ledger (C : WorldCtx) : Type u := C.World → C.Claim → Prop
+
+/-- Obs-based: observationally equivalent worlds receive the same verdict.
+    This is the partition-tolerance leg of CAP: the ledger cannot distinguish
+    worlds that look identical from the local observation channel. -/
+def WorldCtx.obs_based (C : WorldCtx) (L : C.Ledger) : Prop :=
+  ∀ (P : C.Claim) (w0 w1 : C.World), C.PartialObs w0 w1 → (L w0 P ↔ L w1 P)
+
+/-- Supports innovation: accept every locally-true claim (availability leg).
+    The ledger does not veto heterodox claims that are locally warranted. -/
+def WorldCtx.supports_innovation (C : WorldCtx) (L : C.Ledger) : Prop :=
+  ∀ (P : C.Claim) (w : C.World), C.Truth w P → L w P
+
+/-- Supports coordination: only accept globally-true claims (consistency leg).
+    The ledger enforces a shared acceptance standard across worlds. -/
+def WorldCtx.supports_coordination (C : WorldCtx) (L : C.Ledger) : Prop :=
+  ∀ (P : C.Claim) (w : C.World), L w P → C.Truth w P
+
+/-- Latency partition bundle: communication latency exceeds the TTL window.
+    When `latency > ttl_remaining`, any ledger deciding before expiry cannot
+    have received information from a partitioned agent — motivating why
+    ledgers in this regime are effectively obs-based. -/
+structure WorldCtx.W_latency_partition (C : WorldCtx) where
+  /-- Minimum propagation delay between partitioned agents (in steps) -/
+  latency       : Nat
+  /-- Steps remaining before the deposit expires (TTL window) -/
+  ttl_remaining : Nat
+  /-- The expiry deadline precedes the propagation delay: info cannot arrive in time -/
+  partition_condition : latency > ttl_remaining
+
+/-- **EpArch CAP Theorem** — Commitment C2 as a proved theorem.
+
+    Under partial observability, no obs-based ledger can simultaneously support
+    innovation (accept all locally-true claims) and coordination (reject all
+    locally-false claims).
+
+    Proof sketch: by `W_partial_observability`, pick P, w0, w1 with the same
+    observable fingerprint but differing truth values.  If the ledger supports
+    innovation it must accept P at whichever world has `Truth`.  Being obs-based,
+    it gives the same verdict at the other world.  Coordination then forces `Truth`
+    at that world too — contradicting the observation-differing hypothesis. -/
+theorem WorldCtx.no_ledger_tradeoff (C : WorldCtx) (L : C.Ledger)
+    (hObs : C.obs_based L) (W : C.W_partial_observability) :
+    ¬(C.supports_innovation L ∧ C.supports_coordination L) := by
+  intro ⟨hI, hC⟩
+  -- Expose the ∀ forms so Lean sees them as functions without needing to unfold defs
+  have hObs' : ∀ (P : C.Claim) (w0 w1 : C.World),
+      C.PartialObs w0 w1 → (L w0 P ↔ L w1 P) := hObs
+  have hI'   : ∀ (P : C.Claim) (w : C.World), C.Truth w P → L w P := hI
+  have hC'   : ∀ (P : C.Claim) (w : C.World), L w P → C.Truth w P := hC
+  have ⟨P, hND⟩ := W.obs_underdetermines
+  have ⟨w0, w1, hPartial, hDiff⟩ := hND
+  by_cases hT : C.Truth w0 P
+  · -- Truth w0 P: innovation forces acceptance; obs-based propagates; coordination forces Truth w1.
+    have hL0 : L w0 P       := hI' P w0 hT
+    have hL1 : L w1 P       := (hObs' P w0 w1 hPartial).mp hL0
+    exact hDiff.mp hT (hC' P w1 hL1)
+  · -- ¬Truth w0 P: by hDiff.mpr contrapositive, Truth w1 P; symmetric.
+    have hT1 : C.Truth w1 P :=
+      Classical.byContradiction (fun hF1 => hT (hDiff.mpr hF1))
+    have hL1 : L w1 P       := hI' P w1 hT1
+    have hL0 : L w0 P       := (hObs' P w0 w1 hPartial).mpr hL1
+    exact hT (hC' P w0 hL0)
+
+/-- Corollary: in a latency-partitioned world, obs-based ledgers face the CAP tradeoff.
+    `W_latency_partition` documents the physical mechanism (latency > TTL) explaining
+    why any ledger deciding within the TTL window is effectively obs-based. -/
+theorem WorldCtx.no_ledger_tradeoff_of_latency (C : WorldCtx) (L : C.Ledger)
+    (W_po : C.W_partial_observability) (_ : C.W_latency_partition)
+    (hObs : C.obs_based L) :
+    ¬(C.supports_innovation L ∧ C.supports_coordination L) :=
+  C.no_ledger_tradeoff L hObs W_po
+
+
 /-! ## W4: WorldCtx Compatibility (Contract Mode)
 
 This section defines compatibility for WorldCtx extensions, ensuring that

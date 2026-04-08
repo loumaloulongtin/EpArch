@@ -518,7 +518,6 @@ inductive Tier4Witness : EnabledTier4Cluster → Type 1 where
             ∃ (_ : certainty_L a P), ¬knowledge_B B P) ∧
         (∀ (a : Agent) (B : Bubble) (P : Claim),
             ∃ (_ : knowledge_B B P), ¬certainty_L a P) ∧
-        (∀ G : GlobalLedger, supports_innovation G → ¬supports_coordination G) ∧
         (∀ (B : Bubble) (d : Deposit PL SL EL PrL),
             ∃ (_ : consensus B d.P), ¬redeemable d)) →
       Tier4Witness .tier4_commitments

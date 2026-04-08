@@ -18,7 +18,7 @@ This document records the current assumption boundary and how the prior axiom su
 
 **File:** `EpArch/Commitments.lean`
 
-The four structural commitments that define the conforming-architecture class
+The three structural commitments that define the conforming-architecture class
 are bundled as fields of `CommitmentsCtx` (modelled on `WorldCtx`). They are
 not `axiom` declarations; they are hypotheses that appear explicitly in theorem
 signatures:
@@ -28,13 +28,18 @@ signatures:
 | Field | Commitment | Plain reading |
 |-------|------------|---------------|
 | `traction_auth_split` | C1: certainty_L ⊥ knowledge_B (neither implies the other) | An agent can be certain of P without any bank deposit for P, and a bank deposit can exist without the agent being certain. Feeling sure and being authorized are different kinds of things. |
-| `no_global_ledger` | C2: no ledger simultaneously supports innovation and coordination | A single shared ledger cannot simultaneously allow heterodox claims (innovation) and enforce shared acceptance standards (coordination). Scoped validation domains (bubbles) are forced by this tradeoff. |
 | `consensus_not_sufficient` | C4b: consensus does not imply redeemability | A deposit that everyone agrees on in a bubble can still fail against the external constraint surface. Group agreement does not discharge the evidence requirement. |
 | `header_asymmetry` | C7b: stripped disputes produce sticky ∧ proxy_battles | Removing the S/E/V metadata from a deposit before it reaches a dispute makes the dispute harder to resolve and harder to diagnose. The asymmetry is directional: stripping is not a neutral operation. |
 
+**C2 is no longer a hypothesis.** `no_global_ledger` was removed from `CommitmentsCtx`
+and replaced by the proved theorem `WorldCtx.no_ledger_tradeoff` (EpArch CAP Theorem)
+in `WorldCtx.lean`. It is derived from `W_partial_observability` and `obs_based`;
+see §Proved Theorems below.
+
 Forward theorems (`certainty_insufficient_for_authorization`, `no_universal_ledger`,
 `redeemability_requires_more_than_consensus`, `header_stripping_produces_pathology`,
-and their contradiction companions) are conditioned on `(C : CommitmentsCtx ...)`.
+and their contradiction companions) are conditioned on `(C : CommitmentsCtx ...)` for
+C1/C4b/C7b, and on `(C : WorldCtx) (W : C.W_partial_observability)` for C2.
 
 ### Opaque Domain Primitives
 
@@ -48,8 +53,6 @@ Key opaque primitives:
 |-----------|------|------|
 | `certainty_L` | Basic.lean | Agent-side certainty (Ladder top) |
 | `hasDeposit` / `deposited` | Bank.lean | Deposit membership predicates |
-| `GlobalLedger` | Commitments.lean | Abstract ledger type |
-| `supports_innovation` / `supports_coordination` | Commitments.lean | Ledger capability predicates |
 | `dispute` / `sticky` / `proxy_battles` | Commitments.lean | Header-stripping consequence predicates |
 
 All theorems that use these primitives state their dependence explicitly via
@@ -74,7 +77,7 @@ ground the reliance/cascade surface in `DepositDynamics` fields.
 
 ### Structural Commitments (formerly up to 12 axioms → 0)
 
-Four commitments are now fields of `CommitmentsCtx`. The others were discharged as theorems:
+Three commitments remain as fields of `CommitmentsCtx`. C2 is now proved. The others were discharged as theorems:
 
 | Commitment | Resolution |
 |------------|------------|
@@ -82,7 +85,8 @@ Four commitments are now fields of `CommitmentsCtx`. The others were discharged 
 | C5 (`ExportGating`) | Proved from LTS export constructors |
 | C6b (`NoSelfCorrectionWithoutRevision`) | Proved from StepSemantics |
 | C8 (`TemporalValidity`) | Proved from header τ definition |
-| C1, C2, C4b, C7b | Bundled as CommitmentsCtx fields |
+| C2 (`NoGlobalLedger`) | **Proved** as `WorldCtx.no_ledger_tradeoff` (EpArch CAP Theorem) from `W_partial_observability` + `obs_based` in `WorldCtx.lean` |
+| C1, C4b, C7b | Bundled as CommitmentsCtx fields |
 
 ### Invariants (formerly 5 axioms → 0)
 

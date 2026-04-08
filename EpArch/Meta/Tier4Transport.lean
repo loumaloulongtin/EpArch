@@ -93,12 +93,10 @@ theorem commitments_transport_pack
         ∃ (_ : certainty_L a P), ¬knowledge_B B P) ∧
     (∀ (a : Agent) (B : Bubble) (P : Claim),
         ∃ (_ : knowledge_B B P), ¬certainty_L a P) ∧
-    (∀ G : GlobalLedger, supports_innovation G → ¬supports_coordination G) ∧
     (∀ (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance),
         ∃ (_ : consensus B d.P), ¬redeemable d) :=
   ⟨fun a B P => certainty_insufficient_for_authorization E.toCommitmentsCtx a B P,
    fun a B P => authorization_insufficient_for_certainty E.toCommitmentsCtx a B P,
-   fun G => innovation_excludes_coordination E.toCommitmentsCtx G,
    fun B d => redeemability_requires_more_than_consensus E.toCommitmentsCtx B d⟩
 
 
