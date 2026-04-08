@@ -136,7 +136,7 @@ ground the reliance/cascade surface in `DepositDynamics` fields.
 
 ### Structural Commitments (formerly up to 12 axioms → 0)
 
-Three commitments remain as fields of `CommitmentsCtx`. C2 is now proved. The others were discharged as theorems:
+All 8 commitments are now **proved**. `CommitmentsCtx` is fully empty. The table below records each commitment and how it was discharged:
 
 | Commitment | Resolution |
 |------------|------------|

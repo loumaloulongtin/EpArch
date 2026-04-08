@@ -941,7 +941,7 @@ File: `Agent/Imposition.lean`
 
 | Definition | File | Description |
 |------------|------|-------------|
-| `Entrenched` | Basic.lean:142 | `certainty_L a P ∧ ∀ (_signal : Prop), True` — Certainty + refuses revision |
+| `Entrenched` | Basic.lean:189 | `certainty_L a P ∧ ignores_bank_signal a P` — Certainty + closed review channel |
 | `EntrenchedAgent` | Theorems.lean:2756 | Structure bundling agent, claim, and entrenchment proof |
 | `deposit_no_longer_active` | Theorems.lean:2765 | Deposit is Quarantined or Revoked |
 
