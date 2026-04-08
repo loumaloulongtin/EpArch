@@ -67,7 +67,9 @@ variable {PropLike Standard ErrorModel Provenance : Type}
 /-! ## §1  Cluster A: Standalone Commitments Family -/
 
 /-! All 8 architectural commitments are proved standalone theorems in `Commitments.lean`.
-    `commitments_pack` certifies the unconditional conjunct (C3/C7b/C8).
+    `commitments_pack` packages the four universally-closable commitment theorems
+    (C3/C4b/C7b/C8); C4b (`redeemability_requires_more_than_consensus`) is the
+    commitment-specific result that distinguishes A from `structural_theorems_unconditional` (B).
     No transport structure is needed: the theorems are unconditional. -/
 
 
@@ -321,10 +323,9 @@ theorem tier4_transport_pack
          also transports under plain Compatible.
          (The ∃-part of CorrigibleLedgerGoal requires SurjectiveCompatible.)
 
-    Note: Cluster A (C1 traction/authorization split) is no longer a transport
-    conjunct — C1 is proved via the named witness theorems
-    `innovation_allows_traction_without_authorization` and
-    `caveated_authorization_does_not_force_certainty` in Commitments.lean. -/
+    Note: Cluster A (standalone commitments) is not included here — this pack
+    covers Clusters B + C only.  `commitments_pack` in Commitments.lean certifies
+    C3/C4b/C7b/C8 unconditionally; C1/C2/C5/C6b are proved as named theorems. -/
 theorem tier4_full_pack
     {Reason Evidence : Type}
     (ops    : ConcreteBankOps PropLike Standard ErrorModel Provenance)

@@ -854,29 +854,40 @@ theorem TemporalValidity (d1 d2 : Deposit PropLike Standard ErrorModel Provenanc
 /-! ## Commitments Pack
 
 All 8 commitments are proved standalone theorems.
-`commitments_pack` bundles the three that are universally valid with no
-witness or model parameters: C3 (SEVFactorization), C7b (header_stripping_harder),
-and C8 (TemporalValidity).  The remaining commitments are proved as named theorems:
+`commitments_pack` bundles the four universally-closable commitment theorems:
+C3 (SEVFactorization), C4b (redeemability_requires_more_than_consensus),
+C7b (header_stripping_harder), C8 (TemporalValidity).
+C4b distinguishes this cluster from `structural_theorems_unconditional` (Cluster B),
+which covers C3/C7b/C8 but contains no commitment-specific result.
+The remaining commitments are proved as named theorems:
 - C1 — `innovation_allows_traction_without_authorization` + `caveated_authorization_does_not_force_certainty`
 - C2 — `WorldCtx.no_ledger_tradeoff`
-- C4b — `redeemability_requires_more_than_consensus`
 - C5 — `ExportGating`
 - C6b — `NoSelfCorrectionWithoutRevision`
 -/
 
-/-- Standalone commitments pack: the unconditional commitment theorems.
+/-- Standalone commitments pack: unconditional commitment theorems (C3/C4b/C7b/C8).
+    C4b is the commitment-specific result that distinguishes this from
+    `structural_theorems_unconditional` (Cluster B).
     - C3: `SEVFactorization` — every deposit carries independent S/E/V fields.
+    - C4b: `redeemability_requires_more_than_consensus` — intra-bubble deposits cannot
+           be redeemable; consensus (True) and redeemability are structurally separated.
     - C7b: `header_stripping_harder` — stripped disputes are systematically harder to diagnose.
     - C8: `TemporalValidity` — refreshed and unrefreshed deposits are not equivalent.
-    C1, C2, C4b, C5, C6b are proved as named theorems (see their respective sections). -/
+    C1, C2, C5, C6b are proved as named theorems (see their respective sections). -/
 theorem commitments_pack :
     (∀ (d : Deposit PropLike Standard ErrorModel Provenance),
         ∃ (s : Standard) (e : ErrorModel) (v : Provenance),
           d.h.S = s ∧ d.h.E = e ∧ d.h.V = v) ∧
+    (∀ (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance),
+        intra_bubble_only d → does_not_imply (consensus B d.P) (redeemable d)) ∧
     systematically_harder header_preserved_diagnosability header_stripped_diagnosability ∧
     (∀ (d1 d2 : Deposit PropLike Standard ErrorModel Provenance),
         refreshed d1 → unrefreshed d2 → ¬performs_equivalently d1 d2) :=
-  ⟨SEVFactorization, header_stripping_harder, TemporalValidity⟩
+  ⟨SEVFactorization,
+   fun B d h => ⟨trivial, intra_bubble_not_redeemable d h⟩,
+   header_stripping_harder,
+   TemporalValidity⟩
 
 
 /-! ### Forward Theorems (Commitment 1)

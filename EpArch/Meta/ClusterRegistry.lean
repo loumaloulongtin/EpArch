@@ -372,7 +372,7 @@ def clusterDescription : ClusterTag → String
   | .goal_corrigible_full =>
       "[Tier 3] CorrigibleLedgerGoal full ∃+∀ transports via SurjectiveCompatible  (transport_corrigible_ledger)"
   | .tier4_commitments =>
-      "[Tier 4-A] All 8 commitments proved as standalone theorems; C3/C7b/C8 unconditional  (commitments_pack)"
+      "[Tier 4-A] C3/C4b/C7b/C8 unconditional commitment theorems (commitments_pack); C1/C2/C5/C6b proved as named theorems"
   | .tier4_structural =>
       "[Tier 4-B] Structural theorems unconditional: SEV/Temporal/Monolithic/Header  (structural_theorems_unconditional)"
   | .tier4_lts_universal =>

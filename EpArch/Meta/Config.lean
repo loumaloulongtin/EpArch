@@ -261,11 +261,15 @@ All constructor args are Prop-valued by Prop impredicativity. -/
 /-- Indexed proof carrier for Tier 4 clusters. -/
 inductive Tier4Witness : EnabledTier4Cluster → Type 1 where
   | commitments :
-      -- Standalone commitments pack: C3 (SEVFactorization), C7b (header_stripping_harder),
-      -- C8 (TemporalValidity) unconditionally proved; C1/C2/C4b/C5/C6b separately named.
+      -- Standalone commitments pack (C3/C4b/C7b/C8).
+      -- C4b (redeemability_requires_more_than_consensus) is the commitment-specific fact
+      -- not present in structural_theorems_unconditional (Cluster B).
+      -- C1/C2/C5/C6b are proved as separately named theorems.
       (∀ {PL SL EL PrL : Type},
         (∀ (d : Deposit PL SL EL PrL),
             ∃ (s : SL) (e : EL) (v : PrL), d.h.S = s ∧ d.h.E = e ∧ d.h.V = v) ∧
+        (∀ (B : Bubble) (d : Deposit PL SL EL PrL),
+            intra_bubble_only d → does_not_imply (consensus B d.P) (redeemable d)) ∧
         systematically_harder header_preserved_diagnosability header_stripped_diagnosability ∧
         (∀ (d1 d2 : Deposit PL SL EL PrL),
             refreshed d1 → unrefreshed d2 → ¬performs_equivalently d1 d2)) →
