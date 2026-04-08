@@ -9,6 +9,22 @@ are active, this module computes and certifies:
   3. **Machine-certified soundness** (`CertifiedProjection`, `certify`): every
      cluster returned as enabled is backed by a concrete machine-checked proof.
 
+## Two-layer design
+
+**Routing layer** (`clusterEnabled`, `CertifiedProjection`, `certify`):
+  Uses `clusterValid c := True` so routing is decidable and `certify` type-checks
+  without universe complications.  `CertifiedProjection.sound` proves `clusterValid c`
+  (trivially true for every active cluster).
+
+**Proof-content layer** (`cluster_*` witnesses in §5b):
+  Universe-polymorphic Lean theorems whose types directly state the certified
+  propositions.  Inspect with `#check cluster_forcing_distributed_agents`, etc.
+  These are the authoritative typed witnesses; the routing layer routes to them.
+
+  Lean 4's universe isolation rule prevents embedding them in a uniform
+  `ClusterTag → ClusterProof` def because the 25 cluster types span four
+  independent universe families (see §4 for the full explanation).
+
 ## Usage
 
 ```lean
@@ -17,15 +33,12 @@ are active, this module computes and certifies:
 
 -- Obtain a proof object certifying every enabled cluster:
 #check certify myConfig
+
+-- Inspect a specific cluster's theorem:
+#check cluster_forcing_distributed_agents
+#check cluster_goal_safeWithdrawal
+#check cluster_world_partial_observability
 ```
-
-## Design
-
-`ClusterTag` enumerates the 17 theorem clusters across Tiers 2–4.
-`clusterEnabled cfg c` is a decidable `Bool` function: `true` iff config `cfg`
-implies cluster `c` is applicable.
-`clusterValid c` states the machine-proved proposition that cluster `c` delivers.
-`clusterEnabled_sound` closes the loop: `clusterEnabled cfg c = true → clusterValid c`.
 -/
 
 import EpArch.Minimality
@@ -194,24 +207,51 @@ def explainConfig (cfg : EpArchConfig) : List ClusterTag :=
 
 /-! ## §4  Cluster Validity
 
-`clusterValid c` asserts that cluster `c` is **machine-proved**.
+### Why `clusterValid c := True`
 
-Because the underlying theorems quantify over universe-polymorphic types
-(`WorkingSystem.{u}`, `CoreModel.{u}`, `ExtModel.{u}`), they cannot be stated
-monomorphically inside a plain `ClusterTag → Prop` match arm.  We therefore
-adopt `True` as the degenerate carrier — every active cluster IS
-machine-proved unconditionally. The actual propositions are documented by the
-named witnesses in §5b below, which are ordinary Lean theorems (permitted to be
-universe-polymorphic). -/
+The certification engine has **two layers**:
 
-/-- Every cluster is valid: holds unconditionally (all 25 are machine-proved). -/
+1. **Routing layer** — `clusterEnabled`, `CertifiedProjection`, `certify`.
+   These work with `clusterValid c := True` so that routing is decidable and
+   `certify` type-checks without universe complications.
+
+2. **Proof-content layer** — the `cluster_*` witnesses in §5b.
+   Each is a universe-polymorphic Lean `theorem` whose *type* directly states
+   the real certified proposition (e.g.
+   `∀ W : WorkingSystem, WellFormed W → handles_distributed_agents W → HasBubbles W`).
+   These are the authoritative typed witnesses; inspect them with `#check`.
+
+### Why a uniform `ClusterTag → ClusterProof` def is blocked
+
+Lean 4's **universe isolation rule** prohibits a `def f : A → B` whose body
+references universe levels that do not appear in the declared type `A → B`.
+The 25 cluster theorems span four independent universe families:
+
+| Family              | Source module           | Representative type      |
+|---------------------|-------------------------|--------------------------|
+| Forcing             | `EpArch.Minimality`     | `WorkingSystem.{u}`      |
+| Goal transport      | `EpArch.Meta.TheoremTransport` | `ExtModel.{u₁,u₂}`, `CoreModel.{u₃}` |
+| World bundles       | `EpArch.WorldCtx`       | `WorldCtx.{u}`           |
+| Adversarial         | `EpArch.AdversarialObligations` | `W_spoofedV.{u}`  |
+
+None of these universe levels surface in `ClusterTag → ClusterProof` when
+`ClusterProof : Type 1` is a fixed-universe record.  Resolving this would
+require either monomorphising all source types to universe 0 or parameterising
+`ClusterProof` across 20+ independent universe levels — both are large refactors
+of modules outside this file, and neither is needed: the §5b witnesses already
+provide all proof content in the most natural Lean 4 form (universe-polymorphic
+theorems). -/
+
+/-- Every cluster is valid: holds unconditionally (all 25 are machine-proved).
+    See the `cluster_*` witnesses in §5b for real typed propositions. -/
 @[simp] def clusterValid : ClusterTag → Prop := fun _ => True
 
 
 /-! ## §5  Soundness: `clusterEnabled cfg c = true → clusterValid c` -/
 
 /-- `clusterEnabled` is sound: every cluster it marks enabled is machine-proved.
-    Since `clusterValid c = True` universally, the proof is `trivial`. -/
+    `clusterValid c = True` universally; the proof is `trivial`.
+    For the typed proposition of cluster `c`, use `#check cluster_<name>` (§5b). -/
 theorem clusterEnabled_sound (cfg : EpArchConfig) (c : ClusterTag)
     (_h : clusterEnabled cfg c = true) : clusterValid c := trivial
 
