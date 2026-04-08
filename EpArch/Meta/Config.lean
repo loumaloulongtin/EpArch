@@ -4,10 +4,22 @@ EpArch/Meta/Config.lean — Configurable Certification Engine
 Given an `EpArchConfig` specifying which constraints, goals, and world bundles
 are active, this module computes and certifies:
 
-  1. **Which theorem clusters are enabled** (`clusterEnabled` — computable `Bool`).
-  2. **Human-readable routing report** (`explainConfig`, `showConfig` — `#eval`-able).
+  1. **Which theorem clusters are enabled** (`clusterEnabled` — computable `Bool`,
+     defined in `Meta/ClusterRegistry.lean`).
+  2. **Human-readable routing report** (`explainConfig`, `showConfig` — `#eval`-able,
+     defined in `Meta/ClusterRegistry.lean`).
   3. **Machine-certified soundness** (`CertifiedProjection`, `certify`): every
      cluster returned as enabled is backed by a concrete machine-checked proof.
+
+## Module split
+
+`Meta/ClusterRegistry.lean` — pure metadata (no EpArch-specific imports):
+  Types, per-family enumerations, routing, display strings.
+
+`Meta/Config.lean` (this file) — proof-carrying layer:
+  `ConstraintProof`, `ConstraintClusterSpec`, `GoalWitness`, `WorldWitness`,
+  `Tier4Witness`, `CertifiedProjection`, `certify`, completeness theorems,
+  and the `cluster_*` named proof witnesses.
 
 ## Four-layer design
 
@@ -15,8 +27,9 @@ are active, this module computes and certifies:
   Uses `clusterValid c := True` so routing is decidable and `certify` type-checks
   without universe complications.
 
-**Constraint proof layer** (`constraintProof`, `CertifiedProjection.constraintWitnesses`):
-  Tier 2 forcing clusters carry a genuine `ConstraintProof` record (real Lean
+**Constraint proof layer** (`constraintSpec`, `constraintProof`,
+  `CertifiedProjection.constraintWitnesses`):
+  Tier 2 forcing clusters carry a genuine `ConstraintClusterSpec` record (real Lean
   proposition + machine-checked proof).  `WorkingSystem` is monomorphic so Lean 4's
   universe isolation rule does not block this family's carrier.
 
@@ -31,9 +44,6 @@ are active, this module computes and certifies:
 **Proof-content layer** (`cluster_*` witnesses in §5b):
   Universe-polymorphic Lean theorems covering all 25 clusters.  These are the
   standalone named witnesses usable via `#check cluster_goal_safeWithdrawal`, etc.
-
-  See §4 for the full universe isolation explanation and §2b for the per-family
-  enumeration architecture.
 
 ## Usage
 
@@ -56,6 +66,7 @@ are active, this module computes and certifies:
 ```
 -/
 
+import EpArch.Meta.ClusterRegistry
 import EpArch.Minimality
 import EpArch.Health
 import EpArch.Meta.TheoremTransport
@@ -75,225 +86,6 @@ open EpArch.AdversarialObligations
 -- Allows theorem declarations in §5b to reference universe-polymorphic types
 -- (WorkingSystem, CoreModel, ExtModel, W_spoofedV) — standard for Lean 4 theorem declarations.
 universe u
-
-
-/-! ## §1  Configuration Language -/
-
-/-- The six constraints the paper analyses.  Each tag maps to one forcing theorem
-    in `EpArch.Minimality`. -/
-inductive ConstraintTag where
-  | distributed_agents
-  | bounded_audit
-  | export_across_boundaries
-  | adversarial_pressure
-  | coordination_need
-  | truth_pressure
-  deriving DecidableEq, BEq, Repr
-
-/-- The five health goals from `EpArch.Health`. -/
-inductive GoalTag where
-  | safeWithdrawal
-  | reliableExport
-  | corrigibleLedger
-  | soundDeposits
-  | selfCorrection
-  deriving DecidableEq, BEq, Repr
-
-/-- The eight named world bundles from the paper. -/
-inductive WorldTag where
-  | lies_possible
-  | bounded_verification
-  | partial_observability
-  | asymmetric_costs
-  | spoofedV
-  | lies_scale
-  | rolex_ddos
-  | ddos
-  deriving DecidableEq, BEq, Repr
-
-/-- A user-supplied configuration: choose which constraints, goals, and world
-    bundles are operative.  Use `List` for easy `#eval` output. -/
-structure EpArchConfig where
-  constraints : List ConstraintTag
-  goals       : List GoalTag
-  worlds      : List WorldTag
-  deriving Repr
-
-
-/-! ## §2  Cluster Tags -/
-
-/-- The 25 theorem clusters certified in EpArch Tiers 2–4 plus world-bundle obligations. -/
-inductive ClusterTag where
-  -- Tier 2: constraint-forcing theorems (6 clusters)
-  | forcing_distributed_agents
-  | forcing_bounded_audit
-  | forcing_export
-  | forcing_adversarial
-  | forcing_coordination
-  | forcing_truth
-  -- Tier 3: health-goal transport theorems (6 clusters)
-  | goal_safeWithdrawal
-  | goal_reliableExport
-  | goal_soundDeposits
-  | goal_selfCorrection
-  | goal_corrigible_universal   -- ∀-part only, plain Compatible
-  | goal_corrigible_full        -- full ∃+∀, requires SurjectiveCompatible
-  -- Tier 4: main library clusters (5 clusters)
-  | tier4_commitments           -- Cluster A: CommitmentsCtx-parameterized
-  | tier4_structural            -- Cluster B: SEV/Temporal/Monolithic/Header
-  | tier4_lts_universal         -- Cluster B+: LTS withdrawal/repair/submit gates
-  | tier4_bank_goals_compat     -- Cluster C  (Compatible): 4 goals + universal corrigible
-  | tier4_bank_goals_surj       -- Cluster C+ (SurjectiveCompatible): full CorrigibleLedgerGoal
-  -- World-bundle obligation clusters (8 world tags, all now have proved obligations;
-  -- previously .partial_observability was unwired — now corrected)
-  | world_lies_possible         -- W_lies_possible: lying is possible
-  | world_bounded_audit         -- W_bounded_verification: audit can fail before deadline
-  | world_asymmetric_costs      -- W_asymmetric_costs: export_cost < defense_cost
-  | world_partial_observability -- W_partial_observability: obs underdetermines truth → no omniscience
-  | world_spoofed_v             -- W_spoofedV: spoofed provenance blocks path
-  | world_lies_scale            -- W_lies_scale: lies scale (cost asymmetry)
-  | world_rolex_ddos            -- W_rolex_ddos: individual & population attacks structurally same
-  | world_ddos                  -- W_ddos: DDoS causes verification collapse
-  deriving DecidableEq, BEq, Repr
-
-
-/-! ## §2b  Per-Family Cluster Enumerations
-
-Lean 4's universe isolation rule blocks a uniform `ClusterTag → ClusterProof`
-def (see §4).  These per-family enumerations enable a **per-family proof carrier**
-pattern: families whose underlying types are monomorphic can carry genuine
-propositions and proofs while universe-polymorphic families stay at `True`.
-
-**Currently monomorphic** (real proof carrier available): constraint clusters
-(Tier 2 forcing) — `WorkingSystem` has no free universe parameters.
-
-**Universe-polymorphic** (routing only; real propositions in §5b witnesses):
-goal, Tier 4 bank-bundle, and world clusters. -/
-
-/-- The six Tier 2 constraint-forcing clusters. -/
-inductive EnabledConstraintCluster where
-  | forcing_distributed_agents | forcing_bounded_audit | forcing_export
-  | forcing_adversarial | forcing_coordination | forcing_truth
-  deriving DecidableEq, BEq, Repr
-
-/-- The six Tier 3 health-goal transport clusters. -/
-inductive EnabledGoalCluster where
-  | goal_safeWithdrawal | goal_reliableExport | goal_soundDeposits
-  | goal_selfCorrection | goal_corrigible_universal | goal_corrigible_full
-  deriving DecidableEq, BEq, Repr
-
-/-- The five Tier 4 library clusters. -/
-inductive EnabledTier4Cluster where
-  | tier4_commitments | tier4_structural | tier4_lts_universal
-  | tier4_bank_goals_compat | tier4_bank_goals_surj
-  deriving DecidableEq, BEq, Repr
-
-/-- The eight world-bundle clusters. -/
-inductive EnabledWorldCluster where
-  | world_lies_possible | world_bounded_audit | world_asymmetric_costs
-  | world_partial_observability | world_spoofed_v
-  | world_lies_scale | world_rolex_ddos | world_ddos
-  deriving DecidableEq, BEq, Repr
-
-/-- Embed a constraint cluster into the global tag space. -/
-def EnabledConstraintCluster.toClusterTag : EnabledConstraintCluster → ClusterTag
-  | .forcing_distributed_agents => .forcing_distributed_agents
-  | .forcing_bounded_audit      => .forcing_bounded_audit
-  | .forcing_export             => .forcing_export
-  | .forcing_adversarial        => .forcing_adversarial
-  | .forcing_coordination       => .forcing_coordination
-  | .forcing_truth              => .forcing_truth
-
-/-- Embed a goal cluster into the global tag space. -/
-def EnabledGoalCluster.toClusterTag : EnabledGoalCluster → ClusterTag
-  | .goal_safeWithdrawal       => .goal_safeWithdrawal
-  | .goal_reliableExport       => .goal_reliableExport
-  | .goal_soundDeposits        => .goal_soundDeposits
-  | .goal_selfCorrection       => .goal_selfCorrection
-  | .goal_corrigible_universal => .goal_corrigible_universal
-  | .goal_corrigible_full      => .goal_corrigible_full
-
-/-- Embed a Tier 4 cluster into the global tag space. -/
-def EnabledTier4Cluster.toClusterTag : EnabledTier4Cluster → ClusterTag
-  | .tier4_commitments       => .tier4_commitments
-  | .tier4_structural        => .tier4_structural
-  | .tier4_lts_universal     => .tier4_lts_universal
-  | .tier4_bank_goals_compat => .tier4_bank_goals_compat
-  | .tier4_bank_goals_surj   => .tier4_bank_goals_surj
-
-/-- Embed a world cluster into the global tag space. -/
-def EnabledWorldCluster.toClusterTag : EnabledWorldCluster → ClusterTag
-  | .world_lies_possible        => .world_lies_possible
-  | .world_bounded_audit        => .world_bounded_audit
-  | .world_asymmetric_costs     => .world_asymmetric_costs
-  | .world_partial_observability => .world_partial_observability
-  | .world_spoofed_v            => .world_spoofed_v
-  | .world_lies_scale           => .world_lies_scale
-  | .world_rolex_ddos           => .world_rolex_ddos
-  | .world_ddos                 => .world_ddos
-
-
-/-! ## §3  Routing Function -/
-
-/-- All 25 cluster tags, in canonical order.  Used by `explainConfig`. -/
-def allClusters : List ClusterTag := [
-  .forcing_distributed_agents, .forcing_bounded_audit, .forcing_export,
-  .forcing_adversarial, .forcing_coordination, .forcing_truth,
-  .goal_safeWithdrawal, .goal_reliableExport, .goal_soundDeposits,
-  .goal_selfCorrection, .goal_corrigible_universal, .goal_corrigible_full,
-  .tier4_commitments, .tier4_structural, .tier4_lts_universal,
-  .tier4_bank_goals_compat, .tier4_bank_goals_surj,
-  .world_lies_possible, .world_bounded_audit, .world_asymmetric_costs,
-  .world_partial_observability,
-  .world_spoofed_v, .world_lies_scale, .world_rolex_ddos, .world_ddos]
-
-/-- Decide whether cluster `c` is applicable for config `cfg`.
-
-    Tier 4 structural/LTS/commitments clusters are always applicable.
-    Constraint-forcing clusters are gated on the constraint being listed.
-    Goal-transport clusters are gated on the goal being listed.
-    Bank-goal bundles require the full goal set. -/
-def clusterEnabled (cfg : EpArchConfig) : ClusterTag → Bool
-  | .forcing_distributed_agents => cfg.constraints.contains .distributed_agents
-  | .forcing_bounded_audit      => cfg.constraints.contains .bounded_audit
-  | .forcing_export             => cfg.constraints.contains .export_across_boundaries
-  | .forcing_adversarial        => cfg.constraints.contains .adversarial_pressure
-  | .forcing_coordination       => cfg.constraints.contains .coordination_need
-  | .forcing_truth              => cfg.constraints.contains .truth_pressure
-  | .goal_safeWithdrawal        => cfg.goals.contains .safeWithdrawal
-  | .goal_reliableExport        => cfg.goals.contains .reliableExport
-  | .goal_soundDeposits         => cfg.goals.contains .soundDeposits
-  | .goal_selfCorrection        => cfg.goals.contains .selfCorrection
-  | .goal_corrigible_universal  => cfg.goals.contains .corrigibleLedger
-  | .goal_corrigible_full       => cfg.goals.contains .corrigibleLedger
-  | .tier4_commitments          => true
-  | .tier4_structural           => true
-  | .tier4_lts_universal        => true
-  | .tier4_bank_goals_compat    =>
-      cfg.goals.contains .safeWithdrawal &&
-      cfg.goals.contains .reliableExport &&
-      cfg.goals.contains .soundDeposits &&
-      cfg.goals.contains .selfCorrection &&
-      cfg.goals.contains .corrigibleLedger
-  | .tier4_bank_goals_surj      =>
-      cfg.goals.contains .safeWithdrawal &&
-      cfg.goals.contains .reliableExport &&
-      cfg.goals.contains .soundDeposits &&
-      cfg.goals.contains .selfCorrection &&
-      cfg.goals.contains .corrigibleLedger
-  -- World-bundle obligations: gated on worlds field
-  | .world_lies_possible    => cfg.worlds.contains .lies_possible
-  | .world_bounded_audit    => cfg.worlds.contains .bounded_verification
-  | .world_asymmetric_costs => cfg.worlds.contains .asymmetric_costs
-  | .world_partial_observability => cfg.worlds.contains .partial_observability
-  | .world_spoofed_v        => cfg.worlds.contains .spoofedV
-  | .world_lies_scale       => cfg.worlds.contains .lies_scale
-  | .world_rolex_ddos       => cfg.worlds.contains .rolex_ddos
-  | .world_ddos             => cfg.worlds.contains .ddos
-
-/-- The clusters enabled by `cfg`, in canonical order. -/
-def explainConfig (cfg : EpArchConfig) : List ClusterTag :=
-  allClusters.filter (clusterEnabled cfg)
 
 
 /-! ## §4  Cluster Validity
@@ -358,10 +150,13 @@ and §5b witnesses already provide all proof content in the most natural Lean 4 
 
 `WorkingSystem` is monomorphic — its fields are `SystemSpec` and `Bool`, with
 no free universe levels — so Lean 4's universe isolation rule does **not** block
-`def constraintProof : EnabledConstraintCluster → ConstraintProof`.
+`def constraintSpec : EnabledConstraintCluster → ConstraintClusterSpec`.
 
 The Tier 2 forcing theorems can therefore be embedded as genuine propositions
-with genuine machine-checked proofs, not just `True`.
+with genuine machine-checked proofs, not just `True`.  `ConstraintClusterSpec`
+is the single source of truth for each constraint cluster: adding a new
+constraint means adding one `constraintSpec` case (key + routing + display + proof)
+and updating `allConstraintClusters`.  No other tables need touching.
 
 All other families (Tier 3 goal transport, Tier 4 bank bundles, world clusters)
 reference `ExtModel.{u₁,u₂}`, `CoreModel.{u₃}`, `WorldCtx.{u}` — universe-
@@ -376,26 +171,71 @@ structure ConstraintProof : Type 1 where
   /-- Machine-checked proof of `statement`. -/
   proof     : statement
 
-/-- For every Tier 2 constraint cluster, the real proposition and its proof. -/
-def constraintProof : EnabledConstraintCluster → ConstraintProof
+/-- Registry entry for a Tier 2 constraint-forcing cluster.
+    Bundles key, global tag, routing predicate, display string, and proof
+    into a single record — one place to update per constraint. -/
+structure ConstraintClusterSpec : Type 1 where
+  key         : EnabledConstraintCluster
+  globalTag   : ClusterTag
+  enabledBy   : EpArchConfig → Bool
+  description : String
+  witness     : ConstraintProof
+
+/-- Authoritative per-constraint spec.  `constraintProof` is derived from this;
+    `clusterEnabled`/`clusterDescription` keep their readable pattern-matches
+    but could be derived from it too if more constraints are added. -/
+def constraintSpec : EnabledConstraintCluster → ConstraintClusterSpec
   | .forcing_distributed_agents => {
-      statement := ∀ W : WorkingSystem, WellFormed W → handles_distributed_agents W → HasBubbles W
-      proof     := distributed_agents_require_bubbles }
+      key         := .forcing_distributed_agents
+      globalTag   := .forcing_distributed_agents
+      enabledBy   := fun cfg => cfg.constraints.contains .distributed_agents
+      description := "[Tier 2] distributed_agents → HasBubbles  (distributed_agents_require_bubbles)"
+      witness     := {
+        statement := ∀ W : WorkingSystem, WellFormed W → handles_distributed_agents W → HasBubbles W
+        proof     := distributed_agents_require_bubbles } }
   | .forcing_bounded_audit => {
-      statement := ∀ W : WorkingSystem, WellFormed W → handles_bounded_audit W → HasTrustBridges W
-      proof     := bounded_audit_requires_trust_bridges }
+      key         := .forcing_bounded_audit
+      globalTag   := .forcing_bounded_audit
+      enabledBy   := fun cfg => cfg.constraints.contains .bounded_audit
+      description := "[Tier 2] bounded_audit → HasTrustBridges  (bounded_audit_requires_trust_bridges)"
+      witness     := {
+        statement := ∀ W : WorkingSystem, WellFormed W → handles_bounded_audit W → HasTrustBridges W
+        proof     := bounded_audit_requires_trust_bridges } }
   | .forcing_export => {
-      statement := ∀ W : WorkingSystem, WellFormed W → handles_export W → HasHeaders W
-      proof     := export_requires_headers }
+      key         := .forcing_export
+      globalTag   := .forcing_export
+      enabledBy   := fun cfg => cfg.constraints.contains .export_across_boundaries
+      description := "[Tier 2] export_across_boundaries → HasHeaders  (export_requires_headers)"
+      witness     := {
+        statement := ∀ W : WorkingSystem, WellFormed W → handles_export W → HasHeaders W
+        proof     := export_requires_headers } }
   | .forcing_adversarial => {
-      statement := ∀ W : WorkingSystem, WellFormed W → handles_adversarial W → HasRevocation W
-      proof     := adversarial_requires_revocation }
+      key         := .forcing_adversarial
+      globalTag   := .forcing_adversarial
+      enabledBy   := fun cfg => cfg.constraints.contains .adversarial_pressure
+      description := "[Tier 2] adversarial_pressure → HasRevocation  (adversarial_requires_revocation)"
+      witness     := {
+        statement := ∀ W : WorkingSystem, WellFormed W → handles_adversarial W → HasRevocation W
+        proof     := adversarial_requires_revocation } }
   | .forcing_coordination => {
-      statement := ∀ W : WorkingSystem, WellFormed W → handles_coordination W → HasBank W
-      proof     := coordination_requires_bank }
+      key         := .forcing_coordination
+      globalTag   := .forcing_coordination
+      enabledBy   := fun cfg => cfg.constraints.contains .coordination_need
+      description := "[Tier 2] coordination_need → HasBank  (coordination_requires_bank)"
+      witness     := {
+        statement := ∀ W : WorkingSystem, WellFormed W → handles_coordination W → HasBank W
+        proof     := coordination_requires_bank } }
   | .forcing_truth => {
-      statement := ∀ W : WorkingSystem, WellFormed W → handles_truth_pressure W → HasRedeemability W
-      proof     := truth_pressure_requires_redeemability }
+      key         := .forcing_truth
+      globalTag   := .forcing_truth
+      enabledBy   := fun cfg => cfg.constraints.contains .truth_pressure
+      description := "[Tier 2] truth_pressure → HasRedeemability  (truth_pressure_requires_redeemability)"
+      witness     := {
+        statement := ∀ W : WorkingSystem, WellFormed W → handles_truth_pressure W → HasRedeemability W
+        proof     := truth_pressure_requires_redeemability } }
+
+/-- Extract the proof carrier for constraint cluster `c` from `constraintSpec`. -/
+def constraintProof (c : EnabledConstraintCluster) : ConstraintProof := (constraintSpec c).witness
 
 
 /-! ## §4c  Goal Witness Carrier
@@ -593,6 +433,27 @@ def tier4Witness : (c : EnabledTier4Cluster) → Tier4Witness c
 
 /-! ## §4f  Correspondence Lemmas (support lemmas)
 
+/-- All six constraint-forcing clusters in canonical order. -/
+private def allConstraintClusters : List EnabledConstraintCluster :=
+  [.forcing_distributed_agents, .forcing_bounded_audit, .forcing_export,
+   .forcing_adversarial, .forcing_coordination, .forcing_truth]
+
+/-- All six goal-transport clusters in canonical order. -/
+private def allGoalClusters : List EnabledGoalCluster :=
+  [.goal_safeWithdrawal, .goal_reliableExport, .goal_soundDeposits,
+   .goal_selfCorrection, .goal_corrigible_universal, .goal_corrigible_full]
+
+/-- All eight world-bundle clusters in canonical order. -/
+private def allWorldClusters : List EnabledWorldCluster :=
+  [.world_lies_possible, .world_bounded_audit, .world_asymmetric_costs,
+   .world_partial_observability, .world_spoofed_v,
+   .world_lies_scale, .world_rolex_ddos, .world_ddos]
+
+/-- All five Tier 4 clusters in canonical order. -/
+private def allTier4Clusters : List EnabledTier4Cluster :=
+  [.tier4_commitments, .tier4_structural, .tier4_lts_universal,
+   .tier4_bank_goals_compat, .tier4_bank_goals_surj]
+
 Private helpers used by the three `mem_enabledXxxWitnesses_of_enabled` completeness
 theorems defined immediately after `certify` (which they reference).  The `filterMap_mem_of_pos`
 helper is also private and fills the gap left by the absent `List.mem_filterMap` in Lean 4.3.0.
@@ -616,57 +477,17 @@ private theorem filterMap_mem_of_pos {α : Type} {β : Type 1}
 
 -- Membership witnesses for each family's "all clusters" list.
 -- Used in the correspondence lemmas below.
-private theorem enabledGoalCluster_mem_all :
-    ∀ (c : EnabledGoalCluster),
-      c ∈ ([.goal_safeWithdrawal, .goal_reliableExport, .goal_soundDeposits,
-             .goal_selfCorrection, .goal_corrigible_universal, .goal_corrigible_full]
-           : List EnabledGoalCluster)
-  | .goal_safeWithdrawal       => List.Mem.head _
-  | .goal_reliableExport       => List.Mem.tail _ (List.Mem.head _)
-  | .goal_soundDeposits        => List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _))
-  | .goal_selfCorrection       =>
-      List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _)))
-  | .goal_corrigible_universal =>
-      List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _))))
-  | .goal_corrigible_full      =>
-      List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _
-        (List.Mem.tail _ (List.Mem.head _)))))
+private theorem enabledGoalCluster_mem_all (c : EnabledGoalCluster) :
+    c ∈ allGoalClusters := by
+  cases c <;> decide
 
-private theorem enabledWorldCluster_mem_all :
-    ∀ (c : EnabledWorldCluster),
-      c ∈ ([.world_lies_possible, .world_bounded_audit, .world_asymmetric_costs,
-             .world_partial_observability, .world_spoofed_v,
-             .world_lies_scale, .world_rolex_ddos, .world_ddos]
-           : List EnabledWorldCluster)
-  | .world_lies_possible         => List.Mem.head _
-  | .world_bounded_audit         => List.Mem.tail _ (List.Mem.head _)
-  | .world_asymmetric_costs      => List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _))
-  | .world_partial_observability =>
-      List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _)))
-  | .world_spoofed_v             =>
-      List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _))))
-  | .world_lies_scale            =>
-      List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _
-        (List.Mem.tail _ (List.Mem.head _)))))
-  | .world_rolex_ddos            =>
-      List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _
-        (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _))))))
-  | .world_ddos                  =>
-      List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _
-        (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _)))))))
+private theorem enabledWorldCluster_mem_all (c : EnabledWorldCluster) :
+    c ∈ allWorldClusters := by
+  cases c <;> decide
 
-private theorem enabledTier4Cluster_mem_all :
-    ∀ (c : EnabledTier4Cluster),
-      c ∈ ([.tier4_commitments, .tier4_structural, .tier4_lts_universal,
-             .tier4_bank_goals_compat, .tier4_bank_goals_surj]
-           : List EnabledTier4Cluster)
-  | .tier4_commitments       => List.Mem.head _
-  | .tier4_structural        => List.Mem.tail _ (List.Mem.head _)
-  | .tier4_lts_universal     => List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _))
-  | .tier4_bank_goals_compat =>
-      List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _)))
-  | .tier4_bank_goals_surj   =>
-      List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _))))
+private theorem enabledTier4Cluster_mem_all (c : EnabledTier4Cluster) :
+    c ∈ allTier4Clusters := by
+  cases c <;> decide
 
 /-! ## §5  Soundness: `clusterEnabled cfg c = true → clusterValid c` -/
 
@@ -677,67 +498,7 @@ theorem clusterEnabled_sound (cfg : EpArchConfig) (c : ClusterTag)
     (_h : clusterEnabled cfg c = true) : clusterValid c := trivial
 
 
-/-! ## §6  Human-Readable Output -/
-
-/-- One-line description of each cluster (theorem name in parentheses). -/
-def clusterDescription : ClusterTag → String
-  | .forcing_distributed_agents =>
-      "[Tier 2] distributed_agents → HasBubbles  (distributed_agents_require_bubbles)"
-  | .forcing_bounded_audit =>
-      "[Tier 2] bounded_audit → HasTrustBridges  (bounded_audit_requires_trust_bridges)"
-  | .forcing_export =>
-      "[Tier 2] export_across_boundaries → HasHeaders  (export_requires_headers)"
-  | .forcing_adversarial =>
-      "[Tier 2] adversarial_pressure → HasRevocation  (adversarial_requires_revocation)"
-  | .forcing_coordination =>
-      "[Tier 2] coordination_need → HasBank  (coordination_requires_bank)"
-  | .forcing_truth =>
-      "[Tier 2] truth_pressure → HasRedeemability  (truth_pressure_requires_redeemability)"
-  | .goal_safeWithdrawal =>
-      "[Tier 3] SafeWithdrawalGoal transports via Compatible  (transport_safe_withdrawal)"
-  | .goal_reliableExport =>
-      "[Tier 3] ReliableExportGoal transports via Compatible  (transport_reliable_export)"
-  | .goal_soundDeposits =>
-      "[Tier 3] SoundDepositsGoal transports via Compatible  (transport_sound_deposits)"
-  | .goal_selfCorrection =>
-      "[Tier 3] SelfCorrectionGoal transports via Compatible  (transport_self_correction)"
-  | .goal_corrigible_universal =>
-      "[Tier 3] CorrigibleLedgerGoal ∀-part transports via Compatible  (transport_corrigible_universal)"
-  | .goal_corrigible_full =>
-      "[Tier 3] CorrigibleLedgerGoal full ∃+∀ transports via SurjectiveCompatible  (transport_corrigible_ledger)"
-  | .tier4_commitments =>
-      "[Tier 4-A] All commitments proved as standalone theorems; CommitmentsCtx is empty  (commitments_transport_pack)"
-  | .tier4_structural =>
-      "[Tier 4-B] Structural theorems unconditional: SEV/Temporal/Monolithic/Header  (structural_theorems_unconditional)"
-  | .tier4_lts_universal =>
-      "[Tier 4-B+] LTS-universal: withdrawal/repair/submit gates  (lts_theorems_step_universal)"
-  | .tier4_bank_goals_compat =>
-      "[Tier 4-C] All ∀-health goals + universal corrigibility via Compatible  (concrete_bank_all_goals_transport)"
-  | .tier4_bank_goals_surj =>
-      "[Tier 4-C+] All health goals + full CorrigibleLedgerGoal via SurjectiveCompatible  (concrete_bank_all_goals_transport_surj)"
-  | .world_lies_possible =>
-      "[World] W_lies_possible: lying is structurally possible  (WorldCtx.lie_possible_of_W)"
-  | .world_bounded_audit =>
-      "[World] W_bounded_verification: audit can fail before deadline  (WorldCtx.bounded_audit_fails)"
-  | .world_asymmetric_costs =>
-      "[World] W_asymmetric_costs: export cost < defense cost  (WorldCtx.cost_asymmetry_of_W)"
-  | .world_partial_observability =>
-      "[World] W_partial_observability: obs underdetermines truth → no omniscience  (WorldCtx.partial_obs_no_omniscience)"
-  | .world_spoofed_v =>
-      "[World] W_spoofedV: spoofed-V blocks provenance path  (AdversarialObligations.spoofed_V_blocks_path_of_W)"
-  | .world_lies_scale =>
-      "[World] W_lies_scale: lies scale (export < defense cost)  (AdversarialObligations.lies_scale_of_W)"
-  | .world_rolex_ddos =>
-      "[World] W_rolex_ddos: individual and population attacks structurally equivalent  (AdversarialObligations.rolex_ddos_structural_equivalence_of_W)"
-  | .world_ddos =>
-      "[World] W_ddos: DDoS causes verification collapse  (AdversarialObligations.ddos_causes_verification_collapse_of_W)"
-
-/-- Human-readable list of all cluster descriptions enabled by `cfg`. -/
-def showConfig (cfg : EpArchConfig) : List String :=
-  (explainConfig cfg).map clusterDescription
-
-
-/-! ## §7  Certified Projection
+/-! ## §6  Certified Projection
 
 `CertifiedProjection cfg` is a proof-carrying record: it names every enabled
 cluster and holds machine-checked evidence that each one is valid. -/
@@ -793,10 +554,7 @@ def certify (cfg : EpArchConfig) : CertifiedProjection cfg where
   sound               := fun _ _ => trivial
   constraintWitnesses := constraintProof
   enabledConstraintWitnesses :=
-    let allCC : List EnabledConstraintCluster :=
-      [.forcing_distributed_agents, .forcing_bounded_audit, .forcing_export,
-       .forcing_adversarial, .forcing_coordination, .forcing_truth]
-    allCC.filterMap fun c =>
+    allConstraintClusters.filterMap fun c =>
       if clusterEnabled cfg c.toClusterTag
       then some (c, constraintProof c)
       else none
@@ -804,27 +562,17 @@ def certify (cfg : EpArchConfig) : CertifiedProjection cfg where
   worldWitnesses := worldWitness
   tier4Witnesses := tier4Witness
   enabledGoalWitnesses :=
-    let allGC : List EnabledGoalCluster :=
-      [.goal_safeWithdrawal, .goal_reliableExport, .goal_soundDeposits,
-       .goal_selfCorrection, .goal_corrigible_universal, .goal_corrigible_full]
-    allGC.filterMap fun c =>
+    allGoalClusters.filterMap fun c =>
       if clusterEnabled cfg c.toClusterTag
       then some ⟨c, goalWitness c⟩
       else none
   enabledWorldWitnesses :=
-    let allWC : List EnabledWorldCluster :=
-      [.world_lies_possible, .world_bounded_audit, .world_asymmetric_costs,
-       .world_partial_observability, .world_spoofed_v,
-       .world_lies_scale, .world_rolex_ddos, .world_ddos]
-    allWC.filterMap fun c =>
+    allWorldClusters.filterMap fun c =>
       if clusterEnabled cfg c.toClusterTag
       then some ⟨c, worldWitness c⟩
       else none
   enabledTier4Witnesses :=
-    let allT4 : List EnabledTier4Cluster :=
-      [.tier4_commitments, .tier4_structural, .tier4_lts_universal,
-       .tier4_bank_goals_compat, .tier4_bank_goals_surj]
-    allT4.filterMap fun c =>
+    allTier4Clusters.filterMap fun c =>
       if clusterEnabled cfg c.toClusterTag
       then some ⟨c, tier4Witness c⟩
       else none
