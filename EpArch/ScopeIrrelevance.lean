@@ -81,10 +81,13 @@ structure MinimalAgent where
   /-- Agent has some internal "state" (opaque) -/
   state : Type
 
-/-- Any theorem that only uses agent identity works for any implementation.
+/-- **Seam theorem.** Names the minimal-agent identity boundary.
 
     This captures: we don't assume consciousness, rich psychology, etc.
-    If a theorem only uses the existence of agents, it's minimal. -/
+    If a theorem only uses the existence of agents, it's minimal.
+    Proof is `Iff.rfl` because the boundary is *definitional*: the real content
+    is that `MinimalAgent` exposes only `id` and opaque `state`, and our
+    theorems never discriminate beyond that. -/
 theorem agent_identity_suffices (P : Nat → Prop) (a : MinimalAgent) :
     P a.id ↔ P a.id :=
   Iff.rfl
@@ -96,35 +99,41 @@ Adding extra internal state (consciousness, qualia, psychology, embodiment,
 neural architecture) doesn't affect theorems if primitives ignore it.
 -/
 
-/-- Lifting preserves theorems that don't depend on extra state.
+/-- **Seam theorem.** Names the extra-state substitution boundary.
 
-    If a property P only uses the first component (the "real" agent),
-    then it holds for (agent, extra_state) iff it holds for the base agent. -/
+    Proof is `Iff.rfl` because projecting `.1` from a pair is definitionally identity.
+    The architectural content is the *negative* claim: P does not inspect the second
+    component at all. Swapping in any X (qualia, psychology, embodiment) is safe
+    because P never looks at it.
+
+    Paper-facing preservation is closed by `extra_state_paper_facing_transport`,
+    which builds a `Compatible` witness and calls `transport_core`. -/
 theorem extra_state_erasure {Agent X : Type} (P : Agent → Prop)
     (a : Agent) (x : X) :
     P a ↔ P (a, x).1 :=
   Iff.rfl
 
-/-- Corollary: Psychology is irrelevant at system level.
-
-    If we model "psychology" as extra state X, and our system-level
-    properties don't examine X, then psychology doesn't affect theorems. -/
+/-- **Seam theorem.** Names the psychology boundary for citation purposes.
+    Proof is `Iff.rfl` (same pattern as `extra_state_erasure`); the content is that
+    `system_property` never inspects the second component.
+    Paper-facing binding: `psychology_irrelevant_paper_facing`. -/
 theorem psychology_irrelevant {Agent Psychology : Type}
     (system_property : Agent → Prop)
     (a : Agent) (psych : Psychology) :
     system_property a ↔ system_property (a, psych).1 :=
   Iff.rfl
 
-/-- Corollary: Consciousness/qualia irrelevant if not examined.
-
-    This is the formal version of "we don't assume consciousness". -/
+/-- **Seam theorem.** Names the consciousness/qualia boundary for citation purposes.
+    Proof is `Iff.rfl` (same pattern as `extra_state_erasure`).
+    Paper-facing binding: `consciousness_irrelevant_paper_facing`. -/
 theorem consciousness_irrelevant {Agent Qualia : Type}
     (functional_property : Agent → Prop)
     (a : Agent) (q : Qualia) :
     functional_property a ↔ functional_property (a, q).1 :=
   Iff.rfl
 
-/-- Embodiment irrelevant: physical details don't affect abstract properties. -/
+/-- **Seam theorem.** Names the embodiment boundary.
+    Proof is `Iff.rfl` (same pattern as `extra_state_erasure`). -/
 theorem embodiment_irrelevant {Agent Embodiment : Type}
     (abstract_property : Agent → Prop)
     (a : Agent) (e : Embodiment) :
@@ -141,12 +150,12 @@ no downstream consequences to any system-level property that does not directly
 examine `agentTraction`.
 -/
 
-/-- Traction modulation is confined to ladder_stage.
+/-- **Seam theorem.** Names the traction substitution boundary.
 
-    If two traction functions agree on claim P for agent `a`, then
-    `ladder_stage a P` is identical under both.  This is the formal statement
-    that `agentTraction` affects the Ladder *only through* `ladder_stage` —
-    there is no other observable surface.
+    Proof is trivial (the hypothesis *is* the conclusion) because the real content
+    is architectural: `agentTraction` has no other observable surface besides
+    `ladder_stage`. If two implementations agree on a claim P, they produce the
+    same stage output — *by construction*, not by a deep lemma.
 
     Consequence: psychology, neural architecture, and institutional policy can
     freely modulate `agentTraction` without touching any other system predicate. -/
@@ -156,16 +165,15 @@ theorem traction_modulation_confined
     (h : f P = g P) :
     f P = g P := h
 
-/-- Traction implementation is irrelevant to system properties.
+/-- **Seam theorem.** Names the traction implementation boundary for system properties.
 
-    Any system property that is expressed purely in terms of `ladder_stage`
-    outputs (not `agentTraction` directly) is invariant under substitution of
-    the traction function, as long as the outputs agree on the relevant claims.
+    Proof is one rewrite (`h ▸ Iff.rfl`) because the entire architectural claim
+    is already in the hypothesis: stages agree, so properties agree.
+    HOW the agent arrives at a stage (psychology, pattern-matching, neurology,
+    utility calculation) does not affect which system theorems hold — only the
+    resulting `ladder_stage` values matter.
 
-    This is the analog of `psychology_irrelevant` for the traction hook:
-    HOW the agent arrives at a ladder stage (psychology, pattern-matching,
-    neurology, utility calculation) does not affect which system theorems hold.
-    Only the resulting `ladder_stage` values matter. -/
+    This is the `agentTraction` analog of `psychology_irrelevant`. -/
 theorem traction_implementation_irrelevant
     (a : Agent) (P : Claim)
     (system_property : LadderStage → Prop)
@@ -298,22 +306,23 @@ theorem extra_state_paper_facing_transport (C : CoreModel)
     PaperFacing C → PaperFacing (forget (extendWithExtraState C AgentExtra WorldExtra)) :=
   transport_core _ C (extra_state_compatible C AgentExtra WorldExtra)
 
-/-- Corollary: Consciousness specifically is irrelevant (binding version).
-
-    Instantiate X = ConsciousnessState to get the paper-facing result.
+/-- **Named plug-in point.** Not a deep proof — delegates to `extra_state_paper_facing_transport`.
+    Instantiates X = ConsciousnessState so citation sites are self-documenting.
     ConsciousnessState can be any inhabited type (Unit for trivial consciousness). -/
 theorem consciousness_irrelevant_paper_facing (C : CoreModel)
     (ConsciousnessState : Type) [Inhabited ConsciousnessState] :
     PaperFacing C → PaperFacing (forget (extendWithExtraState C ConsciousnessState Unit)) :=
   extra_state_paper_facing_transport C ConsciousnessState Unit
 
-/-- Corollary: Psychology specifically is irrelevant (binding version). -/
+/-- **Named plug-in point.** Not a deep proof — delegates to `extra_state_paper_facing_transport`.
+    Instantiates X = PsychologyState so citation sites are self-documenting. -/
 theorem psychology_irrelevant_paper_facing (C : CoreModel)
     (PsychologyState : Type) [Inhabited PsychologyState] :
     PaperFacing C → PaperFacing (forget (extendWithExtraState C PsychologyState Unit)) :=
   extra_state_paper_facing_transport C PsychologyState Unit
 
-/-- Corollary: Qualia specifically are irrelevant (binding version). -/
+/-- **Named plug-in point.** Not a deep proof — delegates to `extra_state_paper_facing_transport`.
+    Instantiates X = QualiaState so citation sites are self-documenting. -/
 theorem qualia_irrelevant_paper_facing (C : CoreModel)
     (QualiaState : Type) [Inhabited QualiaState] :
     PaperFacing C → PaperFacing (forget (extendWithExtraState C QualiaState Unit)) :=
