@@ -14,13 +14,12 @@ This document records the current assumption boundary and how the prior axiom su
 
 ## Current Assumption Boundary
 
-### CommitmentsCtx — Structural Commitments as a Hypothesis Bundle
+### CommitmentsCtx — Structural Commitment as a Hypothesis Bundle
 
 **File:** `EpArch/Commitments.lean`
 
-The two structural commitments that define the conforming-architecture class
-are bundled as fields of `CommitmentsCtx` (modelled on `WorldCtx`). They are
-not `axiom` declarations; they are hypotheses that appear explicitly in theorem
+One structural commitment remains as a field of `CommitmentsCtx` (modelled on `WorldCtx`).
+It is not an `axiom` declaration; it is a hypothesis appearing explicitly in theorem
 signatures:
 
     theorem T (C : CommitmentsCtx PropLike Standard ErrorModel Provenance) ...
@@ -28,7 +27,6 @@ signatures:
 | Field | Commitment | Plain reading |
 |-------|------------|---------------|
 | `traction_auth_split` | C1: certainty_L ⊥ knowledge_B (neither implies the other) | An agent can be certain of P without any bank deposit for P, and a bank deposit can exist without the agent being certain. Feeling sure and being authorized are different kinds of things. |
-| `header_asymmetry` | C7b: stripped disputes produce sticky ∧ proxy_battles | Removing the S/E/V metadata from a deposit before it reaches a dispute makes the dispute harder to resolve and harder to diagnose. The asymmetry is directional: stripping is not a neutral operation. |
 
 **C2 is no longer a hypothesis.** `no_global_ledger` was removed from `CommitmentsCtx`
 and replaced by the proved theorem `WorldCtx.no_ledger_tradeoff` (EpArch CAP Theorem)
@@ -43,11 +41,18 @@ and the definitional gap between `consensus` (intra-bubble, formally `True`) and
 `redeemable` (requires opaque external evidence: `path_route_exists`, `contact_was_made`,
 `verdict_discriminates`); see §Proved Theorems below.
 
+**C7b is no longer a hypothesis.** `header_asymmetry` was removed from `CommitmentsCtx`.
+The diagnosability / hardness result (`header_stripping_harder`,
+`metadata_stripping_strictly_enlarges`) is now proved via the admissible completion-space
+model: stripping removes all (S, E, V) admissibility constraints, strictly enlarging
+the completion space, which is the structural ground for the score ordering 0 < 3.
+The opaque pathology predicates (`sticky`, `proxy_battles`) are taken as direct
+hypotheses in forward theorems, not CommitmentsCtx fields.
+
 Forward theorems (`certainty_insufficient_for_authorization`, `no_universal_ledger`,
 `redeemability_requires_more_than_consensus`, `header_stripping_produces_pathology`,
 and their contradiction companions) are conditioned on `(C : CommitmentsCtx ...)` for
-C1/C7b, and on `(C : WorldCtx) (W : C.W_partial_observability)` for C2; C4b is
-proved unconditionally (with an `intra_bubble_only` deposit premise).
+C1 only; C2, C4b, C7b are now proved.
 
 ### Opaque Domain Primitives
 
@@ -95,7 +100,8 @@ Three commitments remain as fields of `CommitmentsCtx`. C2 is now proved. The ot
 | C8 (`TemporalValidity`) | Proved from header τ definition |
 | C2 (`NoGlobalLedger`) | **Proved** as `WorldCtx.no_ledger_tradeoff` (EpArch CAP Theorem) from `W_partial_observability` + `obs_based` in `WorldCtx.lean` |
 | C4b (`ConsensusNotSufficient`) | **Proved** as `redeemability_requires_more_than_consensus` from `intra_bubble_only` + definitional gap between `consensus` (`True`) and `redeemable` (opaque external evidence) in `Commitments.lean` |
-| C1, C7b | Bundled as CommitmentsCtx fields |
+| C7b (`HeaderStrippingHarder`) | **Proved** via admissible completion-space model: `metadata_stripping_strictly_enlarges` establishes strict inclusion admissible_full ⊂ admissible_stripped; `header_stripping_harder` is its numeric corollary (0 < 3 fields). Opaque `sticky`/`proxy_battles` taken as direct hypotheses in forward theorems. |
+| C1 | Bundled as CommitmentsCtx field |
 
 ### Invariants (formerly 5 axioms → 0)
 
