@@ -101,8 +101,15 @@ Key opaque primitives:
 
 | Primitive | File | Role |
 |-----------|------|------|
-| `certainty_L` | Basic.lean | Agent-side certainty (Ladder top) |
-| `hasDeposit` / `deposited` | Bank.lean | Deposit membership predicates |
+| `agentTraction` | Basic.lean | Agent's private traction assignment (Claim → LadderStage); hook for psychology/cognition |
+| `ignores_bank_signal` | Basic.lean | Whether agent's review channel is closed (separate from `certainty_L`) |
+| `redeemable` / `path_route_exists` etc. | Commitments.lean | External constraint-surface contact evidence |
+| `reliance_level` / `blast_radius` | Bank.lean | Behavioral cascade predicates |
+
+Note: `certainty_L`, `hasDeposit`, and `deposited` are now **`def`s**, not opaques:
+- `certainty_L a P := ladder_stage a P = .Certainty` (Basic.lean)
+- `deposited B d := d.status = .Deposited ∧ d.bubble = B` (Bank.lean)
+- `hasDeposit B P := ∃ S E V d, d.status = .Deposited ∧ d.bubble = B ∧ d.P = P` (Bank.lean)
 
 All theorems that use these primitives state their dependence explicitly via
 `(C : WorldCtx)` or direct premises.
@@ -119,8 +126,11 @@ The lifecycle operators (`Validate_B`, `Accept_B`, `Challenge_B`, `Repair_B`,
 guarded struct-update definitions. Each operator is grounded in
 `StepSemantics.lean` and witnessed by `ConcreteLedgerModel.lean`.
 
-`knowledge_B` is now a `def` (= `hasDeposit`); `KnowledgeIffDeposited` is
-proved as a theorem by `Iff.rfl`. Two behavioral theorems over concrete definitions
+`knowledge_B` is a `def` (= `hasDeposit`); `KnowledgeIffDeposited` proved by `Iff.rfl`.
+`deposited` and `hasDeposit` are now **`def`s** grounded in `DepositStatus` fields (not opaque):
+`deposited B d := d.status = .Deposited ∧ d.bubble = B`;
+`hasDeposit B P := ∃ S E V d, d.status = .Deposited ∧ d.bubble = B ∧ d.P = P`.
+Two behavioral theorems over concrete definitions
 (`success_driven_bypass` over `reliance_level`; `blast_radius_scales_with_reliance` over `blast_radius`)
 ground the reliance/cascade surface in `DepositDynamics` fields.
 
@@ -137,7 +147,7 @@ Three commitments remain as fields of `CommitmentsCtx`. C2 is now proved. The ot
 | C2 (`NoGlobalLedger`) | **Proved** as `WorldCtx.no_ledger_tradeoff` (EpArch CAP Theorem) from `W_partial_observability` + `obs_based` in `WorldCtx.lean` |
 | C4b (`ConsensusNotSufficient`) | **Proved** as `redeemability_requires_more_than_consensus` from `intra_bubble_only` + definitional gap between `consensus` (`True`) and `redeemable` (opaque external evidence) in `Commitments.lean` |
 | C7b (`HeaderStrippingHarder`) | **Proved** via admissible completion-space model: `metadata_stripping_strictly_enlarges` establishes strict inclusion admissible_full ⊂ admissible_stripped; `header_stripping_harder` is its numeric corollary (0 < 3 fields). `dispute_about B d` — an incoming same-type counter-deposit d' disagreeing on ≥1 header field — directly witnesses `has_alternative_completion d` via `dispute_about_to_alternative` (no type-universe condition). `cross_axis_dispute_about B d` — two counter-deposits dS, dE blaming S and E respectively — directly witnesses both axes for `proxy_battles`. `sticky B P d` (admissible-space multiplicity) proved by `stripped_dispute_is_sticky` from `dispute_about B d` alone; `proxy_battles B P d` (cross-axis underdetermination) proved by `stripped_dispute_has_proxy_battles` from `cross_axis_dispute_about B d` alone. **`has_cross_field_alternatives` premise entirely eliminated** — replaced by event-level export structure. `header_stripping_produces_pathology` takes `dispute_about` + `cross_axis_dispute_about`; zero opaque or type-universe hypotheses. |
-| C1 | Bundled as CommitmentsCtx field |
+| C1 (`TractionAuthSplit`) | **Proved** as two mechanism-grounded theorems: `innovation_allows_traction_without_authorization` (`PreAuthTractionWitness`) + `caveated_authorization_does_not_force_certainty` (`BurdensomeAuthWitness`). `CommitmentsCtx` is now an **empty structure**. |
 
 ### Invariants (formerly 5 axioms → 0)
 
@@ -160,7 +170,7 @@ only theorems, definitions, and opaque constants.
 |--------|------|
 | `Basic.lean` | Core types |
 | `Header.lean` | S/E/V header structure |
-| `Bank.lean` | Bank substrate (concrete operators + opaque behavioral predicates) |
+| `Bank.lean` | Bank substrate (concrete operators; `deposited`/`hasDeposit` are defs; opaque: `reliance_level`, `blast_radius`) |
 | `Commitments.lean` | Structural commitments (all 8 proved; CommitmentsCtx is empty) |
 | `Invariants.lean` | Grounded operational invariants |
 | `StepSemantics.lean` | Concrete step semantics |

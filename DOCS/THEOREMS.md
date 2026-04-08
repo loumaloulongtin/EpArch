@@ -1,6 +1,6 @@
 # Theorem Inventory
 
-This document catalogs **530** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
+This document catalogs **532** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
 
 **What the architecture claims:** Decentralized epistemic authorization requires specific structural mechanisms — a lifecycle with type-separated stages, header-preserving export, a revision loop, temporal validity, and a Bank substrate. These aren't design preferences; they are forced by the combination of agent constraints and system health goals.
 
@@ -513,6 +513,13 @@ These theorems prove that out-of-scope fundamentals (physics, consciousness, psy
 | `consciousness_irrelevant` | Functional properties ignore qualia | Consciousness |
 | `embodiment_irrelevant` | Abstract properties ignore embodiment | Embodiment |
 
+### S4: Traction-Implementation Irrelevance
+
+| Theorem | Description | Fundamental Addressed |
+|---------|-------------|-----------------------|
+| `traction_modulation_confined` | If two traction functions agree on P, their `ladder_stage` output is identical — `agentTraction` has exactly one observable surface | Traction mechanism (confinement) |
+| `traction_implementation_irrelevant` | Any system property over `LadderStage` is invariant under traction-function substitution | Psychology/cognition/policy (implementation) |
+
 ### Fundamentals Coverage
 
 | Fundamental | Status | Mechanism |
@@ -521,6 +528,7 @@ These theorems prove that out-of-scope fundamentals (physics, consciousness, psy
 | Consciousness | Irrelevant | Extra state erased |
 | Psychology | Irrelevant | System-level only |
 | Embodiment | Irrelevant | Via `Obs` abstraction |
+| Traction implementation | Confined + Irrelevant | `traction_modulation_confined` + `traction_implementation_irrelevant` |
 | Optimal Rationality | Not assumed | No Bayes dependency |
 | Free Will | Not assumed | No moral judgment |
 | Metaphysics of Truth | Abstract | Truth is predicate |
