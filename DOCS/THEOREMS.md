@@ -1091,9 +1091,15 @@ orthogonal reasons terminal epistemic closure is unreachable.
 
 **Design:** `clusterEnabled cfg c : Bool` is the computable routing function. `showConfig cfg`
 is `#eval`-able and returns human-readable cluster descriptions. `certify cfg` returns a
-`CertifiedProjection` that names every enabled cluster. Named proof witnesses (`cluster_forcing_*`,
+`CertifiedProjection` that names every enabled cluster and carries genuine `ConstraintProof`
+records for each Tier 2 forcing cluster.  Named proof witnesses (`cluster_forcing_*`,
 `cluster_goal_*`, `cluster_tier4_*`, `cluster_world_*`) state and prove the exact proposition
 for each cluster.
+
+**Three-layer architecture:**
+1. **Routing layer** — `clusterEnabled`, `enabled`, `complete`, `sound` (all clusters, routing only, `clusterValid := True`)
+2. **Constraint proof layer** — `constraintProof`/`constraintWitnesses` (Tier 2 forcing clusters: real `ConstraintProof` with genuine proposition + proof; possible because `WorkingSystem` is monomorphic)
+3. **Proof-content layer** — `cluster_*` universe-polymorphic theorems (all 25 clusters; goal/Tier4/world clusters reference universe-polymorphic types and live here only)
 
 ### Definitions / Configuration Language
 
@@ -1104,13 +1110,23 @@ for each cluster.
 | `WorldTag` | Meta/Config.lean | 8 world-bundle tags (lies_possible … ddos) |
 | `EpArchConfig` | Meta/Config.lean | User-supplied config: lists of active constraints/goals/worlds |
 | `ClusterTag` | Meta/Config.lean | 25 cluster tags spanning Tiers 2–4 and world obligations |
+| `EnabledConstraintCluster` | Meta/Config.lean | Sub-inductive: 6 Tier 2 forcing cluster tags |
+| `EnabledGoalCluster` | Meta/Config.lean | Sub-inductive: 6 Tier 3 health-goal transport cluster tags |
+| `EnabledTier4Cluster` | Meta/Config.lean | Sub-inductive: 5 Tier 4 library cluster tags |
+| `EnabledWorldCluster` | Meta/Config.lean | Sub-inductive: 8 world-bundle cluster tags |
+| `EnabledConstraintCluster.toClusterTag` | Meta/Config.lean | Embed constraint sub-tag into `ClusterTag` |
+| `EnabledGoalCluster.toClusterTag` | Meta/Config.lean | Embed goal sub-tag into `ClusterTag` |
+| `EnabledTier4Cluster.toClusterTag` | Meta/Config.lean | Embed Tier 4 sub-tag into `ClusterTag` |
+| `EnabledWorldCluster.toClusterTag` | Meta/Config.lean | Embed world sub-tag into `ClusterTag` |
 | `allClusters` | Meta/Config.lean | Canonical ordered list of all 25 ClusterTags |
 | `clusterEnabled` | Meta/Config.lean | `EpArchConfig → ClusterTag → Bool` (computable routing) |
 | `explainConfig` | Meta/Config.lean | `EpArchConfig → List ClusterTag` — enabled clusters |
 | `clusterValid` | Meta/Config.lean | `ClusterTag → Prop` — always `True` (every cluster is proved) |
 | `clusterDescription` | Meta/Config.lean | `ClusterTag → String` — one-line human-readable description |
 | `showConfig` | Meta/Config.lean | `EpArchConfig → List String` — `#eval`-able routing report |
-| `CertifiedProjection` | Meta/Config.lean | Proof-carrying record: enabled clusters + soundness |
+| `ConstraintProof` | Meta/Config.lean | Proof-carrying record: `statement : Prop`, `proof : statement` (Tier 2 only) |
+| `constraintProof` | Meta/Config.lean | `EnabledConstraintCluster → ConstraintProof` — real proposition + proof for each forcing cluster |
+| `CertifiedProjection` | Meta/Config.lean | Proof-carrying record: enabled clusters + soundness + `constraintWitnesses` |
 | `certify` | Meta/Config.lean | `EpArchConfig → CertifiedProjection cfg` |
 | `fullConfig` | Meta/Config.lean | Sample: all 6 constraints, 5 goals, 8 worlds |
 | `minimalConfig` | Meta/Config.lean | Sample: 1 constraint, 1 goal, no worlds |
@@ -1155,8 +1171,9 @@ for each cluster.
 
 #### World-Bundle Named Proof Witnesses (Obligation Theorems)
 
-7 of the 8 `WorldTag` values have proved obligation theorems. `.partial_observability` is
-collected but not yet wired (no obligation theorem exists).
+All 8 `WorldTag` values are wired to proved obligation theorems.
+`.partial_observability` was the last to be wired (commit `44dc17d`),
+formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`.
 
 | Theorem | File | Statement | World Bundle | Underlying Theorem |
 |---------|------|-----------|--------------|--------------------|
@@ -1169,11 +1186,18 @@ collected but not yet wired (no obligation theorem exists).
 | `cluster_world_rolex_ddos` | Meta/Config.lean | `W_rolex_ddos → same_structure W.rolex_structure W.ddos_structure` | `.rolex_ddos` | `AdversarialObligations.rolex_ddos_structural_equivalence_of_W` |
 | `cluster_world_ddos` | Meta/Config.lean | `W_ddos → some_vector_overwhelmed s → is_collapsed c` | `.ddos` | `AdversarialObligations.ddos_causes_verification_collapse_of_W` |
 
-### Grand Total: +23 new theorems (507 + 23 = 530)
+### Grand Total: +23 new theorems (507 + 23 = 530); +14 new definitions
 
+**New theorems (+23):**
 - 1 soundness theorem (`clusterEnabled_sound`)
 - 6 Tier 2 forcing witnesses
 - 6 Tier 3 goal-transport witnesses
 - 2 Tier 4-C bank-bundle witnesses
-- 8 world-bundle obligation witnesses (all 8 world tags now wired)
+- 8 world-bundle obligation witnesses (all 8 world tags wired)
+
+**New definitions (+14, not counted as theorems):**
+- 4 sub-family inductives (`EnabledConstraintCluster`, `EnabledGoalCluster`, `EnabledTier4Cluster`, `EnabledWorldCluster`)
+- 4 embedding functions (`*.toClusterTag`)
+- `ConstraintProof` structure + `constraintProof` def (Tier 2 genuine proof carrier)
+- `CertifiedProjection` (updated with `constraintWitnesses`) + `certify`
 

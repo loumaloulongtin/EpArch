@@ -9,21 +9,25 @@ are active, this module computes and certifies:
   3. **Machine-certified soundness** (`CertifiedProjection`, `certify`): every
      cluster returned as enabled is backed by a concrete machine-checked proof.
 
-## Two-layer design
+## Three-layer design
 
-**Routing layer** (`clusterEnabled`, `CertifiedProjection`, `certify`):
+**Routing layer** (`clusterEnabled`, `CertifiedProjection.enabled/complete/sound`):
   Uses `clusterValid c := True` so routing is decidable and `certify` type-checks
-  without universe complications.  `CertifiedProjection.sound` proves `clusterValid c`
-  (trivially true for every active cluster).
+  without universe complications.
+
+**Constraint proof layer** (`constraintProof`, `CertifiedProjection.constraintWitnesses`):
+  Tier 2 forcing clusters carry a genuine `ConstraintProof` record (real Lean
+  proposition + machine-checked proof).  `WorkingSystem` is monomorphic so Lean 4's
+  universe isolation rule does not block this family's carrier.
 
 **Proof-content layer** (`cluster_*` witnesses in §5b):
-  Universe-polymorphic Lean theorems whose types directly state the certified
-  propositions.  Inspect with `#check cluster_forcing_distributed_agents`, etc.
-  These are the authoritative typed witnesses; the routing layer routes to them.
+  Universe-polymorphic Lean theorems covering all 25 clusters.  Goal/Tier4/World
+  clusters reference `ExtModel.{u₁,u₂}`, `CoreModel.{u₃}`, `WorldCtx.{u}` so
+  their propositions cannot be packed into a monomorphic def; the §5b witnesses
+  are the authoritative form.  Inspect with `#check cluster_goal_safeWithdrawal`, etc.
 
-  Lean 4's universe isolation rule prevents embedding them in a uniform
-  `ClusterTag → ClusterProof` def because the 25 cluster types span four
-  independent universe families (see §4 for the full explanation).
+  See §4 for the full universe isolation explanation and §2b for the per-family
+  enumeration architecture.
 
 ## Usage
 
@@ -142,6 +146,82 @@ inductive ClusterTag where
   deriving DecidableEq, BEq, Repr
 
 
+/-! ## §2b  Per-Family Cluster Enumerations
+
+Lean 4's universe isolation rule blocks a uniform `ClusterTag → ClusterProof`
+def (see §4).  These per-family enumerations enable a **per-family proof carrier**
+pattern: families whose underlying types are monomorphic can carry genuine
+propositions and proofs while universe-polymorphic families stay at `True`.
+
+**Currently monomorphic** (real proof carrier available): constraint clusters
+(Tier 2 forcing) — `WorkingSystem` has no free universe parameters.
+
+**Universe-polymorphic** (routing only; real propositions in §5b witnesses):
+goal, Tier 4 bank-bundle, and world clusters. -/
+
+/-- The six Tier 2 constraint-forcing clusters. -/
+inductive EnabledConstraintCluster where
+  | forcing_distributed_agents | forcing_bounded_audit | forcing_export
+  | forcing_adversarial | forcing_coordination | forcing_truth
+  deriving DecidableEq, BEq, Repr
+
+/-- The six Tier 3 health-goal transport clusters. -/
+inductive EnabledGoalCluster where
+  | goal_safeWithdrawal | goal_reliableExport | goal_soundDeposits
+  | goal_selfCorrection | goal_corrigible_universal | goal_corrigible_full
+  deriving DecidableEq, BEq, Repr
+
+/-- The five Tier 4 library clusters. -/
+inductive EnabledTier4Cluster where
+  | tier4_commitments | tier4_structural | tier4_lts_universal
+  | tier4_bank_goals_compat | tier4_bank_goals_surj
+  deriving DecidableEq, BEq, Repr
+
+/-- The eight world-bundle clusters. -/
+inductive EnabledWorldCluster where
+  | world_lies_possible | world_bounded_audit | world_asymmetric_costs
+  | world_partial_observability | world_spoofed_v
+  | world_lies_scale | world_rolex_ddos | world_ddos
+  deriving DecidableEq, BEq, Repr
+
+/-- Embed a constraint cluster into the global tag space. -/
+def EnabledConstraintCluster.toClusterTag : EnabledConstraintCluster → ClusterTag
+  | .forcing_distributed_agents => .forcing_distributed_agents
+  | .forcing_bounded_audit      => .forcing_bounded_audit
+  | .forcing_export             => .forcing_export
+  | .forcing_adversarial        => .forcing_adversarial
+  | .forcing_coordination       => .forcing_coordination
+  | .forcing_truth              => .forcing_truth
+
+/-- Embed a goal cluster into the global tag space. -/
+def EnabledGoalCluster.toClusterTag : EnabledGoalCluster → ClusterTag
+  | .goal_safeWithdrawal       => .goal_safeWithdrawal
+  | .goal_reliableExport       => .goal_reliableExport
+  | .goal_soundDeposits        => .goal_soundDeposits
+  | .goal_selfCorrection       => .goal_selfCorrection
+  | .goal_corrigible_universal => .goal_corrigible_universal
+  | .goal_corrigible_full      => .goal_corrigible_full
+
+/-- Embed a Tier 4 cluster into the global tag space. -/
+def EnabledTier4Cluster.toClusterTag : EnabledTier4Cluster → ClusterTag
+  | .tier4_commitments       => .tier4_commitments
+  | .tier4_structural        => .tier4_structural
+  | .tier4_lts_universal     => .tier4_lts_universal
+  | .tier4_bank_goals_compat => .tier4_bank_goals_compat
+  | .tier4_bank_goals_surj   => .tier4_bank_goals_surj
+
+/-- Embed a world cluster into the global tag space. -/
+def EnabledWorldCluster.toClusterTag : EnabledWorldCluster → ClusterTag
+  | .world_lies_possible        => .world_lies_possible
+  | .world_bounded_audit        => .world_bounded_audit
+  | .world_asymmetric_costs     => .world_asymmetric_costs
+  | .world_partial_observability => .world_partial_observability
+  | .world_spoofed_v            => .world_spoofed_v
+  | .world_lies_scale           => .world_lies_scale
+  | .world_rolex_ddos           => .world_rolex_ddos
+  | .world_ddos                 => .world_ddos
+
+
 /-! ## §3  Routing Function -/
 
 /-- All 25 cluster tags, in canonical order.  Used by `explainConfig`. -/
@@ -247,6 +327,50 @@ theorems). -/
 @[simp] def clusterValid : ClusterTag → Prop := fun _ => True
 
 
+/-! ## §4b  Constraint Proof Carrier
+
+`WorkingSystem` is monomorphic — its fields are `SystemSpec` and `Bool`, with
+no free universe levels — so Lean 4's universe isolation rule does **not** block
+`def constraintProof : EnabledConstraintCluster → ConstraintProof`.
+
+The Tier 2 forcing theorems can therefore be embedded as genuine propositions
+with genuine machine-checked proofs, not just `True`.
+
+All other families (Tier 3 goal transport, Tier 4 bank bundles, world clusters)
+reference `ExtModel.{u₁,u₂}`, `CoreModel.{u₃}`, `WorldCtx.{u}` — universe-
+polymorphic types — so their real propositions live as `cluster_*` witnesses
+in §5b only. -/
+
+/-- Proof-carrying record for a Tier 2 constraint-forcing cluster:
+    the actual Lean forcing proposition and its machine-checked proof. -/
+structure ConstraintProof : Type 1 where
+  /-- The actual Lean forcing proposition. -/
+  statement : Prop
+  /-- Machine-checked proof of `statement`. -/
+  proof     : statement
+
+/-- For every Tier 2 constraint cluster, the real proposition and its proof. -/
+def constraintProof : EnabledConstraintCluster → ConstraintProof
+  | .forcing_distributed_agents => {
+      statement := ∀ W : WorkingSystem, WellFormed W → handles_distributed_agents W → HasBubbles W
+      proof     := distributed_agents_require_bubbles }
+  | .forcing_bounded_audit => {
+      statement := ∀ W : WorkingSystem, WellFormed W → handles_bounded_audit W → HasTrustBridges W
+      proof     := bounded_audit_requires_trust_bridges }
+  | .forcing_export => {
+      statement := ∀ W : WorkingSystem, WellFormed W → handles_export W → HasHeaders W
+      proof     := export_requires_headers }
+  | .forcing_adversarial => {
+      statement := ∀ W : WorkingSystem, WellFormed W → handles_adversarial W → HasRevocation W
+      proof     := adversarial_requires_revocation }
+  | .forcing_coordination => {
+      statement := ∀ W : WorkingSystem, WellFormed W → handles_coordination W → HasBank W
+      proof     := coordination_requires_bank }
+  | .forcing_truth => {
+      statement := ∀ W : WorkingSystem, WellFormed W → handles_truth_pressure W → HasRedeemability W
+      proof     := truth_pressure_requires_redeemability }
+
+
 /-! ## §5  Soundness: `clusterEnabled cfg c = true → clusterValid c` -/
 
 /-- `clusterEnabled` is sound: every cluster it marks enabled is machine-proved.
@@ -321,20 +445,30 @@ def showConfig (cfg : EpArchConfig) : List String :=
 `CertifiedProjection cfg` is a proof-carrying record: it names every enabled
 cluster and holds machine-checked evidence that each one is valid. -/
 
-/-- A certified bundle: the enabled clusters for `cfg`, with proofs. -/
+/-- A certified bundle: the enabled clusters for `cfg`, with proofs.
+
+    Constraint clusters (Tier 2 forcing) carry a genuine `ConstraintProof`
+    with the real Lean proposition and its machine-checked proof.
+    Goal, Tier 4, and world clusters: routing only (`clusterValid c = True`);
+    their real propositions are the `cluster_*` witnesses in §5b. -/
 structure CertifiedProjection (cfg : EpArchConfig) where
   /-- The list of enabled clusters (equal to `explainConfig cfg`). -/
-  enabled   : List ClusterTag
+  enabled             : List ClusterTag
   /-- Faithfully mirrors `explainConfig`. -/
-  complete  : enabled = explainConfig cfg
+  complete            : enabled = explainConfig cfg
   /-- Every enabled cluster is machine-proved (`clusterValid c = True`). -/
-  sound     : ∀ c, c ∈ enabled → clusterValid c
+  sound               : ∀ c, c ∈ enabled → clusterValid c
+  /-- For each Tier 2 forcing cluster: the real proposition and proof.
+      `constraintProof` is total — available for all six forcing clusters,
+      regardless of which are enabled by `cfg`. -/
+  constraintWitnesses : (c : EnabledConstraintCluster) → ConstraintProof
 
 /-- Compute and certify the full projection for any `EpArchConfig`. -/
 def certify (cfg : EpArchConfig) : CertifiedProjection cfg where
-  enabled  := explainConfig cfg
-  complete := rfl
-  sound    := fun _ _ => trivial
+  enabled             := explainConfig cfg
+  complete            := rfl
+  sound               := fun _ _ => trivial
+  constraintWitnesses := constraintProof
 
 
 /-! ## §5b  Named Proof Witnesses
