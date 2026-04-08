@@ -1,7 +1,7 @@
 /-
 EpArch/Meta/ClusterRegistry.lean — Cluster Tag Registry and Routing
 
-Defines the EpArchConfig language, the 25 ClusterTag values and their
+Defines the EpArchConfig language, the 30 ClusterTag values and their
 per-family enumerations, the authoritative allXxxClusters lists, and the
 routing/display functions.
 
@@ -59,7 +59,8 @@ structure EpArchConfig where
 
 /-! ## §2  Cluster Tags -/
 
-/-- The 25 theorem clusters certified in EpArch Tiers 2–4 plus world-bundle obligations. -/
+/-- The 30 theorem clusters certified in EpArch Tiers 2–4 plus world-bundle obligations,
+    constraint-modularity meta-theorems, and lattice-stability results. -/
 inductive ClusterTag where
   -- Tier 2: constraint-forcing theorems (6 clusters)
   | forcing_distributed_agents

@@ -72,9 +72,9 @@ For the full paper-section-to-Lean-artifact mapping (with math notation, A.# lab
 | 21 | Multi-Agent Corroboration — Conditional minimality, bubble infection |
 | 22 | Entrenchment — Pathological Certainty state breaks safe withdrawal |
 | 23 | Observational Completeness — No hidden deposit fields |
-| 24 | Revision Safety — Compatible extensions, premise strengthening, transport |
-| 25 | Lattice-Stability — Graceful degradation, sub-level revision safety, modularity pack |
-| 26 | Theorem Transport — Tier 4 main library closure (CommitmentsCtx + structural + LTS + health goals) |
+| 24 | Lattice-Stability — Graceful degradation, sub-level revision safety, modularity pack |
+| 25 | Theorem Transport — Health Goal Layer (Tier 3 closure) |
+| 26 | Theorem Transport — Main Library Layer (Tier 4 closure: CommitmentsCtx + structural + LTS + health goals) |
 | 27 | Modularity Meta-Theorem — ∀ S ⊆ Constraints, projection_valid S |
 | 28 | Certification Engine — `EpArchConfig → ClusterTag → certified proof` (30 clusters) |
 

@@ -1102,10 +1102,12 @@ other selected constraints remain live implications backed by the required bicon
 
 ## Bucket 28: Configurable Certification Engine — `EpArchConfig → ClusterTag → certified proof`
 
-**Paper Role:** Closes the claim that the 30 theorem clusters are individually selectable and
-certifiable: given any user-specified `EpArchConfig` (which constraints, goals, and world
-bundles are operative), the engine computes exactly which theorem clusters apply and provides
-machine-checked justification for each enabled cluster.  This includes 8 world-bundle
+**Paper Role:** Closes the claim that all 30 theorem clusters are individually certified:
+25 clusters (constraint, goal, Tier 4, world) are user-selectable via `EpArchConfig`;
+the remaining 5 (2 constraint-modularity meta-theorem clusters + 3 lattice-stability
+clusters) are always enabled because they depend on no config gate. Given any
+`EpArchConfig`, the engine computes exactly which clusters apply and provides
+machine-checked justification for each enabled cluster. This includes 8 world-bundle
 obligation clusters wiring `EpArchConfig.worlds` to proved obligation theorems in
 `WorldCtx.lean` and `AdversarialObligations.lean`, 2 constraint-modularity clusters from
 `Meta/Modular.lean`, and 3 lattice-stability clusters from `Modularity.lean`.
