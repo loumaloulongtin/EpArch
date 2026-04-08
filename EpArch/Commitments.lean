@@ -893,22 +893,26 @@ theorem redeemability_requires_more_than_consensus
     - `sticky B P d`              ← `stripped_dispute_is_sticky`        (admissible-space multiplicity)
     - `proxy_battles B P d`       ← `stripped_dispute_has_proxy_battles` (cross-axis underdetermination)
     - `systematically_harder ...` ← `header_stripping_harder`            (numeric summary 0 < 3)
+    `dispute_about B d` is derived internally from `cross_axis_dispute_about B d`
+    via `cross_axis_to_dispute_about`; the caller supplies only the stronger witness.
     Zero opaque hypotheses; no type-universe nontriviality premise. -/
 theorem header_stripping_produces_pathology
     (B : Bubble) (P : PropLike)
     (d : Deposit PropLike Standard ErrorModel Provenance)
-    (h_about : dispute_about B d) (h_P : d.P = P)
+    (h_P : d.P = P)
     (h_cross : cross_axis_dispute_about B d) :
     header_stripped d →
     sticky B P d ∧ proxy_battles B P d ∧
     systematically_harder header_preserved_diagnosability header_stripped_diagnosability :=
   fun h_strip =>
-    ⟨stripped_dispute_is_sticky d B P h_about h_P h_strip,
+    ⟨stripped_dispute_is_sticky d B P (cross_axis_to_dispute_about d h_cross) h_P h_strip,
      stripped_dispute_has_proxy_battles d B P h_cross h_P h_strip,
      header_stripping_harder⟩
 
-/-- Contradiction: "stripped deposits with a cross-axis dispute are never sticky"
-    contradicts the structural derivation from `cross_axis_dispute_about`. -/
+/-- Contradiction: "stripped deposits with an anchored dispute are never sticky"
+    contradicts the structural derivation from `dispute_about`.
+    The weaker `dispute_about B d` premise suffices: only `stripped_dispute_is_sticky`
+    is needed to close the contradiction. -/
 theorem StrippedCtx_contradicts_HeaderPreservationAsymmetry
     (B : Bubble) (P : PropLike)
     (d : Deposit PropLike Standard ErrorModel Provenance)
