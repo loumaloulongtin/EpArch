@@ -97,7 +97,7 @@ lake build   # requires Lean 4.3.0, no Mathlib
 | `AdversarialBase.lean` | Adversarial type definitions |
 | `AdversarialObligations.lean` | Attack/defense obligation theorems under world bundles |
 | `Agent/Corroboration.lean` | k-of-n corroboration guarantees and independence conditions |
-| `Commitments.lean` | The paper's 8 structural commitments; 4 structural ones bundled in `CommitmentsCtx` |
+| `Commitments.lean` | The paper's 8 structural commitments; all 8 are now proved standalone theorems; `CommitmentsCtx` is an empty structure |
 | `Minimality.lean` | Minimality and forcing results |
 | `Feasibility.lean` | Feasibility witnesses |
 | `Health.lean` | Health goal predicates and necessity theorems |
@@ -105,6 +105,9 @@ lake build   # requires Lean 4.3.0, no Mathlib
 | `Modularity.lean` | Lattice-stability: graceful scale-down and sub-level RevisionSafety (9 theorems) |
 | `Meta/TheoremTransport.lean` | Health-goal transport schema: all 5 health goals are transport-safe under Compatible extensions (Tier 3 closure) |
 | `Meta/Tier4Transport.lean` | Main theorem library transport: CommitmentsCtx, structural, and ConcreteBankModel clusters (Tier 4 closure) |
+| `Meta/Modular.lean` | Constraint-subset modularity: `PartialWellFormed`, `modular` (∀ S ⊆ constraints, WellFormed-fragment → forcing results), `wellformed_is_modular` |
+| `Meta/ClusterRegistry.lean` | 30-cluster tag registry: `ClusterTag`, `EnabledXxxCluster` inductives, per-family canonical lists, `clusterEnabled`/`clusterDescription` routing |
+| `Meta/Config.lean` | Configurable certification engine: `CertifiedProjection`, `certify`, named proof witnesses for all 30 clusters |
 
 ### Safety and Scope
 
@@ -128,11 +131,7 @@ lake build   # requires Lean 4.3.0, no Mathlib
 
 ## Axiom Declarations
 
-The formalization contains **zero `axiom` declarations**. The four structural
-commitments are bundled in `CommitmentsCtx` (a hypothesis structure); forward theorems
-are conditioned on `(C : CommitmentsCtx ...)`. Operational invariants are grounded in
-`StepSemantics`. Opaque domain primitives are declared with `opaque`,
-not `axiom`.
+The formalization contains **zero `axiom` declarations**. All 8 structural commitments are now proved standalone theorems; `CommitmentsCtx` is an empty structure. Operational invariants are grounded in `StepSemantics`. Opaque domain primitives are declared with `opaque`, not `axiom`.
 
 > **Note:** “zero global axioms” does not mean “zero assumptions in an absolute sense.”
 > EpArch works with explicit base commitments and context-bundled conditions where appropriate;
@@ -169,6 +168,8 @@ Some paper concepts are explicitly out of scope for this formalization:
 | [DOCS/CORROBORATION.md](DOCS/CORROBORATION.md) | Corroboration module design notes |
 | [DOCS/FEASIBILITY.md](DOCS/FEASIBILITY.md) | Feasibility witness strategy |
 | [DOCS/WITNESS-SCOPE.md](DOCS/WITNESS-SCOPE.md) | What ConcreteLedgerModel.lean witnesses, what is proved elsewhere, and what is out of scope |
+| [DOCS/MODULARITY.md](DOCS/MODULARITY.md) | Modularity tiers: what survives disabling a constraint, health goal, or world bundle, and by what mechanism |
+| [DOCS/PAPER-MAP.md](DOCS/PAPER-MAP.md) | Paper-section–to–Lean-artifact mapping with tier labels, file:line references, and certification-engine inventory |
 
 ---
 

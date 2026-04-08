@@ -112,8 +112,6 @@ Key opaque primitives:
 Note: `reliance_level` and `blast_radius` are **`def`s** (not opaques), grounded in `DepositDynamics` struct fields (`dd.relying_agents` and `dd.cascade_agents` respectively). The behavioral theorems `success_driven_bypass` and `blast_radius_scales_with_reliance` are proved over these defs.
 
 Note: `certainty_L`, `hasDeposit`, and `deposited` are now **`def`s**, not opaques:
-
-Note: `certainty_L`, `hasDeposit`, and `deposited` are now **`def`s**, not opaques:
 - `certainty_L a P := ladder_stage a P = .Certainty` (Basic.lean)
 - `deposited B d := d.status = .Deposited ∧ d.bubble = B` (Bank.lean)
 - `hasDeposit B P := ∃ S E V d, d.status = .Deposited ∧ d.bubble = B ∧ d.P = P` (Bank.lean)

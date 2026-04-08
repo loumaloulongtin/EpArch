@@ -664,6 +664,50 @@ This closes the argument: given realistic agents and desired properties, you **c
 
 ---
 
+## Certification Engine — Configurable Cluster Surface (Buckets 27–28)
+
+**Paper Role:** Proves that the theorem corpus is modular in a strong, machine-checkable sense: any sub-combination of constraints, health goals, and world bundles can be selected, and the engine delivers a `CertifiedProjection` carrying genuine proof witnesses for every enabled cluster.
+
+### Bucket 27 — Modularity Meta-Theorem (`Meta/Modular.lean`)
+
+| Artifact | Type | File | Tier |
+|----------|------|------|------|
+| `ConstraintSubset` | `structure` | Meta/Modular.lean | A |
+| `PartialWellFormed W S` | `def` | Meta/Modular.lean | A |
+| `allConstraints` / `noConstraints` | `def` | Meta/Modular.lean | A |
+| `modular` | `theorem` | Meta/Modular.lean | A |
+| `wellformed_is_modular` | `theorem` | Meta/Modular.lean | A |
+
+**Key result:** `modular : ∀ S W, PartialWellFormed W S → projection_valid S W` — dropping constraint X = setting `S.X := false`; the X-conjunct becomes vacuously true.
+
+### Bucket 28 — Certification Engine (`Meta/ClusterRegistry.lean` + `Meta/Config.lean`)
+
+**Registry / routing** (`Meta/ClusterRegistry.lean`):
+
+| Artifact | Type | Purpose |
+|----------|------|---------|
+| `ClusterTag` | `inductive` | 30 cluster tags (Tiers 2–4 + world + meta-modular + lattice) |
+| `EnabledConstraintCluster` … `EnabledLatticeCluster` | `inductive` (×6) | Per-family sub-inductives with `toClusterTag` |
+| `allConstraintClusters` … `allLatticeClusters` | `def` (×6) | Per-family canonical lists |
+| `allClusters` | `def` | All 30 tags derived from the 6 lists |
+| `clusterEnabled` | `def` | `EpArchConfig → ClusterTag → Bool`; meta-modular and lattice always enabled |
+| `clusterDescription` | `def` | Human-readable one-line description per tag |
+
+**Witness carriers / certification** (`Meta/Config.lean`):
+
+| Artifact | Type | Purpose |
+|----------|------|---------|
+| `MetaModularWitness` | `inductive` | Indexed proof carrier for 2 constraint-modularity clusters |
+| `LatticeWitness` | `inductive` | Indexed proof carrier for 3 lattice-stability clusters |
+| `metaModularWitness` / `latticeWitness` | `def` | Proof-delivering functions for each family |
+| `CertifiedProjection` | `structure` | Full proof bundle: enabled clusters + all witness families + filtered enabled lists |
+| `certify` | `def` | `EpArchConfig → CertifiedProjection cfg` |
+| `mem_enabledMetaModularWitnesses_of_enabled` | `theorem` | Completeness: enabled cluster → witness in filtered list |
+| `mem_enabledLatticeWitnesses_of_enabled` | `theorem` | Completeness: enabled cluster → witness in filtered list |
+| `cluster_meta_modular` … `cluster_lattice_pack` | `theorem` (×5) | Named proof witnesses for all 5 new clusters (Phase F) |
+
+---
+
 ## Export Path
 
 All paper-facing artifacts are exported via:

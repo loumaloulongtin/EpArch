@@ -115,7 +115,9 @@ This means they are already halfway to being transport-safe — the predicate mo
 
 Shape: `(C : CommitmentsCtx PropLike Standard ErrorModel Provenance) → ... → Claim`
 
-Examples: `certainty_insufficient_for_authorization`, `authorization_insufficient_for_certainty`,
+> **Current status:** `CommitmentsCtx` is now an **empty structure** — all 8 commitments are proved standalone theorems, so no theorem is still conditioned on `CommitmentsCtx` fields. `commitments_transport` and `commitments_transport_pack` are retained as structural markers certifying that the premise-strengthening schema remains valid if fields were ever re-added. Cluster A is trivially satisfied.
+
+Examples (all now standalone theorems, no `CommitmentsCtx` premise): `certainty_insufficient_for_authorization`, `authorization_insufficient_for_certainty`,
 `innovation_excludes_coordination`, `redeemability_requires_more_than_consensus`,
 all Gettier/Lottery/Fake Barn diagnoses, `header_stripping_produces_pathology`.
 
@@ -184,6 +186,7 @@ This is the real Cluster C result — not just the competition gate but the full
 | `PaperFacing` / competition gate | `transport_core` + `sub_revision_safety` | ✅ Complete | `RevisionSafety.lean`, `Modularity.lean` |
 | Health goals (5 predicates) | `CoreModel`-parameterized + individual transport theorems | ✅ Complete | `Health.lean`, `Meta/TheoremTransport.lean` |
 | Main theorem library (109+) | Four-part schema: CommitmentsCtx transport, structural unconditional, LTS-universal operational, all-five-health-goals bank bridge | ✅ Complete | `Meta/Tier4Transport.lean` |
+| Certified cluster surface (30 clusters) | `EpArchConfig → ClusterTag → Bool` routing + indexed witness carriers; all 5 cluster families (constraint, goal, Tier 4, world, meta-modular, lattice) are individually selectable and proof-carrying | ✅ Complete | `Meta/ClusterRegistry.lean`, `Meta/Config.lean` |
 
 ---
 

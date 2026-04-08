@@ -1,6 +1,6 @@
 # EpArch Lean Formalization — Documentation Index
 
-This folder documents the Lean formalization of the Epistemic Architecture (EpArch) framework — 532 proved theorems, 0 axiom declarations, zero sorries.
+This folder documents the Lean formalization of the Epistemic Architecture (EpArch) framework — 539 proved theorems, 0 axiom declarations, zero sorries.
 
 **The core claim:** lifecycle gates, header-preserving export, a revision loop, and temporal validity are not design choices. They are *forced* by the combination of agent constraints (imperfect agents face permanent challenge pressure) and system health goals (safe withdrawal, reliable export, self-correction). The files below are the machine-checked record of that forcing argument.
 
@@ -22,8 +22,10 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | [CORROBORATION.md](CORROBORATION.md) | Multi-agent corroboration and common-mode failure |
 | [SEMANTICS.md](SEMANTICS.md) | Step semantics and LTS overview |
 | [WITNESS-SCOPE.md](WITNESS-SCOPE.md) | What the concrete model witnesses (and doesn't) |
+| [MODULARITY.md](MODULARITY.md) | Modularity tiers: what survives disabling a constraint, health goal, or world bundle, and by what mechanism |
+| [PAPER-MAP.md](PAPER-MAP.md) | Paper-section–to–Lean-artifact mapping with tier labels, file:line references, and certification-engine inventory |
 
-For the full paper-section-to-Lean-artifact mapping (with math notation, A.# labels, and claim-budget notes), see **Appendix A** of the paper.
+For the full paper-section-to-Lean-artifact mapping (with math notation, A.# labels, and claim-budget notes), see [PAPER-MAP.md](PAPER-MAP.md) or **Appendix A** of the paper.
 
 ## Core Concepts (Glossary)
 
@@ -70,6 +72,11 @@ For the full paper-section-to-Lean-artifact mapping (with math notation, A.# lab
 | 21 | Multi-Agent Corroboration — Conditional minimality, bubble infection |
 | 22 | Entrenchment — Pathological Certainty state breaks safe withdrawal |
 | 23 | Observational Completeness — No hidden deposit fields |
+| 24 | Revision Safety — Compatible extensions, premise strengthening, transport |
+| 25 | Lattice-Stability — Graceful degradation, sub-level revision safety, modularity pack |
+| 26 | Theorem Transport — Tier 4 main library closure (CommitmentsCtx + structural + LTS + health goals) |
+| 27 | Modularity Meta-Theorem — ∀ S ⊆ Constraints, projection_valid S |
+| 28 | Certification Engine — `EpArchConfig → ClusterTag → certified proof` (30 clusters) |
 
 ### Key Files
 
@@ -84,7 +91,9 @@ For the full paper-section-to-Lean-artifact mapping (with math notation, A.# lab
 | `RevisionSafety.lean` | Premise strengthening + compatible extensions | 0 |
 | `ScopeIrrelevance.lean` | Scope irrelevance theorems | 0 |
 | `Bank.lean` | Bank substrate, lifecycle operators | 0 |
-| `Commitments.lean` | Paper's 8 commitments | 0 |
+| `Commitments.lean` | Paper's 8 commitments (all proved; `CommitmentsCtx` empty) | 0 |
+| `Meta/ClusterRegistry.lean` | 30-cluster tag registry, routing, per-family canonical lists | 0 |
+| `Meta/Config.lean` | Certification engine: `certify`, proof witnesses, completeness theorems | 0 |
 | `Health.lean` | Health predicates + necessity theorems | 0 |
 | `Invariants.lean` | Protocol requirements | 0 |
 | `ConcreteLedgerModel.lean` | Non-vacuity witness (constructive) | 0 |

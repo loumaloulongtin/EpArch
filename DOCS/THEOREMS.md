@@ -1,10 +1,10 @@
 # Theorem Inventory
 
-This document catalogs **532** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
+This document catalogs **539** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
 
 **What the architecture claims:** Decentralized epistemic authorization requires specific structural mechanisms — a lifecycle with type-separated stages, header-preserving export, a revision loop, temporal validity, and a Bank substrate. These aren't design preferences; they are forced by the combination of agent constraints and system health goals.
 
-**What this document is:** A bucketed theorem index (Buckets 1–26), grouped by the claim each cluster supports. Each bucket names the Lean file, the key theorems, and the paper claim they underwrite. This is broader than Appendix A of the paper, which covers only paper-cited theorems with full math notation; this file covers the full proof burden distribution across the repo. For deeper exposition of any area, the standalone DOCS files are the right place. For the modularity story — what survives disabling a constraint, health goal, or world bundle, and by what formal mechanism — see [MODULARITY.md](MODULARITY.md).
+**What this document is:** A bucketed theorem index (Buckets 1–28), grouped by the claim each cluster supports. Each bucket names the Lean file, the key theorems, and the paper claim they underwrite. This is broader than Appendix A of the paper, which covers only paper-cited theorems with full math notation; this file covers the full proof burden distribution across the repo. For deeper exposition of any area, the standalone DOCS files are the right place. For the modularity story — what survives disabling a constraint, health goal, or world bundle, and by what formal mechanism — see [MODULARITY.md](MODULARITY.md).
 
 **Tier labels:** **A** = proved unconditionally, **B** = conditional on a W-bundle premise, **C** = design commitment (context-bundled structural assumption).
 
@@ -708,6 +708,8 @@ $$\text{PRP} \Rightarrow \neg\exists t_{\text{final}}.\, \forall t \geq t_{\text
 | `commitments_transport` | Meta/Tier4Transport.lean | `(C → Claim) → ExtCommitmentsCtx Extra → Claim` | Generic CommitmentsCtx transport |
 | `commitments_transport_pack` | Meta/Tier4Transport.lean | All four forward theorems survive commitment extension | Cluster A certification |
 
+> **Note (current status):** `CommitmentsCtx` is now an **empty structure** — all 8 commitments are proved standalone theorems, so `commitments_transport_pack` holds vacuously. It is retained as a structural marker certifying that the CommitmentsCtx premise-strengthening schema remains valid; no theorems are currently conditioned on `CommitmentsCtx` fields, so Cluster A is trivially satisfied.
+
 ### Cluster B: Structural Unconditional
 
 | Theorem | File | Statement | Role |
@@ -1100,12 +1102,13 @@ other selected constraints remain live implications backed by the required bicon
 
 ## Bucket 28: Configurable Certification Engine — `EpArchConfig → ClusterTag → certified proof`
 
-**Paper Role:** Closes the claim that the 25 theorem clusters are individually selectable and
+**Paper Role:** Closes the claim that the 30 theorem clusters are individually selectable and
 certifiable: given any user-specified `EpArchConfig` (which constraints, goals, and world
 bundles are operative), the engine computes exactly which theorem clusters apply and provides
 machine-checked justification for each enabled cluster.  This includes 8 world-bundle
 obligation clusters wiring `EpArchConfig.worlds` to proved obligation theorems in
-`WorldCtx.lean` and `AdversarialObligations.lean`.
+`WorldCtx.lean` and `AdversarialObligations.lean`, 2 constraint-modularity clusters from
+`Meta/Modular.lean`, and 3 lattice-stability clusters from `Modularity.lean`.
 
 **Note on `.partial_observability`:** Now fully wired. `WorldCtx.partial_obs_no_omniscience`
 formalizes the epistemic-gap argument: under partial observability there exists a proposition
@@ -1113,7 +1116,7 @@ that no agent can determine from observations alone — independent of the PRP c
 argument. Together, PRP (cost) and partial observability (underdetermination) give two
 orthogonal reasons terminal epistemic closure is unreachable.
 
-**File:** `Meta/Config.lean`
+**Files:** `Meta/ClusterRegistry.lean` (30-cluster tag registry, routing, per-family canonical lists) and `Meta/Config.lean` (witness carriers, `certify`, completeness theorems, named proof witnesses)
 
 **Design:** `clusterEnabled cfg c : Bool` is the computable routing function. `showConfig cfg`
 is `#eval`-able and returns human-readable cluster descriptions. `certify cfg` returns a
@@ -1125,7 +1128,7 @@ for each cluster.
 **Three-layer architecture:**
 1. **Routing layer** — `clusterEnabled`, `enabled`, `complete`, `sound` (all clusters, routing only, `clusterValid := True`)
 2. **Constraint proof layer** — `constraintProof`/`constraintWitnesses` (Tier 2 forcing clusters: real `ConstraintProof` with genuine proposition + proof; possible because `WorkingSystem` is monomorphic)
-3. **Proof-content layer** — `cluster_*` universe-polymorphic theorems (all 25 clusters; goal/Tier4/world clusters reference universe-polymorphic types and live here only)
+3. **Proof-content layer** — `cluster_*` universe-polymorphic theorems (all 30 clusters; goal/Tier4/world/meta-modular/lattice clusters reference universe-polymorphic types and live in `Meta/Config.lean`)
 
 ### Definitions / Configuration Language
 
@@ -1135,24 +1138,38 @@ for each cluster.
 | `GoalTag` | Meta/Config.lean | 5 health-goal tags (safeWithdrawal … selfCorrection) |
 | `WorldTag` | Meta/Config.lean | 8 world-bundle tags (lies_possible … ddos) |
 | `EpArchConfig` | Meta/Config.lean | User-supplied config: lists of active constraints/goals/worlds |
-| `ClusterTag` | Meta/Config.lean | 25 cluster tags spanning Tiers 2–4 and world obligations |
-| `EnabledConstraintCluster` | Meta/Config.lean | Sub-inductive: 6 Tier 2 forcing cluster tags |
-| `EnabledGoalCluster` | Meta/Config.lean | Sub-inductive: 6 Tier 3 health-goal transport cluster tags |
-| `EnabledTier4Cluster` | Meta/Config.lean | Sub-inductive: 5 Tier 4 library cluster tags |
-| `EnabledWorldCluster` | Meta/Config.lean | Sub-inductive: 8 world-bundle cluster tags |
-| `EnabledConstraintCluster.toClusterTag` | Meta/Config.lean | Embed constraint sub-tag into `ClusterTag` |
-| `EnabledGoalCluster.toClusterTag` | Meta/Config.lean | Embed goal sub-tag into `ClusterTag` |
-| `EnabledTier4Cluster.toClusterTag` | Meta/Config.lean | Embed Tier 4 sub-tag into `ClusterTag` |
-| `EnabledWorldCluster.toClusterTag` | Meta/Config.lean | Embed world sub-tag into `ClusterTag` |
-| `allClusters` | Meta/Config.lean | Canonical ordered list of all 25 ClusterTags |
-| `clusterEnabled` | Meta/Config.lean | `EpArchConfig → ClusterTag → Bool` (computable routing) |
+| `ClusterTag` | Meta/ClusterRegistry.lean | 30 cluster tags spanning Tiers 2–4, world obligations, constraint-modularity, and lattice-stability |
+| `EnabledConstraintCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 6 Tier 2 forcing cluster tags |
+| `EnabledGoalCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 6 Tier 3 health-goal transport cluster tags |
+| `EnabledTier4Cluster` | Meta/ClusterRegistry.lean | Sub-inductive: 5 Tier 4 library cluster tags |
+| `EnabledWorldCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 8 world-bundle cluster tags |
+| `EnabledMetaModularCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 2 constraint-modularity meta-theorem cluster tags |
+| `EnabledLatticeCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 3 lattice-stability cluster tags |
+| `EnabledConstraintCluster.toClusterTag` | Meta/ClusterRegistry.lean | Embed constraint sub-tag into `ClusterTag` |
+| `EnabledGoalCluster.toClusterTag` | Meta/ClusterRegistry.lean | Embed goal sub-tag into `ClusterTag` |
+| `EnabledTier4Cluster.toClusterTag` | Meta/ClusterRegistry.lean | Embed Tier 4 sub-tag into `ClusterTag` |
+| `EnabledWorldCluster.toClusterTag` | Meta/ClusterRegistry.lean | Embed world sub-tag into `ClusterTag` |
+| `EnabledMetaModularCluster.toClusterTag` | Meta/ClusterRegistry.lean | Embed meta-modular sub-tag into `ClusterTag` |
+| `EnabledLatticeCluster.toClusterTag` | Meta/ClusterRegistry.lean | Embed lattice sub-tag into `ClusterTag` |
+| `allConstraintClusters` | Meta/ClusterRegistry.lean | Canonical list of 6 Tier 2 cluster tags |
+| `allGoalClusters` | Meta/ClusterRegistry.lean | Canonical list of 6 Tier 3 cluster tags |
+| `allTier4Clusters` | Meta/ClusterRegistry.lean | Canonical list of 5 Tier 4 cluster tags |
+| `allWorldClusters` | Meta/ClusterRegistry.lean | Canonical list of 8 world-bundle cluster tags |
+| `allMetaModularClusters` | Meta/ClusterRegistry.lean | Canonical list of 2 constraint-modularity cluster tags |
+| `allLatticeClusters` | Meta/ClusterRegistry.lean | Canonical list of 3 lattice-stability cluster tags |
+| `allClusters` | Meta/ClusterRegistry.lean | Canonical ordered list of all 30 ClusterTags (derived from 6 per-family lists) |
+| `clusterEnabled` | Meta/ClusterRegistry.lean | `EpArchConfig → ClusterTag → Bool` (computable routing); meta-modular and lattice always enabled |
+| `clusterDescription` | Meta/ClusterRegistry.lean | `ClusterTag → String` — one-line human-readable description |
 | `explainConfig` | Meta/Config.lean | `EpArchConfig → List ClusterTag` — enabled clusters |
 | `clusterValid` | Meta/Config.lean | `ClusterTag → Prop` — always `True` (every cluster is proved) |
-| `clusterDescription` | Meta/Config.lean | `ClusterTag → String` — one-line human-readable description |
 | `showConfig` | Meta/Config.lean | `EpArchConfig → List String` — `#eval`-able routing report |
 | `ConstraintProof` | Meta/Config.lean | Proof-carrying record: `statement : Prop`, `proof : statement` (Tier 2 only) |
 | `constraintProof` | Meta/Config.lean | `EnabledConstraintCluster → ConstraintProof` — real proposition + proof for each forcing cluster |
-| `CertifiedProjection` | Meta/Config.lean | Proof-carrying record: enabled clusters + soundness + `constraintWitnesses` |
+| `MetaModularWitness` | Meta/Config.lean | Indexed proof carrier for constraint-modularity clusters (2 constructors: `.modular`, `.wellformed`) |
+| `metaModularWitness` | Meta/Config.lean | `(c : EnabledMetaModularCluster) → MetaModularWitness c` — delivers the proof |
+| `LatticeWitness` | Meta/Config.lean | Indexed proof carrier for lattice-stability clusters (3 constructors: `.graceful`, `.subSafety`, `.pack`) |
+| `latticeWitness` | Meta/Config.lean | `(c : EnabledLatticeCluster) → LatticeWitness c` — delivers the proof |
+| `CertifiedProjection` | Meta/Config.lean | Proof-carrying record: enabled clusters + soundness + `constraintWitnesses` + `metaModularWitnesses` + `latticeWitnesses` + filtered enabled lists for all families |
 | `certify` | Meta/Config.lean | `EpArchConfig → CertifiedProjection cfg` |
 | `fullConfig` | Meta/Config.lean | Sample: all 6 constraints, 5 goals, 8 worlds |
 | `minimalConfig` | Meta/Config.lean | Sample: 1 constraint, 1 goal, no worlds |
@@ -1165,6 +1182,17 @@ for each cluster.
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
 | `clusterEnabled_sound` | Meta/Config.lean | `clusterEnabled cfg c = true → clusterValid c` | All enabled clusters are machine-proved |
+
+#### Correspondence / Completeness Theorems
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `mem_enabledConstraintWitnesses_of_enabled` | Meta/Config.lean | `clusterEnabled cfg c.toClusterTag = true → ⟨c, constraintProof c⟩ ∈ (certify cfg).enabledConstraintWitnesses` | Completeness of Tier 2 witness list |
+| `mem_enabledGoalWitnesses_of_enabled` | Meta/Config.lean | `clusterEnabled cfg c.toClusterTag = true → ⟨c, goalWitness c⟩ ∈ ...` | Completeness of Tier 3 witness list |
+| `mem_enabledTier4Witnesses_of_enabled` | Meta/Config.lean | `clusterEnabled cfg c.toClusterTag = true → ⟨c, tier4Witness c⟩ ∈ ...` | Completeness of Tier 4 witness list |
+| `mem_enabledWorldWitnesses_of_enabled` | Meta/Config.lean | `clusterEnabled cfg c.toClusterTag = true → ⟨c, worldWitness c⟩ ∈ ...` | Completeness of world witness list |
+| `mem_enabledMetaModularWitnesses_of_enabled` | Meta/Config.lean | `clusterEnabled cfg c.toClusterTag = true → ⟨c, metaModularWitness c⟩ ∈ (certify cfg).enabledMetaModularWitnesses` | **Phase F** — completeness of meta-modular witness list |
+| `mem_enabledLatticeWitnesses_of_enabled` | Meta/Config.lean | `clusterEnabled cfg c.toClusterTag = true → ⟨c, latticeWitness c⟩ ∈ (certify cfg).enabledLatticeWitnesses` | **Phase F** — completeness of lattice witness list |
 
 #### Tier 2 Named Proof Witnesses (Forcing)
 
@@ -1212,18 +1240,36 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 | `cluster_world_rolex_ddos` | Meta/Config.lean | `W_rolex_ddos → same_structure W.rolex_structure W.ddos_structure` | `.rolex_ddos` | `AdversarialObligations.rolex_ddos_structural_equivalence_of_W` |
 | `cluster_world_ddos` | Meta/Config.lean | `W_ddos → some_vector_overwhelmed s → is_collapsed c` | `.ddos` | `AdversarialObligations.ddos_causes_verification_collapse_of_W` |
 
-### Grand Total: +23 new theorems (507 + 23 = 530); +14 new definitions
+#### Constraint-Modularity Meta-Theorem Witnesses (Phase F)
 
-**New theorems (+23):**
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `cluster_meta_modular` | Meta/Config.lean | `∀ S W, PartialWellFormed W S → projection_valid S W` | Witness for `.meta_modular` |
+| `cluster_meta_modular_wellformed` | Meta/Config.lean | `∀ S W, WellFormed W → projection_valid S W` | Witness for `.meta_modular_wellformed` |
+
+#### Lattice-Stability Witnesses (Phase F)
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `cluster_lattice_graceful` | Meta/Config.lean | `∀ M, NoSelfCorrection M → PaperFacing M` | Witness for `.lattice_graceful` |
+| `cluster_lattice_sub_safety` | Meta/Config.lean | `Compatible E S.model → PaperFacing S.model → PaperFacing (forget E)` | Witness for `.lattice_sub_safety` |
+| `cluster_lattice_pack` | Meta/Config.lean | Full bidirectional lattice-stability conjunction (graceful + sub-safety + full revision safety) | Witness for `.lattice_pack` |
+
+### Grand Total (through Phase F): **539** theorems
+
+**Original Bucket 28 additions (+23):**
 - 1 soundness theorem (`clusterEnabled_sound`)
 - 6 Tier 2 forcing witnesses
 - 6 Tier 3 goal-transport witnesses
 - 2 Tier 4-C bank-bundle witnesses
 - 8 world-bundle obligation witnesses (all 8 world tags wired)
 
-**New definitions (+14, not counted as theorems):**
-- 4 sub-family inductives (`EnabledConstraintCluster`, `EnabledGoalCluster`, `EnabledTier4Cluster`, `EnabledWorldCluster`)
-- 4 embedding functions (`*.toClusterTag`)
-- `ConstraintProof` structure + `constraintProof` def (Tier 2 genuine proof carrier)
-- `CertifiedProjection` (updated with `constraintWitnesses`) + `certify`
+**Phase F additions (+7):**
+- 2 completeness theorems (`mem_enabledMetaModularWitnesses_of_enabled`, `mem_enabledLatticeWitnesses_of_enabled`)
+- 2 constraint-modularity witnesses (`cluster_meta_modular`, `cluster_meta_modular_wellformed`)
+- 3 lattice-stability witnesses (`cluster_lattice_graceful`, `cluster_lattice_sub_safety`, `cluster_lattice_pack`)
+
+**New definitions (original +14, Phase F +8 = +22):**
+- Original: 4 sub-family inductives, 4 `*.toClusterTag`, `ConstraintProof` + `constraintProof`, `CertifiedProjection` (updated) + `certify`
+- Phase F: `EnabledMetaModularCluster` + `EnabledLatticeCluster` + 2 `toClusterTag` + `MetaModularWitness` + `metaModularWitness` + `LatticeWitness` + `latticeWitness`
 
