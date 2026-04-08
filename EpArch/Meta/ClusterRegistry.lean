@@ -112,8 +112,12 @@ families stay at `True`.
 **Currently monomorphic** (real proof carrier available): constraint clusters
 (Tier 2 forcing) — `WorkingSystem` has no free universe parameters.
 
-**Universe-polymorphic** (routing only; real propositions in §5b witnesses):
-goal, Tier 4 bank-bundle, and world clusters. -/
+**Indexed witness carrier** (real propositions via `inductive FamilyWitness :
+EnabledXxxCluster → Type 1` in `Config.lean`): goal, Tier 4 bank-bundle, world,
+meta-modularity, and lattice-stability clusters.  Universe-polymorphic families
+use Lean 4's Prop impredicativity to store transport theorems as Prop-valued
+constructor arguments; monomorphic families (meta-modularity) follow the same
+indexed-inductive pattern for consistency. -/
 
 /-- The six Tier 2 constraint-forcing clusters. -/
 inductive EnabledConstraintCluster where

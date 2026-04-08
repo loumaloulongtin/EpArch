@@ -16,10 +16,11 @@ directions under bundle perturbation.
   self-correction, the competition gate holds vacuously; compatible extensions
   of such sub-bundles preserve `PaperFacing` through the existing transport
   machinery. Formalised by:
-  1. Decomposing `PaperFacing` into per-goal propositions
-  2. Showing each component is independently preserved by `forget`
-  3. Building `OdometerModel` — a concrete minimal sub-bundle instance
-  4. Proving `SubRevisionSafety`: RevisionSafety holds at every sub-bundle level
+  1. Showing `PaperFacing M ↔ RevisionGate M` holds trivially (`Iff.rfl`)
+  2. Building `OdometerModel` — a concrete minimal sub-bundle instance
+     where `NoSelfCorrection` makes `PaperFacing` vacuously true (`graceful_degradation`)
+  3. Proving `SubRevisionSafety`: RevisionSafety holds at every sub-bundle level
+     via `transport_core` (identical proof term as the full-bundle case)
 
 ## Lattice Picture
 
@@ -63,7 +64,7 @@ open RevisionSafety
 
 This holds for every sub-bundle model where selfCorrects is nowhere true
 (vacuously) — including any purely read-only or append-only system.
-We make this explicit as `PaperFacing_vacuous`.
+We make this explicit as `graceful_degradation`.
 
 For sub-bundles that DO have self-correction, all the commuting-law machinery
 from RevisionSafety carries through identically. We prove `SubRevisionSafety`

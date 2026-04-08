@@ -18,7 +18,8 @@ are active, this module computes and certifies:
 
 `Meta/Config.lean` (this file) — proof-carrying layer:
   `ConstraintProof`, `ConstraintClusterSpec`, `GoalWitness`, `WorldWitness`,
-  `Tier4Witness`, `CertifiedProjection`, `certify`, completeness theorems,
+  `Tier4Witness`, `MetaModularWitness`, `LatticeWitness`,
+  `CertifiedProjection`, `certify`, completeness theorems,
   and the `cluster_*` named proof witnesses.
 
 ## Four-layer design
@@ -34,12 +35,15 @@ are active, this module computes and certifies:
   universe isolation rule does not block this family's carrier.
 
 **Indexed witness layer** (`goalWitness`, `worldWitness`, `tier4Witness`,
-  `CertifiedProjection.goalWitnesses/worldWitnesses/tier4Witnesses`):
-  Goal, World, and Tier 4 clusters use indexed inductives
+  `metaModularWitness`, `latticeWitness`,
+  `CertifiedProjection.goalWitnesses/worldWitnesses/tier4Witnesses/metaModularWitnesses/latticeWitnesses`):
+  All five non-constraint families use indexed inductives
   `GoalWitness : EnabledGoalCluster → Type 1` etc.  Each constructor stores the
   polymorphic transport theorem as a Prop-valued argument.  Lean 4's impredicativity
   of Prop allows `∀ (E : ExtModel), ...P...` to live in Prop even though `ExtModel`
   is universe-polymorphic — avoiding the isolation rule that blocks `def` bodies.
+  `MetaModularWitness` and `LatticeWitness` are also indexed inductives even though
+  their underlying types are monomorphic, for consistency with the other families.
 
 **Proof-content layer** (`cluster_*` witnesses in §5b):
   Universe-polymorphic Lean theorems covering all 30 clusters.  These are the
@@ -55,9 +59,11 @@ are active, this module computes and certifies:
 #check certify myConfig
 
 -- Access typed proof content for a specific cluster family:
-(certify myConfig).goalWitnesses .goal_safeWithdrawal   -- GoalWitness
-(certify myConfig).worldWitnesses .world_lies_possible  -- WorldWitness
-(certify myConfig).tier4Witnesses .tier4_commitments    -- Tier4Witness
+(certify myConfig).goalWitnesses .goal_safeWithdrawal         -- GoalWitness
+(certify myConfig).worldWitnesses .world_lies_possible        -- WorldWitness
+(certify myConfig).tier4Witnesses .tier4_commitments          -- Tier4Witness
+(certify myConfig).metaModularWitnesses .meta_modular         -- MetaModularWitness
+(certify myConfig).latticeWitnesses .lattice_pack             -- LatticeWitness
 
 -- Inspect a specific cluster's theorem:
 #check cluster_forcing_distributed_agents
@@ -137,7 +143,7 @@ The 30 cluster theorems span six independent universe families:
 | Goal transport      | `EpArch.Meta.TheoremTransport` | `ExtModel.{u₁,u₂}`, `CoreModel.{u₃}` |
 | World bundles       | `EpArch.WorldCtx`       | `WorldCtx.{u}`           |
 | Adversarial         | `EpArch.AdversarialObligations` | `W_spoofedV.{u}`  |
-| Meta-modularity     | `EpArch.Meta.Modular`   | `EpArchConfig`           |
+| Meta-modularity     | `EpArch.Meta.Modular`   | `ConstraintSubset`, `WorkingSystem`  |
 | Lattice-stability   | `EpArch.Modularity`     | `CoreModel.{u}`          |
 
 None of these universe levels surface in `ClusterTag → ClusterProof` when
@@ -550,7 +556,7 @@ cluster and holds machine-checked evidence that each one is valid. -/
 
 /-- A certified bundle: the enabled clusters for `cfg`, with proofs.
 
-    **Layer 1 (routing):** `enabled`, `complete`, `sound` — all 25 cluster tags,
+    **Layer 1 (routing):** `enabled`, `complete`, `sound` — all 30 cluster tags,
     routing only, `clusterValid c = True`.
 
     **Layer 2 (constraint proofs):** `constraintWitnesses` — full `ConstraintProof`
@@ -562,7 +568,7 @@ cluster and holds machine-checked evidence that each one is valid. -/
     `enabledGoalWitnesses`, `enabledWorldWitnesses`, `enabledTier4Witnesses` — filtered
     to only the clusters enabled by `cfg` (using dependent pairs `Σ c, WitnessType c`).
 
-    **Layer 4 (proof-content):** `cluster_*` witnesses in §5b cover all 25 clusters. -/
+    **Layer 4 (proof-content):** `cluster_*` witnesses in §5b cover all 30 clusters. -/
 structure CertifiedProjection (cfg : EpArchConfig) where
   /-- The list of enabled clusters (equal to `explainConfig cfg`). -/
   enabled                   : List ClusterTag
