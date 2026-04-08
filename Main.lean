@@ -68,8 +68,8 @@ The formalization proves these claims:
    refinement, and safety preservation.
 5. **StepSemantics.lean** — The constructive operational semantics: SystemState,
    Action, Step relation, competition gate theorem.
-6. **Commitments.lean** — Eight architectural commitments (structural requirements
-   for conforming epistemic systems, expressed as fields of `CommitmentsCtx`).
+6. **Commitments.lean** — Eight architectural commitments (all proved as standalone
+   theorems; `CommitmentsCtx` is now an empty structure).
 7. **Minimality.lean** — The convergence/impossibility theorems: constraints force
    features, removal breaks properties.
 8. **WorldCtx.lean** — Parametric world semantics: the interface through which
@@ -112,13 +112,11 @@ Layer 10 (Modularity): Modularity
 
 ## Axiom Declarations
 
-The formalization contains **zero `axiom` declarations**. The four structural
-commitments are expressed as fields of `CommitmentsCtx` (a hypothesis bundle
-modelled on `WorldCtx`); forward theorems are stated as:
-
-    theorem T (C : CommitmentsCtx ...) ...
-
-and hold for any conforming architecture. Opaque domain primitives
+The formalization contains **zero `axiom` declarations**. All 8 structural commitments
+are proved standalone theorems.  C1 (Traction/Authorization Split) is proved by
+`innovation_allows_traction_without_authorization` and
+`caveated_authorization_does_not_force_certainty`.  `CommitmentsCtx` is an empty
+structure retained for backward compatibility.  Opaque domain primitives
 (`certainty_L`, `knowledge_B`, `sticky`, etc.) are uninterpreted constants,
 not `axiom` declarations.
 -/

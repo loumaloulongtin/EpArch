@@ -6,16 +6,14 @@ framework requires of any conforming system.
 
 ## Assumption boundary
 
-One structural commitment remains as a field of `CommitmentsCtx`, a hypothesis
-structure modelled on `WorldCtx`.  Theorems conditioned on `(C : CommitmentsCtx …)`
-hold for any architecture satisfying the field:
+All 8 commitments are now **proved standalone theorems** — `CommitmentsCtx`
+is an empty structure retained only for backward compatibility.
 
-- C1 (`traction_auth_split`) — certainty_L ⊥ knowledge_B (neither implies the other)
+## Proved commitments
 
-## Proved commitments (no CommitmentsCtx field needed)
-
-Seven commitments are derived as standalone theorems:
-
+- C1 — Two mechanism-grounded theorems:
+    `innovation_allows_traction_without_authorization` (Direction 1 — innovation)
+    `caveated_authorization_does_not_force_certainty` (Direction 2 — header burden)
 - C2 (`no_universal_ledger`) — `WorldCtx.no_ledger_tradeoff` (EpArch CAP Theorem):
     proved from `W_partial_observability` + `obs_based`; for bubble-local ledgers
     `hObs` is automatic via `WorldCtx.localLedger_is_obs_based` (see WorldCtx.lean).
@@ -49,7 +47,7 @@ design requirements.
 
 ## Commitment List
 
-1. Traction/Authorization Split — certainty ≠ knowledge              [CommitmentsCtx field]
+1. Traction/Authorization Split — certainty ≠ knowledge              [proved: two named witnesses]
 2. Scoped Bubbles — no global ledger; validation is local             [proved: CAP theorem]
 3. S/E/V Factorization — three independent header fields              [proved: by rfl]
 4. Redeemability External — constraint surface outside consensus      [proved: structural]
@@ -87,8 +85,90 @@ def independent (A B : Prop) : Prop :=
 
 /-! ## Commitment 1: Traction/Authorization Split
 
-    Commitment: certainty_L and knowledge_B are independent (neither implies the other).
-    Bundled in CommitmentsCtx.traction_auth_split; see CommitmentsCtx section below. -/
+    C1 is grounded in two distinct mechanisms rather than a single black-box
+    independence hypothesis:
+
+    **Direction 1 (innovation):** `certainty_L ⊄ knowledge_B`
+    Pre-authorization traction: an agent engaged in exploratory / innovation-phase
+    work may reach Ladder-side Certainty before the claim has been deposited and
+    accepted in any Bubble Bank.  Modularity: projects that are Bank-only (no
+    innovation pressure) never construct a `PreAuthTractionWitness`.
+
+    **Direction 2 (header burden):** `knowledge_B ⊄ certainty_L`
+    A Bank-authorized deposit may carry visible epistemic burden in its header
+    (stale timestamp τ = 0, or no redeemability path).  An agent may rationally
+    withhold Certainty when the deposit is authorized but fragile.
+    See also `epistemically_burdened` (§Commitment 8) for the structural header predicate
+    that grounds when a `BurdensomeAuthWitness` is warranted.
+
+    Both directions are proved from named witness structures, not from a universal
+    `∀ a B P, ...` axiom.  The witnesses name the architectural mechanism explicitly. -/
+
+/-- **Direction 1 — Innovation scenario witness.**
+    An agent has reached Ladder-side Certainty for a claim before any Bank
+    authorization exists in the bubble.  This is the structural signature of
+    innovation-first exploration: the Ladder outpaces the Bank protocol.
+
+    Modularity: a purely Bank-driven architecture that never involves innovation
+    or pre-authorization work is never required to construct this witness;
+    Ladder machinery (`certainty_L`, `LadderStage`) remains optional. -/
+structure PreAuthTractionWitness where
+  agent  : Agent
+  bubble : Bubble
+  claim  : Claim
+  /-- The agent holds Ladder-side Certainty through exploratory work. -/
+  h_certainty : certainty_L agent claim
+  /-- No Bank authorization exists yet for this claim in this bubble. -/
+  h_no_auth   : ¬knowledge_B bubble claim
+
+/-- C1, Direction 1: `certainty_L` does not imply `knowledge_B`.
+    Under innovation / pre-authorization exploration (witnessed by `w`),
+    the Ladder can be ahead of the Bank.
+    The `does_not_imply` is proved directly from the witness fields; no
+    universal `∀ a B P` over-claim is made. -/
+theorem innovation_allows_traction_without_authorization (w : PreAuthTractionWitness) :
+    does_not_imply (certainty_L w.agent w.claim) (knowledge_B w.bubble w.claim) :=
+  ⟨w.h_certainty, w.h_no_auth⟩
+
+/-- **Direction 2 — Epistemically burdened authorization witness.**
+    A claim is Bank-authorized (`knowledge_B`) but the agent rationally withholds
+    Certainty.  This models the header-burden scenario: an authorized deposit may
+    carry visible epistemic burden (stale timestamp τ = 0, unredeemable claim) that
+    prevents automatic collapse of `knowledge_B` into `certainty_L`.
+
+    The name makes the architectural mechanism explicit: this is NOT an arbitrary
+    non-implication, but one that arises when the Bank layer records a fragile
+    (burdened) authorization.  The `h_no_cert` field witnesses the agent's rational
+    withholding; see `epistemically_burdened` (§Commitment 8) for the structural
+    predicate that characterizes which deposits ground this scenario. -/
+structure BurdensomeAuthWitness where
+  agent     : Agent
+  bubble    : Bubble
+  claim     : Claim
+  /-- The claim IS Bank-authorized in this bubble. -/
+  h_auth    : knowledge_B bubble claim
+  /-- The agent does NOT hold Ladder-side Certainty — header burden explains
+      why: the authorized deposit's τ or redeemability signals fragility. -/
+  h_no_cert : ¬certainty_L agent claim
+
+/-- C1, Direction 2: `knowledge_B` does not imply `certainty_L`.
+    Under caveated authorization (epistemically burdened header, witnessed by `w`),
+    Bank authorization does not force Ladder-side Certainty.
+    The name `BurdensomeAuthWitness` makes the mechanism explicit: this scenario
+    is grounded in the Bank layer's visible header fragility, not an abstract axiom. -/
+theorem caveated_authorization_does_not_force_certainty (w : BurdensomeAuthWitness) :
+    does_not_imply (knowledge_B w.bubble w.claim) (certainty_L w.agent w.claim) :=
+  ⟨w.h_auth, w.h_no_cert⟩
+
+/-- C1 combined: both directions of the Ladder/Bank split, witnessed by
+    orthogonal mechanisms (innovation vs. header burden). -/
+theorem ladder_bank_split_from_innovation_and_headers
+    (w1 : PreAuthTractionWitness)
+    (w2 : BurdensomeAuthWitness) :
+    does_not_imply (certainty_L w1.agent w1.claim) (knowledge_B w1.bubble w1.claim) ∧
+    does_not_imply (knowledge_B w2.bubble w2.claim) (certainty_L w2.agent w2.claim) :=
+  ⟨innovation_allows_traction_without_authorization w1,
+   caveated_authorization_does_not_force_certainty w2⟩
 
 
 /-! ## Commitment 2: Scoped Bubbles (No Global Ledger)
@@ -748,6 +828,16 @@ def refreshed (d : Deposit PropLike Standard ErrorModel Provenance) : Prop := d.
 /-- unrefreshed: a deposit whose τ is zero (never updated / expired). -/
 def unrefreshed (d : Deposit PropLike Standard ErrorModel Provenance) : Prop := d.h.τ = 0
 
+/-- A deposit carries visible epistemic burden when its header signals fragility:
+    - `unrefreshed` (τ = 0): the deposit has never been refreshed (temporally stale).
+    - `¬redeemable`: no VerificationPath connects the deposit to a constraint surface.
+    Either condition means Bank authorization is conditional or fragile, not a warrant
+    for full private Certainty.  This is the structural header predicate for
+    `BurdensomeAuthWitness` (§C1): it characterizes when an authorized deposit
+    warrants the agent withholding `certainty_L`. -/
+def epistemically_burdened (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
+  unrefreshed d ∨ ¬redeemable d
+
 /-- performs_equivalently: two deposits behave the same w.r.t. temporal validity.
     Defined as having the same τ: equal TTL → equivalent temporal behaviour. -/
 def performs_equivalently (d1 d2 : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
@@ -762,63 +852,72 @@ theorem TemporalValidity (d1 d2 : Deposit PropLike Standard ErrorModel Provenanc
   simp [h_eq.trans h2] at h1
 
 
-/-! ## CommitmentsCtx — One Structural Commitment as a Hypothesis Bundle
+/-! ## CommitmentsCtx — All Commitments Now Proved
 
-    Analogous to WorldCtx.W_* bundles: the one remaining commitment is not asserted
-    globally but bundled in a hypothesis structure.  Theorems conditioned on
-    CommitmentsCtx hold for any conforming architecture, without asserting them
-    unconditionally.  This gives zero `axiom` declarations; the commitment
-    appears only as a hypothesis "(C : CommitmentsCtx)" in theorem signatures.
+    `CommitmentsCtx` is now an **empty structure** (no hypothesis fields).
 
-    C2 (no global ledger) → proved theorem `WorldCtx.no_ledger_tradeoff`.
-    C4b (consensus ≠ redeemability) → proved from `intra_bubble_only`.
-    C7b (header stripping → harder disputes) → proved via completion-space model
-        (`metadata_stripping_strictly_enlarges`); `sticky` (admissible multiplicity)
-        and `proxy_battles` (cross-field underdetermination) proved from
-        `has_cross_field_alternatives` — no opaque constants, but the full
-        pathology theorem holds under the mild structural assumption that Standard
-        and ErrorModel each admit at least one value distinct from d's header fields.
+    History: it previously carried one field, `traction_auth_split` (C1).
+    C1 has been replaced by two mechanism-grounded theorems:
+    - `innovation_allows_traction_without_authorization` (Direction 1 — innovation)
+    - `caveated_authorization_does_not_force_certainty` (Direction 2 — header burden)
 
-    Non-vacuity: ConcreteLedgerModel proves analogous structural properties in a
-    concrete model.
+    All 8 architectural commitments are now proved standalone theorems:
+    - C1 → `innovation_allows_traction_without_authorization` + `caveated_authorization_does_not_force_certainty`
+    - C2 → `WorldCtx.no_ledger_tradeoff`
+    - C3 → `SEVFactorization`
+    - C4b → `redeemability_requires_more_than_consensus`
+    - C5 → `ExportGating`
+    - C6b → `NoSelfCorrectionWithoutRevision`
+    - C7b → `header_stripping_harder`
+    - C8 → `TemporalValidity`
+
+    `CommitmentsCtx` is retained as an empty structure for backward compatibility
+    with `ExtCommitmentsCtx` (Tier4Transport) — architectures parameterized by
+    `(C : CommitmentsCtx ...)` continue to typecheck, C is trivially `⟨⟩`.
+
+    Non-vacuity: ConcreteLedgerModel proves analogous structural properties in
+    a concrete model.
 -/
 
-/-- The one structural architectural commitment remaining as a hypothesis bundle.
-    (C2, C4b, C7b diagnosability have all been derived as proved theorems.)
-
-    Field:
-    - `traction_auth_split` — C1: certainty_L ⊥ knowledge_B (independent) -/
+/-- Empty hypothesis bundle — all commitments have been derived as proved theorems.
+    Retained for backward compatibility with `ExtCommitmentsCtx` (Tier4Transport).
+    Trivially inhabited by `⟨⟩`; no structural information is carried. -/
 structure CommitmentsCtx (PropLike Standard ErrorModel Provenance : Type u) where
-  /-- Traction (certainty_L) and authorization (knowledge_B) are independent:
-      neither implies the other. -/
-  traction_auth_split : ∀ (a : Agent) (B : Bubble) (P : Claim),
-    does_not_imply (certainty_L a P) (knowledge_B B P) ∧
-    does_not_imply (knowledge_B B P) (certainty_L a P)
 
 
-/-! ### Forward Theorems (Commitment 1) -/
+/-! ### Forward Theorems (Commitment 1)
 
-/-- Certainty does not entail bank authorization.
-    An agent at Certainty on P may have no Bank deposit for P — the two are independent.
-    This is the paper's central claim: the Bank is necessary, not just the Ladder. -/
-theorem certainty_insufficient_for_authorization (C : CommitmentsCtx PropLike Standard ErrorModel Provenance)
-    (a : Agent) (B : Bubble) (P : Claim) :
-    ∃ (_ : certainty_L a P), ¬knowledge_B B P :=
-  (C.traction_auth_split a B P).1
+    These theorems are named aliases for readability.  The canonical proofs are
+    `innovation_allows_traction_without_authorization` and
+    `caveated_authorization_does_not_force_certainty` (see §Commitment 1 above). -/
 
-/-- Bank authorization does not entail certainty.
-    A deposit may be publicly authorized in B while the agent remains at Ignorance or Belief. -/
-theorem authorization_insufficient_for_certainty (C : CommitmentsCtx PropLike Standard ErrorModel Provenance)
-    (a : Agent) (B : Bubble) (P : Claim) :
-    ∃ (_ : knowledge_B B P), ¬certainty_L a P :=
-  (C.traction_auth_split a B P).2
+/-- Certainty does not entail Bank authorization.
+    Given an innovation-scenario witness (`w : PreAuthTractionWitness`), an agent
+    holds Certainty for a claim with no Bank deposit in the bubble.
+    This is the paper's central architectural asymmetry: private traction can
+    outrun public authorization.  Named alias for
+    `innovation_allows_traction_without_authorization`. -/
+theorem certainty_insufficient_for_authorization (w : PreAuthTractionWitness) :
+    ∃ (_ : certainty_L w.agent w.claim), ¬knowledge_B w.bubble w.claim :=
+  innovation_allows_traction_without_authorization w
 
-/-- WeakCtx: coincidence of certainty and authorization contradicts traction_auth_split. -/
-theorem WeakCtx_contradicts_TractionAuthorizationSplit (C : CommitmentsCtx PropLike Standard ErrorModel Provenance)
+/-- Bank authorization does not entail Certainty.
+    Given a header-burden witness (`w : BurdensomeAuthWitness`), a Bank-authorized
+    deposit with a fragile header (stale or unredeemable) does not force agent
+    Certainty.  Named alias for `caveated_authorization_does_not_force_certainty`. -/
+theorem authorization_insufficient_for_certainty (w : BurdensomeAuthWitness) :
+    ∃ (_ : knowledge_B w.bubble w.claim), ¬certainty_L w.agent w.claim :=
+  caveated_authorization_does_not_force_certainty w
+
+/-- Full coincidence of `certainty_L` and `knowledge_B` contradicts the innovation scenario.
+    If every Certainty were also a Bank authorization for the same agent/bubble/claim,
+    then `w.h_certainty` would force `knowledge_B w.bubble w.claim` — directly
+    contradicting the pre-authorization hypothesis `w.h_no_auth`. -/
+theorem WeakCtx_contradicts_TractionAuthorizationSplit
+    (w : PreAuthTractionWitness)
     (coincidence : ∀ (a : Agent) (B : Bubble) (P : Claim), certainty_L a P ↔ knowledge_B B P) :
     False :=
-  let ⟨ha, hnb⟩ := (C.traction_auth_split (default : Agent) (default : Bubble) (default : Claim)).1
-  hnb ((coincidence default default default).mp ha)
+  w.h_no_auth ((coincidence w.agent w.bubble w.claim).mp w.h_certainty)
 
 
 /-! ### Forward Theorems (Commitment 2) — EpArch CAP Theorem

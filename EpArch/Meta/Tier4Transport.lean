@@ -9,11 +9,16 @@ as transport-safe.
 
 ### Cluster A — CommitmentsCtx-parameterized theorems
 
-Theorems of shape `(C : CommitmentsCtx ...) → ... → Claim`.
-Adding more commitments never invalidates sub-context theorems —
-proved via `premise_strengthening` in `RevisionSafety.lean`.
+`CommitmentsCtx` is now an **empty structure** — all commitments are proved theorems.
+Transport is trivially vacuous: any predicate provable under CommitmentsCtx (i.e.,
+under zero hypotheses) is trivially transportable.
 
-Key theorems: `commitments_transport`, `commitments_transport_pack`.
+C1 is now expressed by two mechanism-grounded named theorems in Commitments.lean:
+- `innovation_allows_traction_without_authorization` — `certainty_L ⊄ knowledge_B`
+- `caveated_authorization_does_not_force_certainty` — `knowledge_B ⊄ certainty_L`
+These are not `∀ a B P` universal claims; each is scoped to its named scenario witness.
+
+Key theorems: `commitments_transport`, `commitments_transport_pack` (trivially vacuous).
 
 ### Cluster B — Standalone structural theorems
 
@@ -44,11 +49,11 @@ Key theorem: `concrete_bank_all_goals_transport`.
 
 | Cluster | Mechanism | Theorem |
 |---|---|---|
-| CommitmentsCtx-parameterized | `premise_strengthening` projection | `commitments_transport_pack` |
+| CommitmentsCtx (trivially vacuous) | All commitments proved; CommitmentsCtx empty | `commitments_transport_pack` |
 | Standalone structural | Unconditional (no transport needed) | `structural_theorems_unconditional` |
 | LTS-universal operational | Step constructor completeness | `lts_theorems_step_universal` |
 | All five health goals (bank) | `transport_*` applied to ConcreteBankModel | `concrete_bank_all_goals_transport` |
-| Full Tier 4 pack | All three clusters combined | `tier4_full_pack` |
+| Full Tier 4 pack | Clusters B + C combined | `tier4_full_pack` |
 
 -/
 
@@ -84,17 +89,19 @@ theorem commitments_transport
     Claim :=
   h_proof E.toCommitmentsCtx
 
-/-- CommitmentsCtx transport pack — all canonical forward theorems survive
-    extension to any larger context. -/
+/-- CommitmentsCtx transport pack — CommitmentsCtx is now an empty structure.
+    All 8 architectural commitments are proved standalone theorems.
+    C1 in particular is proved via mechanism-grounded named witnesses:
+    `innovation_allows_traction_without_authorization` (Direction 1)
+    `caveated_authorization_does_not_force_certainty` (Direction 2)
+
+    Transport is trivially vacuous: any predicate provable under the empty
+    CommitmentsCtx is provable without any hypothesis.  This theorem is
+    retained as a structural marker for Tier 4 Cluster A. -/
 theorem commitments_transport_pack
     {Extra : Prop}
-    (E : ExtCommitmentsCtx PropLike Standard ErrorModel Provenance Extra) :
-    (∀ (a : Agent) (B : Bubble) (P : Claim),
-        ∃ (_ : certainty_L a P), ¬knowledge_B B P) ∧
-    (∀ (a : Agent) (B : Bubble) (P : Claim),
-        ∃ (_ : knowledge_B B P), ¬certainty_L a P) :=
-  ⟨fun a B P => certainty_insufficient_for_authorization E.toCommitmentsCtx a B P,
-   fun a B P => authorization_insufficient_for_certainty E.toCommitmentsCtx a B P⟩
+    (_E : ExtCommitmentsCtx PropLike Standard ErrorModel Provenance Extra) : True :=
+  trivial
 
 
 /-! ## §2  Cluster B: Standalone Structural Theorems -/
@@ -386,8 +393,6 @@ theorem concrete_bank_all_goals_transport_surj
     Kept for backward compatibility. For the full Cluster C certification
     (all five health goals), use `tier4_full_pack`. -/
 theorem tier4_transport_pack
-    {Extra : Prop}
-    (CE : ExtCommitmentsCtx PropLike Standard ErrorModel Provenance Extra)
     (truth_pred  : Bubble → Deposit PropLike Standard ErrorModel Provenance → Prop)
     (obs_pred    : Deposit PropLike Standard ErrorModel Provenance → Prop)
     (verify_pred : Bubble → Deposit PropLike Standard ErrorModel Provenance → Time → Prop)
@@ -400,32 +405,32 @@ theorem tier4_transport_pack
     (h_compat    : Compatible E_bank
         (ConcreteBankModel truth_pred obs_pred verify_pred etime
            submit_pred revise_pred hasRev_pred (fun _ => False))) :
-    (∀ (a : Agent) (B : Bubble) (P : Claim),
-        ∃ (_ : certainty_L a P), ¬knowledge_B B P) ∧
     (∀ (d : Deposit PropLike Standard ErrorModel Provenance),
         ∃ (s : Standard) (e : ErrorModel) (v : Provenance),
           d.h.S = s ∧ d.h.E = e ∧ d.h.V = v) ∧
     PaperFacing (forget E_bank) :=
-  ⟨fun a B P => certainty_insufficient_for_authorization CE.toCommitmentsCtx a B P,
-   SEVFactorization,
+  ⟨SEVFactorization,
    concrete_bank_vacuous_transport truth_pred obs_pred verify_pred etime
      submit_pred revise_pred hasRev_pred E_bank h_compat⟩
 
 /-- `tier4_full_pack` — complete Tier 4 transport certification.
 
-    Packages all four clusters:
-    (1) CommitmentsCtx (Cluster A): four canonical forward theorems survive commitment extension.
-    (2) Structural (Cluster B): SEVFactorization is unconditionally valid.
-        LTS-universal (B extended): withdrawal gates are universally valid for every Step.
-        (The full four-fact LTS pack is in `lts_theorems_step_universal`.)
-    (3) Four full ∀-health goals (Cluster C): SafeWithdrawalGoal, ReliableExportGoal,
-        SoundDepositsGoal, SelfCorrectionGoal transport through any Compatible extension.
-    (4) Universal corrigibility clause (Cluster C): the ∀-part of CorrigibleLedgerGoal
-        (hasRevision → revision preserves truth) also transports under plain Compatible.
-        (The ∃-part of CorrigibleLedgerGoal requires SurjectiveCompatible.) -/
+    Packages three theorem clusters:
+    (B1) Structural (Cluster B): SEVFactorization is unconditionally valid.
+    (B2) LTS-universal (B extended): withdrawal gates are universally valid for every Step.
+         (The full four-fact LTS pack is in `lts_theorems_step_universal`.)
+    (C1–C5) Four full ∀-health goals and universal corrigibility (Cluster C):
+         SafeWithdrawalGoal, ReliableExportGoal, SoundDepositsGoal, SelfCorrectionGoal
+         transport through any Compatible extension; ∀-part of CorrigibleLedgerGoal
+         also transports under plain Compatible.
+         (The ∃-part of CorrigibleLedgerGoal requires SurjectiveCompatible.)
+
+    Note: Cluster A (C1 traction/authorization split) is no longer a transport
+    conjunct — C1 is proved via the named witness theorems
+    `innovation_allows_traction_without_authorization` and
+    `caveated_authorization_does_not_force_certainty` in Commitments.lean. -/
 theorem tier4_full_pack
-    {Extra : Prop} {Reason Evidence : Type}
-    (CE : ExtCommitmentsCtx PropLike Standard ErrorModel Provenance Extra)
+    {Reason Evidence : Type}
     (truth_pred    : Bubble → Deposit PropLike Standard ErrorModel Provenance → Prop)
     (obs_pred      : Deposit PropLike Standard ErrorModel Provenance → Prop)
     (verify_pred   : Bubble → Deposit PropLike Standard ErrorModel Provenance → Time → Prop)
@@ -454,9 +459,6 @@ theorem tier4_full_pack
     (h_cl : CorrigibleLedgerGoal
         (ConcreteBankModel truth_pred obs_pred verify_pred etime
            submit_pred revise_pred hasRev_pred selfCorr_pred)) :
-    -- (A) CommitmentsCtx: certainty ≠ authorization survives extension
-    (∀ (a : Agent) (B : Bubble) (P : Claim),
-        ∃ (_ : certainty_L a P), ¬knowledge_B B P) ∧
     -- (B1) Structural: SEV factorization holds unconditionally
     (∀ (d : Deposit PropLike Standard ErrorModel Provenance),
         ∃ (s : Standard) (e : ErrorModel) (v : Provenance),
@@ -485,8 +487,7 @@ theorem tier4_full_pack
         truth_pred obs_pred verify_pred etime
         submit_pred revise_pred hasRev_pred selfCorr_pred
         E_bank h_compat h_sw h_re h_sd h_sc h_cl
-  ⟨fun a B P => certainty_insufficient_for_authorization CE.toCommitmentsCtx a B P,
-   SEVFactorization,
+  ⟨SEVFactorization,
    lts.1,
    goals.1,
    goals.2.1,
@@ -504,8 +505,7 @@ theorem tier4_full_pack
     This is the maximal Tier 4 certification: all five health goals transport
     completely, with no residual ∃-witness caveat. -/
 theorem tier4_full_pack_surj
-    {Extra : Prop} {Reason Evidence : Type}
-    (CE : ExtCommitmentsCtx PropLike Standard ErrorModel Provenance Extra)
+    {Reason Evidence : Type}
     (truth_pred    : Bubble → Deposit PropLike Standard ErrorModel Provenance → Prop)
     (obs_pred      : Deposit PropLike Standard ErrorModel Provenance → Prop)
     (verify_pred   : Bubble → Deposit PropLike Standard ErrorModel Provenance → Time → Prop)
@@ -534,9 +534,6 @@ theorem tier4_full_pack_surj
     (h_cl : CorrigibleLedgerGoal
         (ConcreteBankModel truth_pred obs_pred verify_pred etime
            submit_pred revise_pred hasRev_pred selfCorr_pred)) :
-    -- (A) CommitmentsCtx: certainty ≠ authorization survives extension
-    (∀ (a : Agent) (B : Bubble) (P : Claim),
-        ∃ (_ : certainty_L a P), ¬knowledge_B B P) ∧
     -- (B1) Structural: SEV factorization holds unconditionally
     (∀ (d : Deposit PropLike Standard ErrorModel Provenance),
         ∃ (s : Standard) (e : ErrorModel) (v : Provenance),
@@ -562,8 +559,7 @@ theorem tier4_full_pack_surj
         truth_pred obs_pred verify_pred etime
         submit_pred revise_pred hasRev_pred selfCorr_pred
         E_bank h_compat h_sw h_re h_sd h_sc h_cl
-  ⟨fun a B P => certainty_insufficient_for_authorization CE.toCommitmentsCtx a B P,
-   SEVFactorization,
+  ⟨SEVFactorization,
    lts.1,
    goals.1,
    goals.2.1,

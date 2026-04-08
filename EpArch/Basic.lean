@@ -130,8 +130,9 @@ inductive LadderStage where
     Functional gloss: "treated as a premise without re-deliberation"
     Opaque: genuinely non-trivial propositional predicate — can hold or fail to hold
     for any given agent/claim pair.  Independence from Bank authorization is formally
-    expressed by TractionAuthorizationSplit in Commitments.lean: certainty_L and
-    knowledge_B are neither equivalent nor mutually implied. -/
+    expressed by two mechanism-based theorems in Commitments.lean:
+    `innovation_allows_traction_without_authorization` (certainty_L ⊄ knowledge_B)
+    `caveated_authorization_does_not_force_certainty` (knowledge_B ⊄ certainty_L). -/
 opaque certainty_L : Agent → Claim → Prop
 
 /-- Structural property: agent's revision channel for P is disconnected.

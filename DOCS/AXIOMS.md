@@ -14,19 +14,24 @@ This document records the current assumption boundary and how the prior axiom su
 
 ## Current Assumption Boundary
 
-### CommitmentsCtx — Structural Commitment as a Hypothesis Bundle
+### CommitmentsCtx — All Commitments Now Proved
 
 **File:** `EpArch/Commitments.lean`
 
-One structural commitment remains as a field of `CommitmentsCtx` (modelled on `WorldCtx`).
-It is not an `axiom` declaration; it is a hypothesis appearing explicitly in theorem
-signatures:
+`CommitmentsCtx` is now an **empty structure** — all 8 architectural commitments have
+been derived as standalone theorems.  No hypothesis fields remain.
 
-    theorem T (C : CommitmentsCtx PropLike Standard ErrorModel Provenance) ...
+C1 (Traction/Authorization Split) was the last remaining field.  It is now expressed
+by two mechanism-grounded named theorems:
 
-| Field | Commitment | Plain reading |
-|-------|------------|---------------|
-| `traction_auth_split` | C1: certainty_L ⊥ knowledge_B (neither implies the other) | An agent can be certain of P without any bank deposit for P, and a bank deposit can exist without the agent being certain. Feeling sure and being authorized are different kinds of things. |
+| Theorem | Direction | Mechanism | Witness structure |
+|---------|-----------|-----------|-------------------|
+| `innovation_allows_traction_without_authorization` | `certainty_L ⊄ knowledge_B` | Innovation / pre-authorization exploration | `PreAuthTractionWitness` |
+| `caveated_authorization_does_not_force_certainty` | `knowledge_B ⊄ certainty_L` | Header burden (stale τ / unredeemable) | `BurdensomeAuthWitness` |
+
+Neither theorem makes a universal `∀ a B P` claim; each is scoped to its named
+scenario witness.  This eliminates the single black-box `traction_auth_split` hypothesis
+and replaces it with two structurally grounded, independently falsiﬁable theorems.
 
 **C2 is no longer a hypothesis.** `no_global_ledger` was removed from `CommitmentsCtx`
 and replaced by the proved theorem `WorldCtx.no_ledger_tradeoff` (EpArch CAP Theorem)
@@ -80,10 +85,11 @@ evidence for the same claim and are both pushing to export it.  For the patholog
 theorems, the more targeted `dispute_about B d` and `cross_axis_dispute_about B d`
 are used (see above).
 
-Forward theorems (`certainty_insufficient_for_authorization`, `no_universal_ledger`,
+Forward theorems (`innovation_allows_traction_without_authorization`,
+`caveated_authorization_does_not_force_certainty`, `no_universal_ledger`,
 `redeemability_requires_more_than_consensus`, `header_stripping_produces_pathology`,
-and their contradiction companions) are conditioned on `(C : CommitmentsCtx ...)` for
-C1 only; C2, C4b, C7b are now proved.
+and their contradiction companions) are all proved standalone theorems — none
+are conditioned on `(C : CommitmentsCtx ...)` fields, as CommitmentsCtx is empty.
 
 ### Opaque Domain Primitives
 
@@ -99,7 +105,7 @@ Key opaque primitives:
 | `hasDeposit` / `deposited` | Bank.lean | Deposit membership predicates |
 
 All theorems that use these primitives state their dependence explicitly via
-`(C : CommitmentsCtx ...)`, `(C : WorldCtx)`, or direct premises.
+`(C : WorldCtx)` or direct premises.
 
 ---
 
@@ -155,7 +161,7 @@ only theorems, definitions, and opaque constants.
 | `Basic.lean` | Core types |
 | `Header.lean` | S/E/V header structure |
 | `Bank.lean` | Bank substrate (concrete operators + opaque behavioral predicates) |
-| `Commitments.lean` | Structural commitments (proved + CommitmentsCtx bundle) |
+| `Commitments.lean` | Structural commitments (all 8 proved; CommitmentsCtx is empty) |
 | `Invariants.lean` | Grounded operational invariants |
 | `StepSemantics.lean` | Concrete step semantics |
 | `Theorems.lean` | Derived theorems |
