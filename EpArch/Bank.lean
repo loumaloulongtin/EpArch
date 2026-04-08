@@ -67,15 +67,33 @@ structure Bank where
 
 /-! ## Core Bank Predicates -/
 
-/-- Deposited: the deposit is active in bubble B. -/
-opaque deposited : Bubble → Deposit PropLike Standard ErrorModel Provenance → Prop
+/-- Deposited: `d` is currently an active, authorized ledger entry in bubble B.
+    Grounded in the deposit's own fields:
+    - `d.status = .Deposited` — the lifecycle gate has been cleared (Candidate → Validated → Deposited)
+    - `d.bubble = B`          — the entry is scoped to this bubble
 
-/-- HasDeposit: there exists some deposit for claim P in bubble B. -/
-opaque hasDeposit : Bubble → PropLike → Prop
+    The same deposit object may be active in one bubble and not another.
+    Import policy is the *admission condition* for reaching `.Deposited` status,
+    but `deposited` denotes the current membership state, not the historical event.
+    See `hasDeposit` for the claim-level holding predicate. -/
+def deposited (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
+  d.status = .Deposited ∧ d.bubble = B
+
+/-- HasDeposit: bubble B currently holds at least one active authorized deposit
+    whose claim is P.
+    Defined as the existential lift of `deposited`: there exist some validation
+    types S/E/V and some deposit `d` of those types with `d.P = P` that is an
+    active authorized ledger entry in B.
+    Existentially abstracts over the specific deposit artifact and its type
+    parameters — the bank certifies the claim P, not the particular object. -/
+def hasDeposit (B : Bubble) (P : PropLike) : Prop :=
+  ∃ (S E V : Type u) (d : Deposit PropLike S E V),
+    d.status = .Deposited ∧ d.bubble = B ∧ d.P = P
 
 /-- Bank-side knowledge: the epistemic primitive of the architecture.
-    Defined as `hasDeposit B P` — holding a certificate in bubble B
-    constitutes the knowledge relation for B. -/
+    Defined as `hasDeposit B P` — bubble B holds an active authorized deposit
+    for P, constituting the bank's authoritative knowledge relation for claim P
+    in bubble B. -/
 def knowledge_B (B : Bubble) (P : PropLike) : Prop := hasDeposit B P
 
 /-- Bank knowledge is equivalent to holding a deposit certificate. -/
