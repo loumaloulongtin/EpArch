@@ -1,13 +1,274 @@
 # Modularity Registry
 
-This document is the single reference for how EpArch's theorem corpus is modular.
-It tracks what can be "disabled" (constraint, health goal, world bundle), by what mechanism, what theorems depend on each item, and what the formal status is.
+This document is the single reference for how EpArch's theorem corpus is modular:
+what surfaces exist, which are user-facing, how to add or remove a cluster, and
+the invariants that must never be broken.
 
-**Key question answered here:** If a product/sub-system rejects some constraint or goal, which theorems still apply, which don't, and how does the formalization certify that?
+**Key question answered here:** If a product/sub-system rejects some constraint or
+goal, which theorems still apply, which don't, and how does the formalization
+certify that?
 
 ---
 
-## The Four Modularity Tiers
+## 1. What Modularity Means in This Repo
+
+EpArch's theorem corpus is sliced into **30 certified clusters** across six families.
+Each cluster is independently selectable — a user or product can accept or reject it
+without invalidating the others.
+
+| Family | Count | What it covers |
+|---|---|---|
+| **Forcing clusters** (Tier 2) | 6 | Each constraint forces a structural feature (`distributed_agents → HasBubbles`, etc.) |
+| **Goal transport** (Tier 3) | 6 | Each health goal is preserved under compatible model extension |
+| **Tier 4 library clusters** | 5 | Commitments pack, structural theorems, LTS-universal gates, bank-goal transport |
+| **World obligations** (Tier 1) | 8 | Each `W_*` bundle enables a slice of adversarial/world theorems |
+| **Meta-modularity** | 2 | `modular` + `wellformed_is_modular` — constraint-subset independence |
+| **Lattice-stability** | 3 | `graceful_degradation`, `sub_revision_safety`, `modularity_pack` |
+
+The 30 `ClusterTag` values in `ClusterRegistry.lean` are the canonical names for all of these.
+
+---
+
+## 2. User-Facing vs. Internal
+
+Three layers sit between a caller and the proof content. Understanding which layer
+does what prevents confusion about where to look and where to edit.
+
+### User-facing surface
+- **`EpArchConfig`** — user-supplied record of `constraints`, `goals`, `worlds` lists.
+- **`ClusterTag`** — the 30 cluster identifiers; what a user cites when requesting certification.
+- **`certify`** — the proof-carrying function; given a `ClusterTag` and evidence, returns the
+  certified theorem statement.
+- **`showConfig`** / `#eval` output — human-readable display; what appears when a user runs
+  `#eval EpArch.Meta.Config.showConfig myConfig`.
+
+### Routing/metadata layer — `Meta/ClusterRegistry.lean`
+- Owns `ClusterTag`, all `EnabledXxxCluster` enumerations, `clusterDescription`,
+  `clusterFamily`, `clusterEnabled`, and every `toClusterTag` mapping.
+- **No EpArch-specific imports.** It is pure metadata — all types are self-contained.
+- Changing a cluster's description, family, or enabled status: edit here only.
+
+### Proof-carrying layer — `Meta/Config.lean`
+- Owns the indexed witness inductives (`ConstraintWitness`, `GoalWitness`,
+  `Tier4Witness`, `WorldWitness`, `MetaModularWitness`, `LatticeWitness`).
+- Each constructor holds the actual Lean type of the theorem being certified.
+- Owns the `tier4Witness`, `worldWitness`, etc. match arms that wire tags to proofs.
+- Changing what a cluster certifies (its type or proof term): edit here.
+
+### Theorem modules — source of actual proof content
+- `Minimality.lean` — Tier 2 forcing theorems.
+- `Health.lean`, `Meta/TheoremTransport.lean` — Tier 3 goal predicates and transport.
+- `Commitments.lean`, `Theorems.lean`, `Diagnosability.lean`, `Agent/*.lean`,
+  `Invariants.lean`, `ScopeIrrelevance.lean`, `Predictions.lean`, `WorkedTraces.lean` — Tier 4.
+- `WorldCtx.lean`, `AdversarialObligations.lean`, `WorldWitness.lean` — Tier 1 / world.
+- `Meta/Modular.lean` — meta-modularity; `Modularity.lean` — lattice-stability.
+- **Editing here does not change the cluster surface** unless Config.lean is updated too.
+
+---
+
+---
+
+## 3. How to Add a New Cluster
+
+Work through these layers **in order**. Each layer depends on the one above it.
+
+### Step 1 — Prove or name the theorem in the source module
+
+Add or identify the theorem in the appropriate `.lean` file.
+It must be a fully closed term — no `sorry`, no empty structure fields.
+
+```lean
+-- Example: new Tier 2 forcing theorem in Minimality.lean
+theorem my_constraint_requires_feature (W : WorkingSystem)
+    (h : WellFormed W) (hC : handles_my_constraint W) : HasMyFeature W := ...
+```
+
+### Step 2 — Update `ClusterRegistry.lean`
+
+Add a new `ClusterTag` constructor, the corresponding `EnabledXxxCluster` value,
+`clusterDescription`, `clusterFamily`, `clusterEnabled`, and `toClusterTag` routing.
+
+```lean
+-- In ClusterTag inductive:
+| forcing_my_constraint   -- Tier 2: my_constraint forces HasMyFeature
+
+-- In constraintMeta (or equivalent routing function):
+| .my_constraint => { globalTag := .forcing_my_constraint,
+                      description := "my_constraint forces HasMyFeature",
+                      ... }
+```
+
+### Step 3 — Update `Config.lean`
+
+Add a constructor to the appropriate witness inductive and a match arm
+in the certifying function.
+
+```lean
+-- In ConstraintWitness inductive:
+| my_constraint :
+    (∀ W, WellFormed W → handles_my_constraint W → HasMyFeature W) →
+    ConstraintWitness .forcing_my_constraint
+
+-- In constraintWitness match:
+| .forcing_my_constraint => .my_constraint my_constraint_requires_feature
+```
+
+### Step 4 — Update `MODULARITY.md`
+
+Only needed if the new cluster changes the public modularity surface or the cluster
+count. Add a row to the relevant family table.
+
+---
+
+## 4. Family-Specific Recipes
+
+Not all families are added the same way. The asymmetry is architectural, not style.
+
+### Tier 2 — Forcing clusters
+
+Use **direct `ConstraintProof`**: the theorem takes `WellFormed W` plus the
+operational predicate for that constraint and returns the forced feature.
+No witness inductive is needed — the proof term is the carrier.
+
+```lean
+-- Minimal pattern:
+theorem my_constraint_requires_feature (W : WorkingSystem)
+    (h : WellFormed W) (hC : handles_my_constraint W) : HasMyFeature W :=
+  ... -- prove from h and hC
+```
+
+### Goal / World / Tier 4 / Meta / Lattice — indexed witness carriers
+
+These families use **indexed inductive witness types** in `Config.lean`.
+The reason is universe management: the proof terms for these families are
+polymorphic or involve `Type 1` universes (model parameters, `CoreModel`,
+`WorkingSystem`), and bundling them into a plain function type causes universe
+issues. The inductive carrier keeps each proof at its natural universe level.
+
+```lean
+-- Tier 4 pattern:
+| my_cluster :
+    (∀ {PL SL EL PrL : Type}, MyTheoremStatement PL SL EL PrL) →
+    Tier4Witness .tier4_my_cluster
+
+-- Match arm:
+| .tier4_my_cluster => .my_cluster my_theorem
+```
+
+If you see existing clusters using `fun` terms in the match arm body, that is
+because the carrier constructor accepts a `∀`-quantified type — the `fun` just
+supplies the universally-quantified argument.
+
+---
+
+## 5. How to Remove or Refactor a Cluster
+
+### Rule: no empty compatibility shells
+
+If a theorem family becomes standalone (proved unconditionally, needs no transport),
+move its cluster to reflect that reality. Do **not** leave a transport shell
+containing vacuous or identity proofs just because it matched an old structure.
+
+The `CommitmentsCtx` refactor (`5a1cdea`) is the canonical example:
+`CommitmentsCtx` was an empty structure that did nothing; `commitments_pack` now
+directly bundles the four unconditional commitment theorems with no wrapper.
+
+### Refactor discipline — touch layers in this order
+
+1. **Proof module** — remove or rewrite the theorem.
+2. **`Config.lean`** — remove the witness constructor and match arm; rewire any
+   callers to the new proof term.
+3. **`ClusterRegistry.lean`** — update description, family, or remove the tag entirely.
+4. **`MODULARITY.md`** — update tables and prose to match the new reality.
+5. **Grep** — search for the old name across all files and kill every stale mention.
+   (`git grep <old_name>` or the `scripts/audit.ps1` script.)
+
+### Rule: update routing, witnesses, and descriptions together
+
+A mismatch between the registry description and what the witness actually carries
+is a documentation bug. The three layers must always agree:
+
+- `clusterDescription` in `ClusterRegistry.lean` says what is certified.
+- The witness constructor type in `Config.lean` encodes exactly that.
+- The proof term in the match arm delivers exactly the constructor type.
+
+---
+
+## 6. Minimal Copy-Paste Templates
+
+### New Tier 2 forcing cluster
+
+```lean
+-- Minimality.lean
+theorem my_constraint_requires_feature (W : WorkingSystem)
+    (h : WellFormed W) (hC : handles_my_constraint W) : HasMyFeature W := ...
+
+-- ClusterRegistry.lean — add to ClusterTag:
+| forcing_my_constraint
+
+-- ClusterRegistry.lean — add row in constraintMeta:
+| .my_constraint => { globalTag := .forcing_my_constraint, ... }
+
+-- Config.lean — add to ConstraintWitness:
+| my_constraint :
+    (∀ W, WellFormed W → handles_my_constraint W → HasMyFeature W) →
+    ConstraintWitness .forcing_my_constraint
+
+-- Config.lean — add match arm:
+| .forcing_my_constraint => .my_constraint my_constraint_requires_feature
+```
+
+### New goal / world / Tier 4 cluster
+
+```lean
+-- Source module
+theorem my_theorem {PL SL EL PrL : Type} ... : MyConclusion PL SL EL PrL := ...
+
+-- ClusterRegistry.lean — add to ClusterTag:
+| tier4_my_cluster  -- or goal_*, world_*, etc.
+
+-- Config.lean — add to Tier4Witness (or GoalWitness, etc.):
+| my_cluster :
+    (∀ {PL SL EL PrL : Type}, MyConclusion PL SL EL PrL) →
+    Tier4Witness .tier4_my_cluster
+
+-- Config.lean — add match arm:
+| .tier4_my_cluster => .my_cluster my_theorem
+```
+
+### New always-on meta cluster (unconditional, no universe polymorphism)
+
+```lean
+-- Source module
+theorem my_meta_fact : MyMetaConclusion := ...
+
+-- Config.lean — witness constructor (if MetaModularWitness family):
+| my_meta :
+    MyMetaConclusion →
+    MetaModularWitness .meta_my_fact
+
+-- Config.lean — match arm:
+| .meta_my_fact => .my_meta my_meta_fact
+```
+
+---
+
+## 7. Invariants — Do Not Break These
+
+These rules prevent the registry, config, and docs from drifting apart.
+
+| # | Invariant |
+|---|---|
+| **I1** | `ClusterRegistry.lean` owns all routing and display. No other file defines `clusterDescription`, `clusterFamily`, or `clusterEnabled`. |
+| **I2** | `Config.lean` owns all proof carriers. Witness inductive constructors are the only place where theorem types are formally encoded against a `ClusterTag`. |
+| **I3** | Named `cluster_*` pack theorems (e.g. `commitments_pack`, `structural_theorems_unconditional`, `lts_theorems_step_universal`) remain the authoritative typed witnesses. Config.lean match arms must reference them by name, not re-prove inline. |
+| **I4** | Every `ClusterTag` constructor that exists must have a matching witness constructor in `Config.lean` and a description in `ClusterRegistry.lean`. Orphaned tags are a build-time bug. |
+| **I5** | Documentation describes the cluster semantics as they exist now. Stale historical scaffolding (old transport wrappers, superseded pack shapes) must be removed — not left as comments or empty shells. |
+| **I6** | The cluster count (currently 30) is a documented fact. If you add or remove a cluster, update the count in this doc and in `README.md`. |
+
+---
+
+
 
 The formalization has four distinct modularity mechanisms, each at a different layer.
 They are now all complete — see [Tier 4](#tier-4-main-theorem-library--transport-schema-complete) for the closure.
@@ -114,8 +375,10 @@ This means they are already halfway to being transport-safe — the predicate mo
 ### Cluster A — Standalone commitments theorem family
 
 All 8 architectural commitments are proved as standalone theorems in `Commitments.lean`.
-`commitments_pack` bundles the unconditional ones (C3/C7b/C8); C1, C2, C4b, C5, C6b
-are proved as separately named theorems.  Cluster A is an unconditional theorem
+`commitments_pack` bundles the unconditional ones (C3/C4b/C7b/C8); C1, C2, C5, C6b
+are proved as separately named theorems.  C4b (`redeemability_requires_more_than_consensus`)
+is the commitment-specific result that distinguishes Cluster A from Cluster B
+(`structural_theorems_unconditional`).  Cluster A is an unconditional theorem
 family — no transport machinery needed.
 
 Examples: `commitments_pack`, `innovation_allows_traction_without_authorization`,
