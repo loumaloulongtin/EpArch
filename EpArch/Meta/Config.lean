@@ -596,6 +596,83 @@ def tier4Witness : (c : EnabledTier4Cluster) → Tier4Witness c
          transport_corrigible_ledger E C h h_cl⟩)
 
 
+/-! ## §4f  Correspondence Lemmas (support lemmas)
+
+Private helpers used by the three `mem_enabledXxxWitnesses_of_enabled` completeness
+theorems defined immediately after `certify` (which they reference).  The `filterMap_mem_of_pos`
+helper is also private and fills the gap left by the absent `List.mem_filterMap` in Lean 4.3.0.
+
+For ergonomic extraction of the schema carried by a witness, use the `cluster_*`
+named theorems in §5b, or pattern-match directly:
+`match w with | .safeWithdrawal f => f E C h hg`. -/
+
+private theorem filterMap_mem_of_pos {α : Type} {β : Type 1}
+    (f : α → Option β) : ∀ (l : List α) (a : α) (b : β),
+    a ∈ l → f a = some b → b ∈ l.filterMap f
+  | [], _, _, hmem, _ => nomatch hmem
+  | _ :: tl, a, b, hmem, hf => by
+      cases hmem with
+      | head => simp only [List.filterMap, hf]; exact List.Mem.head _
+      | tail _ htl =>
+        simp only [List.filterMap]
+        split
+        · exact filterMap_mem_of_pos f tl a b htl hf
+        · exact List.Mem.tail _ (filterMap_mem_of_pos f tl a b htl hf)
+
+-- Membership witnesses for each family's "all clusters" list.
+-- Used in the correspondence lemmas below.
+private theorem enabledGoalCluster_mem_all :
+    ∀ (c : EnabledGoalCluster),
+      c ∈ ([.goal_safeWithdrawal, .goal_reliableExport, .goal_soundDeposits,
+             .goal_selfCorrection, .goal_corrigible_universal, .goal_corrigible_full]
+           : List EnabledGoalCluster)
+  | .goal_safeWithdrawal       => List.Mem.head _
+  | .goal_reliableExport       => List.Mem.tail _ (List.Mem.head _)
+  | .goal_soundDeposits        => List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _))
+  | .goal_selfCorrection       =>
+      List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _)))
+  | .goal_corrigible_universal =>
+      List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _))))
+  | .goal_corrigible_full      =>
+      List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _
+        (List.Mem.tail _ (List.Mem.head _)))))
+
+private theorem enabledWorldCluster_mem_all :
+    ∀ (c : EnabledWorldCluster),
+      c ∈ ([.world_lies_possible, .world_bounded_audit, .world_asymmetric_costs,
+             .world_partial_observability, .world_spoofed_v,
+             .world_lies_scale, .world_rolex_ddos, .world_ddos]
+           : List EnabledWorldCluster)
+  | .world_lies_possible         => List.Mem.head _
+  | .world_bounded_audit         => List.Mem.tail _ (List.Mem.head _)
+  | .world_asymmetric_costs      => List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _))
+  | .world_partial_observability =>
+      List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _)))
+  | .world_spoofed_v             =>
+      List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _))))
+  | .world_lies_scale            =>
+      List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _
+        (List.Mem.tail _ (List.Mem.head _)))))
+  | .world_rolex_ddos            =>
+      List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _
+        (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _))))))
+  | .world_ddos                  =>
+      List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _
+        (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _)))))))
+
+private theorem enabledTier4Cluster_mem_all :
+    ∀ (c : EnabledTier4Cluster),
+      c ∈ ([.tier4_commitments, .tier4_structural, .tier4_lts_universal,
+             .tier4_bank_goals_compat, .tier4_bank_goals_surj]
+           : List EnabledTier4Cluster)
+  | .tier4_commitments       => List.Mem.head _
+  | .tier4_structural        => List.Mem.tail _ (List.Mem.head _)
+  | .tier4_lts_universal     => List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _))
+  | .tier4_bank_goals_compat =>
+      List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _)))
+  | .tier4_bank_goals_surj   =>
+      List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _))))
+
 /-! ## §5  Soundness: `clusterEnabled cfg c = true → clusterValid c` -/
 
 /-- `clusterEnabled` is sound: every cluster it marks enabled is machine-proved.
@@ -757,6 +834,36 @@ def certify (cfg : EpArchConfig) : CertifiedProjection cfg where
       then some ⟨c, tier4Witness c⟩
       else none
 
+/-! ## §4f-cont  Correspondence Lemmas
+
+These theorems prove the config-filtered witness lists are **complete**: every cluster
+the `clusterEnabled` router marks enabled has a proof entry in the corresponding
+`enabledXxxWitnesses` list.  They are placed here (after `certify`) because they
+reference `(certify cfg).enabledXxxWitnesses`.  The private support lemmas
+(`filterMap_mem_of_pos`, `enabledXxxCluster_mem_all`) live in §4f above. -/
+
+/-- **Completeness** of `enabledGoalWitnesses`: every cluster `c` that `clusterEnabled`
+    marks enabled has a proof entry `⟨c, goalWitness c⟩` in the filtered list.
+    Together with the `sound` field, this closes the loop between routing and proofs. -/
+theorem mem_enabledGoalWitnesses_of_enabled (cfg : EpArchConfig) (c : EnabledGoalCluster)
+    (h : clusterEnabled cfg c.toClusterTag = true) :
+    ⟨c, goalWitness c⟩ ∈ (certify cfg).enabledGoalWitnesses := by
+  simp only [certify]
+  exact filterMap_mem_of_pos _ _ c _ (enabledGoalCluster_mem_all c) (by simp [h])
+
+/-- **Completeness** of `enabledWorldWitnesses`. -/
+theorem mem_enabledWorldWitnesses_of_enabled (cfg : EpArchConfig) (c : EnabledWorldCluster)
+    (h : clusterEnabled cfg c.toClusterTag = true) :
+    ⟨c, worldWitness c⟩ ∈ (certify cfg).enabledWorldWitnesses := by
+  simp only [certify]
+  exact filterMap_mem_of_pos _ _ c _ (enabledWorldCluster_mem_all c) (by simp [h])
+
+/-- **Completeness** of `enabledTier4Witnesses`. -/
+theorem mem_enabledTier4Witnesses_of_enabled (cfg : EpArchConfig) (c : EnabledTier4Cluster)
+    (h : clusterEnabled cfg c.toClusterTag = true) :
+    ⟨c, tier4Witness c⟩ ∈ (certify cfg).enabledTier4Witnesses := by
+  simp only [certify]
+  exact filterMap_mem_of_pos _ _ c _ (enabledTier4Cluster_mem_all c) (by simp [h])
 
 /-! ## §5b  Named Proof Witnesses
 
