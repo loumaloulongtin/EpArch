@@ -43,11 +43,15 @@ and the definitional gap between `consensus` (intra-bubble, formally `True`) and
 
 **C7b is no longer a hypothesis.** `header_asymmetry` was removed from `CommitmentsCtx`.
 The diagnosability / hardness result (`header_stripping_harder`,
-`metadata_stripping_strictly_enlarges`) is now proved via the admissible completion-space
+`metadata_stripping_strictly_enlarges`) is proved via the admissible completion-space
 model: stripping removes all (S, E, V) admissibility constraints, strictly enlarging
 the completion space, which is the structural ground for the score ordering 0 < 3.
-The opaque pathology predicates (`sticky`, `proxy_battles`) are taken as direct
-hypotheses in forward theorems, not CommitmentsCtx fields.
+`sticky` and `proxy_battles` are now **defined predicates** (not opaque), derived
+from `has_cross_field_alternatives d`: `sticky B P d` holds when the stripped
+admissible space contains ≥2 incompatible completions (no unique localization);
+`proxy_battles B P d` holds when completions implicating distinct fault axes (S vs E)
+both survive (cross-field underdetermination).  All three pathologies are proved by
+`header_stripping_produces_pathology` from `h_cross` alone — no opaque hypotheses.
 
 Forward theorems (`certainty_insufficient_for_authorization`, `no_universal_ledger`,
 `redeemability_requires_more_than_consensus`, `header_stripping_produces_pathology`,
@@ -66,7 +70,7 @@ Key opaque primitives:
 |-----------|------|------|
 | `certainty_L` | Basic.lean | Agent-side certainty (Ladder top) |
 | `hasDeposit` / `deposited` | Bank.lean | Deposit membership predicates |
-| `dispute` / `sticky` / `proxy_battles` | Commitments.lean | Header-stripping consequence predicates |
+| `dispute` | Commitments.lean | Dispute-existence predicate (opaque domain primitive) |
 
 All theorems that use these primitives state their dependence explicitly via
 `(C : CommitmentsCtx ...)`, `(C : WorldCtx)`, or direct premises.
@@ -100,7 +104,7 @@ Three commitments remain as fields of `CommitmentsCtx`. C2 is now proved. The ot
 | C8 (`TemporalValidity`) | Proved from header τ definition |
 | C2 (`NoGlobalLedger`) | **Proved** as `WorldCtx.no_ledger_tradeoff` (EpArch CAP Theorem) from `W_partial_observability` + `obs_based` in `WorldCtx.lean` |
 | C4b (`ConsensusNotSufficient`) | **Proved** as `redeemability_requires_more_than_consensus` from `intra_bubble_only` + definitional gap between `consensus` (`True`) and `redeemable` (opaque external evidence) in `Commitments.lean` |
-| C7b (`HeaderStrippingHarder`) | **Proved** via admissible completion-space model: `metadata_stripping_strictly_enlarges` establishes strict inclusion admissible_full ⊂ admissible_stripped; `header_stripping_harder` is its numeric corollary (0 < 3 fields). Opaque `sticky`/`proxy_battles` taken as direct hypotheses in forward theorems. |
+| C7b (`HeaderStrippingHarder`) | **Proved** via admissible completion-space model: `metadata_stripping_strictly_enlarges` establishes strict inclusion admissible_full ⊂ admissible_stripped; `header_stripping_harder` is its numeric corollary (0 < 3 fields). `sticky` and `proxy_battles` are **defined** from `has_cross_field_alternatives`: admissible-space multiplicity and cross-field underdetermination respectively; proved by `stripped_dispute_is_sticky` and `stripped_dispute_has_proxy_battles`. Zero opaque hypotheses. |
 | C1 | Bundled as CommitmentsCtx field |
 
 ### Invariants (formerly 5 axioms → 0)
