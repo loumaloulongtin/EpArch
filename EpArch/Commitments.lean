@@ -31,7 +31,8 @@ Seven commitments are derived as standalone theorems:
     enlarges the admissible (S, E, V) completion space; `header_stripping_harder`
     is its numeric corollary.  `sticky` (admissible-space multiplicity) and
     `proxy_battles` (cross-field underdetermination) are defined predicates,
-    proved from `has_cross_field_alternatives d`.
+    proved from `dispute_about`/`cross_axis_dispute_about` alone — no type-universe
+    nontriviality condition.
 - C8 (`TemporalValidity`)    — from the header τ definition
 
 ## What are Commitments?
@@ -333,20 +334,48 @@ theorem NoSelfCorrectionWithoutRevision {Reason Evidence : Type u} (D : Domain)
 
 /-! ## Commitment 7: Header Stripping → Harder Disputes -/
 
-/-- A dispute exists over claim P in bubble B.
+/-- A dispute is anchored to a specific deposit d in bubble B.
 
-    **Definition via cross-bubble export conflict:**
-    Bubble B exports deposit d1 to bubble B2; B2 exports deposit d2 back to B.
-    Both deposits are for the same claim P but disagree on at least one header
-    field (S, E, or V).  This cross-bubble header conflict creates an
-    adjudication obligation — neither deposit can simply be accepted.
+    **`dispute_about B d`**: some other bubble B2 has exported a counter-deposit
+    d' to B that covers the same claim as d but disagrees on at least one header
+    field.  This incoming cross-bubble counter is the minimal evidence of an
+    adjudication obligation anchored to d.
 
-    Structural connection to `sticky`/`proxy_battles`:
-    The field disagreement between d1 and d2 is exactly the source of
-    completion-space multiplicity: a dispute resolver sees one completion
-    matching d1's headers and another matching d2's, with no metadata to
-    collapse them.  This is `has_alternative_completion` instantiated with
-    the actual export witnesses, not a type-universe side condition. -/
+    **Key structural consequence**: the counter-deposit d' has the *same type
+    parameters* as d, so `⟨d'.h.S, d'.h.E, d'.h.V⟩` is a valid Completion
+    witness for d — giving `has_alternative_completion d` directly from the
+    dispute, with no type-universe nontriviality condition. -/
+def dispute_about (B : Bubble)
+    (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
+  ∃ (B2 : Bubble) (d' : Deposit PropLike Standard ErrorModel Provenance),
+    exportDep B2 B d' ∧
+    d'.P = d.P ∧
+    (d'.h.S ≠ d.h.S ∨ d'.h.E ≠ d.h.E ∨ d'.h.V ≠ d.h.V)
+
+/-- A cross-axis dispute: B receives two counter-deposits from (possibly different)
+    bubbles, one blaming the S-axis and one blaming the E-axis.  This is the
+    structural source of proxy battles: argument fragments along fault axes because
+    neither can be resolved without the stripped metadata.
+
+    **Key structural consequence**: directly witnesses both the S-alternative and
+    the E-alternative needed for `proxy_battles`, with no type-universe conditions. -/
+def cross_axis_dispute_about (B : Bubble)
+    (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
+  ∃ (B2 B3 : Bubble)
+    (dS dE : Deposit PropLike Standard ErrorModel Provenance),
+    exportDep B2 B dS ∧ exportDep B3 B dE ∧
+    dS.P = d.P ∧ dE.P = d.P ∧
+    dS.h.S ≠ d.h.S ∧ dE.h.E ≠ d.h.E
+
+/-- A dispute still exists over claim P in bubble B as in the original definition:
+    B exports d1 to B2; B2 exports a conflicting d2 back.  This definition uses
+    existential fresh types (Std Em Prov) so it remains independent of the section
+    variables `Standard ErrorModel Provenance` — making it usable in theorem
+    signatures where those types are not yet in scope.
+
+    The structurally grounded `dispute_about B d` and `cross_axis_dispute_about B d`
+    are the new primary predicates; `dispute B P` is retained for paper-facing
+    theorem signatures that state "in a dispute over P" as context. -/
 def dispute (B : Bubble) (P : PropLike) : Prop :=
   ∃ (Std Em Prov : Type u) (B2 : Bubble) (d1 d2 : Deposit PropLike Std Em Prov),
     exportDep B B2 d1 ∧ exportDep B2 B d2 ∧
@@ -397,6 +426,27 @@ def has_alternative_completion
     (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
   ∃ c : Completion Standard ErrorModel Provenance,
     c.S ≠ d.h.S ∨ c.E ≠ d.h.E ∨ c.V ≠ d.h.V
+
+/-- `dispute_about B d` implies `has_alternative_completion d`.
+    Proof: the counter-deposit d' has the same type parameters as d; packaging
+    `⟨d'.h.S, d'.h.E, d'.h.V⟩` as a Completion gives a witness that disagrees
+    with d.h on at least one axis.  No type-universe side condition needed. -/
+theorem dispute_about_to_alternative
+    (d : Deposit PropLike Standard ErrorModel Provenance)
+    (h_disp : dispute_about B d) :
+    has_alternative_completion d :=
+  let ⟨_, d', _, _, hc⟩ := h_disp
+  ⟨⟨d'.h.S, d'.h.E, d'.h.V⟩, hc⟩
+
+/-- `cross_axis_dispute_about B d` implies `dispute_about B d`:
+    the S-blaming counter-deposit dS serves as the single-counter witness
+    (dS disagrees on S, which satisfies the `∨` in `dispute_about`). -/
+theorem cross_axis_to_dispute_about
+    (d : Deposit PropLike Standard ErrorModel Provenance)
+    (h_cross : cross_axis_dispute_about B d) :
+    dispute_about B d :=
+  let ⟨B2, _, dS, _, h_exp_S, _, h_P_S, _, h_hS, _⟩ := h_cross
+  ⟨B2, dS, h_exp_S, h_P_S, Or.inl h_hS⟩
 
 /-! ### Completion-Space Inclusion Theorems
 
@@ -450,86 +500,70 @@ theorem completion_spaces_are_distinct
 - **`sticky B P d`**: a stripped live dispute cannot localize to a unique
   repair-relevant (S, E, V) assignment — the admissible completion space
   contains at least two incompatible completions.  Proved from
-  `has_alternative_completion d`.
+  `dispute_about B d` alone: the counter-deposit d' provides a same-type
+  Completion witness that diverges from d.h.
 - **`proxy_battles B P d`**: the admissible space contains completions
   implicating at least two distinct fault axes (one blaming S, one blaming E)
   — argument migrates to secondary proxies because no canonical fault direction
-  exists.  Proved from `has_cross_field_alternatives d`, the mild condition
-  that Standard and ErrorModel each admit values distinct from d's header. -/
+  exists.  Proved from `cross_axis_dispute_about B d` alone: the two counter-
+  deposits dS and dE each provide a same-type Completion witness for their
+  respective axes.  No type-universe nontriviality condition needed. -/
 
-/-- Cross-field type nontriviality: Standard and ErrorModel each admit at least
-    two distinct values relative to d's header.  Strictly stronger than
-    `has_alternative_completion` (which requires only one divergent axis). -/
-def has_cross_field_alternatives
-    (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
-  (∃ s : Standard, s ≠ d.h.S) ∧ (∃ e : ErrorModel, e ≠ d.h.E)
-
-/-- A dispute over P in B is **sticky** w.r.t. deposit d when:
-    1. the dispute is live (`dispute B P`),
-    2. the deposit's header is stripped (`header_stripped d`), and
-    3. the admissible (stripped) completion space contains at least two
-       incompatible completions — no unique (S, E, V) assignment is forced.
-    Epistemic ground: `admissible_full` pins exactly one completion (full header);
-    `admissible_stripped` admits all completions (stripped header), so disputes
-    cannot localize to a single repair-relevant state. -/
+/-- A deposit d in bubble B is **sticky** when there is an anchored dispute over d
+    (`dispute_about B d`) and the header is stripped, so the admissible completion
+    space cannot localize to a unique (S, E, V) assignment.
+    The alternative completion is provided directly by the counter-deposit d' in
+    the dispute: `⟨d'.h.S, d'.h.E, d'.h.V⟩` disagrees with `d.h` on at least
+    one field, and both are `admissible_stripped` (the stripped predicate is
+    trivially True). -/
 def sticky (B : Bubble) (P : PropLike)
     (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
-  dispute B P ∧ header_stripped d ∧
+  dispute_about B d ∧ d.P = P ∧ header_stripped d ∧
   ∃ c1 c2 : Completion Standard ErrorModel Provenance,
     admissible_stripped d c1 ∧ admissible_stripped d c2 ∧
     (c1.S ≠ c2.S ∨ c1.E ≠ c2.E ∨ c1.V ≠ c2.V)
 
 /-- Proxy battles over P in B w.r.t. deposit d: the admissible completion space
     contains completions implicating at least two distinct fault axes.
-    - `c_s.S ≠ d.h.S`: one completion blames the S-axis
-    - `c_e.E ≠ d.h.E`: another blames the E-axis
-    Stripped metadata gives no basis to prefer one diagnosis, so argument
-    migrates from the real hidden failure to secondary proxy attributes. -/
+    - `c_s.S ≠ d.h.S`: one completion blames the S-axis (from counter-deposit dS)
+    - `c_e.E ≠ d.h.E`: another blames the E-axis (from counter-deposit dE)
+    The witnesses are provided directly by the cross-axis dispute: dS and dE
+    each supply a same-type Completion at their respective fault axes.
+    No type-universe nontriviality condition is needed. -/
 def proxy_battles (B : Bubble) (P : PropLike)
     (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
-  dispute B P ∧ header_stripped d ∧
+  cross_axis_dispute_about B d ∧ d.P = P ∧ header_stripped d ∧
   ∃ (c_s c_e : Completion Standard ErrorModel Provenance),
     admissible_stripped d c_s ∧ admissible_stripped d c_e ∧
     c_s.S ≠ d.h.S ∧ c_e.E ≠ d.h.E
 
-/-- `has_cross_field_alternatives` implies `has_alternative_completion`:
-    the S-witness ⟨s, d.h.E, d.h.V⟩ diverges from d's header on the S field. -/
-theorem cross_field_to_alternative
-    (d : Deposit PropLike Standard ErrorModel Provenance)
-    (h_cross : has_cross_field_alternatives d) :
-    has_alternative_completion d := by
-  have ⟨⟨s, hs⟩, _⟩ := h_cross
-  exact ⟨⟨s, d.h.E, d.h.V⟩, Or.inl hs⟩
-
-/-- A stripped live dispute is sticky whenever `has_alternative_completion d`.
-    Witnesses: `c_alt` (the alternative, field-divergent completion) and
-    `⟨d.h.S, d.h.E, d.h.V⟩` (the canonical header completion).  Both are
-    `admissible_stripped` (trivially True) and differ on at least one field. -/
+/-- A stripped deposit with an anchored dispute (`dispute_about B d`) is sticky.
+    No `has_alternative_completion` hypothesis needed: the counter-deposit d'
+    in the dispute provides the alternative Completion directly. -/
 theorem stripped_dispute_is_sticky
     (d : Deposit PropLike Standard ErrorModel Provenance)
-    (h_alt : has_alternative_completion d)
     (B : Bubble) (P : PropLike)
-    (h_disp : dispute B P) (h_strip : header_stripped d) :
+    (h_disp : dispute_about B d) (h_P : d.P = P) (h_strip : header_stripped d) :
     sticky B P d := by
   unfold sticky
-  refine ⟨h_disp, h_strip, ?_⟩
-  have ⟨c_alt, hc⟩ := h_alt
+  refine ⟨h_disp, h_P, h_strip, ?_⟩
+  have ⟨c_alt, hc⟩ := dispute_about_to_alternative d h_disp
   exact ⟨c_alt, ⟨d.h.S, d.h.E, d.h.V⟩, trivial, trivial, hc⟩
 
-/-- A stripped live dispute has proxy battles whenever `has_cross_field_alternatives d`.
-    Witnesses: `⟨s, d.h.E, d.h.V⟩` implicates the S-axis (S = s ≠ d.h.S)
-    and `⟨d.h.S, e, d.h.V⟩` implicates the E-axis (E = e ≠ d.h.E).
-    Both are `admissible_stripped` (trivially); no evidence collapses them. -/
+/-- A stripped deposit with a cross-axis dispute (`cross_axis_dispute_about B d`)
+    has proxy battles.  The witnesses are read off the two counter-deposits:
+    `⟨dS.h.S, d.h.E, d.h.V⟩` blames the S-axis;
+    `⟨d.h.S, dE.h.E, d.h.V⟩` blames the E-axis.
+    Both are `admissible_stripped` (trivially); no type-universe side condition. -/
 theorem stripped_dispute_has_proxy_battles
     (d : Deposit PropLike Standard ErrorModel Provenance)
-    (h_cross : has_cross_field_alternatives d)
     (B : Bubble) (P : PropLike)
-    (h_disp : dispute B P) (h_strip : header_stripped d) :
+    (h_cross : cross_axis_dispute_about B d) (h_P : d.P = P) (h_strip : header_stripped d) :
     proxy_battles B P d := by
   unfold proxy_battles
-  refine ⟨h_disp, h_strip, ?_⟩
-  have ⟨⟨s, hs⟩, ⟨e, he⟩⟩ := h_cross
-  exact ⟨⟨s, d.h.E, d.h.V⟩, ⟨d.h.S, e, d.h.V⟩, trivial, trivial, hs, he⟩
+  refine ⟨h_cross, h_P, h_strip, ?_⟩
+  have ⟨_, _, dS, dE, _, _, _, _, h_hS, h_hE⟩ := h_cross
+  exact ⟨⟨dS.h.S, d.h.E, d.h.V⟩, ⟨d.h.S, dE.h.E, d.h.V⟩, trivial, trivial, h_hS, h_hE⟩
 
 /-! ### Diagnosability Score — Grounded Numeric Summary
 
@@ -701,8 +735,9 @@ theorem HeaderPreservation_implies_localization (B : Bubble) (P : PropLike)
 
 /-! Commitment 7, second conjunct: `sticky B P d` and `proxy_battles B P d` are
     proved predicates (see §Epistemic Pathology Predicates above).  Both are
-    structurally derived from `has_cross_field_alternatives d` in
-    `header_stripping_produces_pathology` below. -/
+    structurally derived from `dispute_about`/`cross_axis_dispute_about` alone
+    in `header_stripping_produces_pathology` below — no type-universe nontriviality
+    premise needed. -/
 
 
 /-! ## Commitment 8: Temporal Validity (τ / TTL) -/
@@ -854,35 +889,33 @@ theorem redeemability_requires_more_than_consensus
 /-! ### Forward Theorems (Commitment 7b) -/
 
 /-- Header stripping produces sticky disputes, proxy battles, AND diagnostic loss.
-    The pathology is structural under mild cross-field nontriviality:
-    given `has_cross_field_alternatives d` (Standard and ErrorModel admit values
-    distinct from d.h.S and d.h.E), all three conclusions follow from definitions:
-    - `sticky B P d`        ← `stripped_dispute_is_sticky`        (admissible-space multiplicity)
-    - `proxy_battles B P d` ← `stripped_dispute_has_proxy_battles` (cross-field underdetermination)
-    - `systematically_harder ...` ← `header_stripping_harder`      (numeric summary 0 < 3)
-    Zero opaque hypotheses; `h_cross` is a type-universe nontriviality premise, not an
-    architectural assumption. -/
+    Both `sticky` and `proxy_battles` follow purely from event-level export witnesses:
+    - `sticky B P d`              ← `stripped_dispute_is_sticky`        (admissible-space multiplicity)
+    - `proxy_battles B P d`       ← `stripped_dispute_has_proxy_battles` (cross-axis underdetermination)
+    - `systematically_harder ...` ← `header_stripping_harder`            (numeric summary 0 < 3)
+    Zero opaque hypotheses; no type-universe nontriviality premise. -/
 theorem header_stripping_produces_pathology
     (B : Bubble) (P : PropLike)
     (d : Deposit PropLike Standard ErrorModel Provenance)
-    (h_cross : has_cross_field_alternatives d) :
-    dispute B P → header_stripped d →
+    (h_about : dispute_about B d) (h_P : d.P = P)
+    (h_cross : cross_axis_dispute_about B d) :
+    header_stripped d →
     sticky B P d ∧ proxy_battles B P d ∧
     systematically_harder header_preserved_diagnosability header_stripped_diagnosability :=
-  fun h_disp h_strip =>
-    ⟨stripped_dispute_is_sticky d (cross_field_to_alternative d h_cross) B P h_disp h_strip,
-     stripped_dispute_has_proxy_battles d h_cross B P h_disp h_strip,
+  fun h_strip =>
+    ⟨stripped_dispute_is_sticky d B P h_about h_P h_strip,
+     stripped_dispute_has_proxy_battles d B P h_cross h_P h_strip,
      header_stripping_harder⟩
 
-/-- Contradiction: "stripped disputes over P in B w.r.t. d are never sticky"
-    contradicts the structural derivation from `has_cross_field_alternatives`. -/
+/-- Contradiction: "stripped deposits with a cross-axis dispute are never sticky"
+    contradicts the structural derivation from `cross_axis_dispute_about`. -/
 theorem StrippedCtx_contradicts_HeaderPreservationAsymmetry
     (B : Bubble) (P : PropLike)
     (d : Deposit PropLike Standard ErrorModel Provenance)
-    (h_cross : has_cross_field_alternatives d)
-    (h_disp : dispute B P) (h_strip : header_stripped d)
+    (h_about : dispute_about B d) (h_P : d.P = P)
+    (h_strip : header_stripped d)
     (h_no_sticky : ¬sticky B P d) : False :=
   h_no_sticky
-    (stripped_dispute_is_sticky d (cross_field_to_alternative d h_cross) B P h_disp h_strip)
+    (stripped_dispute_is_sticky d B P h_about h_P h_strip)
 
 end EpArch

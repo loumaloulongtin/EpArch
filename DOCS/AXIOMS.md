@@ -46,18 +46,39 @@ The diagnosability / hardness result (`header_stripping_harder`,
 `metadata_stripping_strictly_enlarges`) is proved via the admissible completion-space
 model: stripping removes all (S, E, V) admissibility constraints, strictly enlarging
 the completion space, which is the structural ground for the score ordering 0 < 3.
-`sticky` and `proxy_battles` are **defined predicates** (not opaque), derived
-from `has_cross_field_alternatives d`: `sticky B P d` holds when the stripped
-admissible space contains ≥2 incompatible completions (no unique localization);
-`proxy_battles B P d` holds when completions implicating distinct fault axes (S vs E)
-both survive (cross-field underdetermination).  All three pathologies are proved by
-`header_stripping_produces_pathology` from `h_cross` alone — no opaque hypotheses.
 
-`dispute B P` is also now a **defined predicate**: it holds when bubble B exports
+`sticky` and `proxy_battles` are **defined predicates** (not opaque), derived from
+event-level export witnesses — **no type-universe nontriviality premise needed**:
+
+- **`dispute_about B d`** — some other bubble B2 has exported a counter-deposit d'
+  to B covering the same claim as d but disagreeing on ≥ 1 header field (S, E, or V).
+  Since d' has the *same type parameters* as d, `⟨d'.h.S, d'.h.E, d'.h.V⟩` is a
+  same-type `Completion` witness: **`dispute_about_to_alternative`** proves
+  `has_alternative_completion d` directly from the dispute.
+
+- **`cross_axis_dispute_about B d`** — B receives two counter-deposits from
+  (possibly different) bubbles: dS disagreeing on the S-axis and dE on the E-axis.
+  This directly witnesses the two fault-axis completions needed for `proxy_battles`;
+  **`cross_axis_to_dispute_about`** projects it to `dispute_about`.
+
+- **`sticky B P d`** holds when `dispute_about B d` and the header is stripped:
+  d'.h provides the alternative completion; no `has_cross_field_alternatives` needed.
+
+- **`proxy_battles B P d`** holds when `cross_axis_dispute_about B d` and the header
+  is stripped: dS and dE directly supply the S-blaming and E-blaming completions.
+
+`header_stripping_produces_pathology` takes `dispute_about B d` and
+`cross_axis_dispute_about B d`; the former `has_cross_field_alternatives d`
+premise is **entirely eliminated** — the type-universe nontriviality condition
+is replaced by the event-level export structure.
+
+`dispute B P` is a **defined predicate**: it holds when bubble B exports
 deposit d1 to bubble B2, B2 exports deposit d2 back to B, both for claim P, but
 d1 and d2 disagree on at least one header field (S, E, or V).  This cross-bubble
 export conflict is the structural origin of dispute: two bubbles hold incompatible
-evidence for the same claim and are both pushing to export it.
+evidence for the same claim and are both pushing to export it.  For the pathology
+theorems, the more targeted `dispute_about B d` and `cross_axis_dispute_about B d`
+are used (see above).
 
 Forward theorems (`certainty_insufficient_for_authorization`, `no_universal_ledger`,
 `redeemability_requires_more_than_consensus`, `header_stripping_produces_pathology`,
@@ -109,7 +130,7 @@ Three commitments remain as fields of `CommitmentsCtx`. C2 is now proved. The ot
 | C8 (`TemporalValidity`) | Proved from header τ definition |
 | C2 (`NoGlobalLedger`) | **Proved** as `WorldCtx.no_ledger_tradeoff` (EpArch CAP Theorem) from `W_partial_observability` + `obs_based` in `WorldCtx.lean` |
 | C4b (`ConsensusNotSufficient`) | **Proved** as `redeemability_requires_more_than_consensus` from `intra_bubble_only` + definitional gap between `consensus` (`True`) and `redeemable` (opaque external evidence) in `Commitments.lean` |
-| C7b (`HeaderStrippingHarder`) | **Proved** via admissible completion-space model: `metadata_stripping_strictly_enlarges` establishes strict inclusion admissible_full ⊂ admissible_stripped; `header_stripping_harder` is its numeric corollary (0 < 3 fields). `sticky` and `proxy_battles` are **defined** from `has_cross_field_alternatives`: admissible-space multiplicity and cross-field underdetermination respectively; proved by `stripped_dispute_is_sticky` and `stripped_dispute_has_proxy_battles`. `dispute B P` is **defined** as a cross-bubble export conflict (d1 from B to B2, d2 from B2 to B, same claim P, incompatible headers). Zero opaque hypotheses; the full pathology theorem `header_stripping_produces_pathology` holds under the mild structural premise `has_cross_field_alternatives d` (Standard and ErrorModel are not singletons relative to d's header) — a type-universe nontriviality condition, not an architectural assumption. |
+| C7b (`HeaderStrippingHarder`) | **Proved** via admissible completion-space model: `metadata_stripping_strictly_enlarges` establishes strict inclusion admissible_full ⊂ admissible_stripped; `header_stripping_harder` is its numeric corollary (0 < 3 fields). `dispute_about B d` — an incoming same-type counter-deposit d' disagreeing on ≥1 header field — directly witnesses `has_alternative_completion d` via `dispute_about_to_alternative` (no type-universe condition). `cross_axis_dispute_about B d` — two counter-deposits dS, dE blaming S and E respectively — directly witnesses both axes for `proxy_battles`. `sticky B P d` (admissible-space multiplicity) proved by `stripped_dispute_is_sticky` from `dispute_about B d` alone; `proxy_battles B P d` (cross-axis underdetermination) proved by `stripped_dispute_has_proxy_battles` from `cross_axis_dispute_about B d` alone. **`has_cross_field_alternatives` premise entirely eliminated** — replaced by event-level export structure. `header_stripping_produces_pathology` takes `dispute_about` + `cross_axis_dispute_about`; zero opaque or type-universe hypotheses. |
 | C1 | Bundled as CommitmentsCtx field |
 
 ### Invariants (formerly 5 axioms → 0)
