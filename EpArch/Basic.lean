@@ -126,11 +126,26 @@ inductive LadderStage where
   | Certainty  -- full traction, active monitoring ceased; review channel still open
   deriving DecidableEq, Repr, Inhabited
 
-/-- The agent a's current Ladder stage for claim P.
-    This is private internal state — opaque from outside the agent.
-    The only structural commitment is that every agent/claim pair has some stage;
-    which stage it is cannot be derived from Bank state alone. -/
-opaque ladder_stage : Agent → Claim → LadderStage
+/-- The agent's private traction assignment: a function from claims to Ladder stages.
+    This is the hook: `agentTraction a` is a first-class object representing
+    agent `a`'s current traction map over all claims.  Its implementation is
+    opaque — psychology, pattern-matching, neurology, and institutional policy all
+    live below this interface.  The architecture only commits to:
+    - Every agent has such a function (totality).
+    - It maps each claim to exactly one stage (determinism).
+    - It cannot be derived from Bank state (traction/authorization separation).
+
+    The function can be thought of as modulated by the agent's internal processes;
+    the opaqueness is intentional — different agent types (human, AI, institution)
+    can implement it differently without affecting any paper-facing theorem. -/
+opaque agentTraction : Agent → (Claim → LadderStage)
+
+/-- ladder_stage: the current traction level of agent `a` for claim P.
+    Defined as the output of the agent's own traction assignment.
+    WHAT it is: `a`'s traction function applied to P.
+    HOW it works: opaque via `agentTraction` — the hook for agent-specific modulation. -/
+def ladder_stage (a : Agent) (P : Claim) : LadderStage :=
+  agentTraction a P
 
 /-- Certainty: agent a is at the top Ladder stage for claim P.
     Defined as: the agent's `ladder_stage` for P equals `LadderStage.Certainty`.
