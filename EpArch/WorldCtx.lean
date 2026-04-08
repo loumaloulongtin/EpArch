@@ -265,12 +265,74 @@ theorem WorldCtx.no_ledger_tradeoff (C : WorldCtx) (L : C.Ledger)
 
 /-- Corollary: in a latency-partitioned world, obs-based ledgers face the CAP tradeoff.
     `W_latency_partition` documents the physical mechanism (latency > TTL) explaining
-    why any ledger deciding within the TTL window is effectively obs-based. -/
+    why any ledger deciding within the TTL window is effectively obs-based.
+    Note: `hObs` remains an explicit assumption here; `W_latency_partition` is explanatory
+    context motivating obs-basedness, not a proof of it.  For the architectural grounding
+    that makes obs-basedness automatic, see `LocalLedger` below. -/
 theorem WorldCtx.no_ledger_tradeoff_of_latency (C : WorldCtx) (L : C.Ledger)
     (W_po : C.W_partial_observability) (_ : C.W_latency_partition)
     (hObs : C.obs_based L) :
     ¬(C.supports_innovation L ∧ C.supports_coordination L) :=
   C.no_ledger_tradeoff L hObs W_po
+
+/-- **Headline form** — no obs-based ledger simultaneously enables both goals.
+    Existential-negation shape: it is impossible for any single obs-based ledger
+    to satisfy both supports_innovation and supports_coordination.
+    Reads as a direct global impossibility statement. -/
+theorem WorldCtx.no_obs_based_universal_ledger (C : WorldCtx)
+    (W : C.W_partial_observability) :
+    ¬ ∃ L : C.Ledger,
+      C.obs_based L ∧ C.supports_innovation L ∧ C.supports_coordination L := by
+  intro ⟨L, hObs, hI, hC⟩
+  exact C.no_ledger_tradeoff L hObs W ⟨hI, hC⟩
+
+/-! ## Locally-Computed Ledgers: Architectural Grounding for obs_based
+
+A locally-computed ledger is one whose verdict is determined solely by the
+observation fingerprint `C.obs w`, not by the full world state `w`.  This is
+the formal expression of the architectural constraint:
+
+    the ledger lives inside the bubble and cannot see beyond the local
+    observation boundary.
+
+For such ledgers, `obs_based` is not an assumption — it is automatically
+derived from the definition.  The dependency chain becomes:
+
+    ledger locality (LocalLedger) → obs_based (automatic)
+    + W_partial_observability → CAP tradeoff (no_ledger_tradeoff_local)
+
+compared to the general theorem:
+
+    hObs (assumed) + W_partial_observability → CAP tradeoff
+-/
+
+/-- A locally-computed ledger: verdict determined solely by the observable
+    fingerprint `C.obs w`.  Formally a function `C.Obs → C.Claim → Prop`.
+    This is the bubble-local decision procedure: it cannot read world state
+    beyond what `C.obs` projects into the observation type. -/
+def WorldCtx.LocalLedger (C : WorldCtx) : Type u := C.Obs → C.Claim → Prop
+
+/-- Lift a LocalLedger to the full Ledger type by composing with `C.obs`. -/
+def WorldCtx.localToLedger (C : WorldCtx) (f : C.LocalLedger) : C.Ledger :=
+  fun w P => f (C.obs w) P
+
+/-- Any locally-computed ledger is automatically obs-based.
+    Proof: `PartialObs w0 w1 := C.obs w0 = C.obs w1`, so the verdict is identical
+    by congruence — no external assumption about the ledger is needed. -/
+theorem WorldCtx.localLedger_is_obs_based (C : WorldCtx) (f : C.LocalLedger) :
+    C.obs_based (C.localToLedger f) :=
+  fun P w0 w1 hPartial => Iff.of_eq (congrArg (f · P) hPartial)
+
+/-- **CAP theorem for locally-computed ledgers** — `hObs` is not a free hypothesis.
+    For any bubble-local ledger (one that reads only from `C.obs`), partial
+    observability alone forces the innovation/coordination tradeoff.
+    This is the clean architectural statement: locality + partial observability
+    ⇒ no single ledger handles both goals. -/
+theorem WorldCtx.no_ledger_tradeoff_local (C : WorldCtx) (f : C.LocalLedger)
+    (W : C.W_partial_observability) :
+    ¬(C.supports_innovation (C.localToLedger f) ∧
+      C.supports_coordination (C.localToLedger f)) :=
+  C.no_ledger_tradeoff (C.localToLedger f) (C.localLedger_is_obs_based f) W
 
 
 /-! ## W4: WorldCtx Compatibility (Contract Mode)

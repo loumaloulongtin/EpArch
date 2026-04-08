@@ -583,9 +583,16 @@ theorem WeakCtx_contradicts_TractionAuthorizationSplit (C : CommitmentsCtx PropL
 /-! ### Forward Theorems (Commitment 2) — EpArch CAP Theorem
 
     C2 is now derived from WorldCtx, not a CommitmentsCtx hypothesis.
-    `WorldCtx.no_ledger_tradeoff` is the core result; these theorems restate
-    it in convenient forms.  All three take a WorldCtx + W_partial_observability
-    + an obs-based ledger instead of a CommitmentsCtx. -/
+    `WorldCtx.no_ledger_tradeoff` is the core result; the theorems below restate
+    it in convenient forms.
+
+    Dependency profiles:
+    - `no_universal_ledger`, `innovation_excludes_coordination`:
+      take `hObs : C.obs_based L` as an explicit assumption.
+    - `no_obs_based_universal_ledger` (WorldCtx.lean): existential-negation
+      headline form — no such obs-based ledger can exist.
+    - `no_universal_local_ledger`: `hObs` is automatic for bubble-local ledgers;
+      partial observability alone forces the tradeoff. -/
 
 /-- A ledger that supports innovation cannot also support coordination.
     Restates `WorldCtx.no_ledger_tradeoff` in implication form. -/
@@ -594,11 +601,29 @@ theorem innovation_excludes_coordination (C : WorldCtx) (L : C.Ledger)
     C.supports_innovation L → ¬C.supports_coordination L :=
   fun hI hC => WorldCtx.no_ledger_tradeoff C L hObs W ⟨hI, hC⟩
 
-/-- No single obs-based ledger serves both innovation and coordination (bubbles forced). -/
+/-- No single obs-based ledger serves both innovation and coordination (bubbles forced).
+    Conjunction form; for the existential-negation headline form see
+    `WorldCtx.no_obs_based_universal_ledger`. -/
 theorem no_universal_ledger (C : WorldCtx) (L : C.Ledger)
     (hObs : C.obs_based L) (W : C.W_partial_observability) :
     ¬(C.supports_innovation L ∧ C.supports_coordination L) :=
   WorldCtx.no_ledger_tradeoff C L hObs W
+
+/-- Existential-negation headline: no obs-based ledger satisfies both goals.
+    Restates `WorldCtx.no_obs_based_universal_ledger` as a forward theorem. -/
+theorem no_obs_based_universal_ledger (C : WorldCtx) (W : C.W_partial_observability) :
+    ¬ ∃ L : C.Ledger,
+      C.obs_based L ∧ C.supports_innovation L ∧ C.supports_coordination L :=
+  WorldCtx.no_obs_based_universal_ledger C W
+
+/-- For bubble-local ledgers, obs-basedness is automatic — `hObs` disappears.
+    Partial observability alone forces the tradeoff for any ledger reading only
+    from the local observation channel (`C.localToLedger f`). -/
+theorem no_universal_local_ledger (C : WorldCtx) (f : C.LocalLedger)
+    (W : C.W_partial_observability) :
+    ¬(C.supports_innovation (C.localToLedger f) ∧
+      C.supports_coordination (C.localToLedger f)) :=
+  WorldCtx.no_ledger_tradeoff_local C f W
 
 /-- Explicit both-support witnesses contradict the CAP tradeoff. -/
 theorem GlobalCtx_contradicts_NoGlobalLedgerTradeoff (C : WorldCtx) (L : C.Ledger)
