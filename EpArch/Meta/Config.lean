@@ -154,9 +154,12 @@ no free universe levels — so Lean 4's universe isolation rule does **not** blo
 
 The Tier 2 forcing theorems can therefore be embedded as genuine propositions
 with genuine machine-checked proofs, not just `True`.  `ConstraintClusterSpec`
-is the single source of truth for each constraint cluster: adding a new
-constraint means adding one `constraintSpec` case (key + routing + display + proof)
-and updating `allConstraintClusters`.  No other tables need touching.
+**extends** `ConstraintClusterMeta` (defined in `ClusterRegistry.lean`) with a
+machine-checked `witness : ConstraintProof` field, so the proof layer is genuinely
+derived from the metadata layer instead of restating the same fields.  Adding a new
+constraint means adding one `constraintMeta` case (routing + display) and one
+`constraintSpec` match arm (proof witness), and updating `allConstraintClusters`.
+No other tables need touching.
 
 All other families (Tier 3 goal transport, Tier 4 bank bundles, world clusters)
 reference `ExtModel.{u₁,u₂}`, `CoreModel.{u₃}`, `WorldCtx.{u}` — universe-
@@ -172,67 +175,36 @@ structure ConstraintProof : Type 1 where
   proof     : statement
 
 /-- Registry entry for a Tier 2 constraint-forcing cluster.
-    Bundles key, global tag, routing predicate, display string, and proof
-    into a single record — one place to update per constraint. -/
-structure ConstraintClusterSpec : Type 1 where
-  key         : EnabledConstraintCluster
-  globalTag   : ClusterTag
-  enabledBy   : EpArchConfig → Bool
-  description : String
-  witness     : ConstraintProof
+    Extends the metadata record from `ClusterRegistry` with a machine-checked
+    proof — the proof layer genuinely derived from the metadata layer. -/
+structure ConstraintClusterSpec extends ConstraintClusterMeta : Type 1 where
+  witness : ConstraintProof
 
-/-- Authoritative per-constraint spec.  `constraintProof` is derived from this;
-    `clusterEnabled`/`clusterDescription` keep their readable pattern-matches
-    but could be derived from it too if more constraints are added. -/
-def constraintSpec : EnabledConstraintCluster → ConstraintClusterSpec
-  | .forcing_distributed_agents => {
-      key         := .forcing_distributed_agents
-      globalTag   := .forcing_distributed_agents
-      enabledBy   := fun cfg => cfg.constraints.contains .distributed_agents
-      description := "[Tier 2] distributed_agents → HasBubbles  (distributed_agents_require_bubbles)"
-      witness     := {
-        statement := ∀ W : WorkingSystem, WellFormed W → handles_distributed_agents W → HasBubbles W
-        proof     := distributed_agents_require_bubbles } }
-  | .forcing_bounded_audit => {
-      key         := .forcing_bounded_audit
-      globalTag   := .forcing_bounded_audit
-      enabledBy   := fun cfg => cfg.constraints.contains .bounded_audit
-      description := "[Tier 2] bounded_audit → HasTrustBridges  (bounded_audit_requires_trust_bridges)"
-      witness     := {
-        statement := ∀ W : WorkingSystem, WellFormed W → handles_bounded_audit W → HasTrustBridges W
-        proof     := bounded_audit_requires_trust_bridges } }
-  | .forcing_export => {
-      key         := .forcing_export
-      globalTag   := .forcing_export
-      enabledBy   := fun cfg => cfg.constraints.contains .export_across_boundaries
-      description := "[Tier 2] export_across_boundaries → HasHeaders  (export_requires_headers)"
-      witness     := {
-        statement := ∀ W : WorkingSystem, WellFormed W → handles_export W → HasHeaders W
-        proof     := export_requires_headers } }
-  | .forcing_adversarial => {
-      key         := .forcing_adversarial
-      globalTag   := .forcing_adversarial
-      enabledBy   := fun cfg => cfg.constraints.contains .adversarial_pressure
-      description := "[Tier 2] adversarial_pressure → HasRevocation  (adversarial_requires_revocation)"
-      witness     := {
-        statement := ∀ W : WorkingSystem, WellFormed W → handles_adversarial W → HasRevocation W
-        proof     := adversarial_requires_revocation } }
-  | .forcing_coordination => {
-      key         := .forcing_coordination
-      globalTag   := .forcing_coordination
-      enabledBy   := fun cfg => cfg.constraints.contains .coordination_need
-      description := "[Tier 2] coordination_need → HasBank  (coordination_requires_bank)"
-      witness     := {
-        statement := ∀ W : WorkingSystem, WellFormed W → handles_coordination W → HasBank W
-        proof     := coordination_requires_bank } }
-  | .forcing_truth => {
-      key         := .forcing_truth
-      globalTag   := .forcing_truth
-      enabledBy   := fun cfg => cfg.constraints.contains .truth_pressure
-      description := "[Tier 2] truth_pressure → HasRedeemability  (truth_pressure_requires_redeemability)"
-      witness     := {
-        statement := ∀ W : WorkingSystem, WellFormed W → handles_truth_pressure W → HasRedeemability W
-        proof     := truth_pressure_requires_redeemability } }
+/-- Authoritative per-constraint spec.  Extends `constraintMeta` (metadata source
+    of truth in `ClusterRegistry`) with the machine-checked proof witness.
+    `constraintProof` is derived from this as a one-liner. -/
+def constraintSpec (c : EnabledConstraintCluster) : ConstraintClusterSpec :=
+  { constraintMeta c with
+    witness :=
+      match c with
+      | .forcing_distributed_agents => {
+          statement := ∀ W : WorkingSystem, WellFormed W → handles_distributed_agents W → HasBubbles W
+          proof     := distributed_agents_require_bubbles }
+      | .forcing_bounded_audit => {
+          statement := ∀ W : WorkingSystem, WellFormed W → handles_bounded_audit W → HasTrustBridges W
+          proof     := bounded_audit_requires_trust_bridges }
+      | .forcing_export => {
+          statement := ∀ W : WorkingSystem, WellFormed W → handles_export W → HasHeaders W
+          proof     := export_requires_headers }
+      | .forcing_adversarial => {
+          statement := ∀ W : WorkingSystem, WellFormed W → handles_adversarial W → HasRevocation W
+          proof     := adversarial_requires_revocation }
+      | .forcing_coordination => {
+          statement := ∀ W : WorkingSystem, WellFormed W → handles_coordination W → HasBank W
+          proof     := coordination_requires_bank }
+      | .forcing_truth => {
+          statement := ∀ W : WorkingSystem, WellFormed W → handles_truth_pressure W → HasRedeemability W
+          proof     := truth_pressure_requires_redeemability } }
 
 /-- Extract the proof carrier for constraint cluster `c` from `constraintSpec`. -/
 def constraintProof (c : EnabledConstraintCluster) : ConstraintProof := (constraintSpec c).witness
@@ -433,6 +405,14 @@ def tier4Witness : (c : EnabledTier4Cluster) → Tier4Witness c
 
 /-! ## §4f  Correspondence Lemmas (support lemmas)
 
+Private helpers used by the three `mem_enabledXxxWitnesses_of_enabled` completeness
+theorems defined immediately after `certify` (which they reference).  The `filterMap_mem_of_pos`
+helper is also private and fills the gap left by the absent `List.mem_filterMap` in Lean 4.3.0.
+
+For ergonomic extraction of the schema carried by a witness, use the `cluster_*`
+named theorems in §5b, or pattern-match directly:
+`match w with | .safeWithdrawal f => f E C h hg`. -/
+
 /-- All six constraint-forcing clusters in canonical order. -/
 private def allConstraintClusters : List EnabledConstraintCluster :=
   [.forcing_distributed_agents, .forcing_bounded_audit, .forcing_export,
@@ -454,14 +434,6 @@ private def allTier4Clusters : List EnabledTier4Cluster :=
   [.tier4_commitments, .tier4_structural, .tier4_lts_universal,
    .tier4_bank_goals_compat, .tier4_bank_goals_surj]
 
-Private helpers used by the three `mem_enabledXxxWitnesses_of_enabled` completeness
-theorems defined immediately after `certify` (which they reference).  The `filterMap_mem_of_pos`
-helper is also private and fills the gap left by the absent `List.mem_filterMap` in Lean 4.3.0.
-
-For ergonomic extraction of the schema carried by a witness, use the `cluster_*`
-named theorems in §5b, or pattern-match directly:
-`match w with | .safeWithdrawal f => f E C h hg`. -/
-
 private theorem filterMap_mem_of_pos {α : Type} {β : Type 1}
     (f : α → Option β) : ∀ (l : List α) (a : α) (b : β),
     a ∈ l → f a = some b → b ∈ l.filterMap f
@@ -479,15 +451,34 @@ private theorem filterMap_mem_of_pos {α : Type} {β : Type 1}
 -- Used in the correspondence lemmas below.
 private theorem enabledGoalCluster_mem_all (c : EnabledGoalCluster) :
     c ∈ allGoalClusters := by
-  cases c <;> decide
+  unfold allGoalClusters; cases c
+  · exact .head _
+  · exact .tail _ (.head _)
+  · exact .tail _ (.tail _ (.head _))
+  · exact .tail _ (.tail _ (.tail _ (.head _)))
+  · exact .tail _ (.tail _ (.tail _ (.tail _ (.head _))))
+  · exact .tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.head _)))))
 
 private theorem enabledWorldCluster_mem_all (c : EnabledWorldCluster) :
     c ∈ allWorldClusters := by
-  cases c <;> decide
+  unfold allWorldClusters; cases c
+  · exact .head _
+  · exact .tail _ (.head _)
+  · exact .tail _ (.tail _ (.head _))
+  · exact .tail _ (.tail _ (.tail _ (.head _)))
+  · exact .tail _ (.tail _ (.tail _ (.tail _ (.head _))))
+  · exact .tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.head _)))))
+  · exact .tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.head _))))))
+  · exact .tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.head _)))))))
 
 private theorem enabledTier4Cluster_mem_all (c : EnabledTier4Cluster) :
     c ∈ allTier4Clusters := by
-  cases c <;> decide
+  unfold allTier4Clusters; cases c
+  · exact .head _
+  · exact .tail _ (.head _)
+  · exact .tail _ (.tail _ (.head _))
+  · exact .tail _ (.tail _ (.tail _ (.head _)))
+  · exact .tail _ (.tail _ (.tail _ (.tail _ (.head _))))
 
 /-! ## §5  Soundness: `clusterEnabled cfg c = true → clusterValid c` -/
 

@@ -132,14 +132,62 @@ inductive EnabledWorldCluster where
   | world_lies_scale | world_rolex_ddos | world_ddos
   deriving DecidableEq, BEq, Repr
 
-/-- Embed a constraint cluster into the global tag space. -/
-def EnabledConstraintCluster.toClusterTag : EnabledConstraintCluster → ClusterTag
-  | .forcing_distributed_agents => .forcing_distributed_agents
-  | .forcing_bounded_audit      => .forcing_bounded_audit
-  | .forcing_export             => .forcing_export
-  | .forcing_adversarial        => .forcing_adversarial
-  | .forcing_coordination       => .forcing_coordination
-  | .forcing_truth              => .forcing_truth
+
+/-! ## §2c  Constraint Cluster Metadata
+
+`ConstraintClusterMeta` is the metadata-only record for a Tier 2 cluster.
+It records the three fields that determine routing and display — no proofs.
+`constraintMeta` is the single source of truth for this data; `clusterEnabled`,
+`clusterDescription`, and `EnabledConstraintCluster.toClusterTag` all derive
+their Tier 2 answers from it.  `Config.lean` extends this record with a
+`witness : ConstraintProof` field via `ConstraintClusterSpec extends ConstraintClusterMeta`.
+
+Placed here (after §2 and §2b) so both `ClusterTag` and `EnabledConstraintCluster`
+are in scope. -/
+
+/-- Metadata-only record for a Tier 2 constraint-forcing cluster.
+    Contains the three fields needed for routing and display but **no proof**.
+    Extended in `Config.lean` by `ConstraintClusterSpec` which adds `witness`. -/
+structure ConstraintClusterMeta where
+  globalTag   : ClusterTag
+  enabledBy   : EpArchConfig → Bool
+  description : String
+
+/-- Authoritative metadata for each Tier 2 constraint-forcing cluster.
+    `clusterEnabled`, `clusterDescription`, and `EnabledConstraintCluster.toClusterTag`
+    all derive their Tier 2 answers from this function. -/
+def constraintMeta : EnabledConstraintCluster → ConstraintClusterMeta
+  | .forcing_distributed_agents => {
+      globalTag   := .forcing_distributed_agents
+      enabledBy   := fun cfg => cfg.constraints.contains .distributed_agents
+      description := "[Tier 2] distributed_agents → HasBubbles  (distributed_agents_require_bubbles)" }
+  | .forcing_bounded_audit => {
+      globalTag   := .forcing_bounded_audit
+      enabledBy   := fun cfg => cfg.constraints.contains .bounded_audit
+      description := "[Tier 2] bounded_audit → HasTrustBridges  (bounded_audit_requires_trust_bridges)" }
+  | .forcing_export => {
+      globalTag   := .forcing_export
+      enabledBy   := fun cfg => cfg.constraints.contains .export_across_boundaries
+      description := "[Tier 2] export_across_boundaries → HasHeaders  (export_requires_headers)" }
+  | .forcing_adversarial => {
+      globalTag   := .forcing_adversarial
+      enabledBy   := fun cfg => cfg.constraints.contains .adversarial_pressure
+      description := "[Tier 2] adversarial_pressure → HasRevocation  (adversarial_requires_revocation)" }
+  | .forcing_coordination => {
+      globalTag   := .forcing_coordination
+      enabledBy   := fun cfg => cfg.constraints.contains .coordination_need
+      description := "[Tier 2] coordination_need → HasBank  (coordination_requires_bank)" }
+  | .forcing_truth => {
+      globalTag   := .forcing_truth
+      enabledBy   := fun cfg => cfg.constraints.contains .truth_pressure
+      description := "[Tier 2] truth_pressure → HasRedeemability  (truth_pressure_requires_redeemability)" }
+
+
+/-- Embed a constraint cluster into the global tag space.
+    Derived from `constraintMeta` — the single source of truth for Tier 2 routing.
+    `toClusterTag c = (constraintMeta c).globalTag` by definition. -/
+def EnabledConstraintCluster.toClusterTag (c : EnabledConstraintCluster) : ClusterTag :=
+  (constraintMeta c).globalTag
 
 /-- Embed a goal cluster into the global tag space. -/
 def EnabledGoalCluster.toClusterTag : EnabledGoalCluster → ClusterTag
@@ -194,12 +242,13 @@ def allClusters : List ClusterTag := [
     Goal-transport clusters are gated on the goal being listed.
     Bank-goal bundles require the full goal set. -/
 def clusterEnabled (cfg : EpArchConfig) : ClusterTag → Bool
-  | .forcing_distributed_agents => cfg.constraints.contains .distributed_agents
-  | .forcing_bounded_audit      => cfg.constraints.contains .bounded_audit
-  | .forcing_export             => cfg.constraints.contains .export_across_boundaries
-  | .forcing_adversarial        => cfg.constraints.contains .adversarial_pressure
-  | .forcing_coordination       => cfg.constraints.contains .coordination_need
-  | .forcing_truth              => cfg.constraints.contains .truth_pressure
+  -- Tier 2: constraint-forcing clusters — routing derived from constraintMeta
+  | .forcing_distributed_agents => (constraintMeta .forcing_distributed_agents).enabledBy cfg
+  | .forcing_bounded_audit      => (constraintMeta .forcing_bounded_audit).enabledBy cfg
+  | .forcing_export             => (constraintMeta .forcing_export).enabledBy cfg
+  | .forcing_adversarial        => (constraintMeta .forcing_adversarial).enabledBy cfg
+  | .forcing_coordination       => (constraintMeta .forcing_coordination).enabledBy cfg
+  | .forcing_truth              => (constraintMeta .forcing_truth).enabledBy cfg
   | .goal_safeWithdrawal        => cfg.goals.contains .safeWithdrawal
   | .goal_reliableExport        => cfg.goals.contains .reliableExport
   | .goal_soundDeposits         => cfg.goals.contains .soundDeposits
@@ -240,18 +289,13 @@ def explainConfig (cfg : EpArchConfig) : List ClusterTag :=
 
 /-- One-line description of each cluster (theorem name in parentheses). -/
 def clusterDescription : ClusterTag → String
-  | .forcing_distributed_agents =>
-      "[Tier 2] distributed_agents → HasBubbles  (distributed_agents_require_bubbles)"
-  | .forcing_bounded_audit =>
-      "[Tier 2] bounded_audit → HasTrustBridges  (bounded_audit_requires_trust_bridges)"
-  | .forcing_export =>
-      "[Tier 2] export_across_boundaries → HasHeaders  (export_requires_headers)"
-  | .forcing_adversarial =>
-      "[Tier 2] adversarial_pressure → HasRevocation  (adversarial_requires_revocation)"
-  | .forcing_coordination =>
-      "[Tier 2] coordination_need → HasBank  (coordination_requires_bank)"
-  | .forcing_truth =>
-      "[Tier 2] truth_pressure → HasRedeemability  (truth_pressure_requires_redeemability)"
+  -- Tier 2: descriptions derived from constraintMeta
+  | .forcing_distributed_agents => (constraintMeta .forcing_distributed_agents).description
+  | .forcing_bounded_audit      => (constraintMeta .forcing_bounded_audit).description
+  | .forcing_export             => (constraintMeta .forcing_export).description
+  | .forcing_adversarial        => (constraintMeta .forcing_adversarial).description
+  | .forcing_coordination       => (constraintMeta .forcing_coordination).description
+  | .forcing_truth              => (constraintMeta .forcing_truth).description
   | .goal_safeWithdrawal =>
       "[Tier 3] SafeWithdrawalGoal transports via Compatible  (transport_safe_withdrawal)"
   | .goal_reliableExport =>
