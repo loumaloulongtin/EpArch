@@ -292,6 +292,12 @@ export EpArch.ScopeIrrelevance (
   embodiment_irrelevant
 )
 
+-- Traction-Implementation Irrelevance
+export EpArch.ScopeIrrelevance (
+  traction_modulation_confined
+  traction_implementation_irrelevant
+)
+
 
 /-! ## Paper-Facing Transport Gate
 

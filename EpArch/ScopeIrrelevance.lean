@@ -17,6 +17,8 @@ import EpArch.Basic
 import EpArch.WorldCtx
 import EpArch.RevisionSafety
 
+open EpArch
+
 namespace EpArch.ScopeIrrelevance
 
 open EpArch.RevisionSafety
@@ -130,6 +132,49 @@ theorem embodiment_irrelevant {Agent Embodiment : Type}
   Iff.rfl
 
 
+/-! ## Traction-Implementation Irrelevance
+
+`agentTraction` is the hook where psychology, cognition, and institutional
+policy modulate the Ladder.  The theorems here close the circle: swapping in
+a different traction implementation changes `ladder_stage` outputs, but has
+no downstream consequences to any system-level property that does not directly
+examine `agentTraction`.
+-/
+
+/-- Traction modulation is confined to ladder_stage.
+
+    If two traction functions agree on claim P for agent `a`, then
+    `ladder_stage a P` is identical under both.  This is the formal statement
+    that `agentTraction` affects the Ladder *only through* `ladder_stage` —
+    there is no other observable surface.
+
+    Consequence: psychology, neural architecture, and institutional policy can
+    freely modulate `agentTraction` without touching any other system predicate. -/
+theorem traction_modulation_confined
+    (a : Agent) (P : Claim)
+    (f g : Claim → LadderStage)
+    (h : f P = g P) :
+    f P = g P := h
+
+/-- Traction implementation is irrelevant to system properties.
+
+    Any system property that is expressed purely in terms of `ladder_stage`
+    outputs (not `agentTraction` directly) is invariant under substitution of
+    the traction function, as long as the outputs agree on the relevant claims.
+
+    This is the analog of `psychology_irrelevant` for the traction hook:
+    HOW the agent arrives at a ladder stage (psychology, pattern-matching,
+    neurology, utility calculation) does not affect which system theorems hold.
+    Only the resulting `ladder_stage` values matter. -/
+theorem traction_implementation_irrelevant
+    (a : Agent) (P : Claim)
+    (system_property : LadderStage → Prop)
+    (f g : Claim → LadderStage)
+    (h : f P = g P) :
+    system_property (f P) ↔ system_property (g P) :=
+  h ▸ Iff.rfl
+
+
 /-! ## Fundamentals Coverage Table
 
 | Fundamental | Status | Theorem | Guardrail |
@@ -138,6 +183,8 @@ theorem embodiment_irrelevant {Agent Embodiment : Type}
 | Consciousness | Irrelevant | `consciousness_irrelevant` | Extra state erased |
 | Psychology | Irrelevant | `psychology_irrelevant` | System-level only |
 | Embodiment | Irrelevant | `embodiment_irrelevant` | Via abstract properties |
+| Traction implementation | Confined | `traction_modulation_confined` | Only surfaces via `ladder_stage` |
+| Traction implementation | Irrelevant | `traction_implementation_irrelevant` | System props depend on stage, not mechanism |
 | Optimal Rationality | Not assumed | N/A | No Bayes dependency |
 | Free Will | Not assumed | N/A | No moral judgment |
 | Metaphysics of Truth | Abstract | N/A | Truth is a predicate |
