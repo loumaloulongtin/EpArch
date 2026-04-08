@@ -16,7 +16,7 @@ lake build   # Lean 4.3.0, no Mathlib
 
 | Goal | Entry point |
 |---|---|
-| **Certify a system configuration** — proof-carrying record for up to 30 theorem clusters | `EpArch.Meta.Config.certify myConfig` |
+| **Certify a system configuration** — proof-carrying record for the applicable theorem clusters | `EpArch.Meta.Config.certify myConfig` |
 | **Inspect which theorems apply** — human-readable routing report per constraint/goal/world | `#eval EpArch.Meta.Config.showConfig myConfig` |
 | **See why primitives are structurally forced** — constraint-to-feature necessity proofs | `EpArch/Minimality.lean`, `EpArch/Agent/Imposition.lean` |
 | **Transport theorems through compatible extensions** — Tier 3–4 closure | `EpArch/Meta/TheoremTransport.lean`, `EpArch/Meta/Tier4Transport.lean` |
@@ -204,15 +204,18 @@ Some paper concepts are explicitly out of scope for this formalization:
 
 > Longtin, L.-M. (2026). *Epistemic Architecture: A Constraints-and-Objectives Framework for Bounded Agents Under Adversarial Pressure.* PhilArchive: <https://philarchive.org/rec/LONEAA-7>
 
-The formalization serves three purposes:
+The paper gives the narrative motivation, the philosophical argument, and the design rationale.
+This repo is the standalone executable artifact: the paper's claims are machine-checked here, not just asserted.
+
+Three specific functions:
 
 1. **Consistency** — the architecture is non-vacuously satisfiable (zero sorries, concrete witnesses)
 2. **Conditional necessity** — rival architectures must address specific theorem-level challenges to compete
 3. **Operational grounding** — abstract paper commitments have concrete LTS semantics that can be inspected
 
-Together these three results support a stronger combined claim. The type definitions function as completeness claims: two deposits agreeing on all named fields (P, S, E, V, τ, ACL, redeemability, bubble, status) are provably identical — there are no hidden degrees of freedom (`observational_completeness_full` in `EpArch/Header.lean`). Combined with the revision safety results (`RevisionSafety.lean`), this means: any proposed extension either refines an existing field (compatible, safe) or is operationally inert (does not affect any transition). The only productive attack surface is the constraint *enumeration* — finding a new constraint that forces a primitive none of the existing fields can express. The burden of proof lies with the proposer, who must produce a Lean formalization where the new constraint provably forces the new primitive.
+The type definitions function as completeness claims: two deposits agreeing on all named fields (P, S, E, V, τ, ACL, redeemability, bubble, status) are provably identical — there are no hidden degrees of freedom (`observational_completeness_full` in `EpArch/Header.lean`). Combined with the revision safety results (`RevisionSafety.lean`), any proposed extension either refines an existing field (compatible, safe) or is operationally inert. The only productive attack surface is the constraint enumeration: finding a new constraint that forces a primitive none of the existing fields can express. The burden of proof lies with the proposer, who must produce a Lean formalization where the new constraint provably forces the new primitive.
 
-This is an architectural specification that makes the paper's claims checkable, not a full mechanization of epistemology.
+The repo stands without reading the paper first. [`DOCS/PAPER-MAP.md`](DOCS/PAPER-MAP.md) maps paper sections to Lean artifacts for readers working in the other direction.
 
 ---
 
