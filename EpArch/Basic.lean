@@ -122,34 +122,57 @@ inductive LadderStage where
   | Denial     -- active rejection; boundary hardened against import
   | Doubt      -- claim on radar but traction actively demoted
   | Ignorance  -- no traction; claim not even considered
-  | Belief     -- action-guiding traction, still monitoring
-  | Certainty  -- full traction, treated as premise
-  deriving DecidableEq, Repr
+  | Belief     -- action-guiding traction, still actively monitoring
+  | Certainty  -- full traction, active monitoring ceased; review channel still open
+  deriving DecidableEq, Repr, Inhabited
 
-/-- Ladder-side traction: agent treats P as settled for inference/action.
-    Functional gloss: "treated as a premise without re-deliberation"
-    Opaque: genuinely non-trivial propositional predicate — can hold or fail to hold
-    for any given agent/claim pair.  Independence from Bank authorization is formally
-    expressed by two mechanism-based theorems in Commitments.lean:
+/-- The agent a's current Ladder stage for claim P.
+    This is private internal state — opaque from outside the agent.
+    The only structural commitment is that every agent/claim pair has some stage;
+    which stage it is cannot be derived from Bank state alone. -/
+opaque ladder_stage : Agent → Claim → LadderStage
+
+/-- Certainty: agent a is at the top Ladder stage for claim P.
+    Defined as: the agent's `ladder_stage` for P equals `LadderStage.Certainty`.
+
+    Semantics: the agent has ceased active monitoring of P — it is treated as a
+    closed premise, no longer subject to deliberative attention.
+    "Can't go higher": `.Certainty` is the last constructor of `LadderStage`;
+    there is no stage above it.
+    "Doorbell still ringable": the review channel (`ignores_bank_signal`) is a
+    separate opaque predicate; Certainty alone does NOT close the channel.
+    Entrenchment = Certainty + closed channel (see `Entrenched`).
+
+    Independence from Bank authorization: see §C1 in Commitments.lean.
     `innovation_allows_traction_without_authorization` (certainty_L ⊄ knowledge_B)
     `caveated_authorization_does_not_force_certainty` (knowledge_B ⊄ certainty_L). -/
-opaque certainty_L : Agent → Claim → Prop
+def certainty_L (a : Agent) (P : Claim) : Prop :=
+  ladder_stage a P = .Certainty
 
-/-- Structural property: agent's revision channel for P is disconnected.
-    Opaque: distinct from certainty_L — an agent can hold Certainty while
-    remaining responsive to Bank signals (the normal, healthy state).
-    Entrenchment requires BOTH certainty_L AND ignores_bank_signal;
-    neither implies the other. -/
+/-- Structural property: agent's review channel for P is disconnected.
+    Opaque: this is a separate predicate from `certainty_L` — an agent at Certainty
+    typically remains responsive to Bank signals (the normal, healthy state).
+    Closing the channel requires an additional structural failure beyond
+    reaching Certainty; it is never implied by Certainty alone. -/
 opaque ignores_bank_signal : Agent → Claim → Prop
+
+/-- Healthy Certainty: the agent is at the Ladder top AND the review channel
+    is still open.  The doorbell can ring.
+    `open_channel_certainty` is the non-pathological form of top-Ladder traction;
+    it is what the theory expects of a well-functioning agent at Certainty.
+    Contrast with `Entrenched`: same Certainty, but the channel has been closed. -/
+def open_channel_certainty (a : Agent) (P : Claim) : Prop :=
+  certainty_L a P ∧ ¬ignores_bank_signal a P
 
 /-- Pathological Ladder state: Certainty that refuses revision when Bank status changes.
 
     Entrenchment is not a legitimate Ladder stage but a defect of Certainty:
-    the agent holds full traction and structurally ignores any signal that
-    the underlying deposit has been quarantined or revoked.
+    the agent holds full traction (ladder_stage a P = .Certainty) AND has
+    structurally closed the Bank signal channel, so it cannot hear quarantine
+    or revocation events.
     See `entrenchment_breaks_safe_withdrawal` for the consequence theorem. -/
 def Entrenched (a : Agent) (P : Claim) : Prop :=
-  certainty_L a P ∧ ignores_bank_signal a P  -- Certainty + disconnected revision channel
+  certainty_L a P ∧ ignores_bank_signal a P  -- Certainty + closed review channel
 
 
 /-! ## Deposit Status

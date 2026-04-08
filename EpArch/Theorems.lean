@@ -2898,7 +2898,8 @@ def deposit_no_longer_active
     The doorbell is disconnected; the agent cannot hear the Bank's signal.
 
     The conclusion is a three-way conjunction, all genuinely proved from `ea`:
-    - `certainty_L ea.agent ea.claim`: from `ea.has_certainty` (opaque, non-trivial)
+    - `certainty_L ea.agent ea.claim`: from `ea.has_certainty`; unfolds to
+      `ladder_stage ea.agent ea.claim = .Certainty` (agent is at Ladder top)
     - `ignores_bank_signal ea.agent ea.claim`: from `ea.refuses_demotion` (opaque, non-trivial)
     - `¬isDeposited s d_idx`: from `h_inactive` (structural, the core pathology)
     All three fields of `ea` now participate in the proof. -/
