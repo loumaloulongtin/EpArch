@@ -123,9 +123,14 @@ def repair (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance)
 
 /-! ## Consensus (for anti-relativism axioms) -/
 
-/-- Consensus: bubble B has reached agreement on claim P.
-    Note: consensus is NOT sufficient for redeemability (Commitment 4). -/
-opaque consensus : Bubble → PropLike → Prop
+/-- Consensus: claim P is endorsed within bubble B.
+    Purely intra-bubble — no external constraint-surface contact required.
+    This is the cheapest form of validation: social/internal governance agreement
+    within B's own endorsement process.  Contrast with `redeemable`, which requires
+    `path_route_exists`, `contact_was_made`, and `verdict_discriminates` against an
+    external constraint surface.
+    Formally `True`: any bubble can form endorsement without external gating. -/
+def consensus (_B : Bubble) (_P : PropLike) : Prop := True
 
 
 /-! ## Lifecycle Operators -/

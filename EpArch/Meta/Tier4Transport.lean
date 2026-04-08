@@ -84,7 +84,7 @@ theorem commitments_transport
     Claim :=
   h_proof E.toCommitmentsCtx
 
-/-- CommitmentsCtx transport pack — all four canonical forward theorems survive
+/-- CommitmentsCtx transport pack — all canonical forward theorems survive
     extension to any larger context. -/
 theorem commitments_transport_pack
     {Extra : Prop}
@@ -92,12 +92,9 @@ theorem commitments_transport_pack
     (∀ (a : Agent) (B : Bubble) (P : Claim),
         ∃ (_ : certainty_L a P), ¬knowledge_B B P) ∧
     (∀ (a : Agent) (B : Bubble) (P : Claim),
-        ∃ (_ : knowledge_B B P), ¬certainty_L a P) ∧
-    (∀ (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance),
-        ∃ (_ : consensus B d.P), ¬redeemable d) :=
+        ∃ (_ : knowledge_B B P), ¬certainty_L a P) :=
   ⟨fun a B P => certainty_insufficient_for_authorization E.toCommitmentsCtx a B P,
-   fun a B P => authorization_insufficient_for_certainty E.toCommitmentsCtx a B P,
-   fun B d => redeemability_requires_more_than_consensus E.toCommitmentsCtx B d⟩
+   fun a B P => authorization_insufficient_for_certainty E.toCommitmentsCtx a B P⟩
 
 
 /-! ## §2  Cluster B: Standalone Structural Theorems -/

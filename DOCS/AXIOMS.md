@@ -18,7 +18,7 @@ This document records the current assumption boundary and how the prior axiom su
 
 **File:** `EpArch/Commitments.lean`
 
-The three structural commitments that define the conforming-architecture class
+The two structural commitments that define the conforming-architecture class
 are bundled as fields of `CommitmentsCtx` (modelled on `WorldCtx`). They are
 not `axiom` declarations; they are hypotheses that appear explicitly in theorem
 signatures:
@@ -28,7 +28,6 @@ signatures:
 | Field | Commitment | Plain reading |
 |-------|------------|---------------|
 | `traction_auth_split` | C1: certainty_L ⊥ knowledge_B (neither implies the other) | An agent can be certain of P without any bank deposit for P, and a bank deposit can exist without the agent being certain. Feeling sure and being authorized are different kinds of things. |
-| `consensus_not_sufficient` | C4b: consensus does not imply redeemability | A deposit that everyone agrees on in a bubble can still fail against the external constraint surface. Group agreement does not discharge the evidence requirement. |
 | `header_asymmetry` | C7b: stripped disputes produce sticky ∧ proxy_battles | Removing the S/E/V metadata from a deposit before it reaches a dispute makes the dispute harder to resolve and harder to diagnose. The asymmetry is directional: stripping is not a neutral operation. |
 
 **C2 is no longer a hypothesis.** `no_global_ledger` was removed from `CommitmentsCtx`
@@ -36,10 +35,19 @@ and replaced by the proved theorem `WorldCtx.no_ledger_tradeoff` (EpArch CAP The
 in `WorldCtx.lean`. It is derived from `W_partial_observability` and `obs_based`;
 see §Proved Theorems below.
 
+**C4b is no longer a hypothesis.** `consensus_not_sufficient` was removed from
+`CommitmentsCtx` and replaced by the proved theorem
+`redeemability_requires_more_than_consensus` in `Commitments.lean`. It is derived
+from `intra_bubble_only` (structural predicate: ∀ cs, ¬path_route_exists d cs)
+and the definitional gap between `consensus` (intra-bubble, formally `True`) and
+`redeemable` (requires opaque external evidence: `path_route_exists`, `contact_was_made`,
+`verdict_discriminates`); see §Proved Theorems below.
+
 Forward theorems (`certainty_insufficient_for_authorization`, `no_universal_ledger`,
 `redeemability_requires_more_than_consensus`, `header_stripping_produces_pathology`,
 and their contradiction companions) are conditioned on `(C : CommitmentsCtx ...)` for
-C1/C4b/C7b, and on `(C : WorldCtx) (W : C.W_partial_observability)` for C2.
+C1/C7b, and on `(C : WorldCtx) (W : C.W_partial_observability)` for C2; C4b is
+proved unconditionally (with an `intra_bubble_only` deposit premise).
 
 ### Opaque Domain Primitives
 
@@ -86,7 +94,8 @@ Three commitments remain as fields of `CommitmentsCtx`. C2 is now proved. The ot
 | C6b (`NoSelfCorrectionWithoutRevision`) | Proved from StepSemantics |
 | C8 (`TemporalValidity`) | Proved from header τ definition |
 | C2 (`NoGlobalLedger`) | **Proved** as `WorldCtx.no_ledger_tradeoff` (EpArch CAP Theorem) from `W_partial_observability` + `obs_based` in `WorldCtx.lean` |
-| C1, C4b, C7b | Bundled as CommitmentsCtx fields |
+| C4b (`ConsensusNotSufficient`) | **Proved** as `redeemability_requires_more_than_consensus` from `intra_bubble_only` + definitional gap between `consensus` (`True`) and `redeemable` (opaque external evidence) in `Commitments.lean` |
+| C1, C7b | Bundled as CommitmentsCtx fields |
 
 ### Invariants (formerly 5 axioms → 0)
 

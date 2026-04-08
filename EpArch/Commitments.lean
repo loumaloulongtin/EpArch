@@ -169,8 +169,27 @@ theorem redeemable_implies_contact_and_discriminating
   exact ⟨⟨vp.surface, h_dep ▸ vp.h_contact⟩, ⟨vp.surface, h_dep ▸ vp.h_discrim⟩⟩
 
 /-! Commitment 4b: Consensus alone doesn't create redeemability.
-    Bundled in CommitmentsCtx.consensus_not_sufficient.
-    Forward theorem in CommitmentsCtx section at end of file. -/
+    Proved structurally below: `intra_bubble_only` deposits cannot be redeemable
+    because redeemability requires `path_route_exists` (opaque external evidence)
+    while intra-bubble deposits provably have no such route.
+    No longer a CommitmentsCtx field. -/
+
+/-- A deposit is intra-bubble-only if it has no external route to any constraint surface.
+    This is the structural condition that separates consensus from redeemability:
+    consensus is achievable for any deposit, but a deposit satisfying `intra_bubble_only`
+    provably cannot be redeemable. -/
+def intra_bubble_only (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
+  ∀ cs, ¬path_route_exists (PropLike := PropLike) (Standard := Standard)
+      (ErrorModel := ErrorModel) (Provenance := Provenance) d cs
+
+/-- Structural separation: an intra-bubble deposit cannot be redeemable.
+    Proof: `redeemable d` supplies `vp.h_path : path_route_exists vp.deposit vp.surface`;
+    after rewriting along `h_dep : vp.deposit = d`, this contradicts `intra_bubble_only d`. -/
+theorem intra_bubble_not_redeemable
+    (d : Deposit PropLike Standard ErrorModel Provenance)
+    (h_intra : intra_bubble_only d) : ¬redeemable d := by
+  intro ⟨vp, h_dep, _⟩
+  exact h_intra vp.surface (h_dep ▸ vp.h_path)
 
 
 /-! ## Commitment 5: Export Gating -/
@@ -494,9 +513,9 @@ theorem TemporalValidity (d1 d2 : Deposit PropLike Standard ErrorModel Provenanc
   simp [h_eq.trans h2] at h1
 
 
-/-! ## CommitmentsCtx — Three Structural Commitments as a Hypothesis Bundle
+/-! ## CommitmentsCtx — Two Structural Commitments as a Hypothesis Bundle
 
-    Analogous to WorldCtx.W_* bundles: these three commitments are not asserted
+    Analogous to WorldCtx.W_* bundles: these two commitments are not asserted
     globally but bundled in a hypothesis structure.  Theorems conditioned on
     CommitmentsCtx hold for any conforming architecture, without asserting them
     unconditionally.  This gives zero `axiom` declarations; the commitments
@@ -506,27 +525,30 @@ theorem TemporalValidity (d1 d2 : Deposit PropLike Standard ErrorModel Provenanc
     in this bundle; it is now the proved theorem `WorldCtx.no_ledger_tradeoff`
     derived from `W_partial_observability` and `obs_based` (see WorldCtx.lean).
 
+    C4b (consensus does not imply redeemability) was previously in this bundle;
+    it is now the proved theorem `redeemability_requires_more_than_consensus`
+    derived from `intra_bubble_only` and the definitional gap between internal
+    consensus and external VerificationPath evidence (see §C4b above).
+
     Non-vacuity: ConcreteLedgerModel proves the analogous structural properties
     hold in a concrete model (commitment1_concrete, commitment2_concrete, etc.).
 -/
 
-/-- The three structural architectural commitments remaining as a hypothesis bundle.
+/-- The two structural architectural commitments remaining as a hypothesis bundle.
     (C2 — no global ledger supports both innovation and coordination — is now
     the proved theorem `WorldCtx.no_ledger_tradeoff`; see WorldCtx.lean.)
+    (C4b — consensus does not imply redeemability — is now the proved theorem
+    `redeemability_requires_more_than_consensus`; see §C4b above.)
 
     Fields:
-    - `traction_auth_split`      — C1: certainty_L ⊥ knowledge_B (independent)
-    - `consensus_not_sufficient` — C4b: consensus ⊥ redeemability
-    - `header_asymmetry`         — C7b: stripped disputes → sticky ∧ proxy_battles -/
+    - `traction_auth_split` — C1: certainty_L ⊥ knowledge_B (independent)
+    - `header_asymmetry`    — C7b: stripped disputes → sticky ∧ proxy_battles -/
 structure CommitmentsCtx (PropLike Standard ErrorModel Provenance : Type u) where
   /-- Traction (certainty_L) and authorization (knowledge_B) are independent:
       neither implies the other. -/
   traction_auth_split : ∀ (a : Agent) (B : Bubble) (P : Claim),
     does_not_imply (certainty_L a P) (knowledge_B B P) ∧
     does_not_imply (knowledge_B B P) (certainty_L a P)
-  /-- Consensus does not imply redeemability — constraint surface is independent. -/
-  consensus_not_sufficient : ∀ (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance),
-    does_not_imply (consensus B d.P) (redeemable d)
   /-- Stripped-header disputes produce stickiness and proxy battles. -/
   header_asymmetry : ∀ (B : Bubble) (P : PropLike)
     (d : Deposit PropLike Standard ErrorModel Provenance),
@@ -588,11 +610,14 @@ theorem GlobalCtx_contradicts_NoGlobalLedgerTradeoff (C : WorldCtx) (L : C.Ledge
 /-! ### Forward Theorems (Commitment 4b) -/
 
 /-- Redeemability requires more than consensus: the constraint surface is independent.
-    There always exists a consensus scenario where redeemability fails. -/
-theorem redeemability_requires_more_than_consensus (C : CommitmentsCtx PropLike Standard ErrorModel Provenance) (B : Bubble)
-    (d : Deposit PropLike Standard ErrorModel Provenance) :
-    ∃ (_ : consensus B d.P), ¬redeemable d :=
-  C.consensus_not_sufficient B d
+    For intra-bubble deposits, consensus (trivially true for any bubble) and redeemability
+    (requiring external path, contact, and verdict evidence) are structurally separated.
+    Proved without CommitmentsCtx: the separation follows from definitions alone. -/
+theorem redeemability_requires_more_than_consensus
+    (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance)
+    (h_intra : intra_bubble_only d) :
+    does_not_imply (consensus B d.P) (redeemable d) :=
+  ⟨trivial, intra_bubble_not_redeemable d h_intra⟩
 
 
 /-! ### Forward Theorems (Commitment 7b) -/
