@@ -90,6 +90,13 @@ inductive ClusterTag where
   | world_lies_scale            -- W_lies_scale: lies scale (cost asymmetry)
   | world_rolex_ddos            -- W_rolex_ddos: individual & population attacks structurally same
   | world_ddos                  -- W_ddos: DDoS causes verification collapse
+  -- Meta-modularity clusters (from EpArch.Meta.Modular — constraint-subset independence)
+  | meta_modular              -- modular: ∀ S W, PartialWellFormed W S → projection_valid S W
+  | meta_modular_wellformed   -- wellformed_is_modular: WellFormed → modular on every subset
+  -- Lattice-stability clusters (from EpArch.Modularity — floor not a cage)
+  | lattice_graceful          -- graceful_degradation: NoSelfCorrection → PaperFacing
+  | lattice_sub_safety        -- sub_revision_safety: Compatible sub-bundle extension is safe
+  | lattice_pack              -- modularity_pack: full bidirectional lattice-stability
   deriving DecidableEq, BEq, Repr
 
 
@@ -130,6 +137,16 @@ inductive EnabledWorldCluster where
   | world_lies_possible | world_bounded_audit | world_asymmetric_costs
   | world_partial_observability | world_spoofed_v
   | world_lies_scale | world_rolex_ddos | world_ddos
+  deriving DecidableEq, BEq, Repr
+
+/-- The two constraint-modularity meta-theorem clusters (from `EpArch.Meta.Modular`). -/
+inductive EnabledMetaModularCluster where
+  | meta_modular | meta_modular_wellformed
+  deriving DecidableEq, BEq, Repr
+
+/-- The three lattice-stability clusters (from `EpArch.Modularity`). -/
+inductive EnabledLatticeCluster where
+  | lattice_graceful | lattice_sub_safety | lattice_pack
   deriving DecidableEq, BEq, Repr
 
 
@@ -217,6 +234,17 @@ def EnabledWorldCluster.toClusterTag : EnabledWorldCluster → ClusterTag
   | .world_rolex_ddos            => .world_rolex_ddos
   | .world_ddos                  => .world_ddos
 
+/-- Embed a meta-modularity cluster into the global tag space. -/
+def EnabledMetaModularCluster.toClusterTag : EnabledMetaModularCluster → ClusterTag
+  | .meta_modular            => .meta_modular
+  | .meta_modular_wellformed => .meta_modular_wellformed
+
+/-- Embed a lattice-stability cluster into the global tag space. -/
+def EnabledLatticeCluster.toClusterTag : EnabledLatticeCluster → ClusterTag
+  | .lattice_graceful   => .lattice_graceful
+  | .lattice_sub_safety => .lattice_sub_safety
+  | .lattice_pack       => .lattice_pack
+
 
 /-! ## §3  Routing
 
@@ -251,14 +279,24 @@ def allWorldClusters : List EnabledWorldCluster :=
    .world_partial_observability, .world_spoofed_v,
    .world_lies_scale, .world_rolex_ddos, .world_ddos]
 
-/-- All 25 cluster tags, in canonical order.  Derived from the per-family lists
+/-- The two constraint-modularity meta-theorem clusters, in canonical order. -/
+def allMetaModularClusters : List EnabledMetaModularCluster :=
+  [.meta_modular, .meta_modular_wellformed]
+
+/-- The three lattice-stability clusters, in canonical order. -/
+def allLatticeClusters : List EnabledLatticeCluster :=
+  [.lattice_graceful, .lattice_sub_safety, .lattice_pack]
+
+/-- All 30 cluster tags, in canonical order.  Derived from the per-family lists
     so ordering stays consistent with those lists automatically.
     Used by `explainConfig`. -/
 def allClusters : List ClusterTag :=
-  (allConstraintClusters.map EnabledConstraintCluster.toClusterTag) ++
-  (allGoalClusters.map      EnabledGoalCluster.toClusterTag) ++
-  (allTier4Clusters.map     EnabledTier4Cluster.toClusterTag) ++
-  (allWorldClusters.map     EnabledWorldCluster.toClusterTag)
+  (allConstraintClusters.map  EnabledConstraintCluster.toClusterTag) ++
+  (allGoalClusters.map        EnabledGoalCluster.toClusterTag) ++
+  (allTier4Clusters.map       EnabledTier4Cluster.toClusterTag) ++
+  (allWorldClusters.map       EnabledWorldCluster.toClusterTag) ++
+  (allMetaModularClusters.map EnabledMetaModularCluster.toClusterTag) ++
+  (allLatticeClusters.map     EnabledLatticeCluster.toClusterTag)
 
 /-- Reverse lookup: given a `ClusterTag`, return the matching
     `EnabledConstraintCluster` if it is a Tier 2 forcing tag, or `none`
@@ -307,10 +345,16 @@ def clusterEnabled (cfg : EpArchConfig) : ClusterTag → Bool
   | .world_lies_scale            => cfg.worlds.contains .lies_scale
   | .world_rolex_ddos            => cfg.worlds.contains .rolex_ddos
   | .world_ddos                  => cfg.worlds.contains .ddos
+  -- Meta-modularity and lattice-stability clusters: always enabled
+  | .meta_modular            => true
+  | .meta_modular_wellformed => true
+  | .lattice_graceful        => true
+  | .lattice_sub_safety      => true
+  | .lattice_pack            => true
   -- Tier 2: only forcing tags reach this arm; dispatch through constraintMeta
   | t => match constraintClusterOfTag? t with
          | some c => (constraintMeta c).enabledBy cfg
-         | none   => false  -- unreachable
+         | none   => panic! "unreachable: all non-Tier-2 ClusterTags are handled above"
 
 /-- The clusters enabled by `cfg`, in canonical order. -/
 def explainConfig (cfg : EpArchConfig) : List ClusterTag :=
@@ -360,10 +404,20 @@ def clusterDescription : ClusterTag → String
       "[World] W_rolex_ddos: individual and population attacks structurally equivalent  (AdversarialObligations.rolex_ddos_structural_equivalence_of_W)"
   | .world_ddos =>
       "[World] W_ddos: DDoS causes verification collapse  (AdversarialObligations.ddos_causes_verification_collapse_of_W)"
+  | .meta_modular =>
+      "[Meta] Constraint-subset modularity: ∀ S W, PartialWellFormed W S → projection_valid S W  (Meta.Modular.modular)"
+  | .meta_modular_wellformed =>
+      "[Meta] WellFormed systems are modular on every constraint subset  (Meta.Modular.wellformed_is_modular)"
+  | .lattice_graceful =>
+      "[Lattice] Graceful degradation: NoSelfCorrection M → PaperFacing M  (Modularity.graceful_degradation)"
+  | .lattice_sub_safety =>
+      "[Lattice] Sub-level revision safety: Compatible extension of any sub-bundle with PaperFacing preserves PaperFacing  (Modularity.sub_revision_safety)"
+  | .lattice_pack =>
+      "[Lattice] EpArch is a floor, not a cage: full bidirectional lattice-stability  (Modularity.modularity_pack)"
   -- Tier 2: only forcing tags reach this arm; dispatch through constraintMeta
   | t => match constraintClusterOfTag? t with
          | some c => (constraintMeta c).description
-         | none   => ""  -- unreachable
+         | none   => panic! "unreachable: all non-Tier-2 ClusterTags are handled above"
 
 /-- Human-readable list of all cluster descriptions enabled by `cfg`. -/
 def showConfig (cfg : EpArchConfig) : List String :=

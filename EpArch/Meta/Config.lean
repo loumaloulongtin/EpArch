@@ -71,6 +71,8 @@ import EpArch.Minimality
 import EpArch.Health
 import EpArch.Meta.TheoremTransport
 import EpArch.Meta.Tier4Transport
+import EpArch.Meta.Modular
+import EpArch.Modularity
 import EpArch.WorldCtx
 import EpArch.AdversarialObligations
 
@@ -80,6 +82,8 @@ open EpArch
 open RevisionSafety
 open EpArch.Meta.TheoremTransport
 open EpArch.Meta.Tier4Transport
+open EpArch.Meta.Modular
+open EpArch.Modularity
 open EpArch.AdversarialObligations
 
 -- Universe parameter shared across all theorem-level propositions in this file.
@@ -403,6 +407,61 @@ def tier4Witness : (c : EnabledTier4Cluster) → Tier4Witness c
          transport_corrigible_ledger E C h h_cl⟩)
 
 
+/-! ## §4eↇ  Meta-Modularity Witness Carrier
+
+Constraint-subset modularity (`EpArch.Meta.Modular`): `WorkingSystem` and
+`ConstraintSubset` are monomorphic, so the propositions are purely Prop-valued
+with no universe-polymorphism concerns.  The indexed inductive pattern is used
+for consistency with the other witness families. -/
+
+/-- Indexed proof carrier for constraint-modularity meta-theorem clusters. -/
+inductive MetaModularWitness : EnabledMetaModularCluster → Type 1 where
+  | modular :
+      (forall (S : ConstraintSubset) (W : WorkingSystem),
+        PartialWellFormed W S → projection_valid S W) →
+      MetaModularWitness .meta_modular
+  | wellformed :
+      (forall (S : ConstraintSubset) (W : WorkingSystem),
+        WellFormed W → projection_valid S W) →
+      MetaModularWitness .meta_modular_wellformed
+
+/-- For every meta-modularity cluster, deliver its `MetaModularWitness`. -/
+def metaModularWitness : (c : EnabledMetaModularCluster) → MetaModularWitness c
+  | .meta_modular            => .modular    modular
+  | .meta_modular_wellformed => .wellformed wellformed_is_modular
+
+
+/-! ## §4e←  Lattice-Stability Witness Carrier
+
+Lattice-stability / graceful-degradation (`EpArch.Modularity`): quantifies over
+`CoreModel` and `ExtModel` (universe-polymorphic) but all constructor arguments
+are Prop-valued, so Lean 4's Prop impredicativity keeps this in `Type 1`
+by the same reasoning as `GoalWitness` and `WorldWitness`. -/
+
+/-- Indexed proof carrier for lattice-stability clusters. -/
+inductive LatticeWitness : EnabledLatticeCluster → Type 1 where
+  | graceful :
+      (forall (M : CoreModel), NoSelfCorrection M → PaperFacing M) →
+      LatticeWitness .lattice_graceful
+  | subSafety :
+      (forall (S : SubBundle) (E : ExtModel),
+        Compatible E S.model → PaperFacing S.model → PaperFacing (forget E)) →
+      LatticeWitness .lattice_sub_safety
+  | pack :
+      ((forall (M : CoreModel), NoSelfCorrection M → PaperFacing M) ∧
+       (forall (S : SubBundle) (E : ExtModel),
+          Compatible E S.model → PaperFacing S.model → PaperFacing (forget E)) ∧
+       (forall (C : CoreModel) (R : RevisionSafeExtension C),
+          PaperFacing C → PaperFacing (forget R.ext))) →
+      LatticeWitness .lattice_pack
+
+/-- For every lattice-stability cluster, deliver its `LatticeWitness`. -/
+def latticeWitness : (c : EnabledLatticeCluster) → LatticeWitness c
+  | .lattice_graceful   => .graceful  graceful_degradation
+  | .lattice_sub_safety => .subSafety sub_revision_safety
+  | .lattice_pack       => .pack      modularity_pack
+
+
 /-! ## §4f  Correspondence Lemmas (support lemmas)
 
 The `allXxxClusters` canonical lists used by `certify` and the membership
@@ -459,6 +518,19 @@ private theorem enabledTier4Cluster_mem_all (c : EnabledTier4Cluster) :
   · exact .tail _ (.tail _ (.head _))
   · exact .tail _ (.tail _ (.tail _ (.head _)))
   · exact .tail _ (.tail _ (.tail _ (.tail _ (.head _))))
+
+private theorem enabledMetaModularCluster_mem_all (c : EnabledMetaModularCluster) :
+    c ∈ allMetaModularClusters := by
+  unfold allMetaModularClusters; cases c
+  · exact .head _
+  · exact .tail _ (.head _)
+
+private theorem enabledLatticeCluster_mem_all (c : EnabledLatticeCluster) :
+    c ∈ allLatticeClusters := by
+  unfold allLatticeClusters; cases c
+  · exact .head _
+  · exact .tail _ (.head _)
+  · exact .tail _ (.tail _ (.head _))
 
 /-! ## §5  Soundness: `clusterEnabled cfg c = true → clusterValid c` -/
 
@@ -517,6 +589,14 @@ structure CertifiedProjection (cfg : EpArchConfig) where
   enabledWorldWitnesses      : List (Σ c : EnabledWorldCluster, WorldWitness c)
   /-- Filtered Tier 4 witnesses: only the clusters enabled by `cfg`. -/
   enabledTier4Witnesses      : List (Σ c : EnabledTier4Cluster, Tier4Witness c)
+  /-- Constraint-modularity proof carriers (both, config-independent). -/
+  metaModularWitnesses       : (c : EnabledMetaModularCluster) → MetaModularWitness c
+  /-- Lattice-stability proof carriers (all three, config-independent). -/
+  latticeWitnesses           : (c : EnabledLatticeCluster) → LatticeWitness c
+  /-- Filtered meta-modularity witnesses: clusters enabled by `cfg` (always all two). -/
+  enabledMetaModularWitnesses : List (Σ c : EnabledMetaModularCluster, MetaModularWitness c)
+  /-- Filtered lattice-stability witnesses: clusters enabled by `cfg` (always all three). -/
+  enabledLatticeWitnesses    : List (Σ c : EnabledLatticeCluster, LatticeWitness c)
 
 /-- Compute and certify the full projection for any `EpArchConfig`. -/
 def certify (cfg : EpArchConfig) : CertifiedProjection cfg where
@@ -546,6 +626,18 @@ def certify (cfg : EpArchConfig) : CertifiedProjection cfg where
     allTier4Clusters.filterMap fun c =>
       if clusterEnabled cfg c.toClusterTag
       then some ⟨c, tier4Witness c⟩
+      else none
+  metaModularWitnesses := metaModularWitness
+  latticeWitnesses     := latticeWitness
+  enabledMetaModularWitnesses :=
+    allMetaModularClusters.filterMap fun c =>
+      if clusterEnabled cfg c.toClusterTag
+      then some ⟨c, metaModularWitness c⟩
+      else none
+  enabledLatticeWitnesses :=
+    allLatticeClusters.filterMap fun c =>
+      if clusterEnabled cfg c.toClusterTag
+      then some ⟨c, latticeWitness c⟩
       else none
 
 /-! ## §4f-cont  Correspondence Lemmas
@@ -578,6 +670,20 @@ theorem mem_enabledTier4Witnesses_of_enabled (cfg : EpArchConfig) (c : EnabledTi
     ⟨c, tier4Witness c⟩ ∈ (certify cfg).enabledTier4Witnesses := by
   simp only [certify]
   exact filterMap_mem_of_pos _ _ c _ (enabledTier4Cluster_mem_all c) (by simp [h])
+
+/-- **Completeness** of `enabledMetaModularWitnesses`. -/
+theorem mem_enabledMetaModularWitnesses_of_enabled (cfg : EpArchConfig)
+    (c : EnabledMetaModularCluster) (h : clusterEnabled cfg c.toClusterTag = true) :
+    ⟨c, metaModularWitness c⟩ ∈ (certify cfg).enabledMetaModularWitnesses := by
+  simp only [certify]
+  exact filterMap_mem_of_pos _ _ c _ (enabledMetaModularCluster_mem_all c) (by simp [h])
+
+/-- **Completeness** of `enabledLatticeWitnesses`. -/
+theorem mem_enabledLatticeWitnesses_of_enabled (cfg : EpArchConfig)
+    (c : EnabledLatticeCluster) (h : clusterEnabled cfg c.toClusterTag = true) :
+    ⟨c, latticeWitness c⟩ ∈ (certify cfg).enabledLatticeWitnesses := by
+  simp only [certify]
+  exact filterMap_mem_of_pos _ _ c _ (enabledLatticeCluster_mem_all c) (by simp [h])
 
 /-! ## §5b  Named Proof Witnesses
 
@@ -700,7 +806,7 @@ theorem cluster_tier4_bank_goals_surj
 
 -- ── World-bundle obligation theorems ─────────────────────────────────────
 -- Each theorem names and proves the machine-checked obligation associated with
--- its WorldTag.  (.partial_observability has no obligation theorem yet.)
+-- its WorldTag.
 
 /-- Cluster `.world_lies_possible`: lying is structurally possible when W_lies_possible holds. -/
 theorem cluster_world_lies_possible
@@ -750,6 +856,49 @@ theorem cluster_world_ddos
     (W : W_ddos) (a : Agent) (s : DDoSState a) (c : CollapsedState a) :
     some_vector_overwhelmed s → is_collapsed c :=
   ddos_causes_verification_collapse_of_W W a s c
+
+
+-- ── Constraint-modularity meta-theorems ───────────────────────────────────────
+
+/-- Cluster `.meta_modular`: the six EpArch constraints are independent modules.
+    Any subset S of the six constraints defines a self-consistent configuration:
+    if W partially satisfies S, the forcing theorems for every constraint in S hold. -/
+theorem cluster_meta_modular (S : ConstraintSubset) (W : WorkingSystem)
+    (pwf : PartialWellFormed W S) : projection_valid S W :=
+  modular S W pwf
+
+/-- Cluster `.meta_modular_wellformed`: any fully well-formed system is modular
+    on every possible constraint subset. -/
+theorem cluster_meta_modular_wellformed (S : ConstraintSubset) (W : WorkingSystem)
+    (h : WellFormed W) : projection_valid S W :=
+  wellformed_is_modular S W h
+
+
+-- ── Lattice-stability theorems ─────────────────────────────────────────────────
+
+/-- Cluster `.lattice_graceful`: graceful degradation — removing self-correction
+    collapses the PaperFacing obligation to True (vacuously satisfied). -/
+theorem cluster_lattice_graceful (M : CoreModel) (h : NoSelfCorrection M) :
+    PaperFacing M :=
+  graceful_degradation M h
+
+/-- Cluster `.lattice_sub_safety`: compatible extension of any sub-bundle that
+    already satisfies PaperFacing preserves PaperFacing. -/
+theorem cluster_lattice_sub_safety (S : SubBundle) (E : ExtModel)
+    (h_compat : Compatible E S.model) (h_pf : PaperFacing S.model) :
+    PaperFacing (forget E) :=
+  sub_revision_safety S E h_compat h_pf
+
+/-- Cluster `.lattice_pack`: EpArch is a floor, not a cage — the full
+    bidirectional lattice-stability result (graceful degradation + sub-level
+    revision safety + full-level revision safety). -/
+theorem cluster_lattice_pack :
+    (∀ (M : CoreModel), NoSelfCorrection M → PaperFacing M) ∧
+    (∀ (S : SubBundle) (E : ExtModel),
+        Compatible E S.model → PaperFacing S.model → PaperFacing (forget E)) ∧
+    (∀ (C : CoreModel) (R : RevisionSafeExtension C),
+        PaperFacing C → PaperFacing (forget R.ext)) :=
+  modularity_pack
 
 
 /-! ## §8  Sample Configurations
