@@ -94,7 +94,7 @@ structure EpArchConfig where
 
 /-! ## §2  Cluster Tags -/
 
-/-- The 24 theorem clusters certified in EpArch Tiers 2–4 plus world-bundle obligations. -/
+/-- The 25 theorem clusters certified in EpArch Tiers 2–4 plus world-bundle obligations. -/
 inductive ClusterTag where
   -- Tier 2: constraint-forcing theorems (6 clusters)
   | forcing_distributed_agents
@@ -116,11 +116,12 @@ inductive ClusterTag where
   | tier4_lts_universal         -- Cluster B+: LTS withdrawal/repair/submit gates
   | tier4_bank_goals_compat     -- Cluster C  (Compatible): 4 goals + universal corrigible
   | tier4_bank_goals_surj       -- Cluster C+ (SurjectiveCompatible): full CorrigibleLedgerGoal
-  -- World-bundle obligation clusters (7 of 8 world tags have proved obligations;
-  -- .partial_observability is defined but has no obligation theorem yet)
+  -- World-bundle obligation clusters (8 world tags, all now have proved obligations;
+  -- previously .partial_observability was unwired — now corrected)
   | world_lies_possible         -- W_lies_possible: lying is possible
   | world_bounded_audit         -- W_bounded_verification: audit can fail before deadline
   | world_asymmetric_costs      -- W_asymmetric_costs: export_cost < defense_cost
+  | world_partial_observability -- W_partial_observability: obs underdetermines truth → no omniscience
   | world_spoofed_v             -- W_spoofedV: spoofed provenance blocks path
   | world_lies_scale            -- W_lies_scale: lies scale (cost asymmetry)
   | world_rolex_ddos            -- W_rolex_ddos: individual & population attacks structurally same
@@ -130,7 +131,7 @@ inductive ClusterTag where
 
 /-! ## §3  Routing Function -/
 
-/-- All 24 cluster tags, in canonical order.  Used by `explainConfig`. -/
+/-- All 25 cluster tags, in canonical order.  Used by `explainConfig`. -/
 def allClusters : List ClusterTag := [
   .forcing_distributed_agents, .forcing_bounded_audit, .forcing_export,
   .forcing_adversarial, .forcing_coordination, .forcing_truth,
@@ -139,6 +140,7 @@ def allClusters : List ClusterTag := [
   .tier4_commitments, .tier4_structural, .tier4_lts_universal,
   .tier4_bank_goals_compat, .tier4_bank_goals_surj,
   .world_lies_possible, .world_bounded_audit, .world_asymmetric_costs,
+  .world_partial_observability,
   .world_spoofed_v, .world_lies_scale, .world_rolex_ddos, .world_ddos]
 
 /-- Decide whether cluster `c` is applicable for config `cfg`.
@@ -179,6 +181,7 @@ def clusterEnabled (cfg : EpArchConfig) : ClusterTag → Bool
   | .world_lies_possible    => cfg.worlds.contains .lies_possible
   | .world_bounded_audit    => cfg.worlds.contains .bounded_verification
   | .world_asymmetric_costs => cfg.worlds.contains .asymmetric_costs
+  | .world_partial_observability => cfg.worlds.contains .partial_observability
   | .world_spoofed_v        => cfg.worlds.contains .spoofedV
   | .world_lies_scale       => cfg.worlds.contains .lies_scale
   | .world_rolex_ddos       => cfg.worlds.contains .rolex_ddos
@@ -201,7 +204,7 @@ machine-proved unconditionally. The actual propositions are documented by the
 named witnesses in §5b below, which are ordinary Lean theorems (permitted to be
 universe-polymorphic). -/
 
-/-- Every cluster is valid: holds unconditionally (all 24 are machine-proved). -/
+/-- Every cluster is valid: holds unconditionally (all 25 are machine-proved). -/
 @[simp] def clusterValid : ClusterTag → Prop := fun _ => True
 
 
@@ -257,6 +260,8 @@ def clusterDescription : ClusterTag → String
       "[World] W_bounded_verification: audit can fail before deadline  (WorldCtx.bounded_audit_fails)"
   | .world_asymmetric_costs =>
       "[World] W_asymmetric_costs: export cost < defense cost  (WorldCtx.cost_asymmetry_of_W)"
+  | .world_partial_observability =>
+      "[World] W_partial_observability: obs underdetermines truth → no omniscience  (WorldCtx.partial_obs_no_omniscience)"
   | .world_spoofed_v =>
       "[World] W_spoofedV: spoofed-V blocks provenance path  (AdversarialObligations.spoofed_V_blocks_path_of_W)"
   | .world_lies_scale =>
@@ -430,6 +435,13 @@ theorem cluster_world_bounded_audit
 theorem cluster_world_asymmetric_costs
     (C : WorldCtx) (W : C.W_asymmetric_costs) : W.export_cost < W.defense_cost :=
   WorldCtx.cost_asymmetry_of_W C W
+
+/-- Cluster `.world_partial_observability`: partial observability blocks omniscience —
+    there exists a proposition no agent can determine from observations alone.
+    This is the epistemic-gap argument, orthogonal to the PRP cost-budget argument. -/
+theorem cluster_world_partial_observability
+    (C : WorldCtx) (W : C.W_partial_observability) : ∃ P, C.NotDeterminedByObs P :=
+  WorldCtx.partial_obs_no_omniscience C W
 
 /-- Cluster `.world_spoofed_v`: spoofed provenance blocks any verification path. -/
 theorem cluster_world_spoofed_v

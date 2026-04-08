@@ -91,6 +91,7 @@ export EpArch.WorldCtx (
   all_agents_can_lie_of_W
   bounded_audit_fails
   cost_asymmetry_of_W
+  partial_obs_no_omniscience
 )
 
 -- Core world theorems (from WorldCtx)

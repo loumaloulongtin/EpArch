@@ -176,6 +176,15 @@ theorem WorldCtx.cost_asymmetry_of_W (C : WorldCtx) (W : C.W_asymmetric_costs) :
     W.export_cost < W.defense_cost :=
   W.asymmetry
 
+/-- Theorem: Partial observability blocks omniscience.
+    Under W_partial_observability, there exists a proposition that no agent
+    can determine from observations alone — even with unlimited verification
+    budget.  This is the epistemic-gap argument for why terminal closure is
+    unreachable, distinct from the PRP cost-budget argument. -/
+theorem WorldCtx.partial_obs_no_omniscience (C : WorldCtx) (W : C.W_partial_observability) :
+    ∃ P, C.NotDeterminedByObs P :=
+  W.obs_underdetermines
+
 
 /-! ## W4: WorldCtx Compatibility (Contract Mode)
 

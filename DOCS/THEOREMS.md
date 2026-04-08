@@ -1,6 +1,6 @@
 # Theorem Inventory
 
-This document catalogs **529** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
+This document catalogs **530** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
 
 **What the architecture claims:** Decentralized epistemic authorization requires specific structural mechanisms — a lifecycle with type-separated stages, header-preserving export, a revision loop, temporal validity, and a Bank substrate. These aren't design preferences; they are forced by the combination of agent constraints and system health goals.
 
@@ -1073,16 +1073,18 @@ other selected constraints remain live implications backed by the required bicon
 
 ## Bucket 28: Configurable Certification Engine — `EpArchConfig → ClusterTag → certified proof`
 
-**Paper Role:** Closes the claim that the 24 theorem clusters are individually selectable and
+**Paper Role:** Closes the claim that the 25 theorem clusters are individually selectable and
 certifiable: given any user-specified `EpArchConfig` (which constraints, goals, and world
 bundles are operative), the engine computes exactly which theorem clusters apply and provides
-machine-checked justification for each enabled cluster.  This includes 7 world-bundle
-obligation clusters that wire `EpArchConfig.worlds` to proved obligation theorems in
+machine-checked justification for each enabled cluster.  This includes 8 world-bundle
+obligation clusters wiring `EpArchConfig.worlds` to proved obligation theorems in
 `WorldCtx.lean` and `AdversarialObligations.lean`.
 
-**Note on `.partial_observability`:** The `WorldTag.partial_observability` value is collected
-but has no proved obligation theorem yet (`W_partial_observability` structure exists in
-`WorldCtx.lean` but no theorem uses it). It is informational.
+**Note on `.partial_observability`:** Now fully wired. `WorldCtx.partial_obs_no_omniscience`
+formalizes the epistemic-gap argument: under partial observability there exists a proposition
+that no agent can determine from observations alone — independent of the PRP cost-budget
+argument. Together, PRP (cost) and partial observability (underdetermination) give two
+orthogonal reasons terminal epistemic closure is unreachable.
 
 **File:** `Meta/Config.lean`
 
@@ -1100,8 +1102,8 @@ for each cluster.
 | `GoalTag` | Meta/Config.lean | 5 health-goal tags (safeWithdrawal … selfCorrection) |
 | `WorldTag` | Meta/Config.lean | 8 world-bundle tags (lies_possible … ddos) |
 | `EpArchConfig` | Meta/Config.lean | User-supplied config: lists of active constraints/goals/worlds |
-| `ClusterTag` | Meta/Config.lean | 24 cluster tags spanning Tiers 2–4 and world obligations |
-| `allClusters` | Meta/Config.lean | Canonical ordered list of all 24 ClusterTags |
+| `ClusterTag` | Meta/Config.lean | 25 cluster tags spanning Tiers 2–4 and world obligations |
+| `allClusters` | Meta/Config.lean | Canonical ordered list of all 25 ClusterTags |
 | `clusterEnabled` | Meta/Config.lean | `EpArchConfig → ClusterTag → Bool` (computable routing) |
 | `explainConfig` | Meta/Config.lean | `EpArchConfig → List ClusterTag` — enabled clusters |
 | `clusterValid` | Meta/Config.lean | `ClusterTag → Prop` — always `True` (every cluster is proved) |
@@ -1160,16 +1162,17 @@ collected but not yet wired (no obligation theorem exists).
 | `cluster_world_lies_possible` | Meta/Config.lean | `C.W_lies_possible → ∃ w a P, C.Lie w a P` | `.lies_possible` | `WorldCtx.lie_possible_of_W` |
 | `cluster_world_bounded_audit` | Meta/Config.lean | `C.RequiresSteps w P k → t < k → ¬C.VerifyWithin w P t` | `.bounded_verification` | `WorldCtx.bounded_audit_fails` |
 | `cluster_world_asymmetric_costs` | Meta/Config.lean | `C.W_asymmetric_costs → W.export_cost < W.defense_cost` | `.asymmetric_costs` | `WorldCtx.cost_asymmetry_of_W` |
+| `cluster_world_partial_observability` | Meta/Config.lean | `C.W_partial_observability → ∃ P, C.NotDeterminedByObs P` | `.partial_observability` | `WorldCtx.partial_obs_no_omniscience` |
 | `cluster_world_spoofed_v` | Meta/Config.lean | `W_spoofedV → is_V_spoofed v → ¬has_path p` | `.spoofedV` | `AdversarialObligations.spoofed_V_blocks_path_of_W` |
 | `cluster_world_lies_scale` | Meta/Config.lean | `W_lies_scale → W.costs.export_cost < W.costs.defense_cost` | `.lies_scale` | `AdversarialObligations.lies_scale_of_W` |
 | `cluster_world_rolex_ddos` | Meta/Config.lean | `W_rolex_ddos → same_structure W.rolex_structure W.ddos_structure` | `.rolex_ddos` | `AdversarialObligations.rolex_ddos_structural_equivalence_of_W` |
 | `cluster_world_ddos` | Meta/Config.lean | `W_ddos → some_vector_overwhelmed s → is_collapsed c` | `.ddos` | `AdversarialObligations.ddos_causes_verification_collapse_of_W` |
 
-### Grand Total: +22 new theorems (507 + 22 = 529)
+### Grand Total: +23 new theorems (507 + 23 = 530)
 
 - 1 soundness theorem (`clusterEnabled_sound`)
 - 6 Tier 2 forcing witnesses
 - 6 Tier 3 goal-transport witnesses
 - 2 Tier 4-C bank-bundle witnesses
-- 7 world-bundle obligation witnesses
+- 8 world-bundle obligation witnesses (all 8 world tags now wired)
 
