@@ -866,6 +866,16 @@ The remaining commitments are proved as named theorems:
 - C6b — `NoSelfCorrectionWithoutRevision`
 -/
 
+/-- Redeemability requires more than consensus: the constraint surface is independent.
+    For intra-bubble deposits, consensus (trivially true for any bubble) and redeemability
+    (requiring external path, contact, and verdict evidence) are structurally separated.
+    Proved structurally: the separation follows from definitions alone. -/
+theorem redeemability_requires_more_than_consensus
+    (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance)
+    (h_intra : intra_bubble_only d) :
+    does_not_imply (consensus B d.P) (redeemable d) :=
+  ⟨trivial, intra_bubble_not_redeemable d h_intra⟩
+
 /-- Standalone commitments pack: unconditional commitment theorems (C3/C4b/C7b/C8).
     C4b is the commitment-specific result that distinguishes this from
     `structural_theorems_unconditional` (Cluster B).
@@ -885,7 +895,7 @@ theorem commitments_pack :
     (∀ (d1 d2 : Deposit PropLike Standard ErrorModel Provenance),
         refreshed d1 → unrefreshed d2 → ¬performs_equivalently d1 d2) :=
   ⟨SEVFactorization,
-   fun B d h => ⟨trivial, intra_bubble_not_redeemable d h⟩,
+   redeemability_requires_more_than_consensus,
    header_stripping_harder,
    TemporalValidity⟩
 
@@ -974,19 +984,6 @@ theorem GlobalCtx_contradicts_NoGlobalLedgerTradeoff (C : WorldCtx) (L : C.Ledge
     (hObs : C.obs_based L) (W : C.W_partial_observability)
     (hI : C.supports_innovation L) (hC : C.supports_coordination L) : False :=
   WorldCtx.no_ledger_tradeoff C L hObs W ⟨hI, hC⟩
-
-
-/-! ### Forward Theorems (Commitment 4b) -/
-
-/-- Redeemability requires more than consensus: the constraint surface is independent.
-    For intra-bubble deposits, consensus (trivially true for any bubble) and redeemability
-    (requiring external path, contact, and verdict evidence) are structurally separated.
-    Proved structurally: the separation follows from definitions alone. -/
-theorem redeemability_requires_more_than_consensus
-    (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance)
-    (h_intra : intra_bubble_only d) :
-    does_not_imply (consensus B d.P) (redeemable d) :=
-  ⟨trivial, intra_bubble_not_redeemable d h_intra⟩
 
 
 /-! ### Forward Theorems (Commitment 7b) -/
