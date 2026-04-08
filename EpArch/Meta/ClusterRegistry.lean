@@ -103,22 +103,9 @@ inductive ClusterTag where
 
 /-! ## §2b  Per-Family Cluster Enumerations
 
-Lean 4's universe isolation rule blocks a uniform `ClusterTag → ClusterProof`
-def (see §4 in Config.lean).  These per-family enumerations enable a
-**per-family proof carrier** pattern: Tier 2 constraint clusters use a direct
-`ConstraintProof` record (genuine proposition + machine-checked proof); all other
-families use indexed inductive witness carriers (`FamilyWitness : EnabledXxxCluster →
-Type 1`) where constructors store the real theorems as Prop-valued arguments.
-
-**Currently monomorphic** (real proof carrier available): constraint clusters
-(Tier 2 forcing) — `WorkingSystem` has no free universe parameters.
-
-**Indexed witness carrier** (real propositions via `inductive FamilyWitness :
-EnabledXxxCluster → Type 1` in `Config.lean`): goal, Tier 4 bank-bundle, world,
-meta-modularity, and lattice-stability clusters.  Universe-polymorphic families
-use Lean 4's Prop impredicativity to store transport theorems as Prop-valued
-constructor arguments; monomorphic families (meta-modularity) follow the same
-indexed-inductive pattern for consistency. -/
+Six `EnabledXxxCluster` inductives — one per family — enable per-family proof
+carriers in `Config.lean`.  Tier 2 uses a direct `ConstraintProof` record;
+all other families use indexed inductive witness carriers. -/
 
 /-- The six Tier 2 constraint-forcing clusters. -/
 inductive EnabledConstraintCluster where

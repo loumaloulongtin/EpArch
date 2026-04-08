@@ -1,4 +1,4 @@
-/-
+﻿/-
 EpArch/Meta/Config.lean — Configurable Certification Engine
 
 Given an `EpArchConfig` specifying which constraints, goals, and world bundles
@@ -22,32 +22,16 @@ are active, this module computes and certifies:
   `CertifiedProjection`, `certify`, completeness theorems,
   and the `cluster_*` named proof witnesses.
 
-## Four-layer design
+## Proof-carrying layers
 
-**Routing layer** (`clusterEnabled`, `CertifiedProjection.enabled/complete/sound`):
-  Uses `clusterValid c := True` so routing is decidable and `certify` type-checks
-  without universe complications.
-
-**Constraint proof layer** (`constraintSpec`, `constraintProof`,
-  `CertifiedProjection.constraintWitnesses`):
-  Tier 2 forcing clusters carry a genuine `ConstraintClusterSpec` record (real Lean
-  proposition + machine-checked proof).  `WorkingSystem` is monomorphic so Lean 4's
-  universe isolation rule does not block this family's carrier.
-
-**Indexed witness layer** (`goalWitness`, `worldWitness`, `tier4Witness`,
-  `metaModularWitness`, `latticeWitness`,
-  `CertifiedProjection.goalWitnesses/worldWitnesses/tier4Witnesses/metaModularWitnesses/latticeWitnesses`):
-  All five non-constraint families use indexed inductives
-  `GoalWitness : EnabledGoalCluster → Type 1` etc.  Each constructor stores the
-  polymorphic transport theorem as a Prop-valued argument.  Lean 4's impredicativity
-  of Prop allows `∀ (E : ExtModel), ...P...` to live in Prop even though `ExtModel`
-  is universe-polymorphic — avoiding the isolation rule that blocks `def` bodies.
-  `MetaModularWitness` and `LatticeWitness` are also indexed inductives even though
-  their underlying types are monomorphic, for consistency with the other families.
-
-**Proof-content layer** (`cluster_*` witnesses in §5b):
-  Universe-polymorphic Lean theorems covering all 30 clusters.  These are the
-  standalone named witnesses usable via `#check cluster_goal_safeWithdrawal`, etc.
+- **Routing** — `clusterEnabled`, `CertifiedProjection.enabled/complete/sound`.
+- **Constraint proofs** — `constraintSpec`/`constraintProof`: `ConstraintClusterSpec` carries
+  a genuine Lean proposition and machine-checked proof for each Tier 2 cluster.
+- **Indexed witnesses** — `goalWitness`, `worldWitness`, `tier4Witness`,
+  `metaModularWitness`, `latticeWitness`: one indexed inductive per family,
+  constructors store the real transport theorem as a Prop-valued argument.
+- **Named witnesses** — `cluster_*` in §5b: universe-polymorphic standalone theorems
+  for all 30 clusters, the authoritative typed form.
 
 ## Usage
 
@@ -102,58 +86,10 @@ universe u
 
 /-! ## §4  Cluster Validity
 
-### Why `clusterValid c := True`
-
-The certification engine has **four layers** (mirroring the file header):
-
-1. **Routing layer** — `clusterEnabled`, `enabled`, `complete`, `sound`.
-   Works with `clusterValid c := True` so routing is decidable and
-   `certify` type-checks without universe complications.
-
-2. **Constraint proof layer** — `constraintProof`, `constraintWitnesses`,
-   `enabledConstraintWitnesses` (§4b).
-   `WorkingSystem` is monomorphic (fields: `SystemSpec`, `Bool`; no free
-   universe levels), so Lean 4's isolation rule does not block a
-   `def constraintProof : EnabledConstraintCluster → ConstraintProof`.
-   Tier 2 forcing clusters carry a genuine `statement : Prop` / `proof : statement`
-   pair.  `enabledConstraintWitnesses` filters this to only the clusters
-   enabled by a given `EpArchConfig`.
-
-3. **Indexed witness layer** — `goalWitness`, `worldWitness`, `tier4Witness` (§4c–§4e).
-   Goal, World, and Tier 4 clusters reference `ExtModel.{u}`, `CoreModel.{u}`,
-   `WorldCtx.{u}`, etc.  A uniform `def` carrier is blocked by the universe isolation
-   rule, but `inductive GoalWitness : EnabledGoalCluster → Type 1` with
-   Prop-valued constructor arguments is accepted by Lean 4: `∀ (E : ExtModel), ...P...`
-   is in `Prop` when `P` is in `Prop`, by impredicativity, regardless of `ExtModel`'s
-   universe level.  The constructors package the real transport theorems as args.
-
-4. **Proof-content layer** — the `cluster_*` witnesses in §5b.
-   Universe-polymorphic Lean theorems covering all 30 clusters.  Goal/Tier4/World
-   clusters reference `ExtModel.{u₁,u₂}`, `CoreModel.{u₃}`, `WorldCtx.{u}` and
-   cannot be packed into a monomorphic def; the §5b witnesses are the authoritative
-   standalone form.  Inspect with `#check cluster_goal_safeWithdrawal`, etc.
-
-### Why a uniform `ClusterTag → ClusterProof` def is blocked
-
-Lean 4's **universe isolation rule** prohibits a `def f : A → B` whose body
-references universe levels that do not appear in the declared type `A → B`.
-The 30 cluster theorems span six independent universe families:
-
-| Family              | Source module           | Representative type      |
-|---------------------|-------------------------|---------------------------|
-| Forcing             | `EpArch.Minimality`     | `WorkingSystem.{u}`      |
-| Goal transport      | `EpArch.Meta.TheoremTransport` | `ExtModel.{u₁,u₂}`, `CoreModel.{u₃}` |
-| World bundles       | `EpArch.WorldCtx`       | `WorldCtx.{u}`           |
-| Adversarial         | `EpArch.AdversarialObligations` | `W_spoofedV.{u}`  |
-| Meta-modularity     | `EpArch.Meta.Modular`   | `ConstraintSubset`, `WorkingSystem`  |
-| Lattice-stability   | `EpArch.Modularity`     | `CoreModel.{u}`          |
-
-None of these universe levels surface in `ClusterTag → ClusterProof` when
-`ClusterProof : Type 1` is a fixed-universe record.  Resolving this would
-require either monomorphising all source types to universe 0 or parameterising
-`ClusterProof` across 20+ independent universe levels — both are large refactors
-of modules outside this file, and neither is needed: the indexed witnesses (§4c–§4e)
-and §5b witnesses already provide all proof content in the most natural Lean 4 form. -/
+`clusterValid c := True` unconditionally: all 30 clusters are machine-proved.
+The routing layer uses this so `certify` type-checks without universe complications;
+typed proof content lives in the indexed witnesses (§4b–§4e') and `cluster_*`
+witnesses (§5b). -/
 
 /-- Every cluster is valid: holds unconditionally (all 30 are machine-proved).
     See the `cluster_*` witnesses in §5b for real typed propositions. -/
@@ -162,26 +98,10 @@ and §5b witnesses already provide all proof content in the most natural Lean 4 
 
 /-! ## §4b  Constraint Proof Carrier
 
-`WorkingSystem` is monomorphic — its fields are `SystemSpec` and `Bool`, with
-no free universe levels — so Lean 4's universe isolation rule does **not** block
-`def constraintSpec : EnabledConstraintCluster → ConstraintClusterSpec`.
+Tier 2 forcing clusters use a direct `ConstraintClusterSpec` record (extends
+`ConstraintClusterMeta` from `ClusterRegistry` with a `witness : ConstraintProof`
+field).  All other families use indexed inductive witnesses; see §4c–§4e'. -/
 
-The Tier 2 forcing theorems can therefore be embedded as genuine propositions
-with genuine machine-checked proofs, not just `True`.  `ConstraintClusterSpec`
-**extends** `ConstraintClusterMeta` (defined in `ClusterRegistry.lean`) with a
-machine-checked `witness : ConstraintProof` field, so the proof layer is genuinely
-derived from the metadata layer instead of restating the same fields.  Adding a new
-constraint means adding one `constraintMeta` case (routing + display) and one
-`constraintSpec` match arm (proof witness), and updating `allConstraintClusters`.
-No other tables need touching.
-
-All other families (Tier 3 goal transport, Tier 4 bank bundles, world clusters,
-meta-modularity, and lattice-stability) carry real proof content via the indexed
-witness carriers defined in §4c–§4e’ below (`GoalWitness`, `WorldWitness`,
-`Tier4Witness`, `MetaModularWitness`, `LatticeWitness`).  The standalone `cluster_*`
-theorems in §5b are the universe-polymorphic authoritative form for families whose
-underlying types reference `ExtModel`, `CoreModel`, or `WorldCtx`; the indexed
-witness constructors package those same theorems as Prop-valued arguments. -/
 
 /-- Proof-carrying record for a Tier 2 constraint-forcing cluster:
     the actual Lean forcing proposition and its machine-checked proof. -/
