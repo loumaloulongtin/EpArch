@@ -9,7 +9,7 @@ are active, this module computes and certifies:
   3. **Machine-certified soundness** (`CertifiedProjection`, `certify`): every
      cluster returned as enabled is backed by a concrete machine-checked proof.
 
-## Three-layer design
+## Four-layer design
 
 **Routing layer** (`clusterEnabled`, `CertifiedProjection.enabled/complete/sound`):
   Uses `clusterValid c := True` so routing is decidable and `certify` type-checks
@@ -20,11 +20,17 @@ are active, this module computes and certifies:
   proposition + machine-checked proof).  `WorkingSystem` is monomorphic so Lean 4's
   universe isolation rule does not block this family's carrier.
 
+**Indexed witness layer** (`goalWitness`, `worldWitness`, `tier4Witness`,
+  `CertifiedProjection.goalWitnesses/worldWitnesses/tier4Witnesses`):
+  Goal, World, and Tier 4 clusters use indexed inductives
+  `GoalWitness : EnabledGoalCluster → Type 1` etc.  Each constructor stores the
+  polymorphic transport theorem as a Prop-valued argument.  Lean 4's impredicativity
+  of Prop allows `∀ (E : ExtModel), ...P...` to live in Prop even though `ExtModel`
+  is universe-polymorphic — avoiding the isolation rule that blocks `def` bodies.
+
 **Proof-content layer** (`cluster_*` witnesses in §5b):
-  Universe-polymorphic Lean theorems covering all 25 clusters.  Goal/Tier4/World
-  clusters reference `ExtModel.{u₁,u₂}`, `CoreModel.{u₃}`, `WorldCtx.{u}` so
-  their propositions cannot be packed into a monomorphic def; the §5b witnesses
-  are the authoritative form.  Inspect with `#check cluster_goal_safeWithdrawal`, etc.
+  Universe-polymorphic Lean theorems covering all 25 clusters.  These are the
+  standalone named witnesses usable via `#check cluster_goal_safeWithdrawal`, etc.
 
   See §4 for the full universe isolation explanation and §2b for the per-family
   enumeration architecture.
@@ -37,6 +43,11 @@ are active, this module computes and certifies:
 
 -- Obtain a proof object certifying every enabled cluster:
 #check certify myConfig
+
+-- Access typed proof content for a specific cluster family:
+(certify myConfig).goalWitnesses .goal_safeWithdrawal   -- GoalWitness
+(certify myConfig).worldWitnesses .world_lies_possible  -- WorldWitness
+(certify myConfig).tier4Witnesses .tier4_commitments    -- Tier4Witness
 
 -- Inspect a specific cluster's theorem:
 #check cluster_forcing_distributed_agents
@@ -289,7 +300,7 @@ def explainConfig (cfg : EpArchConfig) : List ClusterTag :=
 
 ### Why `clusterValid c := True`
 
-The certification engine has **three layers** (mirroring the file header):
+The certification engine has **four layers** (mirroring the file header):
 
 1. **Routing layer** — `clusterEnabled`, `enabled`, `complete`, `sound`.
    Works with `clusterValid c := True` so routing is decidable and
@@ -304,11 +315,19 @@ The certification engine has **three layers** (mirroring the file header):
    pair.  `enabledConstraintWitnesses` filters this to only the clusters
    enabled by a given `EpArchConfig`.
 
-3. **Proof-content layer** — the `cluster_*` witnesses in §5b.
+3. **Indexed witness layer** — `goalWitness`, `worldWitness`, `tier4Witness` (§4c–§4e).
+   Goal, World, and Tier 4 clusters reference `ExtModel.{u}`, `CoreModel.{u}`,
+   `WorldCtx.{u}`, etc.  A uniform `def` carrier is blocked by the universe isolation
+   rule, but `inductive GoalWitness : EnabledGoalCluster → Type 1` with
+   Prop-valued constructor arguments is accepted by Lean 4: `∀ (E : ExtModel), ...P...`
+   is in `Prop` when `P` is in `Prop`, by impredicativity, regardless of `ExtModel`'s
+   universe level.  The constructors package the real transport theorems as args.
+
+4. **Proof-content layer** — the `cluster_*` witnesses in §5b.
    Universe-polymorphic Lean theorems covering all 25 clusters.  Goal/Tier4/World
    clusters reference `ExtModel.{u₁,u₂}`, `CoreModel.{u₃}`, `WorldCtx.{u}` and
    cannot be packed into a monomorphic def; the §5b witnesses are the authoritative
-   form.  Inspect with `#check cluster_goal_safeWithdrawal`, etc.
+   standalone form.  Inspect with `#check cluster_goal_safeWithdrawal`, etc.
 
 ### Why a uniform `ClusterTag → ClusterProof` def is blocked
 
@@ -327,9 +346,8 @@ None of these universe levels surface in `ClusterTag → ClusterProof` when
 `ClusterProof : Type 1` is a fixed-universe record.  Resolving this would
 require either monomorphising all source types to universe 0 or parameterising
 `ClusterProof` across 20+ independent universe levels — both are large refactors
-of modules outside this file, and neither is needed: the §5b witnesses already
-provide all proof content in the most natural Lean 4 form (universe-polymorphic
-theorems). -/
+of modules outside this file, and neither is needed: the indexed witnesses (§4c–§4e)
+and §5b witnesses already provide all proof content in the most natural Lean 4 form. -/
 
 /-- Every cluster is valid: holds unconditionally (all 25 are machine-proved).
     See the `cluster_*` witnesses in §5b for real typed propositions. -/
@@ -378,6 +396,204 @@ def constraintProof : EnabledConstraintCluster → ConstraintProof
   | .forcing_truth => {
       statement := ∀ W : WorkingSystem, WellFormed W → handles_truth_pressure W → HasRedeemability W
       proof     := truth_pressure_requires_redeemability }
+
+
+/-! ## §4c  Goal Witness Carrier
+
+Indexed proof-carrying inductive for Tier 3 health-goal transport clusters.
+Each constructor stores the polymorphic transport theorem schema as a Prop-valued
+argument.  Lean 4's impredicativity of `Prop` means `∀ (E : ExtModel), ...P...`
+is in `Prop` when `P` is in `Prop`, even though `ExtModel` lives at `Type (u+1)`.
+This sidesteps the `def`-body universe isolation rule while still delivering
+the real transport theorem to callers. -/
+
+/-- Indexed proof carrier for Tier 3 goal clusters.
+    Each constructor `c (h : <transport schema>)` witnesses that the transport
+    theorem for cluster `c` holds. -/
+inductive GoalWitness : EnabledGoalCluster → Type 1 where
+  | safeWithdrawal :
+      (∀ (E : ExtModel) (C : CoreModel),
+        Compatible E C → SafeWithdrawalGoal C → SafeWithdrawalGoal (forget E)) →
+      GoalWitness .goal_safeWithdrawal
+  | reliableExport :
+      (∀ (E : ExtModel) (C : CoreModel),
+        Compatible E C → ReliableExportGoal C → ReliableExportGoal (forget E)) →
+      GoalWitness .goal_reliableExport
+  | soundDeposits :
+      (∀ (E : ExtModel) (C : CoreModel),
+        Compatible E C → SoundDepositsGoal C → SoundDepositsGoal (forget E)) →
+      GoalWitness .goal_soundDeposits
+  | selfCorrection :
+      (∀ (E : ExtModel) (C : CoreModel),
+        Compatible E C → SelfCorrectionGoal C → SelfCorrectionGoal (forget E)) →
+      GoalWitness .goal_selfCorrection
+  | corrigibleUniversal :
+      (∀ (E : ExtModel) (C : CoreModel),
+        Compatible E C → CorrigibleLedgerGoal C →
+        ∀ (B_E : (forget E).sig.Bubble), (forget E).ops.hasRevision B_E →
+        ∀ (d_E d'_E : (forget E).sig.Deposit),
+        (forget E).ops.revise B_E d_E d'_E → (forget E).ops.truth B_E d'_E) →
+      GoalWitness .goal_corrigible_universal
+  | corrigibleFull :
+      (∀ (E : ExtModel) (C : CoreModel),
+        SurjectiveCompatible E C → CorrigibleLedgerGoal C →
+        CorrigibleLedgerGoal (forget E)) →
+      GoalWitness .goal_corrigible_full
+
+/-- For every Tier 3 goal cluster, deliver its `GoalWitness` backed by the
+    corresponding transport theorem from `EpArch.Meta.TheoremTransport`. -/
+def goalWitness : (c : EnabledGoalCluster) → GoalWitness c
+  | .goal_safeWithdrawal       => .safeWithdrawal       transport_safe_withdrawal
+  | .goal_reliableExport       => .reliableExport       transport_reliable_export
+  | .goal_soundDeposits        => .soundDeposits        transport_sound_deposits
+  | .goal_selfCorrection       => .selfCorrection       transport_self_correction
+  | .goal_corrigible_universal => .corrigibleUniversal  transport_corrigible_universal
+  | .goal_corrigible_full      => .corrigibleFull       transport_corrigible_ledger
+
+
+/-! ## §4d  World Witness Carrier
+
+Same indexed-inductive pattern for world-bundle clusters.
+`WorldCtx.{u}` is universe-polymorphic; the constructor args are Prop-valued
+(impredicative ∀ over WorldCtx instantiations), so `WorldWitness` itself lives
+in `Type 1` without a universe parameter conflict. -/
+
+/-- Indexed proof carrier for world-bundle clusters. -/
+inductive WorldWitness : EnabledWorldCluster → Type 1 where
+  | liesPossible :
+      (∀ (C : WorldCtx) (W : C.W_lies_possible), ∃ w a P, C.Lie w a P) →
+      WorldWitness .world_lies_possible
+  | boundedAudit :
+      (∀ (C : WorldCtx) (w : C.World) (P : C.Claim) (k t : Nat),
+        C.RequiresSteps w P k → t < k → ¬C.VerifyWithin w P t) →
+      WorldWitness .world_bounded_audit
+  | asymmetricCosts :
+      (∀ (C : WorldCtx) (W : C.W_asymmetric_costs), W.export_cost < W.defense_cost) →
+      WorldWitness .world_asymmetric_costs
+  | partialObservability :
+      (∀ (C : WorldCtx) (W : C.W_partial_observability), ∃ P, C.NotDeterminedByObs P) →
+      WorldWitness .world_partial_observability
+  | spoofedV :
+      (∀ {PL SL EL PrL : Type}
+        (W : W_spoofedV (PropLike := PL) (Standard := SL) (ErrorModel := EL) (Provenance := PrL))
+        (d : Deposit PL SL EL PrL) (v : V_Spoofed_State d) (p : PathExists d),
+        is_V_spoofed v → ¬has_path p) →
+      WorldWitness .world_spoofed_v
+  | liesScale :
+      (∀ (W : W_lies_scale), W.costs.export_cost < W.costs.defense_cost) →
+      WorldWitness .world_lies_scale
+  | rolexDdos :
+      (∀ (W : W_rolex_ddos), same_structure W.rolex_structure W.ddos_structure) →
+      WorldWitness .world_rolex_ddos
+  | ddos :
+      (∀ (W : W_ddos) (a : Agent) (s : DDoSState a) (c : CollapsedState a),
+        some_vector_overwhelmed s → is_collapsed c) →
+      WorldWitness .world_ddos
+
+/-- For every world-bundle cluster, deliver its `WorldWitness`. -/
+def worldWitness : (c : EnabledWorldCluster) → WorldWitness c
+  | .world_lies_possible         => .liesPossible        WorldCtx.lie_possible_of_W
+  | .world_bounded_audit         => .boundedAudit        WorldCtx.bounded_audit_fails
+  | .world_asymmetric_costs      => .asymmetricCosts     WorldCtx.cost_asymmetry_of_W
+  | .world_partial_observability => .partialObservability WorldCtx.partial_obs_no_omniscience
+  | .world_spoofed_v             => .spoofedV            spoofed_V_blocks_path_of_W
+  | .world_lies_scale            => .liesScale           lies_scale_of_W
+  | .world_rolex_ddos            => .rolexDdos           rolex_ddos_structural_equivalence_of_W
+  | .world_ddos                  => .ddos                ddos_causes_verification_collapse_of_W
+
+
+/-! ## §4e  Tier 4 Witness Carrier
+
+Same indexed-inductive pattern for Tier 4 library clusters.
+`commitments` and `structural` quantify over `Type`-universe type variables;
+`ltsUniversal` additionally quantifies over `Reason` and `Evidence` types.
+All constructor args are Prop-valued by Prop impredicativity. -/
+
+/-- Indexed proof carrier for Tier 4 clusters. -/
+inductive Tier4Witness : EnabledTier4Cluster → Type 1 where
+  | commitments :
+      (∀ {PL SL EL PrL : Type} {Extra : Prop}
+        (E : ExtCommitmentsCtx PL SL EL PrL Extra),
+        (∀ (a : Agent) (B : Bubble) (P : Claim),
+            ∃ (_ : certainty_L a P), ¬knowledge_B B P) ∧
+        (∀ (a : Agent) (B : Bubble) (P : Claim),
+            ∃ (_ : knowledge_B B P), ¬certainty_L a P) ∧
+        (∀ G : GlobalLedger, supports_innovation G → ¬supports_coordination G) ∧
+        (∀ (B : Bubble) (d : Deposit PL SL EL PrL),
+            ∃ (_ : consensus B d.P), ¬redeemable d)) →
+      Tier4Witness .tier4_commitments
+  | structural :
+      (∀ {PL SL EL PrL : Type},
+        (∀ (d : Deposit PL SL EL PrL),
+            ∃ (s : SL) (e : EL) (v : PrL), d.h.S = s ∧ d.h.E = e ∧ d.h.V = v) ∧
+        (∀ (d1 d2 : Deposit PL SL EL PrL),
+            refreshed d1 → unrefreshed d2 → ¬performs_equivalently d1 d2) ∧
+        (¬∀ f1 f2 : FailureField, FailMonolithic f1 = FailMonolithic f2 → f1 = f2) ∧
+        systematically_harder header_preserved_diagnosability header_stripped_diagnosability) →
+      Tier4Witness .tier4_structural
+  | ltsUniversal :
+      (∀ {PL SL EL PrL : Type} {Reason Evidence : Type},
+        (∀ (s s' : StepSemantics.SystemState PL SL EL PrL)
+           (B : Bubble) (a : Agent) (d_idx : Nat),
+           StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
+             s (StepSemantics.Action.Withdraw a B d_idx) s' →
+           ACL_OK_At s a B d_idx ∧ Current_At s d_idx ∧ ConsultedBank_At s d_idx) ∧
+        (∀ (s s' : StepSemantics.SystemState PL SL EL PrL)
+           (d_idx : Nat) (f : Field),
+           StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
+             s (StepSemantics.Action.Repair d_idx f) s' →
+           s'.ledger = StepSemantics.updateDepositStatus s.ledger d_idx .Candidate) ∧
+        (∀ (s s' : StepSemantics.SystemState PL SL EL PrL)
+           (d_idx : Nat) (f : Field),
+           StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
+             s (StepSemantics.Action.Repair d_idx f) s' →
+           StepSemantics.isQuarantined s d_idx) ∧
+        (∀ (s s' : StepSemantics.SystemState PL SL EL PrL)
+           (d : Deposit PL SL EL PrL),
+           StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
+             s (StepSemantics.Action.Submit d) s' →
+           ∃ d', d' ∈ s'.ledger ∧ d'.status = DepositStatus.Candidate)) →
+      Tier4Witness .tier4_lts_universal
+  | bankGoalsCompat :
+      (∀ (E : ExtModel) (C : CoreModel) (h : Compatible E C)
+        (h_sw : SafeWithdrawalGoal C) (h_re : ReliableExportGoal C)
+        (h_sd : SoundDepositsGoal C) (h_sc : SelfCorrectionGoal C)
+        (h_cl : CorrigibleLedgerGoal C),
+        SafeWithdrawalGoal (forget E) ∧ ReliableExportGoal (forget E) ∧
+        SoundDepositsGoal (forget E) ∧ SelfCorrectionGoal (forget E) ∧
+        (∀ B_E : (forget E).sig.Bubble, (forget E).ops.hasRevision B_E →
+         ∀ d_E d'_E : (forget E).sig.Deposit,
+         (forget E).ops.revise B_E d_E d'_E → (forget E).ops.truth B_E d'_E)) →
+      Tier4Witness .tier4_bank_goals_compat
+  | bankGoalsSurj :
+      (∀ (E : ExtModel) (C : CoreModel) (h : SurjectiveCompatible E C)
+        (h_sw : SafeWithdrawalGoal C) (h_re : ReliableExportGoal C)
+        (h_sd : SoundDepositsGoal C) (h_sc : SelfCorrectionGoal C)
+        (h_cl : CorrigibleLedgerGoal C),
+        SafeWithdrawalGoal (forget E) ∧ ReliableExportGoal (forget E) ∧
+        SoundDepositsGoal (forget E) ∧ SelfCorrectionGoal (forget E) ∧
+        CorrigibleLedgerGoal (forget E)) →
+      Tier4Witness .tier4_bank_goals_surj
+
+/-- For every Tier 4 cluster, deliver its `Tier4Witness`. -/
+def tier4Witness : (c : EnabledTier4Cluster) → Tier4Witness c
+  | .tier4_commitments       => .commitments   commitments_transport_pack
+  | .tier4_structural        => .structural    structural_theorems_unconditional
+  | .tier4_lts_universal     => .ltsUniversal  lts_theorems_step_universal
+  | .tier4_bank_goals_compat => .bankGoalsCompat
+      (fun E C h h_sw h_re h_sd h_sc h_cl =>
+        ⟨transport_safe_withdrawal E C h h_sw,
+         transport_reliable_export E C h h_re,
+         transport_sound_deposits E C h h_sd,
+         transport_self_correction E C h h_sc,
+         transport_corrigible_universal E C h h_cl⟩)
+  | .tier4_bank_goals_surj   => .bankGoalsSurj
+      (fun E C h h_sw h_re h_sd h_sc h_cl =>
+        ⟨transport_safe_withdrawal E C h.toCompatible h_sw,
+         transport_reliable_export E C h.toCompatible h_re,
+         transport_sound_deposits E C h.toCompatible h_sd,
+         transport_self_correction E C h.toCompatible h_sc,
+         transport_corrigible_ledger E C h h_cl⟩)
 
 
 /-! ## §5  Soundness: `clusterEnabled cfg c = true → clusterValid c` -/
@@ -463,7 +679,12 @@ cluster and holds machine-checked evidence that each one is valid. -/
     for all six Tier 2 forcing clusters (total, config-independent).
     `enabledConstraintWitnesses` — filtered to only the clusters enabled by `cfg`.
 
-    **Layer 3 (proof-content):** `cluster_*` witnesses in §5b cover all 25 clusters. -/
+    **Layer 3 (indexed witnesses):** `goalWitnesses`, `worldWitnesses`, `tier4Witnesses`
+    — indexed inductives packaging the real transport theorem for each cluster.
+    `enabledGoalWitnesses`, `enabledWorldWitnesses`, `enabledTier4Witnesses` — filtered
+    to only the clusters enabled by `cfg` (using dependent pairs `Σ c, WitnessType c`).
+
+    **Layer 4 (proof-content):** `cluster_*` witnesses in §5b cover all 25 clusters. -/
 structure CertifiedProjection (cfg : EpArchConfig) where
   /-- The list of enabled clusters (equal to `explainConfig cfg`). -/
   enabled                   : List ClusterTag
@@ -474,11 +695,24 @@ structure CertifiedProjection (cfg : EpArchConfig) where
   /-- Tier 2 proof carriers (all six, config-independent).
       `constraintWitnesses c` delivers the real proposition and proof for
       forcing cluster `c` regardless of which constraints `cfg` enables. -/
-  constraintWitnesses       : (c : EnabledConstraintCluster) → ConstraintProof
+  constraintWitnesses        : (c : EnabledConstraintCluster) → ConstraintProof
   /-- Filtered Tier 2 proof carriers: only the constraint clusters enabled
       by `cfg`.  Each entry pairs the sub-tag with its `ConstraintProof`,
       so callers get proposition + proof for exactly the active clusters. -/
   enabledConstraintWitnesses : List (EnabledConstraintCluster × ConstraintProof)
+  /-- Tier 3 goal proof carriers (all six, config-independent).
+      Each `GoalWitness c` packages the polymorphic transport theorem for `c`. -/
+  goalWitnesses              : (c : EnabledGoalCluster) → GoalWitness c
+  /-- World-bundle proof carriers (all eight, config-independent). -/
+  worldWitnesses             : (c : EnabledWorldCluster) → WorldWitness c
+  /-- Tier 4 proof carriers (all five, config-independent). -/
+  tier4Witnesses             : (c : EnabledTier4Cluster) → Tier4Witness c
+  /-- Filtered Tier 3 goal witnesses: only the clusters enabled by `cfg`. -/
+  enabledGoalWitnesses       : List (Σ c : EnabledGoalCluster, GoalWitness c)
+  /-- Filtered world witnesses: only the clusters enabled by `cfg`. -/
+  enabledWorldWitnesses      : List (Σ c : EnabledWorldCluster, WorldWitness c)
+  /-- Filtered Tier 4 witnesses: only the clusters enabled by `cfg`. -/
+  enabledTier4Witnesses      : List (Σ c : EnabledTier4Cluster, Tier4Witness c)
 
 /-- Compute and certify the full projection for any `EpArchConfig`. -/
 def certify (cfg : EpArchConfig) : CertifiedProjection cfg where
@@ -493,6 +727,34 @@ def certify (cfg : EpArchConfig) : CertifiedProjection cfg where
     allCC.filterMap fun c =>
       if clusterEnabled cfg c.toClusterTag
       then some (c, constraintProof c)
+      else none
+  goalWitnesses  := goalWitness
+  worldWitnesses := worldWitness
+  tier4Witnesses := tier4Witness
+  enabledGoalWitnesses :=
+    let allGC : List EnabledGoalCluster :=
+      [.goal_safeWithdrawal, .goal_reliableExport, .goal_soundDeposits,
+       .goal_selfCorrection, .goal_corrigible_universal, .goal_corrigible_full]
+    allGC.filterMap fun c =>
+      if clusterEnabled cfg c.toClusterTag
+      then some ⟨c, goalWitness c⟩
+      else none
+  enabledWorldWitnesses :=
+    let allWC : List EnabledWorldCluster :=
+      [.world_lies_possible, .world_bounded_audit, .world_asymmetric_costs,
+       .world_partial_observability, .world_spoofed_v,
+       .world_lies_scale, .world_rolex_ddos, .world_ddos]
+    allWC.filterMap fun c =>
+      if clusterEnabled cfg c.toClusterTag
+      then some ⟨c, worldWitness c⟩
+      else none
+  enabledTier4Witnesses :=
+    let allT4 : List EnabledTier4Cluster :=
+      [.tier4_commitments, .tier4_structural, .tier4_lts_universal,
+       .tier4_bank_goals_compat, .tier4_bank_goals_surj]
+    allT4.filterMap fun c =>
+      if clusterEnabled cfg c.toClusterTag
+      then some ⟨c, tier4Witness c⟩
       else none
 
 
