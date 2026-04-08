@@ -14,8 +14,9 @@ certify that?
 
 EpArch's theorem corpus is sliced into **30 certified clusters** across six families.
 Constraint, goal, and world clusters are config-driven — activated by the `EpArchConfig`
-a user provides. Meta-modularity, lattice-stability, and Tier 4 structural clusters are
-always-on: they hold unconditionally and require no configuration.
+a user provides. Meta-modularity, lattice-stability, and all Tier 4 clusters (commitments,
+structural, LTS-universal, and bank-goal transport) are always-on: they hold
+unconditionally and require no configuration.
 
 | Family | Count | What it covers |
 |---|---|---|
@@ -445,7 +446,7 @@ This is the real Cluster C result — not just the competition gate but the full
 | `PaperFacing` / competition gate | `transport_core` + `sub_revision_safety` | ✅ Complete | `RevisionSafety.lean`, `Modularity.lean` |
 | Health goals (5 predicates) | `CoreModel`-parameterized + individual transport theorems | ✅ Complete | `Health.lean`, `Meta/TheoremTransport.lean` |
 | Main theorem library (109+) | Four-part schema: standalone commitments, structural unconditional, LTS-universal operational, all-five-health-goals bank bridge | ✅ Complete | `Meta/Tier4Transport.lean` |
-| Certified cluster surface (30 clusters) | `EpArchConfig → ClusterTag → Bool` routing + indexed witness carriers; all 6 cluster families (constraint, goal, Tier 4, world, meta-modular, lattice) are individually selectable and proof-carrying | ✅ Complete | `Meta/ClusterRegistry.lean`, `Meta/Config.lean` |
+| Certified cluster surface (30 clusters) | `EpArchConfig → ClusterTag → Bool` routing + indexed witness carriers; all 6 cluster families are proof-carrying; constraint/goal/world families are config-selectable; Tier 4/meta-modular/lattice families are always-on | ✅ Complete | `Meta/ClusterRegistry.lean`, `Meta/Config.lean` |
 
 ---
 
