@@ -116,9 +116,9 @@ theorem success_feasible :
 
 /-- Paper-facing name: success forces Bank primitives.
 
-    Accepts the WellFormed hypothesis for backward compatibility, but
-    routes through `convergence_structural` via `wellformed_implies_structurally_forced`.
-    The proof is therefore structurally grounded, not a biconditional projection. -/
+    Any working system that is WellFormed and satisfies all operational
+    properties contains Bank primitives.  The proof routes through
+    `convergence_structural` via `wellformed_implies_structurally_forced`. -/
 theorem goals_force_bank_primitives :
     ∀ W : WorkingSystem, WellFormed W → SatisfiesAllProperties W → containsBankPrimitives W :=
   fun W h_wf h_sat =>

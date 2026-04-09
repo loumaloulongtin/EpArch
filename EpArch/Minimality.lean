@@ -283,36 +283,35 @@ def WellFormed (W : WorkingSystem) : Prop :=
   (W.supports_correction = true ↔ W.spec.has_redeemability = true)
 
 
-/-! ## WellFormed Extractions (Kept for Meta/Config Compatibility)
+/-! ## WellFormed Lifting Theorems
 
-Each theorem extracts the forward direction of one biconditional from the
+Each theorem lifts the forward direction of one biconditional from the
 `WellFormed` coherence package.  These are logical consequences of
-`WellFormed`, not independently derived forcing results.  They are
-preserved because `EpArch.Meta.Config` registers them as named proof
-witnesses; the independent structural grounding for each implication is
-in the Structural Forcing Models section below. -/
+`WellFormed`, not independently derived forcing results.  The independent
+structural grounding for each implication is in the Structural Forcing
+Models section below. -/
 
-/-- Distributed agents → Bubbles. Extraction of WellFormed.1.mp. -/
+/-- Distributed agents → Bubbles. -/
 theorem distributed_agents_require_bubbles (W : WorkingSystem) (h_wf : WellFormed W) :
     handles_distributed_agents W → HasBubbles W := h_wf.1.mp
 
-/-- Bounded audit → Trust bridges. Extraction of WellFormed.2.1.mp. -/
+/-- Bounded audit → Trust bridges. -/
 theorem bounded_audit_requires_trust_bridges (W : WorkingSystem) (h_wf : WellFormed W) :
     handles_bounded_audit W → HasTrustBridges W := h_wf.2.1.mp
 
-/-- Export across boundaries → Headers + gates. Extraction of WellFormed.2.2.1.mp. -/
+/-- Export across boundaries → Headers + gates. -/
 theorem export_requires_headers (W : WorkingSystem) (h_wf : WellFormed W) :
     handles_export W → HasHeaders W := h_wf.2.2.1.mp
 
-/-- Adversarial pressure → Revocation. Extraction of WellFormed.2.2.2.1.mp. -/
+/-- Adversarial pressure → Revocation. -/
 theorem adversarial_requires_revocation (W : WorkingSystem) (h_wf : WellFormed W) :
     handles_adversarial W → HasRevocation W := h_wf.2.2.2.1.mp
 
-/-- Coordination need → Bank. Extraction of WellFormed.2.2.2.2.1.mp. -/
+/-- Coordination need → Bank. -/
 theorem coordination_requires_bank (W : WorkingSystem) (h_wf : WellFormed W) :
     handles_coordination W → HasBank W := h_wf.2.2.2.2.1.mp
 
-/-- Truth pressure → Redeemability. Extraction of WellFormed.2.2.2.2.2.mp. -/
+/-- Truth pressure → Redeemability. -/
 theorem truth_pressure_requires_redeemability (W : WorkingSystem) (h_wf : WellFormed W) :
     handles_truth_pressure W → HasRedeemability W := h_wf.2.2.2.2.2.mp
 
@@ -554,10 +553,11 @@ def minimalConstraintsTable : List PrimitiveNecessity := [
     Structural Forcing Models
     ========================================================================
 
-The forcing theorems above (`distributed_agents_require_bubbles`, etc.)
+The lifting theorems above (`distributed_agents_require_bubbles`, etc.)
 derive features from the `WellFormed` coherence package, which explicitly
 states biconditionals like `has_shared_records ↔ has_bubble_separation`.
-A fair criticism: those proofs are projections from assumed equivalences.
+Those proofs reflect the biconditional structure of `WellFormed` rather
+than the constraint geometry directly.
 
 This section provides **independent, structurally-grounded proofs** for
 each forcing direction.  Each model captures the essential structure of
