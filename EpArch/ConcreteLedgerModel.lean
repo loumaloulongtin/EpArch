@@ -8,12 +8,13 @@ import EpArch.Theorems
 # ConcreteLedgerModel.lean — Zero-Axiom Constructive Witness
 
 A concrete model of a decentralized ledger that satisfies ALL commitments
-from Commitments.lean, ALL Bank governance axioms, and ALL Invariants.
+from Commitments.lean, ALL Bank governance theorems, and ALL Invariants.
 
 ## Purpose
 
-This is the NON-VACUITY proof: the axiom bundles used throughout the
-codebase are consistent — there exists at least one model satisfying them.
+This is the NON-VACUITY proof: the assumption bundles (world-bundles and
+structural predicates) used throughout the codebase are consistent —
+there exists at least one model satisfying them.
 This is a consistency proof, not a uniqueness claim.
 
 ## Key Properties
@@ -25,7 +26,7 @@ This is a consistency proof, not a uniqueness claim.
   CProvenance = List String. These are intentionally simple — the point
   is satisfiability, not realism.
 - **Full coverage:** Witnesses all 8 commitments (Commitments.lean),
-  all 18 Bank axioms (Bank.lean), and all 5 invariants (Invariants.lean).
+  all Bank theorems and operators (Bank.lean), and all 5 invariants (Invariants.lean).
 
 ## Role in Architecture
 
@@ -676,7 +677,7 @@ def CBehaviorallyEquivalent (acl1 acl2 : CACL) (bubble1 bubble2 : CBubble) : Pro
 
 /-- Theorem: Systems with the same deposits and ACL behave identically.
 
-    This grounds the abstract `bank_primitives_determine_behavior` axiom:
+    This grounds the abstract `bank_primitives_determine_behavior` theorem:
     the primitives (deposits, ACL, lifecycle) determine the behavior. -/
 theorem concrete_bank_determines_behavior (acl : CACL) (B1 B2 : CBubble) :
     B1.deposits = B2.deposits → B1.id = B2.id → CBehaviorallyEquivalent acl acl B1 B2 := by
@@ -686,7 +687,7 @@ theorem concrete_bank_determines_behavior (acl : CACL) (B1 B2 : CBubble) :
   rw [h_eq, h_id]
 
 
-/-! ## Grounding Linking Axioms in Concrete Model -/
+/-! ## Grounding Abstract Theorems in Concrete Model -/
 
 /-- Theorem: Export requires headers (grounded version).
 
@@ -1069,7 +1070,7 @@ theorem noBubbles_flat_scope_fires
     `no_bubbles_lacks_bubbles` refutes it.  One step; no convergence
     pipeline involved.
 
-    This is `deficient system + bridge axiom ⇒ contradiction`, not
+    This is `deficient system + Bridge* hypothesis ⇒ contradiction`, not
     `deficient system alone ⇒ contradiction`.  `SatisfiesAllProperties`
     is not needed; `ForcingEmbedding` is not constructed.  The structural
     model does the work directly. -/
@@ -1304,8 +1305,8 @@ theorem no_headers_lacks_headers : ¬HasHeaders NoHeadersSystem := by
 /-- The discriminating import scenario for the no-headers system.
 
     Without headers, there is no metadata to distinguish good from bad
-    imports.  The bridge axiom (provided as a hypothesis in the
-    theorems below) says that without metadata, import functions
+    imports.  The bridge hypothesis (provided as a theorem argument)
+    says that without metadata, import functions
     are uniform: `f x = f y` for all x y. -/
 def noHeadersImport : RepresentsDiscriminatingImport NoHeadersSystem where
   Claim := ImportClaim
@@ -1320,7 +1321,7 @@ def noHeadersImport : RepresentsDiscriminatingImport NoHeadersSystem where
     requires `f bad_data = false` AND `f good_data = true`.
     `Bool.noConfusion` catches the contradiction: `true = false` is absurd.
 
-    The uniformity hypothesis is the bridge axiom: it says that
+    The uniformity hypothesis is the bridge predicate: it says that
     without headers, the system cannot distinguish good from bad claims,
     so any import decision function is forced to treat them identically.
 
@@ -1477,14 +1478,14 @@ def truth_endorsed : TruthClaim → Prop
 
 /-- Falsifiability: without redeemability, nothing is externally falsifiable.
     The closed system has no external constraint surface to test against.
-    This IS the bridge axiom: "closed" means "no external falsification." -/
+    This IS the bridge predicate: "closed" means "no external falsification." -/
 def truth_falsifiable_closed : TruthClaim → Prop
   | .the_claim => False
 
 /-- The closed endorsement scenario for the no-redeemability system.
 
     Without redeemability (no external constraint surface), endorsed
-    claims cannot be externally falsified.  The closure axiom holds
+    claims cannot be externally falsified.  The closure hypothesis holds
     trivially because `truth_falsifiable_closed` maps everything to False.
 
     The structural model then fires: `closed_system_unfalsifiable` proves
@@ -1505,7 +1506,7 @@ def noRedeemabilityClosed : RepresentsClosedEndorsement NoRedeemabilitySystem wh
 
     For this system, `truth_falsifiable_closed` maps everything to False,
     so the result is straightforward — but that IS the point: the closure
-    axiom captures that a system without redeemability has no external
+    predicate captures that a system without redeemability has no external
     falsification mechanism.  The structural model is what PROVES that
     truth pressure (∃ endorsed ∧ falsifiable) is impossible under this
     condition. -/
@@ -1538,22 +1539,22 @@ The concrete model demonstrates:
 5. Convergence theorem applies via ForcingEmbedding (all Or.inl)
 
 The deficient systems demonstrate six bridge-impossibility theorems:
-6. Scope: `noBubbles_bridge_impossible` — flat scope bridge axiom
+6. Scope: `noBubbles_bridge_impossible` — flat scope bridge hypothesis
    → `bubbles_forced_by_bridge` → HasBubbles → contradiction.
    Structural model: `flat_scope_impossible`.
-7. Bank: `noBank_bridge_impossible` — shared deposit bridge axiom
+7. Bank: `noBank_bridge_impossible` — shared deposit bridge hypothesis
    → `bank_forced_by_bridge` → HasBank → contradiction.
    Structural model: `private_storage_no_sharing`.
-8. Revocation: `noRevocation_bridge_impossible` — escape bridge axiom
+8. Revocation: `noRevocation_bridge_impossible` — escape bridge hypothesis
    → `revocation_forced_by_bridge` (induction) → HasRevocation → contradiction.
    Structural model: `monotonic_no_exit`.
-9. Headers: `noHeaders_bridge_impossible` — uniform+sound+complete import axiom
+9. Headers: `noHeaders_bridge_impossible` — uniform+sound+complete import predicate
    → `headers_forced_by_bridge` (Bool.noConfusion) → HasHeaders → contradiction.
    Structural model: `no_sound_complete_uniform_import`.
-10. Trust: `noTrust_bridge_impossible` — within-budget bridge axiom
+10. Trust: `noTrust_bridge_impossible` — within-budget bridge hypothesis
     → `trust_forced_by_bridge` (Nat arithmetic) → HasTrustBridges → contradiction.
     Structural model: `verification_only_import_incomplete`.
-11. Redeemability: `noRedeemability_bridge_impossible` — endorsed+falsifiable axiom
+11. Redeemability: `noRedeemability_bridge_impossible` — endorsed+falsifiable predicate
     → `redeemability_forced_by_bridge` → HasRedeemability → contradiction.
     Structural model: `closed_system_unfalsifiable`.
 
@@ -1561,7 +1562,7 @@ The deficient systems demonstrate six bridge-impossibility theorems:
 The concrete system uses ForcingEmbedding → StructurallyForced → convergence_structural
 (the full pipeline).  Deficient systems use Bridge_X → *_forced_by_bridge → ¬HasX
 (direct contradiction, no convergence pipeline).  This matches what is actually
-proven: deficient system + bridge axiom ⇒ contradiction — NOT deficient system alone.
+proven: deficient system + Bridge* hypothesis ⇒ contradiction — NOT deficient system alone.
 
 This proves the axioms are CONSISTENT: they don't rule out all possible
 systems. The Bank architecture is realizable, not just hypothetical.
@@ -1707,7 +1708,7 @@ theorem revoke_is_revision7 :
 /-! ### Explicit Trace Construction
 
 We construct the trace explicitly using Step constructors, removing the need
-for trace axioms. The key is proving that state transformations match. -/
+for trace proofs. The key is proving that state transformations match. -/
 
 /-- The intermediate state after challenge matches stateAfterChallenge7. -/
 theorem challenge_step_state_eq :
@@ -1757,7 +1758,7 @@ theorem concrete_trace_hasRevision : concrete_trace.hasRevision = true := by
   unfold concrete_trace Trace.hasRevision Action.isRevision
   rfl
 
-/-- Non-axiom version: A concrete trace exists from initial to revoked state. -/
+/-- Non-`axiom` version: A concrete trace exists from initial to revoked state. -/
 theorem concrete_revision_trace_exists' :
     ∃ (t : Trace (Reason := String) (Evidence := String)
         initialConcreteState7 stateAfterRevoke7),
@@ -1843,20 +1844,20 @@ theorem revoke_produces_resolved7 : isResolved stateAfterRevoke7 0 := by
   exact ⟨{ witness_deposit with status := .Revoked }, rfl, rfl⟩
 
 /-- A concrete trace of length 2: Challenge then Revoke.
-    Defined explicitly using concrete_trace (no axiom). -/
+    Defined explicitly using concrete_trace (no Lean axiom). -/
 def concrete_resolution_trace9 :
     Trace (Reason := String) (Evidence := String)
       initialConcreteState7 stateAfterRevoke7 :=
   concrete_trace
 
 /-- The trace has length 2 (Challenge then Revoke). -/
-theorem concrete_trace_length_axiom : concrete_resolution_trace9.length = 2 := by
+theorem concrete_trace_length_fact : concrete_resolution_trace9.length = 2 := by
   unfold concrete_resolution_trace9 concrete_trace Trace.length
   rfl
 
 /-- The concrete resolution trace has length 2. -/
 theorem concrete_trace_length9 :
-    concrete_resolution_trace9.length = 2 := concrete_trace_length_axiom
+    concrete_resolution_trace9.length = 2 := concrete_trace_length_fact
 
 /-- The concrete model demonstrates convergence: deposits can reach resolution. -/
 theorem concrete_converges9 :
@@ -1883,7 +1884,7 @@ def concrete_convergence_witness9 :
 
 /-- The concrete convergence witness has time = 2. -/
 theorem concrete_convergence_time9 :
-    concrete_convergence_witness9.time = 2 := concrete_trace_length_axiom
+    concrete_convergence_witness9.time = 2 := concrete_trace_length_fact
 
 
 /-! ## Non-Vacuity Proofs for Step-Preserved Invariants -/
@@ -1944,7 +1945,7 @@ theorem concrete_step_preservation_example10 : ∃ (s s' : SystemState String CS
     inv_valid_status s ∧ t.length > 0 :=
   ⟨initialConcreteState7, stateAfterRevoke7, concrete_resolution_trace9,
    initial_satisfies_valid_status10,
-   by rw [concrete_trace_length_axiom]; decide⟩
+   by rw [concrete_trace_length_fact]; decide⟩
 
 
 /-! ## Competition Gate Non-Vacuity Summary
