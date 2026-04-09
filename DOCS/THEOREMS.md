@@ -346,21 +346,21 @@ For each of the six forcing dimensions, alternative mechanisms are instantiated 
 | §  | Alternatives covered | Key theorems |
 |----|----------------------|---------------|
 | §1b | Capability-token systems, federated namespaces, parameterized gates | `capability_flat_impossible`, `federated_flat_impossible`, `parameterized_gate_flat_impossible` — each gives an `AgentDisagreement`; `flat_scope_impossible` fires unchanged |
-| §2b | Staged verification, delegated verification markets | `staged_verification_incomplete` (cumulative-cost `BoundedVerification`); `delegated_is_trust_bridge` + `trust_required_iff_not_locally_verifiable` + `delegation_necessary_iff_locally_inadequate` — delegation IS a trust bridge by strict biconditional |
+| §2b | Staged verification, delegated verification markets | `staged_verification_incomplete` (cumulative-cost `BoundedVerification`); `delegated_is_trust_bridge` + `trust_required_iff_not_locally_verifiable` + `delegation_necessary_iff_locally_inadequate` — delegation satisfies the trust-bridge definition by biconditional |
 | §3b | Content-addressed routing, global contextual routing state | `content_addressed_has_header` — sound+complete content-addressed import satisfies `IsHeader` directly; `global_routing_cannot_discriminate` — global state is effectively uniform |
 | §4b | Quarantine, hold/shadow, rollback | `quarantine_violates_absorbing`, `hold_violates_absorbing`, `rollback_violates_absorbing` — each is a non-absorbing exit from accepted, i.e., revocation under another name |
-| §5b | Replicated logs, attestation networks, CRDT-based shared state | `replicated_log_is_shared`, `attestation_network_is_shared`, `crdt_is_shared` — each satisfies the sharing condition; isolation does not hold; they ARE shared ledgers |
+| §5b | Replicated logs, attestation networks, CRDT-based shared state | `replicated_log_is_shared`, `attestation_network_is_shared`, `crdt_is_shared` — each satisfies the sharing condition; isolation does not hold; each qualifies as a shared ledger under the definition |
 | §6b | Anomaly signaling, partial contestation, soft falsifiability | `anomaly_signal_insufficient`; `partial_contestation_closed_on_endorsed`; `soft_falsifiability_closed`; `*_closed_when_universal` under coverage assumption |
 
-### `IsHeader` Minimality Definition (Minimality.lean)
+### `IsHeader` Definition (Minimality.lean)
 
-`IsHeader M f` — a routing function `f : M.Claim → Bool` is a header for `DiscriminatingImport` scenario `M` iff it discriminates good from bad claims (`f M.good ≠ f M.bad`). This is the *minimality definition*: the least structure needed to route correctly.
+`IsHeader M f` — a routing function `f : M.Claim → Bool` is a header for `DiscriminatingImport` scenario `M` iff it discriminates good from bad claims (`f M.good ≠ f M.bad`). This is the minimal structure needed to route correctly.
 
 | Theorem | Statement | Role |
 |---------|-----------|------|
-| `sound_complete_import_is_header` | Sound+complete import → `IsHeader` | Closes the classificatory gap as a theorem |
+| `sound_complete_import_is_header` | Sound+complete import → `IsHeader` | Any sound+complete import satisfies the header definition |
 | `routing_requires_header` | ∃ sound+complete f → ∃ header | Any working routing function carries a header |
-| `content_addressed_has_header` | Sound+complete content-addressed policy → `IsHeader` | Hash-based routing IS a header via the embedding |
+| `content_addressed_has_header` | Sound+complete content-addressed policy → `IsHeader` | Content-addressed routing satisfies the header definition via the embedding |
 
 ### Forcing Stratification (Minimality.lean §6c)
 
@@ -371,7 +371,7 @@ Not all six forcing dimensions have the same strength. §6c proves this stratifi
 | Hard | Scope, revocation, bank, partial contestation | `redeemability_hard_forced`, `partial_contestation_hard_forced` | Impossibility fires from structural fields alone, no coverage assumption |
 | Soft | Anomaly signaling, soft falsifiability | `anomaly_not_hard_forced`, `soft_falsifiability_not_hard_forced` | Consistent instances exist with endorsed+falsifiable claims; coverage assumption (`∀ c, endorsed c → signals c`) cannot be discharged from structure alone |
 
-The stratification is a theorem, not a caveat: `anomaly_not_hard_forced` and `soft_falsifiability_not_hard_forced` exhibit explicit counterexamples (vacuous `emits_anomaly`/`flagged`) proving soft closure is genuinely weaker.
+`anomaly_not_hard_forced` and `soft_falsifiability_not_hard_forced` exhibit explicit counterexamples (vacuous `emits_anomaly`/`flagged`) confirming soft closure is genuinely weaker than hard forcing.
 
 ### Forcing Package (Convergence.lean)
 

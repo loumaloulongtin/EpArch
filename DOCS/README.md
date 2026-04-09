@@ -58,6 +58,8 @@ For the full paper-section-to-Lean-artifact mapping (with math notation, A.# lab
 | 7 | Invariant Preservation — Truth and gate invariants under trace induction |
 | 8 | Modal Properties — Safety/Sensitivity ↔ S/E/V header preservation |
 | 9 | Grounded Minimality — Each feature necessary for specific capabilities |
+| 9b | Abstract Structural Forcing — six impossibility models + alternative dismissals; `StructurallyForced` / `convergence_structural` (`Minimality.lean` + `Convergence.lean`) |
+| 9c | Observation-Boundary Equivalence — Bank primitive flags fully determine observable behavior (`BehavioralEquivalence.lean`) |
 | 10 | Adversarial Model — Attack structures, DDoS vectors, obligation theorems |
 | 11 | Repair Loop Semantics — Challenge-repair-revalidation cycle |
 | 12 | Withdrawal Gates — Three-gate model (Status ∧ ACL ∧ τ) |
@@ -96,6 +98,9 @@ For the full paper-section-to-Lean-artifact mapping (with math notation, A.# lab
 | `Meta/Config.lean` | Certification engine: `certify`, proof witnesses, completeness theorems | 0 |
 | `Health.lean` | Health predicates + necessity theorems | 0 |
 | `Invariants.lean` | Protocol requirements | 0 |
+| `Minimality.lean` | Structural impossibility models + alternative-architecture dismissals | 0 |
+| `Convergence.lean` | `StructurallyForced`, `ForcingEmbedding`, `convergence_structural`, bridge predicates | 0 |
+| `BehavioralEquivalence.lean` | Observation-boundary equivalence; Bank flags determine behavior | 0 |
 | `ConcreteLedgerModel.lean` | Non-vacuity witness (constructive) | 0 |
 
 ## Build & Verification
