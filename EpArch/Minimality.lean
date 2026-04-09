@@ -1078,7 +1078,7 @@ def RepresentsDisagreement.toDisagreement {W : WorkingSystem}
     `embedding_to_structurally_forced` closes it via `flat_scope_impossible`.
 
     This theorem demonstrates the abstract model doing real work: the
-    structural lemma is load-bearing. -/
+    structural lemma is used essentially here. -/
 theorem disagreement_without_bubbles_embeds
     (W : WorkingSystem)
     (R : RepresentsDisagreement W)

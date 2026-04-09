@@ -201,7 +201,6 @@ theorem traction_implementation_irrelevant
 3. **Claim completeness** — other fundamentals could be added similarly.
 
 The module establishes the pattern for scope-irrelevance claims.
-Extending to all paper-facing theorems is straightforward but verbose.
 -/
 
 

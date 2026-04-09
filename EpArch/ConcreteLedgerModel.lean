@@ -1065,13 +1065,7 @@ theorem noBubbles_flat_scope_fires
 
     If the system commits to a flat acceptance function faithful to both
     agents, `bridge_bubbles_impossible` derives the contradiction — and
-    `no_bubbles_lacks_bubbles` supplies the refutation.  One step; no convergence
-    pipeline involved.
-
-    This is `deficient system + Bridge* hypothesis ⇒ contradiction`, not
-    `deficient system alone ⇒ contradiction`.  `SatisfiesAllProperties`
-    is not needed; `ForcingEmbedding` is not constructed.  The structural
-    model does the work directly. -/
+    `no_bubbles_lacks_bubbles` supplies the refutation. -/ -/
 theorem noBubbles_bridge_impossible
     (f : DisagreementClaim → Prop)
     (hf₁ : ∀ c, f c ↔ agent1_accept c)
@@ -1555,9 +1549,8 @@ The deficient systems demonstrate six bridge-impossibility theorems:
     Structural model: `closed_system_unfalsifiable`.
 
 **Separation of concerns:**
-The concrete system uses ForcingEmbedding → StructurallyForced → convergence_structural
-(the full pipeline).  Deficient systems apply `bridge_*_impossible` directly
-(no convergence pipeline): deficient system + Bridge* hypothesis ⇒ contradiction.
+The concrete system uses ForcingEmbedding → StructurallyForced → convergence_structural.
+Deficient systems apply `bridge_*_impossible` directly, without the convergence pipeline.
 
 The commitments are consistent: they do not rule out all possible systems.
 The Bank architecture is realizable, and the structural models catch genuine
