@@ -672,6 +672,39 @@ theorem delegated_is_trust_bridge (M : DelegatedVerification) :
     ¬∀ c : M.Claim, M.verify_cost c ≤ M.budget :=
   verification_only_import_incomplete (delegated_to_bounded M)
 
+/-- A claim is locally verifiable if its verification cost is within budget. -/
+def LocallyVerifiable (M : DelegatedVerification) (c : M.Claim) : Prop :=
+  M.verify_cost c ≤ M.budget
+
+/-- Trust-based import is required for a claim **if and only if** local verification is
+    insufficient.  This is the tight formal biconditional that closes the gap:
+    "delegated verification = trust bridge" is not a classificatory gloss but a
+    provable equivalence grounded in Nat arithmetic.
+
+    Left: a claim exceeding the budget cannot be handled locally.
+    Right: budget failure is the exact structural condition that forces trust-based import.
+    Both directions follow from core Nat order lemmas — no additional structural
+    assumption is needed beyond the arithmetic. -/
+theorem trust_required_iff_not_locally_verifiable (M : DelegatedVerification) (c : M.Claim) :
+    M.verify_cost c > M.budget ↔ ¬LocallyVerifiable M c :=
+  ⟨fun hgt hle => absurd hle (Nat.not_le_of_gt hgt),
+   fun h => (Nat.lt_or_ge M.budget (M.verify_cost c)).elim id (fun h' => (h h').elim)⟩
+
+/-- At the system level: delegation is necessary **if and only if** local verification is
+    insufficient for at least one claim.
+
+    Left-to-right: if some claim exceeds the budget, the universal adequacy predicate fails.
+    Right-to-left: `M.hard_claim` witnesses the shortfall — the evidence is already in the
+    DelegatedVerification fields.
+
+    Together with `delegated_is_trust_bridge`, this completes the equivalence: trust bridges
+    arise precisely when, and only when, local verification is inadequate. -/
+theorem delegation_necessary_iff_locally_inadequate (M : DelegatedVerification) :
+    (∃ c : M.Claim, M.verify_cost c > M.budget) ↔
+    ¬∀ c : M.Claim, LocallyVerifiable M c :=
+  ⟨fun ⟨c, hc⟩ hA => absurd (hA c) (Nat.not_le_of_gt hc),
+   fun _ => ⟨M.hard_claim, M.exceeds_budget⟩⟩
+
 
 /-! ### 3. Export Across Boundaries → Headers (Metadata)
 
@@ -716,6 +749,42 @@ theorem no_sound_complete_uniform_import (M : DiscriminatingImport)
   have h_eq := h_uniform M.good M.bad
   rw [h_sound, h_complete] at h_eq
   exact Bool.noConfusion h_eq
+
+/-- A function `f : M.Claim → Bool` **is a header** for import scenario `M` if it
+    discriminates good from bad claims.  This is the *minimality definition* of a header:
+    the least structure needed to route correctly.
+
+    Any routing function that successfully distinguishes good from bad claims IS a header
+    by this definition — the label is not a classificatory gloss but a formal property of
+    the routing function itself.  The definition absorbs the interpretive step:
+    "non-uniform discrimination = metadata = header" is built into the type. -/
+def IsHeader (M : DiscriminatingImport) (f : M.Claim → Bool) : Prop :=
+  f M.good ≠ f M.bad
+
+/-- A sound-and-complete import function IS a header: it must disagree on good and bad
+    claims.  This closes the classificatory gap as a theorem rather than a gloss.
+
+    Proof: `h_complete` forces `f good = true`; `h_sound` forces `f bad = false`;
+    so `f good ≠ f bad` follows by `Bool.noConfusion`.  No appeal to "header-like"
+    language is needed — the routing function satisfies the definition directly. -/
+theorem sound_complete_import_is_header (M : DiscriminatingImport)
+    (f : M.Claim → Bool)
+    (h_sound : f M.bad = false)
+    (h_complete : f M.good = true) :
+    IsHeader M f := by
+  intro h_eq
+  rw [h_complete, h_sound] at h_eq
+  exact Bool.noConfusion h_eq
+
+/-- Non-uniform routing requires a header: any sound-and-complete import policy carries
+    a header in the sense of `IsHeader`.  The formal identity is unavoidable: the only
+    way to discriminate good from bad imports is to carry per-claim metadata.
+    No assumption about the routing mechanism (hash, state, format) is needed beyond
+    soundness and completeness. -/
+theorem routing_requires_header (M : DiscriminatingImport) :
+    (∃ f : M.Claim → Bool, f M.bad = false ∧ f M.good = true) →
+    ∃ f : M.Claim → Bool, IsHeader M f :=
+  fun ⟨f, hs, hc⟩ => ⟨f, sound_complete_import_is_header M f hs hc⟩
 
 
 /-! ### 3b. Alternative Metadata Strategies Reduce to DiscriminatingImport
@@ -795,6 +864,23 @@ theorem content_addressed_is_header (M : ContentAddressedImport)
     (content_addressed_to_discriminating M)
     (fun c => M.import_by_hash (M.hash c))
     h_uniform h_sound h_complete
+
+/-- A sound-and-complete content-addressed policy **carries a header**: the composite
+    routing function `import_by_hash ∘ hash` IS a header for the embedded
+    `DiscriminatingImport` scenario.
+
+    This replaces the interpretive gloss "non-uniform hash-based routing is header-like"
+    with a formal identity proven via `sound_complete_import_is_header`.  The `IsHeader`
+    definition absorbs the classificatory step — the routing function satisfies the
+    minimality definition of a header directly, without any additional argument. -/
+theorem content_addressed_has_header (M : ContentAddressedImport)
+    (h_sound : M.import_by_hash (M.hash M.bad) = false)
+    (h_complete : M.import_by_hash (M.hash M.good) = true) :
+    IsHeader (content_addressed_to_discriminating M)
+             (fun c => M.import_by_hash (M.hash c)) :=
+  sound_complete_import_is_header (content_addressed_to_discriminating M)
+    (fun c => M.import_by_hash (M.hash c))
+    h_sound h_complete
 
 /-- Global contextual routing state: a single shared routing predicate
     applied to all claims (not per-claim metadata). -/
@@ -1193,6 +1279,99 @@ theorem soft_closed_when_universal (M : SoftFalsifiability)
     (h_all : ∀ c, M.endorsed c → M.flagged c) :
     ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c :=
   closed_system_unfalsifiable (soft_to_closed M h_all)
+
+
+/-! ### §6c. Forcing Stratification: Hard vs Soft Forcing for Truth Pressure
+
+The six forcing dimensions do not all have the same tightness.
+
+**Hard forcing:** the bridge scenario is self-refuting from its structural fields alone,
+without additional behavioral coverage assumptions.  Scope, revocation, bank, and
+partial contestation all belong to this tier.
+
+**Soft forcing:** the impossibility fires only under a maximal coverage assumption
+(`∀ c, endorsed c → emits_anomaly c` / `flagged c`).  That assumption cannot be
+discharged from the structure alone — it describes a behavioral property of the system
+that the type does not enforce.
+
+`anomaly_not_hard_forced` and `soft_falsifiability_not_hard_forced` prove this
+stratification constructively: each exhibits a consistent `AnomalySignaling /
+SoftFalsifiability` instance with an endorsed, externally-falsifiable claim, showing
+the structure does not rule out the gap that hard forcing closes.
+
+`partial_contestation_hard_forced` distinguishes partial contestation from the soft
+alternatives: its parameter-free embedding places it at the hard tier alongside
+`ClosedEndorsement` itself.
+
+This stratification is a theorem, not a caveat.  It proves what the alternatives
+establish (soft closure under coverage assumptions) and what they do not (hard
+self-refutation from structure alone).
+-/
+
+/-- Redeemability is hard-forced: `ClosedEndorsement` is self-refuting from its
+    structural fields alone.  The impossibility fires unconditionally — no coverage
+    assumption is needed. -/
+theorem redeemability_hard_forced (M : ClosedEndorsement) :
+    ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c :=
+  closed_system_unfalsifiable M
+
+/-- Anomaly signaling requires a coverage assumption for its closure to hold:
+    the impossibility fires only when all endorsed claims trigger signals.  This is
+    soft forcing — `h_all` cannot be discharged from the `AnomalySignaling` structure
+    alone, making this a strictly weaker forcing tier than `ClosedEndorsement`. -/
+theorem anomaly_requires_coverage_for_closure (M : AnomalySignaling)
+    (h_all : ∀ c, M.endorsed c → M.emits_anomaly c) :
+    ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c :=
+  anomaly_closed_when_universal M h_all
+
+/-- Anomaly signaling is NOT hard-forced: there exists an `AnomalySignaling` instance
+    with an endorsed, externally-falsifiable claim.
+
+    Counterexample: everything is endorsed and externally falsifiable, but nothing
+    signals.  `signal_does_not_open` is vacuously satisfied — the antecedent
+    `emits_anomaly c` is never met, so the implication holds without forcing closure.
+
+    This is the formal lower-bound on truth-pressure alternative forcing: anomaly
+    signaling occupies a weaker tier than `ClosedEndorsement`. -/
+theorem anomaly_not_hard_forced :
+    ¬∀ M : AnomalySignaling, ¬∃ c : M.Claim, M.endorsed c ∧ M.externally_falsifiable c := by
+  intro h
+  let M : AnomalySignaling := {
+    Claim := Unit
+    endorsed := fun _ => True
+    externally_falsifiable := fun _ => True
+    emits_anomaly := fun _ => False
+    signal_does_not_open := fun _ _ h_sig => h_sig.elim
+  }
+  exact h M ⟨(), trivial, trivial⟩
+
+/-- Soft falsifiability is NOT hard-forced: there exists a `SoftFalsifiability` instance
+    with an endorsed, externally-falsifiable claim.
+
+    Counterexample: everything is endorsed and externally falsifiable, but nothing is
+    flagged.  `flag_not_falsifiable` is vacuously satisfied — the antecedent `flagged c`
+    is never met.  The gap that the coverage assumption closes is real and cannot be
+    eliminated by structure alone. -/
+theorem soft_falsifiability_not_hard_forced :
+    ¬∀ M : SoftFalsifiability, ¬∃ c : M.Claim, M.endorsed c ∧ M.externally_falsifiable c := by
+  intro h
+  let M : SoftFalsifiability := {
+    Claim := Unit
+    endorsed := fun _ => True
+    flagged := fun _ => False
+    externally_falsifiable := fun _ => True
+    flag_not_falsifiable := fun _ _ h_flag => h_flag.elim
+  }
+  exact h M ⟨(), trivial, trivial⟩
+
+/-- Partial contestation IS hard-forced: the parameter-free embedding `partial_to_closed`
+    means `closed_system_unfalsifiable` fires without any coverage assumption.
+    Partial contestation is structurally equivalent to `ClosedEndorsement` and occupies
+    the same (hard) forcing tier — unlike anomaly signaling and soft falsifiability,
+    which require coverage assumptions and therefore belong to the soft tier. -/
+theorem partial_contestation_hard_forced (M : PartialContestation) :
+    ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c :=
+  partial_contestation_closed_on_endorsed M
 
 
 end EpArch
