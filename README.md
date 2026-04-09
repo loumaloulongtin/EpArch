@@ -175,7 +175,7 @@ See [DOCS/AXIOMS.md](DOCS/AXIOMS.md) for the full account.
 
 ## Kernel Boundary
 
-EpArch formalizes the coordination-relevant architectural layer, not the full internal epistemology of every possible agent. The boundary is drawn to preserve **agent agnosticism**: the kernel must remain applicable across heterogeneous systems — including minimal agents such as an odometer-like system that tracks position without facing the full human-style constraint bundle — and must scale down gracefully without assuming a thick cognition model.
+EpArch identifies and formalizes the **minimal mechanisms** required for heterogeneous agents to coordinate together — that is, the architectural layer every coordination participant must share regardless of its internal epistemology, cognition model, or constraint bundle. The kernel boundary follows from this goal: anything specific to one class of agent's internals is, by definition, not part of the shared coordination substrate and belongs in a downstream overlay. This includes minimal agents such as an odometer-like system that tracks position without facing the full human-style constraint bundle; such agents are first-class coordination participants, and the kernel must scale down to accommodate them without losing its guarantees.
 
 ### Out of scope for the kernel
 
