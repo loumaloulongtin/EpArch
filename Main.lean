@@ -132,7 +132,6 @@ import EpArch.Theorems
 import EpArch.Minimality
 import EpArch.BehavioralEquivalence
 import EpArch.Convergence
-import EpArch.VerificationDepth
 import EpArch.AdversarialBase  -- Base types/structures (no axioms)
 import EpArch.Invariants
 import EpArch.WorkedTraces

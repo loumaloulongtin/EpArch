@@ -46,6 +46,7 @@ import EpArch.Header
 import EpArch.Bank
 import EpArch.Commitments
 import EpArch.SystemSpec
+import EpArch.VerificationDepth
 
 namespace EpArch
 
@@ -686,6 +687,42 @@ theorem delegation_necessary_iff_locally_inadequate (M : DelegatedVerification) 
     ¬∀ c : M.Claim, LocallyVerifiable M c :=
   ⟨fun ⟨c, hc⟩ hA => absurd (hA c) (Nat.not_le_of_gt hc),
    fun _ => ⟨M.hard_claim, M.exceeds_budget⟩⟩
+
+
+/-! ### §2c. Kernel Witness: BoundedVerification is Non-Vacuous by Construction
+
+The `BoundedVerification` structure and `verification_only_import_incomplete`
+are the architectural abstractions.  `DepthClaim` (VerificationDepth.lean) is
+their semantic ground: it witnesses that claim families with irreducible
+verification cost exist within the kernel itself, not just as a structural
+hypothesis.
+
+The kernel must traverse all n constructors to type-check any proof of
+`DepthClaim n`.  No budget below n suffices.  `bounded_verify_incomplete`
+prooves this by structural recursion on `Nat` — the recursion is the cost.
+
+Consequence for trust bridges: a budget-n verifier cannot verify an
+endorsement of `DepthClaim n`, since that endorsement has depth n+1
+(`endorser_cannot_self_verify`).  The forcing argument of §2 applies to
+this family without any coverage assumption. -/
+
+/-- `BoundedVerification` has a canonical kernel inhabitant for every budget d.
+    Claims are `Nat`-indexed depths; cost equals depth; depth d+1 exceeds
+    budget d.  `DepthClaim (d+1)` is genuinely true (`depth_claim_provable`),
+    so the incompleteness shown by `bounded_verify_incomplete` is real. -/
+def depth_bounded_verification (d : Nat) : BoundedVerification where
+  Claim          := Nat
+  verify_cost    := id
+  budget         := d
+  hard_claim     := d + 1
+  exceeds_budget := Nat.lt_succ_self d
+
+/-- `verification_only_import_incomplete` fires on the kernel witness:
+    no budget-d verifier covers the full `DepthClaim` family. -/
+theorem depth_verification_incomplete (d : Nat) :
+    ¬∀ c : (depth_bounded_verification d).Claim,
+      (depth_bounded_verification d).verify_cost c ≤ (depth_bounded_verification d).budget :=
+  verification_only_import_incomplete (depth_bounded_verification d)
 
 
 /-! ### 3. Export Across Boundaries → Headers (Metadata)
