@@ -213,10 +213,16 @@ concrete_forcing_embedding
   embedding_to_structurally_forced
   │
   ▼
-  convergence_structural
+  concrete_structurally_forced
   │
   ▼
-  existence_under_constraints_structural / _embedding
+  convergence_structural
+  │
+  ├──▶  existence_under_constraints_structural
+  │       (StructurallyForced ∧ SatisfiesAllProperties ∧ containsBankPrimitives)
+  │
+  └──▶  existence_under_constraints_embedding
+          (ForcingEmbedding ∧ SatisfiesAllProperties ∧ containsBankPrimitives)
 ```
 
 
