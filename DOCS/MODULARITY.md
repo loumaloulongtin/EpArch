@@ -302,9 +302,9 @@ The type system then mechanically excludes all and only the theorems that depend
 
 ## Tier 2 — Constraints / Forcing Results (already modular by conjunction separation)
 
-**Mechanism:** The six forcing theorems in `Minimality.lean` are each stated independently.
-Each takes only `WellFormed W` plus the operational predicate for *that* constraint.
-They are not bundled — disabling one constraint does not affect the others.
+**Mechanism:** The six lifting theorems in `Minimality.lean` (`distributed_agents_require_bubbles`, etc.) are each stated independently. Each takes `WellFormed W` plus the operational predicate for *that* constraint; they are logical consequences of the `WellFormed` biconditionals.
+
+The **preferred forcing path** is `StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W` (`convergence_structural`), where `StructurallyForced` packages the six forward implications independently justified by the structural impossibility models (`flat_scope_impossible`, `monotonic_no_exit`, etc.). `WellFormed W → StructurallyForced W` via `wellformed_implies_structurally_forced`, so the two paths are compatible. New forcing contributions should be added as `StructurallyForced` fields, not as additional `WellFormed`-taking theorems.
 
 **File:** `Minimality.lean`
 

@@ -322,6 +322,56 @@ Applications of the safety/sensitivity framework to specific epistemological cas
 
 ---
 
+## Bucket 9b: Abstract Structural Forcing Layer (Minimality.lean)
+
+**Paper Role:** Provide structurally-grounded, WellFormed-independent proofs that each constraint forces its feature. The six lifting theorems (`distributed_agents_require_bubbles`, etc.) derive from `WellFormed`; these theorems justify the implications independently.
+
+### Structural Impossibility Models
+
+Six abstract scenario structures, each proving that a degenerate configuration is impossible.
+
+| Theorem | Structure | Impossibility proved |
+|---------|-----------|----------------------|
+| `flat_scope_impossible` | `AgentDisagreement` | No flat acceptance function can faithfully represent two disagreeing agents |
+| `verification_only_import_incomplete` | `BoundedVerification` | Some claims exceed any fixed budget; verification-only import cannot cover them |
+| `uniform_import_nondiscriminating` / `no_sound_complete_uniform_import` | `DiscriminatingImport` | A uniform import function cannot be both sound and complete |
+| `monotonic_no_exit` | `MonotonicLifecycle` | An absorbing accepted state cannot be escaped at any step count |
+| `private_storage_no_sharing` | `PrivateOnlyStorage` | Isolated agent storage makes shared deposit access impossible |
+| `closed_system_unfalsifiable` | `ClosedEndorsement` | A closed endorsement system has no externally falsifiable endorsed claim |
+
+### Forcing Package
+
+| Structure/Theorem | Description |
+|-------------------|-------------|
+| `StructurallyForced W` | Packages six `handles_X W → HasFeature_X W` implications; each independently justified by the structural models above |
+| `wellformed_implies_structurally_forced` | `WellFormed W → StructurallyForced W` (forward extraction from the biconditionals) |
+| `ForcingEmbedding W` | For each dimension: `handles_X W → HasFeature_X W ∨ Bridge_X W`; connects concrete system data to the abstract scenario witnesses |
+| `embedding_to_structurally_forced` | `ForcingEmbedding W → StructurallyForced W` (mechanical, constructive, no Classical reasoning) |
+
+### Bridge Predicates and Impossibility
+
+| Predicate | `bridge_*_impossible` | What is ruled out |
+|-----------|-----------------------|--------------------|
+| `BridgeBubbles W` | `bridge_bubbles_impossible` | Flat scope faithful to two disagreeing agents |
+| `BridgeTrust W` | `bridge_trust_impossible` | All claims fitting within budget |
+| `BridgeHeaders W` | `bridge_headers_impossible` | Sound-and-complete uniform import |
+| `BridgeRevocation W` | `bridge_revocation_impossible` | Escaping the absorbing accepted state |
+| `BridgeBank W` | `bridge_bank_impossible` | Isolated agents sharing a deposit |
+| `BridgeRedeemability W` | `bridge_redeemability_impossible` | Endorsed claim externally falsifiable in closed system |
+
+### Convergence and Impossibility (Structural Versions)
+
+| Theorem | Statement | Role |
+|---------|-----------|------|
+| `convergence_structural` | `StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W` | Preferred convergence path; no `WellFormed` dependency |
+| `structural_impossibility` | `StructurallyForced W → missing any feature → ¬SatisfiesAllProperties W` | Contrapositive: missing a feature blocks all-property satisfaction |
+
+### Scenario Predicates (ConcreteLedgerModel.lean)
+
+`Represents*` structures supply concrete claim/agent/lifecycle data so the abstract impossibility models fire on real systems, not hypothetical ones. Six scenario types match the six forcing dimensions. Deficient working systems (one feature absent) use scenario predicates to show the corresponding bridge impossibility theorem fires.
+
+---
+
 ## Bucket 10: Adversarial Model (AdversarialBase.lean)
 
 **Paper Role:** Formalize attack patterns and boundary conditions.
@@ -824,7 +874,10 @@ File: `Agent/Imposition.lean`
 
 | Theorem | File | Statement | Paper Claim |
 |---------|------|-----------|-------------|
-| `goals_force_bank_primitives` | Feasibility.lean | ∀ W. WellFormed W → SatisfiesAllProperties W → containsBankPrimitives W | Minimality: forced primitives |
+| `goals_force_bank_primitives` | Feasibility.lean | ∀ W. WellFormed W → SatisfiesAllProperties W → containsBankPrimitives W | Minimality: forced primitives (WellFormed path) |
+| `structural_goals_force_bank_primitives` | Feasibility.lean | ∀ W. StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W | Minimality: forced primitives (structural path) |
+| `existence_under_constraints_structural` | Feasibility.lean | ∃ W. StructurallyForced W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W | Existence via structural path |
+| `existence_under_constraints_embedding` | Feasibility.lean | ∃ W. ForcingEmbedding W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W | Existence via embedding path (strongest form) |
 | `success_feasible` | Feasibility.lean | ∃ W. WellFormed W ∧ SatisfiesAllProperties W | Success bundle non-empty |
 | `world_bundles_feasible` | Feasibility.lean | World bundles satisfiable | Appendix: World non-vacuity |
 | `commitments_feasible` | Feasibility.lean | 8 commitments satisfiable | Appendix: Model non-vacuity |

@@ -509,6 +509,9 @@ All paper claims should reference these definitions.
 | `all_commitments_satisfiable` | `theorem` | ConcreteLedgerModel.lean:559 | A |
 | `concrete_satisfies_all_properties` | `theorem` | ConcreteLedgerModel.lean:~900 | A |
 | `concrete_has_*` | `theorem` family | ConcreteLedgerModel.lean:841-866 | A |
+| `concrete_forcing_embedding` | `def` | ConcreteLedgerModel.lean | A |
+| `concrete_structurally_forced` | `theorem` | ConcreteLedgerModel.lean | A |
+| `concrete_structural_convergence` | `theorem` | ConcreteLedgerModel.lean | A |
 | `existence_under_constraints` | `theorem` | Feasibility.lean | A |
 | `goals_force_bank_primitives` | `theorem` | Feasibility.lean | A |
 | `success_feasible` | `theorem` | Feasibility.lean | A |
@@ -537,6 +540,9 @@ All paper claims should reference these definitions.
 |----------|------|-----------|------|
 | `existence_under_constraints` | `theorem` | Feasibility.lean | A |
 | `goals_force_bank_primitives` | `theorem` | Feasibility.lean | A |
+| `structural_goals_force_bank_primitives` | `theorem` | Feasibility.lean | A |
+| `existence_under_constraints_structural` | `theorem` | Feasibility.lean | A |
+| `existence_under_constraints_embedding` | `theorem` | Feasibility.lean | A |
 | `success_feasible` | `theorem` | Feasibility.lean | A |
 | `SuccessfulSystem` | `structure` | Realizer.lean | C |
 | `ConcreteSuccessfulSystem` | `def` | Realizer.lean | A |
