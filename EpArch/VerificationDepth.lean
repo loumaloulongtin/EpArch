@@ -39,7 +39,6 @@ forcing argument for trust bridges and redeemability.
 -/
 
 import EpArch.WorldCtx
-import EpArch.Minimality
 
 namespace EpArch
 
@@ -97,20 +96,13 @@ theorem no_budget_is_sufficient (d : Nat) :
 
 /-! ### Connection to BoundedVerification
 
-The `DepthClaim` family instantiates `BoundedVerification` (Minimality.lean)
-concretely.  `BoundedVerification` is not merely a well-typed structure —
-it has a canonical kernel inhabitant for every budget d. -/
-
-/-- The DepthClaim family witnesses a `BoundedVerification` scenario for any
-    budget d: claims are indexed by depth, cost equals depth, and depth d+1
-    exceeds budget d. -/
-def depth_bounded_verification (d : Nat) : BoundedVerification where
-  Claim          := Nat
-  verify_cost    := id
-  budget         := d
-  hard_claim     := d + 1
-  exceeds_budget := Nat.lt_succ_self d
-
+`BoundedVerification` in Minimality.lean is the structural scenario abstraction
+that sits above this layer.  The `DepthClaim` family witnesses it: for any
+budget d, `depth_bounded_verification d` supplies the required instance with
+`Claim := Nat`, `verify_cost := id`, `budget := d`, `hard_claim := d+1`.
+`depth_claim_provable` confirms `DepthClaim (d+1)` is genuinely true, so the
+rejection by `bounded_verify_incomplete` is a real incompleteness, not a
+vacuous one.  That bridge lives in Minimality.lean's direction, not here. -/
 /-- An endorsement of a depth-n claim has depth n+1 — one more constructor
     wrapping the original.  Budget-n verifiers cannot verify their own
     endorsements: `bounded_verify n (n+1) = false`. -/
