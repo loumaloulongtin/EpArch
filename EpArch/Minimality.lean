@@ -6,7 +6,7 @@ and satisfies all operational properties, it necessarily contains
 the Bank primitives.  The theorems here prove this via structural
 impossibility: remove primitive X and constraint Y cannot be satisfied.
 
-The core claim is CONVERGENCE under constraints, not metaphysical necessity.
+The core claim is convergence under constraints, not metaphysical necessity.
 These theorems formalize that convergence.
 
 ## Central Role
@@ -58,7 +58,7 @@ variable {PropLike Standard ErrorModel Provenance : Type u}
 The minimal constraints table has three columns:
   | Constraint | What It Forces | If Relaxed |
 
-This typeclass captures the CONSTRAINT column. The "What It Forces" is captured
+This typeclass captures the constraint column. The "What It Forces" is captured
 by the convergence theorem and impossibility theorems below. -/
 
 /-- Predicate: agent controls acceptance for a bubble. -/
@@ -265,14 +265,14 @@ captures this necessary coherence. -/
 
 /-- A system is well-formed if behavioral capabilities ↔ architectural features.
 
-    This is the DESIGN INVARIANT: systems claiming to handle a property
+    The design invariant: systems claiming to handle a property
     must actually have the architectural feature that enables it, AND
     systems with the architectural feature must have the capability enabled.
 
     Note: This is not a circular definition. The behavioral predicates
     (handles_*) inspect boolean flags. The architectural predicates
     (Has*) inspect SystemSpec. Well-formedness connects these two layers
-    BIDIRECTIONALLY, enabling proofs in both directions. -/
+    bidirectionally, enabling proofs in both directions. -/
 def WellFormed (W : WorkingSystem) : Prop :=
   -- Distributed agents handling ↔ bubbles
   (W.has_shared_records = true ↔ W.spec.has_bubble_separation = true) ∧

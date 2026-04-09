@@ -1,20 +1,20 @@
 /-
-Behavioral Equivalence
+EpArch/BehavioralEquivalence.lean — Observation-Boundary Equivalence
 
-Sharp observation-boundary equivalence for WorkingSystems.
-Two systems with identical Bank primitives produce identical observations
-on all inputs in the abstract coordination interface.
+Defines the abstract input/observation interface for WorkingSystems and
+proves that any two systems sharing identical Bank primitive flags produce
+identical observations on all inputs.
 
-## Key Definitions
+## Definitions
 
-- `Input`                    — abstract input events (withdraw, export, challenge, time-advance)
-- `Observation`              — observable outcomes
-- `Behavior`                 — observation function indexed by WorkingSystem primitive flags
-- `BehaviorallyEquivalent`   — identical observations on all inputs
+- `Input`               — abstract input events (withdraw, export, challenge, time-advance)
+- `Observation`         — observable outcomes
+- `Behavior`            — observation function, indexed by WorkingSystem primitive flags
+- `BehaviorallyEquivalent` — identical observations on all inputs
 
-## Key Theorems
+## Theorems
 
-- `working_systems_equivalent`        — SatisfiesAllProperties on both → behaviorally equivalent
+- `working_systems_equivalent`         — SatisfiesAllProperties on both → behaviorally equivalent
 - `bank_primitives_determine_behavior` — WellFormed + containsBankPrimitives → equivalent
 
 ## Dependencies
@@ -27,16 +27,12 @@ import EpArch.Minimality
 
 namespace EpArch
 
-/-! ## Sharp Behavioral Equivalence
-
-Systems with Bank primitives are "behaviorally equivalent" for coordination
-purposes. Define the observation boundary explicitly, then show that
-systems with identical primitives produce identical observations. -/
+/-! ## Behavioral Equivalence -/
 
 /-! ### Input Events -/
 
-/-- Input events that a WorkingSystem can receive.
-    These are the abstract analogues of CInputEvent in ConcreteLedgerModel.lean. -/
+/-- Abstract input events a WorkingSystem can receive.
+    Analogues of CInputEvent in ConcreteLedgerModel.lean. -/
 inductive Input where
   /-- Request to withdraw/rely on a deposit. -/
   | WithdrawRequest (agent_id : Nat) (bubble_id : Nat) (claim_id : Nat)
@@ -51,7 +47,7 @@ inductive Input where
 /-! ### Observable Outcomes -/
 
 /-- Observable outcomes from processing inputs.
-    These are the abstract analogues of COutcome in ConcreteLedgerModel.lean. -/
+    Analogues of COutcome in ConcreteLedgerModel.lean. -/
 inductive Observation where
   /-- Withdrawal succeeded. -/
   | WithdrawSuccess (claim_id : Nat)
@@ -69,29 +65,22 @@ inductive Observation where
 
 /-! ### Behavior Function -/
 
-/-- The behavior of a WorkingSystem on an input.
-
-    This is the KEY INSIGHT: behavior depends ONLY on the primitives.
-    Two systems with the same primitives produce the same observations.
-
-    The function is defined by cases on what primitives the system has.
-    This makes the link between primitives and behavior DEFINITIONAL. -/
+/-- The observation produced by a WorkingSystem on a given input.
+    Depends only on the primitive flags: `has_shared_records`, `enables_reliance`,
+    `supports_correction`. Two systems with identical flags produce identical output. -/
 def Behavior (W : WorkingSystem) (i : Input) : Observation :=
   match i with
   | .WithdrawRequest _ _ claim_id =>
-    -- Withdrawal requires: shared records + reliance
     if W.has_shared_records ∧ W.enables_reliance then
       .WithdrawSuccess claim_id
     else
       .WithdrawDenied "missing primitives"
   | .ExportRequest _ target claim_id =>
-    -- Export requires: shared records + reliance
     if W.has_shared_records ∧ W.enables_reliance then
       .ExportSuccess claim_id target
     else
       .ExportDenied "missing primitives"
   | .ChallengeRequest _ field =>
-    -- Challenge requires: correction support
     if W.supports_correction then
       .ChallengeProcessed s!"challenged field {field}"
     else
@@ -99,13 +88,10 @@ def Behavior (W : WorkingSystem) (i : Input) : Observation :=
   | .TimeAdvance _ =>
     .TimeAdvanced
 
-/-! ### Sharp Behavioral Equivalence -/
+/-! ### Behavioral Equivalence -/
 
-/-- Two systems are behaviorally equivalent iff they produce
-    the same observations on ALL inputs.
-
-    This is the SHARP definition: not "similar enough" but
-    "identical on the observation boundary". -/
+/-- Two systems are behaviorally equivalent if they produce identical
+    observations on every input. -/
 def BehaviorallyEquivalent (W1 W2 : WorkingSystem) : Prop :=
   ∀ i : Input, Behavior W1 i = Behavior W2 i
 
@@ -129,11 +115,9 @@ theorem behavioral_equiv_trans (W1 W2 W3 : WorkingSystem) :
   intro h12 h23 i
   exact (h12 i).trans (h23 i)
 
-/-- Core lemma: systems with identical primitive flags behave identically.
-
-    This is the computational content: Behavior only inspects
-    has_shared_records, enables_reliance, and supports_correction.
-    The resists_adversaries flag is included for completeness but not used by Behavior. -/
+/-- Systems with identical primitive flags produce identical observations.
+    `Behavior` inspects `has_shared_records`, `enables_reliance`, and `supports_correction`;
+    `resists_adversaries` is carried for completeness but not used by `Behavior`. -/
 theorem same_flags_same_behavior (W1 W2 : WorkingSystem)
     (h_records : W1.has_shared_records = W2.has_shared_records)
     (h_reliance : W1.enables_reliance = W2.enables_reliance)
@@ -152,26 +136,19 @@ theorem same_flags_same_behavior (W1 W2 : WorkingSystem)
   | TimeAdvance ticks =>
     rfl
 
-/-- Helper lemma: SatisfiesAllProperties fixes all behavioral flags.
-
-    This is the key computational insight: if a system satisfies all properties,
-    we know exactly what its flags must be. -/
+/-- `SatisfiesAllProperties` determines the values of all behavioral flags. -/
 theorem satisfies_all_fixes_flags (W : WorkingSystem) (h : SatisfiesAllProperties W) :
     W.has_shared_records = true ∧
     W.enables_reliance = true ∧
     W.supports_correction = true ∧
     W.resists_adversaries = true := by
   have ⟨h1, h2, _h3, h4, _h5, _h6⟩ := h
-  -- h1: handles_distributed_agents W = (W.has_shared_records = true)
-  -- h2: handles_bounded_audit W = (W.enables_reliance = true)
-  -- h4: handles_adversarial W = (W.supports_correction = true ∧ W.resists_adversaries = true)
   unfold handles_distributed_agents at h1
   unfold handles_bounded_audit at h2
   unfold handles_adversarial at h4
   exact ⟨h1, h2, h4.1, h4.2⟩
 
-/-- Main behavioral equivalence theorem: systems satisfying all properties behave identically.
-    Proof: SatisfiesAllProperties fixes all flags, same flags = same behavior. -/
+/-- Any two systems satisfying all properties are behaviorally equivalent. -/
 theorem working_systems_equivalent (W1 W2 : WorkingSystem) :
     SatisfiesAllProperties W1 → SatisfiesAllProperties W2 → BehaviorallyEquivalent W1 W2 := by
   intro h_sat1 h_sat2
@@ -183,10 +160,10 @@ theorem working_systems_equivalent (W1 W2 : WorkingSystem) :
     (h1_cor.trans h2_cor.symm)
     (h1_adv.trans h2_adv.symm)
 
-/-- Systems with Bank primitives are behaviorally equivalent for coordination.
+/-- WellFormed systems containing Bank primitives are behaviorally equivalent.
 
-    containsBankPrimitives implies the SystemSpec has all features, which
-    (for well-formed systems) implies the behavioral flags are set correctly.
+    `containsBankPrimitives` implies all spec features; `WellFormed` (backward direction)
+    maps spec features to behavioral flags.
 
     Note: This requires bidirectional well-formedness to connect spec features
     to behavioral flags. The `mpr` direction of WellFormed gives us:
