@@ -1364,7 +1364,7 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 | `cluster_lattice_sub_safety` | Meta/Config.lean | `Compatible E S.model → PaperFacing S.model → PaperFacing (forget E)` | Witness for `.lattice_sub_safety` |
 | `cluster_lattice_pack` | Meta/Config.lean | Full bidirectional lattice-stability conjunction (graceful + sub-safety + full revision safety) | Witness for `.lattice_pack` |
 
-### Grand Total (through Phase F): **539** theorems
+### Grand Total (through Phase F + scope-alternatives): **640** theorems
 
 **Original Bucket 28 additions (+23):**
 - 1 soundness theorem (`clusterEnabled_sound`)
@@ -1377,6 +1377,10 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 - 2 completeness theorems (`mem_enabledMetaModularWitnesses_of_enabled`, `mem_enabledLatticeWitnesses_of_enabled`)
 - 2 constraint-modularity witnesses (`cluster_meta_modular`, `cluster_meta_modular_wellformed`)
 - 3 lattice-stability witnesses (`cluster_lattice_graceful`, `cluster_lattice_sub_safety`, `cluster_lattice_pack`)
+
+**scope-alternatives additions (+101):**
+- `Convergence.lean`: `StructurallyForced` forcing bridge, §1b–§6b alternative-dismissal theorems, scenario predicates, and supporting lemmas
+- `BehavioralEquivalence.lean`: bank-primitive behavioral-equivalence theorems and their symmetric/transitive closure
 
 **New definitions (original +14, Phase F +8 = +22):**
 - Original: 4 sub-family inductives, 4 `*.toClusterTag`, `ConstraintProof` + `constraintProof`, `CertifiedProjection` (updated) + `certify`

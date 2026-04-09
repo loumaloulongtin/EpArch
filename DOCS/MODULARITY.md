@@ -64,7 +64,9 @@ does what prevents confusion about where to look and where to edit.
 - Changing what a cluster certifies (its type or proof term): edit here.
 
 ### Theorem modules — source of actual proof content
-- `Minimality.lean` — Tier 2 forcing theorems.
+- `Minimality.lean` — Tier 2 six individual lifting theorems.
+- `Convergence.lean` — `StructurallyForced`, `convergence_structural`, impossibility models, §1b–§6b alternative dismissals.
+- `BehavioralEquivalence.lean` — bank-primitive behavioral-equivalence results.
 - `Health.lean`, `Meta/TheoremTransport.lean` — Tier 3 goal predicates and transport.
 - `Commitments.lean`, `Theorems.lean`, `Diagnosability.lean`, `Agent/*.lean`,
   `Invariants.lean`, `ScopeIrrelevance.lean`, `Predictions.lean`, `WorkedTraces.lean` — Tier 4.
@@ -308,7 +310,7 @@ The type system then mechanically excludes all and only the theorems that depend
 
 The **preferred forcing path** is `StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W` (`convergence_structural`), where `StructurallyForced` packages the six forward implications independently justified by the structural impossibility models (`flat_scope_impossible`, `monotonic_no_exit`, etc.). `WellFormed W → StructurallyForced W` via `wellformed_implies_structurally_forced`, so the two paths are compatible. New forcing contributions should be added as `StructurallyForced` fields, not as additional `WellFormed`-taking theorems.
 
-**File:** `Minimality.lean`
+**Files:** `Minimality.lean` (six individual lifting theorems); `Convergence.lean` (`StructurallyForced`, `convergence_structural`, impossibility models, §1b–§6b alternative dismissals)
 
 | Constraint | Operational predicate | Forced feature | Theorem |
 |---|---|---|---|
@@ -444,7 +446,7 @@ This is the real Cluster C result — not just the competition gate but the full
 | Layer | Mechanism | Current status | Certifying file |
 |---|---|---|---|
 | World bundles (`W_*`) | Explicit hypothesis — not providing proof disables | ✅ Complete | `WorldCtx.lean`, `AdversarialObligations.lean` |
-| Constraints (6 forcing results) | Independent conjuncts + `PartialWellFormed`/`modular` meta-theorem | ✅ Complete | `Minimality.lean`, `Meta/Modular.lean` |
+| Constraints (6 forcing results) | Independent conjuncts + `PartialWellFormed`/`modular` meta-theorem | ✅ Complete | `Minimality.lean`, `Convergence.lean`, `Meta/Modular.lean` |
 | `PaperFacing` / competition gate | `transport_core` + `sub_revision_safety` | ✅ Complete | `RevisionSafety.lean`, `Modularity.lean` |
 | Health goals (5 predicates) | `CoreModel`-parameterized + individual transport theorems | ✅ Complete | `Health.lean`, `Meta/TheoremTransport.lean` |
 | Main theorem library (109+) | Four-part schema: standalone commitments, structural unconditional, LTS-universal operational, all-five-health-goals bank bridge | ✅ Complete | `Meta/Tier4Transport.lean` |
