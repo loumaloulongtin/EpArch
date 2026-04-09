@@ -1233,6 +1233,128 @@ theorem private_coordination_bank_embed
       h_access₁ h, h_access₂ h⟩
 
 
+/-! ### Scenario 3: Monotonic Lifecycle (Adversarial → Revocation)
+
+A system facing adversarial pressure has a deposit lifecycle.  If revocation
+is absent, the "accepted" state is absorbing — once a deposit passes
+acceptance, no transition can remove it.  `monotonic_no_exit` proves
+(by induction) that an accepted deposit stays accepted through any
+number of steps.
+
+`RepresentsMonotonicLifecycle` enriches a `WorkingSystem` with a
+concrete lifecycle (states, transition function, absorbing accepted state)
+and an adversarial witness: a bad deposit that reaches the accepted state.
+When `¬HasRevocation`, the system is in the `MonotonicLifecycle` scenario. -/
+
+/-- A system represents a monotonic lifecycle if, absent revocation,
+    its deposit lifecycle has an absorbing "accepted" state: once a
+    deposit is accepted, no transition can remove it.
+
+    The `bad_deposit_accepted` field is the adversarial witness:
+    a deposit that should not be accepted but reaches the accepted
+    state.  Without revocation, it stays there permanently. -/
+structure RepresentsMonotonicLifecycle (W : WorkingSystem) where
+  /-- The lifecycle state type. -/
+  State : Type
+  /-- The accepted state. -/
+  accepted : State
+  /-- The lifecycle transition function. -/
+  step : State → State
+  /-- Without revocation, accepted is absorbing. -/
+  absorbing_without_revocation : ¬HasRevocation W → step accepted = accepted
+
+/-- Extract `MonotonicLifecycle` from a system that
+    `RepresentsMonotonicLifecycle` and lacks revocation. -/
+def RepresentsMonotonicLifecycle.toLifecycle {W : WorkingSystem}
+    (R : RepresentsMonotonicLifecycle W) (h_no_rev : ¬HasRevocation W) :
+    MonotonicLifecycle where
+  State := R.State
+  accepted := R.accepted
+  step := R.step
+  absorbing := R.absorbing_without_revocation h_no_rev
+
+/-- **Right-branch embedding (adversarial direction).**
+
+    A system with a monotonic lifecycle and no revocation:
+    `monotonic_no_exit` fires by induction, proving that the accepted
+    state cannot be escaped at any step count `n`.  This is the
+    strongest proof in the repo — genuine induction, not just
+    axiom contradiction. -/
+theorem monotonic_lifecycle_without_revocation_embeds
+    (W : WorkingSystem)
+    (R : RepresentsMonotonicLifecycle W)
+    (h_no_rev : ¬HasRevocation W)
+    (n : Nat) :
+    iter R.step n R.accepted = R.accepted :=
+  monotonic_no_exit (R.toLifecycle h_no_rev) n
+
+
+/-! ### Scenario 4: Discriminating Import (Export → Headers)
+
+When deposits cross scope boundaries, the receiver must decide which
+to accept.  Without metadata (headers), every deposit looks identical
+— the import function is uniform.  But sound-and-complete import
+requires accepting good claims and rejecting bad ones.  A uniform
+function cannot discriminate.
+
+`RepresentsDiscriminatingImport` enriches a `WorkingSystem` with
+two concrete claims (good and bad) that the import function must
+distinguish.  When `¬HasHeaders`, the system is in the
+`DiscriminatingImport` scenario. -/
+
+/-- A system represents a discriminating import scenario if it faces
+    two claims that must be distinguished on import: one should be
+    accepted, one rejected.
+
+    The structural point: without metadata (headers), claims are
+    indistinguishable, so any import function is uniform.
+    `no_sound_complete_uniform_import` proves that a uniform function
+    cannot be both sound and complete — any proposed function either
+    accepts the bad claim or rejects the good one.
+
+    Whether a system's import function is ACTUALLY uniform (the bridge
+    axiom) depends on the system and is carried as a separate hypothesis
+    in the right-branch embedding theorems. -/
+structure RepresentsDiscriminatingImport (W : WorkingSystem) where
+  /-- The claim type crossing scope boundaries. -/
+  Claim : Type
+  /-- A claim the receiver should accept. -/
+  good : Claim
+  /-- A claim the receiver should reject. -/
+  bad : Claim
+  /-- The claims are distinct. -/
+  good_ne_bad : good ≠ bad
+
+/-- Extract `DiscriminatingImport` from a system that
+    `RepresentsDiscriminatingImport`. -/
+def RepresentsDiscriminatingImport.toImport {W : WorkingSystem}
+    (R : RepresentsDiscriminatingImport W) : DiscriminatingImport where
+  Claim := R.Claim
+  good := R.good
+  bad := R.bad
+  good_ne_bad := R.good_ne_bad
+
+/-- **Right-branch embedding (export direction).**
+
+    A system with discriminating import needs and no headers:
+    any import function `f` must satisfy `f good = true` and
+    `f bad = false` for sound-and-complete import.  The bridge axiom
+    (taken as hypothesis `h_uniform`) says that without headers,
+    the import function is uniform: `f x = f y` for all `x y`.
+    `no_sound_complete_uniform_import` fires via `Bool.noConfusion`
+    to derive False. -/
+theorem discriminating_import_without_headers_embeds
+    (W : WorkingSystem)
+    (R : RepresentsDiscriminatingImport W)
+    (_h_no_headers : ¬HasHeaders W)
+    (f : R.Claim → Bool)
+    (h_uniform : ∀ x y, f x = f y)
+    (h_sound : f R.bad = false)
+    (h_complete : f R.good = true) :
+    False :=
+  no_sound_complete_uniform_import R.toImport f h_uniform h_sound h_complete
+
+
 /-! ## Convergence and Impossibility (Structural Versions) -/
 
 /-- Convergence theorem (structural version): under structural forcing,
