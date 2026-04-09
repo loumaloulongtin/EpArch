@@ -2,6 +2,8 @@
 
 Standalone Lean 4 framework for reasoning about bounded epistemic systems under adversarial pressure.
 
+> **Scope note.** EpArch is a framework for determining which architectural mechanisms are *required* under realistic constraint and goal profiles. It is not a claim that every conceivable world or system must instantiate the same mechanisms.
+
 [![CI](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml/badge.svg)](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml)
 
 **539 theorems. 0 axiom declarations. 0 sorries.**
