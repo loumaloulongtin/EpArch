@@ -2,7 +2,7 @@
 
 Standalone Lean 4 framework for reasoning about bounded epistemic systems under adversarial pressure.
 
-> **Scope note.** EpArch is a framework for determining which architectural mechanisms are *required* under recognizable constraint and goal profiles. It is not a claim that every conceivable world or system must instantiate the same mechanisms.
+> **Scope note.** EpArch is a framework for determining which architectural mechanisms are *required* under recognizable constraint and goal profiles — the kinds of real-world operational regimes we actually build epistemic systems for. It is not a claim that every conceivable world or system must instantiate the same mechanisms.
 
 [![CI](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml/badge.svg)](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml)
 
@@ -52,7 +52,7 @@ def myConfig : EpArchConfig := {
 
 ## The EpArch Framework
 
-EpArch is a machine-checked framework for reasoning about bounded epistemic systems under adversarial pressure. Starting from minimal operational constraints on agents and the world, it derives a cluster of structurally forced primitives: scoped authorization zones (**Bubbles**), a shared deposit ledger (**Bank**) with lifecycle gates, structured validation headers (**S/E/V**), and temporal validity (**τ**). These are not design choices — they are machine-proved forced features.
+EpArch is a machine-checked framework for reasoning about bounded epistemic systems under adversarial pressure. Starting from minimal operational constraints on agents and the world, it derives a cluster of structurally forced primitives: scoped authorization zones (**Bubbles**), a shared deposit ledger (**Bank**) with lifecycle gates, structured validation headers (**S/E/V**), and temporal validity (**τ**). These are not design choices — they are machine-proved forced features. The domain scoping is what makes the results strong: declaring a constraint/goal profile is a precondition, not a limitation — within any declared profile the derivations are machine-checked necessities, not conditional recommendations.
 
 The framework has three layers:
 - **Formal architecture** — core types, lifecycle semantics, commitments, forcing results, adversarial obligations, revision safety.
@@ -75,7 +75,7 @@ The framework has three layers:
 | Adversarial obligation theorems | `EpArch/AdversarialObligations.lean` |
 | Revision safety (extensions can't break existing results) | `EpArch/RevisionSafety.lean` |
 
-**A notable result:** The notation-invariance theorems (`notation_invariance_of_redeemability`, `math_practice_is_bubble_distinct`) show that mathematical practice is itself a bubble in the architecture's terms, with Lean's kernel as the constraint surface — and these claims are discharged by that same kernel.
+**Notable derived interpretations:** The notation-invariance theorems (`notation_invariance_of_redeemability`, `math_practice_is_bubble_distinct`) show that mathematical practice is itself a bubble in the architecture's terms, with Lean's kernel as the constraint surface — and these claims are discharged by that same kernel.
 
 ---
 
