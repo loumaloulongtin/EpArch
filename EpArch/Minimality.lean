@@ -17,7 +17,7 @@ revision-capability, temporal-expiry, redeemability-grounding), then it
 necessarily contains the Bank primitives (scoped bubbles, header-bearing
 deposits, redeemability, export gates, revision protocol).
 
-This is convergence, not uniqueness: ANY working solution must contain
+This is convergence, not uniqueness: any working solution must contain
 these structural elements, but implementations can differ.
 
 ## Key Definitions

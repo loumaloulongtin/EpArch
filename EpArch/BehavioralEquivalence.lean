@@ -173,19 +173,13 @@ theorem bank_primitives_determine_behavior (W1 W2 : WorkingSystem)
     containsBankPrimitives W1 → containsBankPrimitives W2 →
     BehaviorallyEquivalent W1 W2 := by
   intro h1 h2
-  -- containsBankPrimitives unfolds to Has* conjunctions
   unfold containsBankPrimitives at h1 h2
   have ⟨hB1, hT1, _hH1, hR1, _hK1, hD1⟩ := h1
   have ⟨hB2, hT2, _hH2, hR2, _hK2, hD2⟩ := h2
-  -- Has* are definitional: HasBubbles W = W.spec.has_bubble_separation = true
   unfold HasBubbles HasTrustBridges HasHeaders HasRevocation HasBank HasRedeemability at *
-  -- Use bidirectional WellFormed to derive flag values from spec features
-  -- WellFormed.1.mpr: spec.has_bubble_separation = true → has_shared_records = true
   have h1_rec : W1.has_shared_records = true := h_wf1.1.mpr hB1
   have h1_rel : W1.enables_reliance = true := h_wf1.2.1.mpr hT1
   have h1_cor : W1.supports_correction = true := h_wf1.2.2.2.2.2.mpr hD1
-  -- For resists_adversaries, we need to extract from the revocation ↔
-  -- WellFormed says: (supports_correction ∧ resists_adversaries) ↔ has_revocation
   have h1_adv_pair : W1.supports_correction = true ∧ W1.resists_adversaries = true :=
     h_wf1.2.2.2.1.mpr hR1
   have h1_adv : W1.resists_adversaries = true := h1_adv_pair.2
