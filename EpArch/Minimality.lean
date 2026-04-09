@@ -984,77 +984,136 @@ impossible scenario") now lives in the `ForcingEmbedding` instance,
 localised and auditable.  The derivation is uniform and constructive
 (no Classical reasoning — `Or.elim` is intuitionistic). -/
 
+/-! ## Bridge Predicates and System-Independent Forcing Theorems
+
+A **bridge predicate** `Bridge_X W` names the commitment a system would
+have to make in dimension X if it lacks feature X.  Each is an existential
+over the abstract structural model's scenario data.
+
+The `*_forced_by_bridge` theorems are system-independent: for ANY `W`,
+committing to the impossible scenario forces the feature.  They are
+derived directly from the structural impossibility theorems — no
+`StructurallyForced` or `convergence_structural` involved.
+
+**Separation of concerns:**
+- The concrete good system proves `StructurallyForced` via `ForcingEmbedding`
+  (the full convergence pipeline, using `Or.inl` everywhere).
+- Deficient systems prove `Bridge_X DeficientSystem → False` via these
+  theorems: bridge axiom → `*_forced_by_bridge` → HasFeature → contradiction
+  with ¬HasFeature.  The convergence machine is not involved.
+
+This matches what is actually proven: deficient systems + bridge axiom ⇒
+contradiction, NOT deficient system alone ⇒ contradiction. -/
+
+/-- A system is bridge-committed on scope: it provides a flat acceptance
+    function faithful to two disagreeing agents. -/
+def BridgeBubbles (_W : WorkingSystem) : Prop :=
+  ∃ D : AgentDisagreement, ∃ f : D.Claim → Prop,
+    (∀ c, f c ↔ D.accept₁ c) ∧ (∀ c, f c ↔ D.accept₂ c)
+
+/-- Scope forcing: bridge commitment on scope forces bubble separation.
+    Combined with `¬HasBubbles W`, yields `BridgeBubbles W → False`. -/
+theorem bubbles_forced_by_bridge (_W : WorkingSystem) :
+    BridgeBubbles _W → HasBubbles _W :=
+  fun ⟨D, f, hf⟩ => absurd ⟨f, hf⟩ (flat_scope_impossible D)
+
+/-- A system is bridge-committed on trust: all claims fit within budget. -/
+def BridgeTrust (_W : WorkingSystem) : Prop :=
+  ∃ M : BoundedVerification, ∀ c, M.verify_cost c ≤ M.budget
+
+/-- Trust forcing: bridge commitment on trust forces trust bridges. -/
+theorem trust_forced_by_bridge (_W : WorkingSystem) :
+    BridgeTrust _W → HasTrustBridges _W :=
+  fun ⟨M, hM⟩ => absurd hM (verification_only_import_incomplete M)
+
+/-- A system is bridge-committed on headers: a uniform import function
+    is both sound and complete. -/
+def BridgeHeaders (_W : WorkingSystem) : Prop :=
+  ∃ M : DiscriminatingImport, ∃ f : M.Claim → Bool,
+    (∀ x y, f x = f y) ∧ f M.bad = false ∧ f M.good = true
+
+/-- Headers forcing: bridge commitment on headers forces header preservation. -/
+theorem headers_forced_by_bridge (_W : WorkingSystem) :
+    BridgeHeaders _W → HasHeaders _W :=
+  fun ⟨M, f, hu, hs, hc⟩ => (no_sound_complete_uniform_import M f hu hs hc).elim
+
+/-- A system is bridge-committed on revocation: the accepted state escapes. -/
+def BridgeRevocation (_W : WorkingSystem) : Prop :=
+  ∃ M : MonotonicLifecycle, ∃ n, iter M.step n M.accepted ≠ M.accepted
+
+/-- Revocation forcing: bridge commitment on revocation forces revocation. -/
+theorem revocation_forced_by_bridge (_W : WorkingSystem) :
+    BridgeRevocation _W → HasRevocation _W :=
+  fun ⟨M, n, hn⟩ => absurd (monotonic_no_exit M n) hn
+
+/-- A system is bridge-committed on bank: isolated agents share a deposit. -/
+def BridgeBank (_W : WorkingSystem) : Prop :=
+  ∃ M : PrivateOnlyStorage, ∃ d, M.has_access M.a₁ d ∧ M.has_access M.a₂ d
+
+/-- Bank forcing: bridge commitment on bank forces shared ledger. -/
+theorem bank_forced_by_bridge (_W : WorkingSystem) :
+    BridgeBank _W → HasBank _W :=
+  fun ⟨M, d, hd⟩ => absurd ⟨d, hd⟩ (private_storage_no_sharing M)
+
+/-- A system is bridge-committed on redeemability: a closed system has an
+    endorsed-and-falsifiable claim. -/
+def BridgeRedeemability (_W : WorkingSystem) : Prop :=
+  ∃ M : ClosedEndorsement, ∃ c, M.endorsed c ∧ M.externally_falsifiable c
+
+/-- Redeemability forcing: bridge commitment on redeemability forces
+    redeemability. -/
+theorem redeemability_forced_by_bridge (_W : WorkingSystem) :
+    BridgeRedeemability _W → HasRedeemability _W :=
+  fun ⟨M, c, hc⟩ => absurd ⟨c, hc⟩ (closed_system_unfalsifiable M)
+
+
 /-- Forcing embeddings: connects a `WorkingSystem` to the abstract
     structural models via an auditable disjunction.
 
     Each field says: a system handling the constraint EITHER already
-    has the feature, OR instantiates the scenario proven impossible
-    by the corresponding structural model.  Since the right disjunct
-    is impossible, the feature holds. -/
+    has the feature, OR is bridge-committed to the impossible scenario
+    for that dimension.  Since bridge commitment forces the feature
+    (via `*_forced_by_bridge`), the feature holds in both branches. -/
 structure ForcingEmbedding (W : WorkingSystem) : Prop where
-  /-- Distributed agents: either bubbles exist, or disagreeing agents
-      share a single flat scope — contradicted by `flat_scope_impossible`. -/
+  /-- Distributed agents: either bubbles exist, or the system is
+      bridge-committed on scope (`BridgeBubbles`). -/
   scope_embed : handles_distributed_agents W →
-    HasBubbles W ∨
-    (∃ D : AgentDisagreement, ∃ f : D.Claim → Prop,
-      (∀ c, f c ↔ D.accept₁ c) ∧ (∀ c, f c ↔ D.accept₂ c))
-  /-- Bounded audit: either trust bridges exist, or ALL claims are
-      within the verification budget — contradicted by
-      `verification_only_import_incomplete`. -/
+    HasBubbles W ∨ BridgeBubbles W
+  /-- Bounded audit: either trust bridges exist, or the system is
+      bridge-committed on trust (`BridgeTrust`). -/
   trust_embed : handles_bounded_audit W →
-    HasTrustBridges W ∨
-    (∃ M : BoundedVerification, ∀ c, M.verify_cost c ≤ M.budget)
-  /-- Export: either headers exist, or a uniform import function is both
-      sound and complete — contradicted by
-      `no_sound_complete_uniform_import`. -/
+    HasTrustBridges W ∨ BridgeTrust W
+  /-- Export: either headers exist, or the system is bridge-committed
+      on headers (`BridgeHeaders`). -/
   header_embed : handles_export W →
-    HasHeaders W ∨
-    (∃ M : DiscriminatingImport, ∃ f : M.Claim → Bool,
-      (∀ x y, f x = f y) ∧ f M.bad = false ∧ f M.good = true)
-  /-- Adversarial: either revocation exists, or the accepted state can
-      be escaped despite being absorbing — contradicted by
-      `monotonic_no_exit`. -/
+    HasHeaders W ∨ BridgeHeaders W
+  /-- Adversarial: either revocation exists, or the system is
+      bridge-committed on revocation (`BridgeRevocation`). -/
   revocation_embed : handles_adversarial W →
-    HasRevocation W ∨
-    (∃ M : MonotonicLifecycle, ∃ n, iter M.step n M.accepted ≠ M.accepted)
-  /-- Coordination: either shared ledger exists, or isolated agents share
-      a deposit — contradicted by `private_storage_no_sharing`. -/
+    HasRevocation W ∨ BridgeRevocation W
+  /-- Coordination: either shared ledger exists, or the system is
+      bridge-committed on bank (`BridgeBank`). -/
   bank_embed : handles_coordination W →
-    HasBank W ∨
-    (∃ M : PrivateOnlyStorage, ∃ d, M.has_access M.a₁ d ∧ M.has_access M.a₂ d)
-  /-- Truth pressure: either redeemability exists, or a closed system
-      has an endorsed-and-falsifiable claim — contradicted by
-      `closed_system_unfalsifiable`. -/
+    HasBank W ∨ BridgeBank W
+  /-- Truth pressure: either redeemability exists, or the system is
+      bridge-committed on redeemability (`BridgeRedeemability`). -/
   redeemability_embed : handles_truth_pressure W →
-    HasRedeemability W ∨
-    (∃ M : ClosedEndorsement, ∃ c, M.endorsed c ∧ M.externally_falsifiable c)
+    HasRedeemability W ∨ BridgeRedeemability W
 
 /-- Mechanical derivation: `ForcingEmbedding` → `StructurallyForced`.
 
     Each field is derived by `Or.elim`: the left branch is the feature
-    itself (`id`); the right branch feeds the scenario into the structural
-    impossibility theorem, producing `False`, which closes any goal.
-    Fully constructive — no `Classical.byContradiction`. -/
+    itself (`id`); the right branch applies `*_forced_by_bridge`, which
+    derives the feature from the bridge commitment via the structural
+    impossibility theorem.  Fully constructive — no `Classical.byContradiction`. -/
 theorem embedding_to_structurally_forced (W : WorkingSystem) (E : ForcingEmbedding W) :
     StructurallyForced W where
-  scope_forcing h :=
-    (E.scope_embed h).elim id fun ⟨D, f, hf⟩ =>
-      absurd ⟨f, hf⟩ (flat_scope_impossible D)
-  trust_forcing h :=
-    (E.trust_embed h).elim id fun ⟨M, hM⟩ =>
-      absurd hM (verification_only_import_incomplete M)
-  header_forcing h :=
-    (E.header_embed h).elim id fun ⟨M, f, hu, hs, hc⟩ =>
-      (no_sound_complete_uniform_import M f hu hs hc).elim
-  revocation_forcing h :=
-    (E.revocation_embed h).elim id fun ⟨M, n, hn⟩ =>
-      absurd (monotonic_no_exit M n) hn
-  bank_forcing h :=
-    (E.bank_embed h).elim id fun ⟨M, d, hd⟩ =>
-      absurd ⟨d, hd⟩ (private_storage_no_sharing M)
-  redeemability_forcing h :=
-    (E.redeemability_embed h).elim id fun ⟨M, c, hc⟩ =>
-      absurd ⟨c, hc⟩ (closed_system_unfalsifiable M)
+  scope_forcing h := (E.scope_embed h).elim id (bubbles_forced_by_bridge W)
+  trust_forcing h := (E.trust_embed h).elim id (trust_forced_by_bridge W)
+  header_forcing h := (E.header_embed h).elim id (headers_forced_by_bridge W)
+  revocation_forcing h := (E.revocation_embed h).elim id (revocation_forced_by_bridge W)
+  bank_forcing h := (E.bank_embed h).elim id (bank_forced_by_bridge W)
+  redeemability_forcing h := (E.redeemability_embed h).elim id (redeemability_forced_by_bridge W)
 
 
 /-! ## Scenario Predicates: Enriching WorkingSystems with Structural Content

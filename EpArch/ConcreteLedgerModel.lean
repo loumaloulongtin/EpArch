@@ -1067,84 +1067,25 @@ theorem noBubbles_flat_scope_fires
     False :=
   noBubbles_no_flat_scope ⟨f, h₁, h₂⟩
 
-/-- **The forcing chain for the no-bubbles system.**
+/-- **Bridge impossibility for the no-bubbles system.**
 
-    Given a bridge axiom (if the system could commit to a flat scope,
-    what would it look like), the structural model derives False,
-    which forces HasBubbles.  This is the full forcing argument on
-    a deficient system, going through the abstract model.
+    If the system commits to a flat acceptance function faithful to both
+    agents, `bubbles_forced_by_bridge` derives `HasBubbles` — but
+    `no_bubbles_lacks_bubbles` refutes it.  One step; no convergence
+    pipeline involved.
 
-    The bridge axiom makes the design judgment explicit and auditable:
-    "without bubbles, the system would expose a flat acceptance function."
-    Since flat_scope_impossible shows no such function exists, the
-    system must have bubbles.
-
-    For this specific system (NoBubblesSystem), the conclusion
-    `HasBubbles NoBubblesSystem` is FALSE (the system lacks bubbles).
-    This means the bridge axiom's premise is vacuously unsatisfiable —
-    no flat function exists — which is EXACTLY what the structural
-    model proves.  The impossibility IS the result. -/
-theorem noBubbles_forcing_chain
-    (f : DisagreementClaim → Prop)
-    (h₁ : ∀ c, f c ↔ agent1_accept c)
-    (h₂ : ∀ c, f c ↔ agent2_accept c) :
-    HasBubbles NoBubblesSystem :=
-  absurd ⟨f, h₁, h₂⟩ noBubbles_no_flat_scope
-
-/-- The no-bubbles system has the other 5 features. -/
-theorem noBubbles_has_trust : HasTrustBridges NoBubblesSystem := by
-  unfold HasTrustBridges NoBubblesSystem noBubblesSpec; rfl
-theorem noBubbles_has_headers : HasHeaders NoBubblesSystem := by
-  unfold HasHeaders NoBubblesSystem noBubblesSpec; rfl
-theorem noBubbles_has_revocation : HasRevocation NoBubblesSystem := by
-  unfold HasRevocation NoBubblesSystem noBubblesSpec; rfl
-theorem noBubbles_has_bank : HasBank NoBubblesSystem := by
-  unfold HasBank NoBubblesSystem noBubblesSpec; rfl
-theorem noBubbles_has_redeemability : HasRedeemability NoBubblesSystem := by
-  unfold HasRedeemability NoBubblesSystem noBubblesSpec; rfl
-
-theorem noBubbles_satisfies_all : SatisfiesAllProperties NoBubblesSystem := by
-  unfold SatisfiesAllProperties handles_distributed_agents handles_bounded_audit
-    handles_export handles_adversarial handles_coordination handles_truth_pressure
-    NoBubblesSystem
-  simp
-
-/-- **Full global embedding for the no-bubbles system.**
-
-    Given the bridge axiom (a flat acceptance function faithful to both
-    agents), this constructs the COMPLETE chain:
-
-        bridge axiom → ForcingEmbedding (Or.inr on scope)
-                     → StructurallyForced (flat_scope_impossible fires)
-                     → convergence_structural → containsBankPrimitives
-                     → HasBubbles NoBubblesSystem
-                     → contradiction with ¬HasBubbles → False
-
-    This is not illustrative — it is a full global embedding through
-    the same convergence pipeline that proves the main theorem.  The
-    structural model fires inside `embedding_to_structurally_forced`,
-    deriving `HasBubbles` from `False`.  The convergence machine
-    propagates this to `containsBankPrimitives`.  Then we extract
-    `HasBubbles` and contradict `no_bubbles_lacks_bubbles`.
-
-    The result: no system can handle all constraints, lack bubbles,
-    and commit to a flat scope.  QED. -/
-theorem noBubbles_global_impossibility
+    This is `deficient system + bridge axiom ⇒ contradiction`, not
+    `deficient system alone ⇒ contradiction`.  `SatisfiesAllProperties`
+    is not needed; `ForcingEmbedding` is not constructed.  The structural
+    model does the work directly. -/
+theorem noBubbles_bridge_impossible
     (f : DisagreementClaim → Prop)
     (hf₁ : ∀ c, f c ↔ agent1_accept c)
     (hf₂ : ∀ c, f c ↔ agent2_accept c) :
     False :=
-  let emb : ForcingEmbedding NoBubblesSystem := {
-    scope_embed := fun _ => Or.inr ⟨noBubblesDisagreement.toDisagreement, f, hf₁, hf₂⟩
-    trust_embed := fun _ => Or.inl noBubbles_has_trust
-    header_embed := fun _ => Or.inl noBubbles_has_headers
-    revocation_embed := fun _ => Or.inl noBubbles_has_revocation
-    bank_embed := fun _ => Or.inl noBubbles_has_bank
-    redeemability_embed := fun _ => Or.inl noBubbles_has_redeemability
-  }
-  let sf := embedding_to_structurally_forced NoBubblesSystem emb
-  let bp := convergence_structural NoBubblesSystem sf noBubbles_satisfies_all
-  absurd bp.1 no_bubbles_lacks_bubbles
+  absurd (bubbles_forced_by_bridge NoBubblesSystem
+    ⟨noBubblesDisagreement.toDisagreement, f, hf₁, hf₂⟩)
+    no_bubbles_lacks_bubbles
 
 
 /-! ### Deficient System 2: No Shared Ledger (Bank) -/
@@ -1223,67 +1164,19 @@ theorem noBank_shared_deposit_fires
     False :=
   noBank_no_shared_deposit ⟨d, h₁, h₂⟩
 
-/-- **The forcing chain for the no-bank system.**
+/-- **Bridge impossibility for the no-bank system.**
 
-    Given a claimed shared deposit (bridge axiom: agents coordinate
-    on deposit `d`), the structural model derives False, which forces
-    HasBank.  Same structure as the scope forcing chain.
-
-    For NoBankSystem, HasBank is FALSE.  The bridge axiom is
-    unsatisfiable (bob can't access any deposit), which is exactly
-    what the structural model proves. -/
-theorem noBank_forcing_chain
-    (d : CoordinationDeposit)
-    (h₁ : private_access .alice d)
-    (h₂ : private_access .bob d) :
-    HasBank NoBankSystem :=
-  absurd ⟨d, h₁, h₂⟩ noBank_no_shared_deposit
-
-/-- The no-bank system has the other 5 features. -/
-theorem noBank_has_bubbles : HasBubbles NoBankSystem := by
-  unfold HasBubbles NoBankSystem noBankSpec; rfl
-theorem noBank_has_trust : HasTrustBridges NoBankSystem := by
-  unfold HasTrustBridges NoBankSystem noBankSpec; rfl
-theorem noBank_has_headers : HasHeaders NoBankSystem := by
-  unfold HasHeaders NoBankSystem noBankSpec; rfl
-theorem noBank_has_revocation : HasRevocation NoBankSystem := by
-  unfold HasRevocation NoBankSystem noBankSpec; rfl
-theorem noBank_has_redeemability : HasRedeemability NoBankSystem := by
-  unfold HasRedeemability NoBankSystem noBankSpec; rfl
-
-theorem noBank_satisfies_all : SatisfiesAllProperties NoBankSystem := by
-  unfold SatisfiesAllProperties handles_distributed_agents handles_bounded_audit
-    handles_export handles_adversarial handles_coordination handles_truth_pressure
-    NoBankSystem
-  simp
-
-/-- **Full global embedding for the no-bank system.**
-
-    Given the bridge axiom (a shared deposit accessible to both agents),
-    this constructs the complete chain:
-
-        bridge axiom → ForcingEmbedding (Or.inr on bank)
-                     → StructurallyForced (private_storage_no_sharing fires)
-                     → convergence_structural → containsBankPrimitives
-                     → HasBank NoBankSystem
-                     → contradiction with ¬HasBank → False -/
-theorem noBank_global_impossibility
+    If a shared deposit `d` is accessible to both alice and bob,
+    `bank_forced_by_bridge` derives `HasBank` — but `no_bank_lacks_bank`
+    refutes it. -/
+theorem noBank_bridge_impossible
     (d : CoordinationDeposit)
     (h₁ : private_access .alice d)
     (h₂ : private_access .bob d) :
     False :=
-  let emb : ForcingEmbedding NoBankSystem := {
-    scope_embed := fun _ => Or.inl noBank_has_bubbles
-    trust_embed := fun _ => Or.inl noBank_has_trust
-    header_embed := fun _ => Or.inl noBank_has_headers
-    revocation_embed := fun _ => Or.inl noBank_has_revocation
-    bank_embed := fun _ => Or.inr ⟨noBankCoordination.toPrivateStorage no_bank_lacks_bank,
-      d, h₁, h₂⟩
-    redeemability_embed := fun _ => Or.inl noBank_has_redeemability
-  }
-  let sf := embedding_to_structurally_forced NoBankSystem emb
-  let bp := convergence_structural NoBankSystem sf noBank_satisfies_all
-  absurd bp.2.2.2.2.1 no_bank_lacks_bank
+  absurd (bank_forced_by_bridge NoBankSystem
+    ⟨noBankCoordination.toPrivateStorage no_bank_lacks_bank, d, h₁, h₂⟩)
+    no_bank_lacks_bank
 
 
 /-! ### Deficient System 3: No Revocation (Adversarial → Revocation)
@@ -1366,61 +1259,19 @@ theorem noRevocation_bad_deposit_stuck (n : Nat) :
       = LifecycleState.accepted :=
   noRevocation_accepted_permanent n
 
-/-- **The forcing chain for the no-revocation system.**
+/-- **Bridge impossibility for the no-revocation system.**
 
-    Given that a system claims `n` steps escape the accepted state
-    (i.e., `iter step n accepted ≠ accepted`), `monotonic_no_exit`
-    derives a contradiction.  The structural model fires by induction,
-    forcing HasRevocation. -/
-theorem noRevocation_forcing_chain
-    (n : Nat) (h : iter lifecycle_step n LifecycleState.accepted ≠ LifecycleState.accepted) :
-    HasRevocation NoRevocationSystem :=
-  absurd (noRevocation_accepted_permanent n) h
-
-/-- The no-revocation system has the other 5 features. -/
-theorem noRevocation_has_bubbles : HasBubbles NoRevocationSystem := by
-  unfold HasBubbles NoRevocationSystem noRevocationSpec; rfl
-theorem noRevocation_has_trust : HasTrustBridges NoRevocationSystem := by
-  unfold HasTrustBridges NoRevocationSystem noRevocationSpec; rfl
-theorem noRevocation_has_headers : HasHeaders NoRevocationSystem := by
-  unfold HasHeaders NoRevocationSystem noRevocationSpec; rfl
-theorem noRevocation_has_bank : HasBank NoRevocationSystem := by
-  unfold HasBank NoRevocationSystem noRevocationSpec; rfl
-theorem noRevocation_has_redeemability : HasRedeemability NoRevocationSystem := by
-  unfold HasRedeemability NoRevocationSystem noRevocationSpec; rfl
-
-theorem noRevocation_satisfies_all : SatisfiesAllProperties NoRevocationSystem := by
-  unfold SatisfiesAllProperties handles_distributed_agents handles_bounded_audit
-    handles_export handles_adversarial handles_coordination handles_truth_pressure
-    NoRevocationSystem
-  simp
-
-/-- **Full global embedding for the no-revocation system.**
-
-    Given the bridge axiom (some step count `n` at which the accepted
-    state is escaped), this constructs the complete chain:
-
-        bridge axiom → ForcingEmbedding (Or.inr on revocation)
-                     → StructurallyForced (monotonic_no_exit fires by induction)
-                     → convergence_structural → containsBankPrimitives
-                     → HasRevocation NoRevocationSystem
-                     → contradiction with ¬HasRevocation → False -/
-theorem noRevocation_global_impossibility
+    If some `n` steps escape the accepted state, `revocation_forced_by_bridge`
+    derives `HasRevocation` via induction — but `no_revocation_lacks_revocation`
+    refutes it.  The inductive force of `monotonic_no_exit` is fully preserved
+    in the `revocation_forced_by_bridge` theorem in Minimality.lean. -/
+theorem noRevocation_bridge_impossible
     (n : Nat)
     (h : iter lifecycle_step n LifecycleState.accepted ≠ LifecycleState.accepted) :
     False :=
-  let emb : ForcingEmbedding NoRevocationSystem := {
-    scope_embed := fun _ => Or.inl noRevocation_has_bubbles
-    trust_embed := fun _ => Or.inl noRevocation_has_trust
-    header_embed := fun _ => Or.inl noRevocation_has_headers
-    revocation_embed := fun _ => Or.inr
-      ⟨noRevocationLifecycle.toLifecycle no_revocation_lacks_revocation, n, h⟩
-    bank_embed := fun _ => Or.inl noRevocation_has_bank
-    redeemability_embed := fun _ => Or.inl noRevocation_has_redeemability
-  }
-  let sf := embedding_to_structurally_forced NoRevocationSystem emb
-  let bp := convergence_structural NoRevocationSystem sf noRevocation_satisfies_all
-  absurd bp.2.2.2.1 no_revocation_lacks_revocation
+  absurd (revocation_forced_by_bridge NoRevocationSystem
+    ⟨noRevocationLifecycle.toLifecycle no_revocation_lacks_revocation, n, h⟩)
+    no_revocation_lacks_revocation
 
 
 /-! ### Deficient System 4: No Headers (Export → Headers)
@@ -1501,66 +1352,20 @@ theorem noHeaders_uniform_import
     f ImportClaim.good_data = f ImportClaim.bad_data :=
   uniform_import_nondiscriminating noHeadersImport.toImport f h_uniform
 
-/-- **The forcing chain for the no-headers system.**
+/-- **Bridge impossibility for the no-headers system.**
 
-    Given any import function claimed to be sound-and-complete AND
-    uniform (the bridge axiom), `no_sound_complete_uniform_import`
-    derives False via `Bool.noConfusion`.  The structural model
-    forces HasHeaders. -/
-theorem noHeaders_forcing_chain
-    (f : ImportClaim → Bool)
-    (h_uniform : ∀ x y : ImportClaim, f x = f y)
-    (h_sound : f .bad_data = false)
-    (h_complete : f .good_data = true) :
-    HasHeaders NoHeadersSystem :=
-  absurd (noHeaders_uniform_import f h_uniform)
-    (by rw [h_sound, h_complete]; exact Bool.noConfusion)
-
-/-- The no-headers system has the other 5 features. -/
-theorem noHeaders_has_bubbles : HasBubbles NoHeadersSystem := by
-  unfold HasBubbles NoHeadersSystem noHeadersSpec; rfl
-theorem noHeaders_has_trust : HasTrustBridges NoHeadersSystem := by
-  unfold HasTrustBridges NoHeadersSystem noHeadersSpec; rfl
-theorem noHeaders_has_revocation : HasRevocation NoHeadersSystem := by
-  unfold HasRevocation NoHeadersSystem noHeadersSpec; rfl
-theorem noHeaders_has_bank : HasBank NoHeadersSystem := by
-  unfold HasBank NoHeadersSystem noHeadersSpec; rfl
-theorem noHeaders_has_redeemability : HasRedeemability NoHeadersSystem := by
-  unfold HasRedeemability NoHeadersSystem noHeadersSpec; rfl
-
-theorem noHeaders_satisfies_all : SatisfiesAllProperties NoHeadersSystem := by
-  unfold SatisfiesAllProperties handles_distributed_agents handles_bounded_audit
-    handles_export handles_adversarial handles_coordination handles_truth_pressure
-    NoHeadersSystem
-  simp
-
-/-- **Full global embedding for the no-headers system.**
-
-    Given the bridge axiom (a uniform import function that is both
-    sound and complete), this constructs the complete chain:
-
-        bridge axiom → ForcingEmbedding (Or.inr on headers)
-                     → StructurallyForced (Bool.noConfusion fires)
-                     → convergence_structural → containsBankPrimitives
-                     → HasHeaders NoHeadersSystem
-                     → contradiction with ¬HasHeaders → False -/
-theorem noHeaders_global_impossibility
+    If a uniform import function is both sound and complete,
+    `headers_forced_by_bridge` derives `HasHeaders` via `Bool.noConfusion`
+    — but `no_headers_lacks_headers` refutes it. -/
+theorem noHeaders_bridge_impossible
     (f : ImportClaim → Bool)
     (h_uniform : ∀ x y : ImportClaim, f x = f y)
     (h_sound : f .bad_data = false)
     (h_complete : f .good_data = true) :
     False :=
-  let emb : ForcingEmbedding NoHeadersSystem := {
-    scope_embed := fun _ => Or.inl noHeaders_has_bubbles
-    trust_embed := fun _ => Or.inl noHeaders_has_trust
-    header_embed := fun _ => Or.inr ⟨noHeadersImport.toImport, f, h_uniform, h_sound, h_complete⟩
-    revocation_embed := fun _ => Or.inl noHeaders_has_revocation
-    bank_embed := fun _ => Or.inl noHeaders_has_bank
-    redeemability_embed := fun _ => Or.inl noHeaders_has_redeemability
-  }
-  let sf := embedding_to_structurally_forced NoHeadersSystem emb
-  let bp := convergence_structural NoHeadersSystem sf noHeaders_satisfies_all
-  absurd bp.2.2.1 no_headers_lacks_headers
+  absurd (headers_forced_by_bridge NoHeadersSystem
+    ⟨noHeadersImport.toImport, f, h_uniform, h_sound, h_complete⟩)
+    no_headers_lacks_headers
 
 
 /-! ### Deficient System 5: No Trust Bridges (Bounded Audit → Trust)
@@ -1630,58 +1435,17 @@ theorem noTrust_verification_incomplete :
 theorem noTrust_hard_claim_exceeds :
     ¬(audit_verify_cost AuditClaim.hard_claim ≤ 100) := by decide
 
-/-- **The forcing chain for the no-trust system.**
+/-- **Bridge impossibility for the no-trust system.**
 
-    Given a claim that all verification costs fit within budget,
-    `verification_only_import_incomplete` derives False via
-    Nat arithmetic.  The structural model forces HasTrustBridges. -/
-theorem noTrust_forcing_chain
-    (h : ∀ c : AuditClaim, audit_verify_cost c ≤ 100) :
-    HasTrustBridges NoTrustSystem :=
-  absurd h noTrust_verification_incomplete
-
-/-- The no-trust system has the other 5 features. -/
-theorem noTrust_has_bubbles : HasBubbles NoTrustSystem := by
-  unfold HasBubbles NoTrustSystem noTrustSpec; rfl
-theorem noTrust_has_headers : HasHeaders NoTrustSystem := by
-  unfold HasHeaders NoTrustSystem noTrustSpec; rfl
-theorem noTrust_has_revocation : HasRevocation NoTrustSystem := by
-  unfold HasRevocation NoTrustSystem noTrustSpec; rfl
-theorem noTrust_has_bank : HasBank NoTrustSystem := by
-  unfold HasBank NoTrustSystem noTrustSpec; rfl
-theorem noTrust_has_redeemability : HasRedeemability NoTrustSystem := by
-  unfold HasRedeemability NoTrustSystem noTrustSpec; rfl
-
-theorem noTrust_satisfies_all : SatisfiesAllProperties NoTrustSystem := by
-  unfold SatisfiesAllProperties handles_distributed_agents handles_bounded_audit
-    handles_export handles_adversarial handles_coordination handles_truth_pressure
-    NoTrustSystem
-  simp
-
-/-- **Full global embedding for the no-trust system.**
-
-    Given the bridge axiom (all verification costs fit within budget),
-    this constructs the complete chain:
-
-        bridge axiom → ForcingEmbedding (Or.inr on trust)
-                     → StructurallyForced (Nat arithmetic fires)
-                     → convergence_structural → containsBankPrimitives
-                     → HasTrustBridges NoTrustSystem
-                     → contradiction with ¬HasTrustBridges → False -/
-theorem noTrust_global_impossibility
+    If all verification costs fit within budget, `trust_forced_by_bridge`
+    derives `HasTrustBridges` via Nat arithmetic — but `no_trust_lacks_trust`
+    refutes it. -/
+theorem noTrust_bridge_impossible
     (h : ∀ c : AuditClaim, audit_verify_cost c ≤ 100) :
     False :=
-  let emb : ForcingEmbedding NoTrustSystem := {
-    scope_embed := fun _ => Or.inl noTrust_has_bubbles
-    trust_embed := fun _ => Or.inr ⟨noTrustVerification.toVerification, h⟩
-    header_embed := fun _ => Or.inl noTrust_has_headers
-    revocation_embed := fun _ => Or.inl noTrust_has_revocation
-    bank_embed := fun _ => Or.inl noTrust_has_bank
-    redeemability_embed := fun _ => Or.inl noTrust_has_redeemability
-  }
-  let sf := embedding_to_structurally_forced NoTrustSystem emb
-  let bp := convergence_structural NoTrustSystem sf noTrust_satisfies_all
-  absurd bp.2.1 no_trust_lacks_trust
+  absurd (trust_forced_by_bridge NoTrustSystem
+    ⟨noTrustVerification.toVerification, h⟩)
+    no_trust_lacks_trust
 
 
 /-! ### Deficient System 6: No Redeemability (Truth Pressure → Redeemability)
@@ -1760,61 +1524,19 @@ theorem noRedeemability_no_truth_pressure :
   closed_system_unfalsifiable (noRedeemabilityClosed.toClosed
     no_redeemability_lacks_redeemability)
 
-/-- The forcing chain: given a claim that is both endorsed and falsifiable,
-    `closed_system_unfalsifiable` derives False, forcing HasRedeemability. -/
-theorem noRedeemability_forcing_chain
-    (c : TruthClaim)
-    (h_end : truth_endorsed c)
-    (h_fals : truth_falsifiable_closed c) :
-    HasRedeemability NoRedeemabilitySystem :=
-  absurd ⟨c, h_end, h_fals⟩ noRedeemability_no_truth_pressure
+/-- **Bridge impossibility for the no-redeemability system.**
 
-/-- The no-redeemability system has the other 5 features. -/
-theorem noRedeemability_has_bubbles : HasBubbles NoRedeemabilitySystem := by
-  unfold HasBubbles NoRedeemabilitySystem noRedeemabilitySpec; rfl
-theorem noRedeemability_has_trust : HasTrustBridges NoRedeemabilitySystem := by
-  unfold HasTrustBridges NoRedeemabilitySystem noRedeemabilitySpec; rfl
-theorem noRedeemability_has_headers : HasHeaders NoRedeemabilitySystem := by
-  unfold HasHeaders NoRedeemabilitySystem noRedeemabilitySpec; rfl
-theorem noRedeemability_has_revocation : HasRevocation NoRedeemabilitySystem := by
-  unfold HasRevocation NoRedeemabilitySystem noRedeemabilitySpec; rfl
-theorem noRedeemability_has_bank : HasBank NoRedeemabilitySystem := by
-  unfold HasBank NoRedeemabilitySystem noRedeemabilitySpec; rfl
-
-theorem noRedeemability_satisfies_all : SatisfiesAllProperties NoRedeemabilitySystem := by
-  unfold SatisfiesAllProperties handles_distributed_agents handles_bounded_audit
-    handles_export handles_adversarial handles_coordination handles_truth_pressure
-    NoRedeemabilitySystem
-  simp
-
-/-- **Full global embedding for the no-redeemability system.**
-
-    Given the bridge axiom (a claim that is both endorsed and
-    externally falsifiable under closure), this constructs the
-    complete chain:
-
-        bridge axiom → ForcingEmbedding (Or.inr on redeemability)
-                     → StructurallyForced (closed_system_unfalsifiable fires)
-                     → convergence_structural → containsBankPrimitives
-                     → HasRedeemability NoRedeemabilitySystem
-                     → contradiction with ¬HasRedeemability → False -/
-theorem noRedeemability_global_impossibility
+    If a claim is both endorsed and externally falsifiable under closure,
+    `redeemability_forced_by_bridge` derives `HasRedeemability` — but
+    `no_redeemability_lacks_redeemability` refutes it. -/
+theorem noRedeemability_bridge_impossible
     (c : TruthClaim)
     (h_end : truth_endorsed c)
     (h_fals : truth_falsifiable_closed c) :
     False :=
-  let emb : ForcingEmbedding NoRedeemabilitySystem := {
-    scope_embed := fun _ => Or.inl noRedeemability_has_bubbles
-    trust_embed := fun _ => Or.inl noRedeemability_has_trust
-    header_embed := fun _ => Or.inl noRedeemability_has_headers
-    revocation_embed := fun _ => Or.inl noRedeemability_has_revocation
-    bank_embed := fun _ => Or.inl noRedeemability_has_bank
-    redeemability_embed := fun _ => Or.inr
-      ⟨noRedeemabilityClosed.toClosed no_redeemability_lacks_redeemability, c, h_end, h_fals⟩
-  }
-  let sf := embedding_to_structurally_forced NoRedeemabilitySystem emb
-  let bp := convergence_structural NoRedeemabilitySystem sf noRedeemability_satisfies_all
-  absurd bp.2.2.2.2.2 no_redeemability_lacks_redeemability
+  absurd (redeemability_forced_by_bridge NoRedeemabilitySystem
+    ⟨noRedeemabilityClosed.toClosed no_redeemability_lacks_redeemability, c, h_end, h_fals⟩)
+    no_redeemability_lacks_redeemability
 
 
 /-! ## Concrete Instance Summary
@@ -1824,38 +1546,33 @@ The concrete model demonstrates:
 2. WorkingSystem can be instantiated (ConcreteWorkingSystem)
 3. All Has* predicates hold (trivially, by construction)
 4. WellFormed holds (all implications satisfied)
-5. Convergence theorem applies to concrete instance
+5. Convergence theorem applies via ForcingEmbedding (all Or.inl)
 
-The deficient systems demonstrate six full global embeddings:
-6. Scope: `noBubbles_global_impossibility` — flat scope bridge axiom
-   → ForcingEmbedding (Or.inr) → StructurallyForced → containsBankPrimitives
-   → HasBubbles → contradiction.  Structural model: `flat_scope_impossible`.
-7. Bank: `noBank_global_impossibility` — shared deposit bridge axiom
-   → ForcingEmbedding (Or.inr) → StructurallyForced → containsBankPrimitives
-   → HasBank → contradiction.  Structural model: `private_storage_no_sharing`.
-8. Revocation: `noRevocation_global_impossibility` — escape bridge axiom
-   → ForcingEmbedding (Or.inr) → StructurallyForced → containsBankPrimitives
-   → HasRevocation → contradiction.  Structural model: `monotonic_no_exit`.
-9. Headers: `noHeaders_global_impossibility` — uniform import bridge axiom
-   → ForcingEmbedding (Or.inr) → StructurallyForced → containsBankPrimitives
-   → HasHeaders → contradiction.  Structural model: `no_sound_complete_uniform_import`.
-10. Trust: `noTrust_global_impossibility` — within-budget bridge axiom
-    → ForcingEmbedding (Or.inr) → StructurallyForced → containsBankPrimitives
-    → HasTrustBridges → contradiction.  Structural model:
-    `verification_only_import_incomplete`.
-11. Redeemability: `noRedeemability_global_impossibility` — endorsed+falsifiable
-    bridge axiom → ForcingEmbedding (Or.inr) → StructurallyForced →
-    containsBankPrimitives → HasRedeemability → contradiction.  Structural model:
-    `closed_system_unfalsifiable`.
+The deficient systems demonstrate six bridge-impossibility theorems:
+6. Scope: `noBubbles_bridge_impossible` — flat scope bridge axiom
+   → `bubbles_forced_by_bridge` → HasBubbles → contradiction.
+   Structural model: `flat_scope_impossible`.
+7. Bank: `noBank_bridge_impossible` — shared deposit bridge axiom
+   → `bank_forced_by_bridge` → HasBank → contradiction.
+   Structural model: `private_storage_no_sharing`.
+8. Revocation: `noRevocation_bridge_impossible` — escape bridge axiom
+   → `revocation_forced_by_bridge` (induction) → HasRevocation → contradiction.
+   Structural model: `monotonic_no_exit`.
+9. Headers: `noHeaders_bridge_impossible` — uniform+sound+complete import axiom
+   → `headers_forced_by_bridge` (Bool.noConfusion) → HasHeaders → contradiction.
+   Structural model: `no_sound_complete_uniform_import`.
+10. Trust: `noTrust_bridge_impossible` — within-budget bridge axiom
+    → `trust_forced_by_bridge` (Nat arithmetic) → HasTrustBridges → contradiction.
+    Structural model: `verification_only_import_incomplete`.
+11. Redeemability: `noRedeemability_bridge_impossible` — endorsed+falsifiable axiom
+    → `redeemability_forced_by_bridge` → HasRedeemability → contradiction.
+    Structural model: `closed_system_unfalsifiable`.
 
-These are NOT illustrative forcing chains.  Each constructs a FULL
-`ForcingEmbedding` instance (Or.inr on the deficient dimension, Or.inl on the
-other five), derives `StructurallyForced` via `embedding_to_structurally_forced`,
-propagates through `convergence_structural` to `containsBankPrimitives`, then
-extracts the missing Has* feature and contradicts the ¬Has* proof.  The SAME
-pipeline that proves convergence for the concrete system also fires for deficient
-systems — the structural models are genuine, load-bearing, and mechanically
-integrated into the full convergence architecture.
+**Separation of concerns:**
+The concrete system uses ForcingEmbedding → StructurallyForced → convergence_structural
+(the full pipeline).  Deficient systems use Bridge_X → *_forced_by_bridge → ¬HasX
+(direct contradiction, no convergence pipeline).  This matches what is actually
+proven: deficient system + bridge axiom ⇒ contradiction — NOT deficient system alone.
 
 This proves the axioms are CONSISTENT: they don't rule out all possible
 systems. The Bank architecture is realizable, not just hypothetical.
