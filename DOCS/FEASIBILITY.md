@@ -96,6 +96,58 @@ For new citations, prefer `existence_under_constraints`.
 
 ---
 
+## Structural Convergence Theorems (Branch: structural-forcing)
+
+These three theorems expose the structural forcing path directly, without routing through
+`WellFormed`. They were added to give paper readers a cleaner chain of evidence.
+
+### `structural_goals_force_bank_primitives`
+
+**File:** `EpArch/Feasibility.lean`  
+**Tier:** A
+
+```lean
+theorem structural_goals_force_bank_primitives :
+    ∀ W : WorkingSystem,
+      StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W
+```
+
+Structural variant of `goals_force_bank_primitives`. Routes directly through
+`convergence_structural` (in `Minimality.lean`) without depending on the
+`WellFormed` biconditionals. This is the preferred citation when the structural
+path needs to be made explicit.
+
+### `existence_under_constraints_structural`
+
+**File:** `EpArch/Feasibility.lean`  
+**Tier:** A
+
+```lean
+theorem existence_under_constraints_structural :
+    ∃ W : WorkingSystem,
+      StructurallyForced W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W
+```
+
+Structural headline theorem. Witnessed by `ConcreteWorkingSystem` via
+`concrete_structurally_forced` + `concrete_satisfies_all_properties`.
+
+### `existence_under_constraints_embedding`
+
+**File:** `EpArch/Feasibility.lean`  
+**Tier:** A
+
+```lean
+theorem existence_under_constraints_embedding :
+    ∃ W : WorkingSystem,
+      ForcingEmbedding W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W
+```
+
+Strongest form. Full chain: `concrete_forcing_embedding → StructurallyForced →
+convergence_structural → containsBankPrimitives`. All design judgment is localised
+in `concrete_forcing_embedding`; the rest is mechanical derivation.
+
+---
+
 ## Supporting Modules
 
 ### `EpArch/Realizer.lean`
