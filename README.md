@@ -6,7 +6,7 @@ Standalone Lean 4 framework for reasoning about bounded epistemic systems under 
 
 [![CI](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml/badge.svg)](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml)
 
-**539 theorems. 0 axiom declarations. 0 sorries.**
+**657 theorems. 0 axiom declarations. 0 sorries.**
 
 ```bash
 lake build   # Lean 4.3.0, no Mathlib
@@ -20,7 +20,7 @@ lake build   # Lean 4.3.0, no Mathlib
 |---|---|
 | **Certify a system configuration** — proof-carrying record for the applicable theorem clusters | `EpArch.Meta.Config.certify myConfig` |
 | **Inspect which theorems apply** — human-readable routing report per constraint/goal/world | `#eval EpArch.Meta.Config.showConfig myConfig` |
-| **See why primitives are structurally forced** — constraint-to-feature necessity proofs | `EpArch/Minimality.lean`, `EpArch/Agent/Imposition.lean` |
+| **See why primitives are structurally forced** — constraint-to-feature necessity proofs | `EpArch/Minimality.lean`, `EpArch/Agent/Imposition.lean`, `EpArch/Feasibility.lean` (world-assumption forcing) |
 | **Transport theorems through compatible extensions** — Tier 3–4 closure | `EpArch/Meta/TheoremTransport.lean`, `EpArch/Meta/Tier4Transport.lean` |
 | **Extend or adapt the framework** — 30-cluster registry + contributor recipes | [`DOCS/MODULARITY.md`](DOCS/MODULARITY.md) |
 | **Verify a constructive witness** — zero-axiom trace from initial state to revoked | `EpArch/ConcreteLedgerModel.lean` |
@@ -89,7 +89,10 @@ The framework has three layers:
 | Stripping reduces diagnosability | `strip_reduces_diagnosability` | Diagnosability.lean |
 | Lottery paradox is a type error | `lottery_paradox_dissolved_architecturally` | Theorems.lean |
 | Staleness blocks withdrawal | `stale_blocks_withdrawal` | Theorems.lean |
-| All world constraints are simultaneously satisfiable | `W_lies_possible`, `W_bounded_verification`, `W_partial_observability` | WorldWitness.lean |
+| All world constraint bundles are satisfiable (non-vacuity) | `holds_W_lies_possible`, `holds_W_bounded_verification`, `holds_W_partial_observability` | WorldWitness.lean |
+| Each W_* bundle independently forces its architectural primitive | `w_lies_forces_revocation_need`, `w_bounded_forces_incompleteness`, `w_partial_obs_forces_redeemability` | Feasibility.lean |
+| In any world satisfying all three bundles, Bank primitives are necessary | `world_assumptions_force_bank_primitives` | Feasibility.lean |
+| Bank primitives necessary — no free assumptions (W_* discharged by WitnessCtx) | `kernel_world_forces_bank_primitives` | Feasibility.lean |
 | Concrete model satisfies all commitments | `all_commitments_satisfiable` | ConcreteLedgerModel.lean |
 
 ---
@@ -128,7 +131,7 @@ The framework has three layers:
 | `Agent/Corroboration.lean` | k-of-n corroboration guarantees and independence conditions |
 | `Commitments.lean` | The paper's 8 structural commitments; all proved as standalone theorems; `commitments_pack` bundles the unconditional ones (C3/C4b/C7b/C8) |
 | `Minimality.lean` | Minimality and forcing results |
-| `Feasibility.lean` | Feasibility witnesses |
+| `Feasibility.lean` | Feasibility witnesses; world-to-structural bridge theorems; `world_assumptions_force_bank_primitives` (W_* bundles → `containsBankPrimitives`); `kernel_world_forces_bank_primitives` (zero-assumption corollary) |
 | `Health.lean` | Health goal predicates and necessity theorems |
 | `Invariants.lean` | System invariants (grounded operational theorems, 0 axiom declarations) |
 | `Modularity.lean` | Lattice-stability: graceful scale-down and sub-level RevisionSafety (9 theorems) |
