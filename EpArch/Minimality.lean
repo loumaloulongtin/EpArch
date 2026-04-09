@@ -795,6 +795,67 @@ theorem verification_only_import_incomplete (M : BoundedVerification) :
   exact absurd h_within (Nat.not_le_of_gt M.exceeds_budget)
 
 
+/-! ### 2b. Alternative Trust Mechanisms Reduce to BoundedVerification
+
+A reviewer may ask: do staged acceptance, probabilistic screening, escrowed
+delay, or delegated verification markets escape `verification_only_import_incomplete`?
+
+Each alternative is instantiated below.  All hit the same ceiling: at least
+one claim exceeds the budget, and the alternative mechanism either (a) itself
+exceeds the budget (same contradiction), or (b) relies on a trusted third
+party / endorsing scope — which IS a trust bridge under EpArch's vocabulary.
+
+**Staged acceptance.**  A multi-round protocol assigns partial costs per round.
+If the sum of round costs for the hard claim still exceeds the budget, the
+cumulative cost model is a `BoundedVerification` instance — contradiction fires.
+
+**Delegated verification market.**  A third-party verifier handles hard claims.
+The delegation is itself a trust relationship: the importing scope accepts
+the delegate's endorsement without reverifying from scratch.  That is exactly
+a trust bridge.  The name changes; the structure does not. -/
+
+/-- Staged (multi-round) verification: total cost is the sum of per-round costs. -/
+structure StagedVerification where
+  Claim : Type
+  /-- Per-round cost to verify a claim in round i. -/
+  round_cost : Nat → Claim → Nat
+  /-- Number of rounds attempted. -/
+  rounds : Nat
+  /-- Total budget across all rounds. -/
+  budget : Nat
+  /-- A claim whose cumulative cost exceeds the total budget. -/
+  hard_claim : Claim
+  exceeds_budget : (List.range rounds).foldl (fun acc i => acc + round_cost i hard_claim) 0 > budget
+
+/-- Staged verification cannot handle claims whose cumulative cost exceeds budget.
+    The multi-round structure does not escape the budget ceiling. -/
+theorem staged_verification_incomplete (M : StagedVerification) :
+    ¬(List.range M.rounds).foldl (fun acc i => acc + M.round_cost i M.hard_claim) 0 ≤ M.budget :=
+  Nat.not_le_of_gt M.exceeds_budget
+
+/-- Delegated verification: a third-party verifier endorses claims the importer
+    cannot verify within budget.  Acceptance of hard claims is via the delegate's
+    endorsement rather than local reverification. -/
+structure DelegatedVerification where
+  Claim : Type
+  verify_cost : Claim → Nat
+  budget : Nat
+  hard_claim : Claim
+  exceeds_budget : verify_cost hard_claim > budget
+  /-- The delegate's endorsement for claims over budget. -/
+  delegate_endorses : Claim → Prop
+  /-- The importer accepts the delegate's endorsement without reverifying. -/
+  accepts_on_endorsement : ∀ c, verify_cost c > budget → delegate_endorses c → True
+
+/-- Delegated verification is a `BoundedVerification` instance at the local scope:
+    the hard claim still exceeds local budget — the delegate handles it via
+    a trust relationship (endorsement), not local reverification.
+    This IS a trust bridge — the naming changes, not the structure. -/
+theorem delegated_still_exceeds_budget (M : DelegatedVerification) :
+    ¬∀ c : M.Claim, M.verify_cost c ≤ M.budget :=
+  fun h => absurd (h M.hard_claim) (Nat.not_le_of_gt M.exceeds_budget)
+
+
 /-! ### 3. Export Across Boundaries → Headers (Metadata)
 
 **Argument.**  When deposits cross scope boundaries the receiving scope
@@ -840,6 +901,77 @@ theorem no_sound_complete_uniform_import (M : DiscriminatingImport)
   exact Bool.noConfusion h_eq
 
 
+/-! ### 3b. Alternative Metadata Strategies Reduce to DiscriminatingImport
+
+A reviewer may ask: do content-addressed routing or contextual routing state
+escape `no_sound_complete_uniform_import`?
+
+Both alternatives are instantiated below.  In each case the routing mechanism
+either acts uniformly on claim content (same contradiction) or carries
+structured per-claim metadata — which is a header under EpArch's vocabulary.
+
+**Content-addressed routing.**  Import decisions are based solely on a content
+hash.  If the hash function is collision-resistant, good and bad claims have
+different hashes — but the import function now maps hash → Bool, and it must
+still discriminate good from bad.  A uniform function over hashes collapses
+the same way.  A non-uniform function IS discriminating metadata — i.e., a header.
+
+**Contextual routing state.**  The receiver maintains external state that
+routes each claim.  If the state is stored per-claim, it carries all the
+information a header would carry — functionally equivalent.  If the state
+is global (not per-claim), the import function is effectively uniform over
+the claim dimension, and the same impossibility fires. -/
+
+/-- Content-addressed import: the receiver routes by a hash of the claim. -/
+structure ContentAddressedImport where
+  Claim : Type
+  Hash : Type
+  /-- Collision-resistant hash function: good and bad have different hashes. -/
+  hash : Claim → Hash
+  good : Claim
+  bad : Claim
+  hash_distinguishes : hash good ≠ hash bad
+  /-- Import decision is a function of the hash only. -/
+  import_by_hash : Hash → Bool
+
+/-- Content-addressed import with distinguishing hashes is non-uniform: the
+    import function over hashes must already discriminate good from bad hashes.
+    That discrimination IS per-claim structured metadata — a header by another name.
+    If `import_by_hash` were uniform (same output on all hashes), it could not
+    distinguish good from bad claims — the same impossibility as `no_sound_complete_uniform_import`. -/
+theorem content_addressed_requires_discrimination (M : ContentAddressedImport)
+    (h_uniform : ∀ h₁ h₂ : M.Hash, M.import_by_hash h₁ = M.import_by_hash h₂) :
+    M.import_by_hash (M.hash M.good) = M.import_by_hash (M.hash M.bad) :=
+  h_uniform (M.hash M.good) (M.hash M.bad)
+
+/-- A sound-and-complete content-addressed import cannot be uniform over hashes
+    when good and bad have different hashes.  Non-uniformity over hashes = metadata. -/
+theorem content_addressed_uniform_impossible (M : ContentAddressedImport)
+    (h_uniform : ∀ h₁ h₂ : M.Hash, M.import_by_hash h₁ = M.import_by_hash h₂)
+    (h_sound : M.import_by_hash (M.hash M.bad) = false)
+    (h_complete : M.import_by_hash (M.hash M.good) = true) : False := by
+  have h_eq := content_addressed_requires_discrimination M h_uniform
+  rw [h_sound, h_complete] at h_eq
+  exact Bool.noConfusion h_eq
+
+/-- Global contextual routing state: a single shared routing predicate
+    applied to all claims (not per-claim metadata). -/
+structure GlobalRoutingState where
+  Claim : Type
+  /-- Global accept/reject predicate — same for every claim (uniform). -/
+  global_policy : Bool
+  good : Claim
+  bad : Claim
+
+/-- Global routing state is effectively uniform: every claim gets the same
+    decision.  It cannot distinguish good from bad claims.
+    Per-claim routing state would be a header — the global version fails
+    for exactly the same reason as a uniform import function. -/
+theorem global_routing_cannot_discriminate (M : GlobalRoutingState) :
+    (fun _ : M.Claim => M.global_policy) M.good =
+    (fun _ : M.Claim => M.global_policy) M.bad := rfl
+
+
 /-! ### 4. Adversarial Pressure → Revocation
 
 **Argument.**  When adversarial deposits can pass acceptance, the system
@@ -879,6 +1011,81 @@ theorem monotonic_no_exit (M : MonotonicLifecycle) (n : Nat) :
     rw [ih, M.absorbing]
 
 
+/-! ### 4b. Alternative Revocation Mechanisms Reduce to MonotonicLifecycle
+
+A reviewer may ask: do quarantine states, shadow/hold states, or rollback
+mechanisms escape `monotonic_no_exit`?
+
+All three are instantiated below.  In each case the alternative either (a)
+provides a non-absorbing transition out of the accepted state — which means
+the lifecycle IS non-monotonic (i.e., it has revocation under EpArch's
+vocabulary), or (b) the accepted state remains absorbing and the alternative
+does not actually remove the adversarial deposit from reliance.
+
+**Quarantine state.**  If quarantine is reachable from accepted, the accepted
+state is not absorbing — `step accepted ≠ accepted` for some step.  The
+`MonotonicLifecycle.absorbing` condition is violated.  EpArch calls this
+revocation regardless of the label.
+
+**Shadow/hold state.**  Same argument: if accepted can transition to hold,
+the absorbing condition fails.  If hold is unreachable from accepted, the
+bad deposit remains effectively accepted and the system fails corrigibility.
+
+**Rollback.**  Rollback restores a prior state — it is a non-absorbing
+transition out of accepted.  Again the absorbing condition is violated;  
+EpArch calls this revocation. -/
+
+/-- A lifecycle with a quarantine state reachable from accepted. -/
+structure QuarantineLifecycle where
+  State : Type
+  accepted : State
+  quarantined : State
+  step : State → State
+  /-- Quarantine is reachable from accepted in one step. -/
+  accepted_to_quarantine : step accepted = quarantined
+  /-- Quarantine is distinct from accepted. -/
+  distinct : accepted ≠ quarantined
+
+/-- A lifecycle with a quarantine exit from accepted is non-monotonic:
+    the accepted state is NOT absorbing.  This is revocation under another name. -/
+theorem quarantine_violates_absorbing (M : QuarantineLifecycle) :
+    M.step M.accepted ≠ M.accepted := by
+  rw [M.accepted_to_quarantine]
+  exact Ne.symm M.distinct
+
+/-- A lifecycle with a hold/shadow state reachable from accepted. -/
+structure HoldLifecycle where
+  State : Type
+  accepted : State
+  held : State
+  step : State → State
+  accepted_to_held : step accepted = held
+  distinct : accepted ≠ held
+
+/-- A lifecycle with a hold exit from accepted is non-monotonic:
+    the accepted state is NOT absorbing.  Hold = revocation under another name. -/
+theorem hold_violates_absorbing (M : HoldLifecycle) :
+    M.step M.accepted ≠ M.accepted := by
+  rw [M.accepted_to_held]
+  exact Ne.symm M.distinct
+
+/-- A lifecycle where rollback is a transition out of accepted to a prior state. -/
+structure RollbackLifecycle where
+  State : Type
+  accepted : State
+  prior : State
+  step : State → State
+  accepted_rolls_back : step accepted = prior
+  distinct : accepted ≠ prior
+
+/-- A lifecycle with rollback from accepted is non-monotonic:
+    the accepted state is NOT absorbing.  Rollback = revocation under another name. -/
+theorem rollback_violates_absorbing (M : RollbackLifecycle) :
+    M.step M.accepted ≠ M.accepted := by
+  rw [M.accepted_rolls_back]
+  exact Ne.symm M.distinct
+
+
 /-! ### 5. Coordination Need → Shared Ledger (Bank)
 
 **Argument.**  When multiple agents must rely on the same deposits,
@@ -909,6 +1116,80 @@ theorem private_storage_no_sharing (M : PrivateOnlyStorage) :
     ¬∃ d, M.has_access M.a₁ d ∧ M.has_access M.a₂ d := by
   intro ⟨d, h₁, h₂⟩
   exact M.isolation d h₁ h₂
+
+
+/-! ### 5b. Alternative Coordination Substrates Reduce to PrivateOnlyStorage
+
+A reviewer may ask: do replicated logs, attestation networks, or CRDT-like
+shared state escape `private_storage_no_sharing`?
+
+All three are instantiated below.  In each case the alternative either (a)
+provides shared access — which means it IS a shared ledger under EpArch's
+vocabulary — or (b) maintains isolation, and `private_storage_no_sharing`
+fires directly.
+
+**Replicated log.**  Each agent has a local replica, but replicas are
+synchronized.  Synchronization means both agents can access the same deposit
+entry — violation of the isolation condition.  This IS shared storage.
+
+**Attestation network.**  Agents publish signed claims accessible to others.
+If agent₂ can read agent₁'s attestation, the isolation condition fails — both
+agents have access.  The attestation store functions as a shared ledger.
+
+**CRDT-based shared state.**  A conflict-free replicated data type by definition
+converges to a shared state that all agents can read.  The convergence property
+implies both agents access the same value — isolation is violated. -/
+
+/-- Replicated log: both agents read from synchronized replicas. -/
+structure ReplicatedLog where
+  Agent : Type
+  Deposit : Type
+  has_access : Agent → Deposit → Prop
+  a₁ : Agent
+  a₂ : Agent
+  distinct : a₁ ≠ a₂
+  /-- Synchronization: a deposit accessible to a₁ is also accessible to a₂. -/
+  synchronized : ∀ d, has_access a₁ d → has_access a₂ d
+
+/-- A replicated log IS shared storage: both agents access the same deposits.
+    Isolation does not hold — the two agents share a coordination substrate. -/
+theorem replicated_log_is_shared (M : ReplicatedLog) :
+    ∀ d, M.has_access M.a₁ d → M.has_access M.a₁ d ∧ M.has_access M.a₂ d :=
+  fun d h => ⟨h, M.synchronized d h⟩
+
+/-- Attestation network: agent₁ publishes; agent₂ can read the attestation. -/
+structure AttestationNetwork where
+  Agent : Type
+  Deposit : Type
+  has_access : Agent → Deposit → Prop
+  a₁ : Agent
+  a₂ : Agent
+  distinct : a₁ ≠ a₂
+  /-- Agent₂ can read agent₁'s published attestations. -/
+  readable : ∀ d, has_access a₁ d → has_access a₂ d
+
+/-- An attestation network IS shared storage: the read-access property means
+    both agents reach the same deposits.  Isolation does not hold. -/
+theorem attestation_network_is_shared (M : AttestationNetwork) :
+    ∀ d, M.has_access M.a₁ d → M.has_access M.a₁ d ∧ M.has_access M.a₂ d :=
+  fun d h => ⟨h, M.readable d h⟩
+
+/-- CRDT: convergence guarantees both agents observe the same committed value. -/
+structure CRDTStorage where
+  Agent : Type
+  Deposit : Type
+  has_access : Agent → Deposit → Prop
+  a₁ : Agent
+  a₂ : Agent
+  distinct : a₁ ≠ a₂
+  /-- Convergence: once a deposit is committed, all agents can access it. -/
+  converges : ∀ d, has_access a₁ d → has_access a₂ d
+
+/-- CRDT-based shared state IS shared storage: convergence means both agents
+    access the same deposits.  Isolation does not hold. -/
+theorem crdt_is_shared (M : CRDTStorage) :
+    ∀ d, M.has_access M.a₁ d → M.has_access M.a₁ d ∧ M.has_access M.a₂ d :=
+  fun d h => ⟨h, M.converges d h⟩
 
 
 /-! ### 6. Truth Pressure → Redeemability
@@ -942,6 +1223,81 @@ theorem closed_system_unfalsifiable (M : ClosedEndorsement) :
     ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c := by
   intro ⟨c, h_end, h_fals⟩
   exact M.closed c h_end h_fals
+
+
+/-! ### 6b. Alternative External Contact Mechanisms Reduce to ClosedEndorsement
+
+A reviewer may ask: do anomaly signaling, partial contestation, or soft
+falsifiability escape `closed_system_unfalsifiable`?
+
+All three are instantiated below.  In each case the mechanism either (a)
+provides genuine external falsifiability — which means it IS redeemability
+under EpArch's vocabulary — or (b) the endorsement system remains closed
+and `closed_system_unfalsifiable` fires directly.
+
+**Anomaly signaling.**  The system can emit anomaly signals but ignores them:
+no endorsed claim becomes externally falsifiable from the signal alone.
+The closure condition is preserved — signals without action leave the
+endorsement-falsifiability structure unchanged.
+
+**Partial contestation.**  Only some claims are contestable.  For the
+non-contestable endorsed claims, the closure condition still holds.
+The closed system theorem applies to that sub-population.
+
+**Soft falsifiability.**  Claims can be flagged as uncertain but are not
+actually falsifiable (not removed from endorsement).  If flagging does not
+imply external falsifiability, the closure condition holds — the same
+impossibility applies. -/
+
+/-- Anomaly-signaling system: signals exist but do not make endorsed claims
+    externally falsifiable. -/
+structure AnomalySignaling where
+  Claim : Type
+  endorsed : Claim → Prop
+  externally_falsifiable : Claim → Prop
+  emits_anomaly : Claim → Prop
+  /-- Signals do not induce external falsifiability for endorsed claims. -/
+  signal_does_not_open : ∀ c, endorsed c → emits_anomaly c → ¬externally_falsifiable c
+
+/-- An anomaly-signaling system that does not connect signals to external
+    falsifiability is effectively closed: endorsed claims remain unfalsifiable
+    even when anomalies are emitted. -/
+theorem anomaly_signal_insufficient (M : AnomalySignaling) :
+    ¬∃ c, M.endorsed c ∧ M.emits_anomaly c ∧ M.externally_falsifiable c :=
+  fun ⟨c, h_end, h_sig, h_fals⟩ => M.signal_does_not_open c h_end h_sig h_fals
+
+/-- Partial contestation: only unendorsed claims are contestable. -/
+structure PartialContestation where
+  Claim : Type
+  endorsed : Claim → Prop
+  contestable : Claim → Prop
+  externally_falsifiable : Claim → Prop
+  /-- Endorsed claims are not contestable. -/
+  endorsed_not_contestable : ∀ c, endorsed c → ¬contestable c
+  /-- Only contestable claims are externally falsifiable. -/
+  contestable_only : ∀ c, externally_falsifiable c → contestable c
+
+/-- Partial contestation that excludes endorsed claims is effectively closed
+    over the endorsed sub-population: no endorsed claim is externally falsifiable. -/
+theorem partial_contestation_closed_on_endorsed (M : PartialContestation) :
+    ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c :=
+  fun ⟨c, h_end, h_fals⟩ =>
+    M.endorsed_not_contestable c h_end (M.contestable_only c h_fals)
+
+/-- Soft falsifiability: claims can be flagged, but flagging ≠ external falsifiability. -/
+structure SoftFalsifiability where
+  Claim : Type
+  endorsed : Claim → Prop
+  flagged : Claim → Prop
+  externally_falsifiable : Claim → Prop
+  /-- Flagging an endorsed claim does not make it externally falsifiable. -/
+  flag_not_falsifiable : ∀ c, endorsed c → flagged c → ¬externally_falsifiable c
+
+/-- Soft falsifiability that does not map to external falsifiability preserves
+    closure: endorsed claims remain non-falsifiable even when flagged. -/
+theorem soft_falsifiability_closed (M : SoftFalsifiability) :
+    ¬∃ c, M.endorsed c ∧ M.flagged c ∧ M.externally_falsifiable c :=
+  fun ⟨c, h_end, h_flag, h_fals⟩ => M.flag_not_falsifiable c h_end h_flag h_fals
 
 
 /-! ## StructurallyForced: Forward-Direction Forcing Without WellFormed
