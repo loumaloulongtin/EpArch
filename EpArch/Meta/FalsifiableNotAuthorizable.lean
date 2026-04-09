@@ -96,6 +96,14 @@ theorem trivial_fails_lies_possible : ¬ Nonempty TrivialCtx.W_lies_possible := 
   -- h_false : ¬ TrivialCtx.Truth w P = ¬ True = False
   exact h_false trivial
 
+/-- In TrivialCtx, no lie is constructible: the kernel discriminator is a no-op.
+
+    TrivialCtx.Truth = fun _ _ => True, so every uttered claim is vacuously true.
+    This is the formal statement of "we would not need Lean if lies were impossible":
+    in a world where all claims are true, there is nothing to reject. -/
+theorem trivial_has_no_lies : ¬∃ w a P, TrivialCtx.Lie w a P :=
+  WorldCtx.kernel_redundant_without_lies TrivialCtx (fun _ _ => trivial)
+
 /-- W_bounded_verification fails in TrivialCtx.
 
     Proof: W_bounded_verification requires ∃ P k, k > 0 ∧ ∀ w, RequiresSteps w P k.

@@ -165,6 +165,15 @@ theorem WorldCtx.all_agents_can_lie_of_W (C : WorldCtx) (W : C.W_lies_possible)
   have ⟨w, P, h_false⟩ := W.some_false
   exact ⟨w, P, W.unrestricted_utterance a P, h_false⟩
 
+/-- Theorem: If all propositions are true in all worlds, no lie is constructible.
+
+    The kernel discriminator is a no-op: every utterance is guaranteed true,
+    so the accept/reject pass never rejects anything.  We would not need the
+    kernel if this held — EpArch primitives exist precisely because it does not. -/
+theorem WorldCtx.kernel_redundant_without_lies (C : WorldCtx)
+    (h : ∀ w P, C.Truth w P) : ¬∃ w a P, C.Lie w a P :=
+  fun ⟨w, _, P, _, h_false⟩ => h_false (h w P)
+
 /-- Theorem: Bounded audit fails when time is insufficient. -/
 theorem WorldCtx.bounded_audit_fails (C : WorldCtx) (w : C.World) (P : C.Claim)
     (k t : Nat) : C.RequiresSteps w P k → t < k → ¬C.VerifyWithin w P t := by

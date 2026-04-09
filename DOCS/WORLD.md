@@ -90,7 +90,15 @@ These are the minimum derived notions needed to state obligation theorems cleanl
 
 ## World Assumption Bundles
 
-The `W_*` structures package assumptions that later theorems depend on.
+The `W_*` structures package assumptions that later theorems depend on. They are *conditions on a WorldCtx*, not universal facts: some instantiations satisfy them (`WitnessCtx` in `WorldWitness.lean`) and some do not (`TrivialCtx`, where `Truth w P = True` always, provably has no lies). The heading "assumptions" is correct — they characterize which worlds are epistemically non-trivial.
+
+Each bundle independently forces its own structural conclusion — no bundle needs the others to do its work:
+
+- **`W_lies_possible` alone** → `w_lies_forces_revocation_need`: revocation primitives are necessary.
+- **`W_bounded_verification` alone** → `w_bounded_forces_incompleteness`: trust-bridge primitives are necessary.
+- **`W_partial_observability` alone** → `w_partial_obs_forces_redeemability`: redeemability primitives are necessary.
+
+The "all three" requirement only appears at the top-level convergence theorem `world_assumptions_force_bank_primitives`, which needs all three because `containsBankPrimitives` requires *all six* architectural features and three of those six are each individually grounded by one bundle. Remove any one bundle and the corresponding feature loses its forcing argument — the theorem would have a gap. The assumptions are not discharged by the conditional — they are its antecedents. They are discharged only in `kernel_world_forces_bank_primitives`, which instantiates the concrete `WitnessCtx` witness and closes the statement with zero free hypotheses.
 
 ### `W_lies_possible`
 ```lean
@@ -98,7 +106,7 @@ structure WorldCtx.W_lies_possible (C : WorldCtx) where
   some_false : ∃ w P, ¬C.Truth w P
   unrestricted_utterance : ∀ a P, C.Utter a P
 ```
-**Buys:** Lying is structurally possible.
+**Buys:** Lying is structurally possible; also grounds `w_lies_forces_revocation_need` in `Feasibility.lean`, which derives `MonotonicLifecycle` absorption → `monotonic_no_exit` → Bank revocation primitives are necessary.
 **Assumes:** False propositions exist; agents can utter arbitrary claims.
 
 This is an existence/capability bundle. It says nothing about frequency, effectiveness, or strategic success.
@@ -108,7 +116,7 @@ This is an existence/capability bundle. It says nothing about frequency, effecti
 structure WorldCtx.W_bounded_verification (C : WorldCtx) where
   verification_has_cost : ∃ P k, k > 0 ∧ ∀ w, C.RequiresSteps w P k
 ```
-**Buys:** Some verification tasks have non-trivial cost.
+**Buys:** Some verification tasks have non-trivial cost; also grounds `w_bounded_forces_incompleteness` in `Feasibility.lean`, which derives `BoundedVerification` incompleteness → Bank trust-bridge primitives are necessary.
 **Assumes:** At least some propositions require more than zero effort to verify.
 
 This gives the architecture a formal handle on bounded audit.
@@ -118,7 +126,7 @@ This gives the architecture a formal handle on bounded audit.
 structure WorldCtx.W_partial_observability (C : WorldCtx) where
   obs_underdetermines : ∃ P, C.NotDeterminedByObs P
 ```
-**Buys:** Observation does not settle all truth.
+**Buys:** Observation does not settle all truth; also grounds `w_partial_obs_forces_redeemability` in `Feasibility.lean`, which derives the obs-stable closed endorsement gap → Bank redeemability primitives are necessary.
 **Assumes:** There exist observationally equivalent worlds differing in truth value.
 
 This is the clean world-layer form of "what can be seen is not everything that matters."
@@ -150,6 +158,14 @@ theorem WorldCtx.bounded_audit_fails (C : WorldCtx) (w : C.World) (P : C.Claim)
 ```
 **What it buys:** Time/resource limits matter formally.
 **What it does not buy:** A fixed empirical cost model for real verification tasks.
+
+### `kernel_redundant_without_lies`
+```lean
+theorem WorldCtx.kernel_redundant_without_lies (C : WorldCtx)
+    (h : ∀ w P, C.Truth w P) : ¬∃ w a P, C.Lie w a P
+```
+**What it buys:** If all propositions are universally true in all worlds, no lie is constructible — the kernel discriminator is a no-op and EpArch's accept/reject pass never fires. This is the contrapositive justification for why mechanisms like the kernel exist: they are only non-trivial in worlds where `W_lies_possible` holds.
+**What it does not buy:** A proof that `W_lies_possible` holds in any concrete world. That is established by `WitnessCtx` in `WorldWitness.lean`.
 
 ---
 
@@ -202,13 +218,14 @@ The one overclaim to avoid: existence/capability results (`lie_possible_of_W`, `
 Basic.lean
     ↓
 WorldCtx.lean
-    ↓                             ↓
-World.lean (re-exports)    AdversarialObligations.lean (W-bundles → obligations)
+    ↓                             ↓                          ↓
+World.lean (re-exports)    AdversarialObligations.lean    Feasibility.lean
+                           (W-bundles → obligations)      (W-bundles → containsBankPrimitives)
                                   ↑
                             AdversarialBase.lean (attack patterns)
 ```
 
-`WorldCtx.lean` provides the semantic interface for truth, observation, and bounded verification. `World.lean` is a compatibility/re-export layer, not the conceptual center. `AdversarialBase.lean` imports `Basic`, `Header`, `Bank`, and `Commitments` (not `World.lean`); `AdversarialObligations.lean` imports `WorldCtx` plus `AdversarialBase`.
+`WorldCtx.lean` provides the semantic interface for truth, observation, and bounded verification. `World.lean` is a compatibility/re-export layer, not the conceptual center. `AdversarialBase.lean` imports `Basic`, `Header`, `Bank`, and `Commitments` (not `World.lean`); `AdversarialObligations.lean` imports `WorldCtx` plus `AdversarialBase`. `Feasibility.lean` imports `WorldCtx` directly and uses all three W_* bundles as antecedents in `world_assumptions_force_bank_primitives`, closing the loop from world assumptions to architectural convergence.
 
 ---
 
