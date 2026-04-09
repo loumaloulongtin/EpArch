@@ -428,15 +428,13 @@ A reviewer may ask: do capability systems, federated namespaces, or
 dynamically parameterized acceptance gates escape `flat_scope_impossible`?
 
 This section instantiates each alternative, then shows it either:
-(a) directly supplies an `AgentDisagreement` (the old theorem fires unchanged), or
-(b) is structurally equivalent to per-agent scoped acceptance — i.e., it IS
-    bubble separation under a different name.
+(a) directly supplies an `AgentDisagreement` instance, or
+(b) embeds into per-agent scoped acceptance.
 
 **Capability-token system.**  Each claim carries a capability token; acceptance
 is token-gated.  Two agents with non-overlapping token sets disagree on the
 witness claim: agent 1 holds the required token; agent 2 does not.
-This is a direct `AgentDisagreement` instance — `flat_scope_impossible` applies
-without modification.
+This is a direct `AgentDisagreement` instance — `flat_scope_impossible` applies.
 
 **Federated namespace.**  A global namespace partitioned by scope identifier:
 `accept(scope_id, claim) := local_policy scope_id claim`.  Two agents from
@@ -907,23 +905,20 @@ A reviewer may ask: do quarantine states, shadow/hold states, or rollback
 mechanisms escape `monotonic_no_exit`?
 
 All three are instantiated below.  In each case the alternative either (a)
-provides a non-absorbing transition out of the accepted state — which means
-the lifecycle IS non-monotonic (i.e., it has revocation under EpArch's
-vocabulary), or (b) the accepted state remains absorbing and the alternative
+provides a non-absorbing transition out of the accepted state — the lifecycle
+is non-monotonic — or (b) the accepted state remains absorbing and the alternative
 does not actually remove the adversarial deposit from reliance.
 
 **Quarantine state.**  If quarantine is reachable from accepted, the accepted
 state is not absorbing — `step accepted ≠ accepted` for some step.  The
-`MonotonicLifecycle.absorbing` condition is violated.  EpArch calls this
-revocation regardless of the label.
+`MonotonicLifecycle.absorbing` condition is violated.
 
 **Shadow/hold state.**  Same argument: if accepted can transition to hold,
 the absorbing condition fails.  If hold is unreachable from accepted, the
 bad deposit remains effectively accepted and the system fails corrigibility.
 
-**Rollback.**  Rollback restores a prior state — it is a non-absorbing
-transition out of accepted.  Again the absorbing condition is violated;
-EpArch calls this revocation. -/
+**Rollback.**  Rollback restores a prior state — a non-absorbing transition
+out of accepted.  The absorbing condition is violated. -/
 
 /-- A lifecycle with a quarantine state reachable from accepted. -/
 structure QuarantineLifecycle where
@@ -937,7 +932,7 @@ structure QuarantineLifecycle where
   distinct : accepted ≠ quarantined
 
 /-- A lifecycle with a quarantine exit from accepted is non-monotonic:
-    the accepted state is NOT absorbing.  This is revocation under another name. -/
+    the accepted state is not absorbing. -/
 theorem quarantine_violates_absorbing (M : QuarantineLifecycle) :
     M.step M.accepted ≠ M.accepted := by
   rw [M.accepted_to_quarantine]
@@ -953,7 +948,7 @@ structure HoldLifecycle where
   distinct : accepted ≠ held
 
 /-- A lifecycle with a hold exit from accepted is non-monotonic:
-    the accepted state is NOT absorbing.  Hold = revocation under another name. -/
+    the accepted state is not absorbing. -/
 theorem hold_violates_absorbing (M : HoldLifecycle) :
     M.step M.accepted ≠ M.accepted := by
   rw [M.accepted_to_held]
@@ -969,7 +964,7 @@ structure RollbackLifecycle where
   distinct : accepted ≠ prior
 
 /-- A lifecycle with rollback from accepted is non-monotonic:
-    the accepted state is NOT absorbing.  Rollback = revocation under another name. -/
+    the accepted state is not absorbing. -/
 theorem rollback_violates_absorbing (M : RollbackLifecycle) :
     M.step M.accepted ≠ M.accepted := by
   rw [M.accepted_rolls_back]
@@ -1014,17 +1009,16 @@ A reviewer may ask: do replicated logs, attestation networks, or CRDT-like
 shared state escape `private_storage_no_sharing`?
 
 All three are instantiated below.  In each case the alternative either (a)
-provides shared access — which means it IS a shared ledger under EpArch's
-vocabulary — or (b) maintains isolation, and `private_storage_no_sharing`
-fires directly.
+provides shared access between the two agents, or (b) maintains isolation,
+and `private_storage_no_sharing` fires directly.
 
 **Replicated log.**  Each agent has a local replica, but replicas are
 synchronized.  Synchronization means both agents can access the same deposit
-entry — violation of the isolation condition.  This IS shared storage.
+entry — violation of the isolation condition.
 
 **Attestation network.**  Agents publish signed claims accessible to others.
 If agent₂ can read agent₁'s attestation, the isolation condition fails — both
-agents have access.  The attestation store functions as a shared ledger.
+agents have access.
 
 **CRDT-based shared state.**  A conflict-free replicated data type by definition
 converges to a shared state that all agents can read.  The convergence property
@@ -1041,8 +1035,8 @@ structure ReplicatedLog where
   /-- Synchronization: a deposit accessible to a₁ is also accessible to a₂. -/
   synchronized : ∀ d, has_access a₁ d → has_access a₂ d
 
-/-- A replicated log IS shared storage: both agents access the same deposits.
-    Isolation does not hold — the two agents share a coordination substrate. -/
+/-- A replicated log with synchronization: both agents access the same deposits.
+    Isolation does not hold. -/
 theorem replicated_log_is_shared (M : ReplicatedLog) :
     ∀ d, M.has_access M.a₁ d → M.has_access M.a₁ d ∧ M.has_access M.a₂ d :=
   fun d h => ⟨h, M.synchronized d h⟩
@@ -1058,8 +1052,8 @@ structure AttestationNetwork where
   /-- Agent₂ can read agent₁'s published attestations. -/
   readable : ∀ d, has_access a₁ d → has_access a₂ d
 
-/-- An attestation network IS shared storage: the read-access property means
-    both agents reach the same deposits.  Isolation does not hold. -/
+/-- An attestation network with shared read-access: both agents reach the same
+    deposits.  Isolation does not hold. -/
 theorem attestation_network_is_shared (M : AttestationNetwork) :
     ∀ d, M.has_access M.a₁ d → M.has_access M.a₁ d ∧ M.has_access M.a₂ d :=
   fun d h => ⟨h, M.readable d h⟩
@@ -1075,8 +1069,8 @@ structure CRDTStorage where
   /-- Convergence: once a deposit is committed, all agents can access it. -/
   converges : ∀ d, has_access a₁ d → has_access a₂ d
 
-/-- CRDT-based shared state IS shared storage: convergence means both agents
-    access the same deposits.  Isolation does not hold. -/
+/-- CRDT-based shared state where convergence means both agents access the same
+    deposits.  Isolation does not hold. -/
 theorem crdt_is_shared (M : CRDTStorage) :
     ∀ d, M.has_access M.a₁ d → M.has_access M.a₁ d ∧ M.has_access M.a₂ d :=
   fun d h => ⟨h, M.converges d h⟩
@@ -1121,9 +1115,8 @@ A reviewer may ask: do anomaly signaling, partial contestation, or soft
 falsifiability escape `closed_system_unfalsifiable`?
 
 All three are instantiated below.  In each case the mechanism either (a)
-provides genuine external falsifiability — which means it IS redeemability
-under EpArch's vocabulary — or (b) the endorsement system remains closed
-and `closed_system_unfalsifiable` fires directly.
+provides genuine external falsifiability, or (b) the endorsement system remains
+closed and `closed_system_unfalsifiable` fires directly.
 
 **Anomaly signaling.**  The system can emit anomaly signals but ignores them:
 no endorsed claim becomes externally falsifiable from the signal alone.
@@ -1156,10 +1149,9 @@ theorem anomaly_signal_insufficient (M : AnomalySignaling) :
     ¬∃ c, M.endorsed c ∧ M.emits_anomaly c ∧ M.externally_falsifiable c :=
   fun ⟨c, h_end, h_sig, h_fals⟩ => M.signal_does_not_open c h_end h_sig h_fals
 
-/-- When all endorsed claims trigger anomaly signals (worst-case: maximal scrutiny),
-    AnomalySignaling embeds into ClosedEndorsement: the closure condition is derived
-    from `signal_does_not_open`.  The identification is mechanically forced:
-    anomaly signaling without external-contact action IS a ClosedEndorsement. -/
+/-- When all endorsed claims trigger anomaly signals, `AnomalySignaling` embeds
+    into `ClosedEndorsement`: the closure condition is derived from
+    `signal_does_not_open`. -/
 def anomaly_to_closed (M : AnomalySignaling)
     (h_all : ∀ c, M.endorsed c → M.emits_anomaly c) : ClosedEndorsement where
   Claim                  := M.Claim
@@ -1188,10 +1180,8 @@ structure PartialContestation where
   /-- Only contestable claims are externally falsifiable. -/
   contestable_only : ∀ c, externally_falsifiable c → contestable c
 
-/-- PartialContestation embeds directly (no extra parameter) into ClosedEndorsement:
-    the closure over the full endorsed sub-population is derived from the two structural
-    conditions, not assumed.  This is the cleanest of the §6b identifications:
-    the structure IS ClosedEndorsement — the embedding is parameter-free. -/
+/-- `PartialContestation` embeds into `ClosedEndorsement` without an extra parameter:
+    closure over endorsed claims is derived from the two structural conditions. -/
 def partial_to_closed (M : PartialContestation) : ClosedEndorsement where
   Claim                  := M.Claim
   endorsed               := M.endorsed
@@ -1221,10 +1211,8 @@ theorem soft_falsifiability_closed (M : SoftFalsifiability) :
     ¬∃ c, M.endorsed c ∧ M.flagged c ∧ M.externally_falsifiable c :=
   fun ⟨c, h_end, h_flag, h_fals⟩ => M.flag_not_falsifiable c h_end h_flag h_fals
 
-/-- When all endorsed claims are flagged (maximal soft-falsifiability coverage),
-    SoftFalsifiability embeds into ClosedEndorsement: the closure condition is derived
-    from `flag_not_falsifiable`.  The identification is structural:
-    flagging without external contact IS a ClosedEndorsement. -/
+/-- When all endorsed claims are flagged, `SoftFalsifiability` embeds into
+    `ClosedEndorsement`: the closure condition is derived from `flag_not_falsifiable`. -/
 def soft_to_closed (M : SoftFalsifiability)
     (h_all : ∀ c, M.endorsed c → M.flagged c) : ClosedEndorsement where
   Claim                  := M.Claim
@@ -1233,9 +1221,8 @@ def soft_to_closed (M : SoftFalsifiability)
   closed                 := fun c h_end h_fals =>
     M.flag_not_falsifiable c h_end (h_all c h_end) h_fals
 
-/-- Under maximal flag coverage (all endorsed claims flagged), the full
-    `closed_system_unfalsifiable` impossibility fires via the embedding.
-    Soft falsifiability IS a ClosedEndorsement when it lacks genuine external contact. -/
+/-- Under maximal flag coverage, `closed_system_unfalsifiable` fires via the embedding.
+    No endorsed claim is externally falsifiable. -/
 theorem soft_closed_when_universal (M : SoftFalsifiability)
     (h_all : ∀ c, M.endorsed c → M.flagged c) :
     ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c :=
