@@ -1065,7 +1065,7 @@ theorem noBubbles_flat_scope_fires
 
     If the system commits to a flat acceptance function faithful to both
     agents, `bridge_bubbles_impossible` derives the contradiction — and
-    `no_bubbles_lacks_bubbles` supplies the refutation. -/ -/
+    `no_bubbles_lacks_bubbles` supplies the refutation. -/
 theorem noBubbles_bridge_impossible
     (f : DisagreementClaim → Prop)
     (hf₁ : ∀ c, f c ↔ agent1_accept c)
