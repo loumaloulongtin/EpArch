@@ -29,6 +29,8 @@ unconditionally and require no configuration.
 
 The 30 `ClusterTag` values in `ClusterRegistry.lean` are the canonical names for all of these.
 
+**Why this matters architecturally:** Modularity is not only a proof-engineering convenience — it is a kernel design constraint. EpArch must remain applicable across agents that do not share the same internal epistemology or constraint bundle, including minimal agents (e.g., an odometer-like system tracking position) that face only a sub-bundle of the full set. The cluster architecture ensures the kernel scales down gracefully: a system that does not face `FallibilityConstraint` simply does not receive the clusters that depend on it, and the remaining claims stay sound. This is why the kernel boundary stops at coordination-relevant architectural requirements rather than agent-internal dynamics models.
+
 ---
 
 ## 2. User-Facing vs. Internal
@@ -302,22 +304,22 @@ The type system then mechanically excludes all and only the theorems that depend
 
 ## Tier 2 — Constraints / Forcing Results (already modular by conjunction separation)
 
-**Mechanism:** The six forcing theorems in `Minimality.lean` are each stated independently.
-Each takes only `WellFormed W` plus the operational predicate for *that* constraint.
-They are not bundled — disabling one constraint does not affect the others.
+**Mechanism:** The six lifting theorems in `Minimality.lean` (`distributed_agents_require_bubbles`, etc.) are each stated independently. Each takes `WellFormed W` plus the operational predicate for *that* constraint; they are logical consequences of the `WellFormed` biconditionals.
+
+The **preferred forcing path** is `StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W` (`convergence_structural`), where `StructurallyForced` packages the six forward implications independently justified by the structural impossibility models (`flat_scope_impossible`, `monotonic_no_exit`, etc.). `WellFormed W → StructurallyForced W` via `wellformed_implies_structurally_forced`, so the two paths are compatible. New forcing contributions should be added as `StructurallyForced` fields, not as additional `WellFormed`-taking theorems.
 
 **File:** `Minimality.lean`
 
-| Constraint | Operational predicate | Forced feature | Theorem | Impossibility theorem |
-|---|---|---|---|---|
-| `distributed_agents` | `handles_distributed_agents` | `HasBubbles` | `distributed_agents_require_bubbles` | `no_bubbles_implies_failure` |
-| `bounded_audit` | `handles_bounded_audit` | `HasTrustBridges` | `bounded_audit_requires_trust_bridges` | `no_trust_bridges_implies_failure` |
-| `export_across_boundaries` | `handles_export` | `HasHeaders` | `export_requires_headers` | `no_headers_implies_failure'` |
-| `adversarial_pressure` | `handles_adversarial` | `HasRevocation` | `adversarial_requires_revocation` | `no_revocation_implies_failure` |
-| `coordination_need` | `handles_coordination` | `HasBank` | `coordination_requires_bank` | `no_bank_implies_failure` |
-| `truth_pressure` | `handles_truth_pressure` | `HasRedeemability` | `truth_pressure_requires_redeemability` | `no_redeemability_implies_failure` |
+| Constraint | Operational predicate | Forced feature | Theorem |
+|---|---|---|---|
+| `distributed_agents` | `handles_distributed_agents` | `HasBubbles` | `distributed_agents_require_bubbles` |
+| `bounded_audit` | `handles_bounded_audit` | `HasTrustBridges` | `bounded_audit_requires_trust_bridges` |
+| `export_across_boundaries` | `handles_export` | `HasHeaders` | `export_requires_headers` |
+| `adversarial_pressure` | `handles_adversarial` | `HasRevocation` | `adversarial_requires_revocation` |
+| `coordination_need` | `handles_coordination` | `HasBank` | `coordination_requires_bank` |
+| `truth_pressure` | `handles_truth_pressure` | `HasRedeemability` | `truth_pressure_requires_redeemability` |
 
-**Global theorem:** `convergence_under_constraints'` = conjunction of all six. If you only accept k constraints, use the k individual forcing theorems instead — they all still hold.
+**Global theorem:** `convergence_structural` = conjunction of all six (via `StructurallyForced`). `goals_force_bank_primitives` re-exports this under the `WellFormed` signature for backward compatibility. If you only accept k constraints, use the k individual forcing theorems instead — they all still hold.
 
 **Relation to world bundles:** `adversarial_pressure` is downstream of `W_lies_possible` (lies possible + imperfect gate → adversarial deposits pass). They operate at different layers and are not interchangeable.
 
@@ -453,7 +455,7 @@ This is the real Cluster C result — not just the competition gate but the full
 ## 9. Product / User Handbook
 
 **"I want to disable constraint X for my product."**
-→ Go to Tier 2. Find X in the constraint table. The k forcing theorems not involving X all still apply. The global `convergence_under_constraints'` no longer applies.
+→ Go to Tier 2. Find X in the constraint table. The k forcing theorems not involving X all still apply. The global `convergence_structural` / `goals_force_bank_primitives` no longer applies.
 
 **"I want to disable health goal G for my product."**
 → Go to Tier 3. Find G in the health goal table. Note which `CoreOps` fields it references.

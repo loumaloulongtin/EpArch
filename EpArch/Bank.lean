@@ -133,12 +133,12 @@ opaque RepairAction : Type u
 
 /-- Repair: apply a repair action to a deposit, targeting a specific field.
     Returns the repaired deposit re-entering as Candidate for revalidation. -/
-def repair (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance)
-    (f : Field) (r : RepairAction) : Deposit PropLike Standard ErrorModel Provenance :=
+def repair (_B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance)
+    (_f : Field) (_r : RepairAction) : Deposit PropLike Standard ErrorModel Provenance :=
   { d with status := .Candidate }
 
 
-/-! ## Consensus (for anti-relativism axioms) -/
+/-! ## Consensus (for anti-relativism claims) -/
 
 /-- Consensus: claim P is endorsed within bubble B.
     Purely intra-bubble — no external constraint-surface contact required.
@@ -163,7 +163,7 @@ def consensus (_B : Bubble) (_P : PropLike) : Prop := True
     and Accept_B (header → ledger entry) for finer-grained lifecycle control.
     Grounded: guards on d.status = .Candidate — only transitions when the precondition
     holds, returning d unchanged otherwise. -/
-def Validate_B (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
+def Validate_B (_B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
     Deposit PropLike Standard ErrorModel Provenance :=
   if d.status = .Candidate then { d with status := .Validated } else d
 
@@ -172,7 +172,7 @@ def Validate_B (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance
     Postcondition: ledger entry created; ACL instantiated; export class assigned
     Grounded: guards on d.status = .Validated — only transitions to Deposited when the
     deposit has passed validation; returns d unchanged otherwise. -/
-def Accept_B (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
+def Accept_B (_B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
     Deposit PropLike Standard ErrorModel Provenance :=
   if d.status = .Validated then { d with status := .Deposited } else d
 
@@ -181,7 +181,7 @@ def Accept_B (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) 
     Postcondition: withdrawal/export permissions tightened; repair clock starts
     Grounded: guards on d.status = .Deposited — only active deposits can be
     challenged; returns d unchanged otherwise. -/
-def Challenge_B (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) (f : Field) :
+def Challenge_B (_B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) (_f : Field) :
     Deposit PropLike Standard ErrorModel Provenance :=
   if d.status = .Deposited then { d with status := .Quarantined } else d
 
@@ -190,7 +190,7 @@ def Challenge_B (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenanc
     Postcondition: updated header; returns to Candidate for revalidation
     Grounded: guards on d.status = .Quarantined — only quarantined deposits
     can be repaired; returns d unchanged otherwise. -/
-def Repair_B (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
+def Repair_B (_B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
     Deposit PropLike Standard ErrorModel Provenance :=
   if d.status = .Quarantined then { d with status := .Candidate } else d
 
@@ -200,7 +200,7 @@ def Repair_B (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) 
     Note: Permits Revoke from both Quarantined and Deposited.
     Grounded: guards on d.status = .Quarantined ∨ d.status = .Deposited — the disjunction
     is decidable via DepositStatus.DecidableEq; returns d unchanged otherwise. -/
-def Revoke_B (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
+def Revoke_B (_B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
     Deposit PropLike Standard ErrorModel Provenance :=
   if d.status = .Quarantined ∨ d.status = .Deposited then { d with status := .Revoked } else d
 
@@ -210,7 +210,7 @@ def Revoke_B (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) 
     Note: Extension operator for post-revocation re-entry into the lifecycle.
     Grounded: guards on d.status = .Revoked — only revoked deposits can be
     restored; returns d unchanged otherwise. -/
-def Restore_B (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
+def Restore_B (_B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
     Deposit PropLike Standard ErrorModel Provenance :=
   if d.status = .Revoked then { d with status := .Candidate } else d
 
@@ -218,7 +218,7 @@ def Restore_B (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance)
     Precondition: revalidation under C's standards OR TrustBridge(B,C)
     Postcondition: header may mutate (V lengthens, E adds proxy-trust risk)
     Concrete witness: reassigns bubble membership to C, preserving deposit status. -/
-def Export_B_C (B C : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
+def Export_B_C (_B C : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
     Deposit PropLike Standard ErrorModel Provenance := { d with bubble := C }
 
 /-- Import_C: External → Candidate or Deposited
@@ -314,13 +314,13 @@ theorem full_lifecycle_pipeline (B : Bubble)
 
 /-- τ refresh: update the currentness marker on a deposit.
     Updates the τ field in the header; all other header fields are preserved. -/
-def τ_refresh (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) (t : Time) :
+def τ_refresh (_B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) (t : Time) :
     Deposit PropLike Standard ErrorModel Provenance := { d with h := { d.h with τ := t } }
 
 /-- Deprecation: mark deposit as stale (past TTL).
     Sets status to Revoked. DepositStatus carries no Stale variant at this
     abstraction level; the concrete model's CDepositStatus has Stale/Aging. -/
-def deprecate (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
+def deprecate (_B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
     Deposit PropLike Standard ErrorModel Provenance := { d with status := .Revoked }
 
 /-- Audit policy: bubble's rules for hygiene frequency. -/

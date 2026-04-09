@@ -39,8 +39,8 @@ and the "competition gate corners" that test each architectural feature.
 - Skepticism, Regress, Testimony, Higher-Order Evidence, etc.
 - Each mapped to a field failure or type-level mismatch
 
-### Bridge Axioms & Pathology Summary (lines ~1717–1860)
-- Linking axioms connecting abstract commitments to StepSemantics
+### Bridge Theorems & Pathology Summary (lines ~1717–1860)
+- Linking theorems connecting abstract commitments to StepSemantics
 - Key grounding relationships
 
 ### Competition Gate Corners (lines ~1867–2814)
@@ -1618,7 +1618,7 @@ theorem deposits_survive_revision_free_trace
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (t : Trace (Reason := Reason) (Evidence := Evidence) s s')
     (h_no_rev : t.hasRevision = false)
-    (B : Bubble) (d_idx : Nat)
+    (_B : Bubble) (d_idx : Nat)
     (h_dep : isDeposited s d_idx) :
     isDeposited s' d_idx :=
   StepSemantics.trace_no_revision_preserves_deposited s s' t h_no_rev d_idx h_dep
@@ -1754,13 +1754,13 @@ theorem extended_cognition_dissolution (e : extended_case) :
   artifact_bubble_membership e
 
 
-/-! ## Bridge Axioms
+/-! ## Bridge Theorems
 
-These axioms were moved from StepSemantics.lean to restore the clean
+These theorems were moved from StepSemantics.lean to restore the clean
 semantics layer.  Now proved via structural definitions.
 
-StepSemantics.lean is the discharge layer where axioms become theorems.
-Both bridge axioms are now theorems via structural analysis. -/
+StepSemantics.lean is the discharge layer where forced conditions become theorems.
+Both bridge theorems follow from structural analysis. -/
 
 /-- Monolithic case: no factorization means no localization possible.
 
@@ -1930,8 +1930,7 @@ def strip (d : Deposit PropLike Standard ErrorModel Provenance) : PayloadStrippe
 
     Conclusion is `¬∀ x y, strip x = strip y → x = y` (the definition of
     non-injectivity spelled out, since `Function.Injective` is not in scope
-    without Mathlib).  This is strictly stronger than the old existential
-    re-wrap and correctly identifies the counterexample logic.
+    without Mathlib).  The conclusion identifies the non-injectivity witness directly.
 
     For the structural construction of a colliding pair from header differences,
     see `different_headers_same_strip`.  For the no-left-inverse corollary,
@@ -2411,7 +2410,7 @@ theorem allRestricted_implies_no_revision
     full traces of arbitrary length. If every action in the trace is
     non-contestation, then ¬Revoked at the start implies ¬Revoked
     after any number of steps. The paper claim "contestation-blocking causes
-    deposits to persist" is now backed by full trace induction. -/
+    deposits to persist" holds for traces of arbitrary length. -/
 theorem frozen_canon_no_revocation_trace
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (t : Trace (Reason := Reason) (Evidence := Evidence) s s')
@@ -2895,7 +2894,7 @@ def deposit_no_longer_active
     6. Quarantined/Revoked ≠ Deposited → withdrawal gate fails
 
     Therefore: Entrenchment + Bank status change → ¬safe withdrawal.
-    The doorbell is disconnected; the agent cannot hear the Bank's signal.
+    Entrenchment blocks the demotion that Bank status change would require.
 
     The conclusion is a three-way conjunction, all genuinely proved from `ea`:
     - `certainty_L ea.agent ea.claim`: from `ea.has_certainty`; unfolds to

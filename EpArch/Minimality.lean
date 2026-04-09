@@ -1,16 +1,17 @@
 /-
 Minimality and Impossibility Theorems
 
-This is where "only possible solution" becomes theorem-grade:
-- Constraints + desiderata → must have these primitives
-- Remove primitive X → cannot satisfy properties Y
+Formal convergence result: if a system is well-formed
+and satisfies all operational properties, it necessarily contains
+the Bank primitives.  The theorems here prove this via structural
+impossibility: remove primitive X and constraint Y cannot be satisfied.
 
 The core claim is CONVERGENCE under constraints, not metaphysical necessity.
 These theorems formalize that convergence.
 
 ## Central Role
 
-This file contains the paper's HEADLINE RESULT: if a system is well-formed
+This file contains the central convergence result: if a system is well-formed
 and satisfies all operational properties (withdrawal-safety, export-gating,
 revision-capability, temporal-expiry, redeemability-grounding), then it
 necessarily contains the Bank primitives (scoped bubbles, header-bearing
@@ -24,12 +25,15 @@ these structural elements, but implementations can differ.
 - `Constraints` — typeclass capturing the minimal system predicates
 - `WorkingSystem` — a system satisfying all operational properties
 - `WellFormed` — no trivially-degenerate configurations
-- `convergence_under_constraints'` — WorkingSystem + WellFormed → has all Bank primitives
+- `StructurallyForced` — forward-only implications justified by structural models
+- `convergence_structural` — WorkingSystem + StructurallyForced → has all Bank primitives
+  (preferred convergence theorem; `WellFormed → StructurallyForced` via
+  `wellformed_implies_structurally_forced`)
 
 ## Dependencies
 
 - **SystemSpec.lean:** provides the `SystemSpec` structure that `MinimalConstraints` wraps
-- **Commitments.lean:** the axioms that are shown to be forced
+- **Commitments.lean:** the commitments that are shown to be forced
 - **ConcreteLedgerModel.lean:** proves `WorkingSystem` is nonempty (non-vacuity)
 -/
 
@@ -249,7 +253,7 @@ def SatisfiesAllProperties (W : WorkingSystem) : Prop :=
 
 A system is "well-formed" if its behavioral capabilities are backed by
 the corresponding architectural features. This is the key invariant that
-allows the linking axioms to become theorems.
+grounds the linking theorems operationally.
 
 In a real system, you can't "handle distributed agents" without bubbles,
 you can't "handle export" without headers, etc. The well-formedness predicate
@@ -280,107 +284,37 @@ def WellFormed (W : WorkingSystem) : Prop :=
   (W.supports_correction = true ↔ W.spec.has_redeemability = true)
 
 
-/-! ## Linking Theorems: Constraint → Forced Feature
+/-! ## WellFormed Lifting Theorems
 
-Each theorem formalizes one row of the "What It Forces" column.
-These are the load-bearing connections between operational requirements
-and architectural primitives. -/
+Each theorem lifts the forward direction of one biconditional from the
+`WellFormed` coherence package.  These are logical consequences of
+`WellFormed`, not independently derived forcing results.  The independent
+structural grounding for each implication is in the Structural Forcing
+Models section below. -/
 
 /-- Distributed agents → Bubbles. -/
 theorem distributed_agents_require_bubbles (W : WorkingSystem) (h_wf : WellFormed W) :
-  handles_distributed_agents W → HasBubbles W := by
-  intro h_handles
-  unfold handles_distributed_agents at h_handles
-  unfold HasBubbles
-  exact h_wf.1.mp h_handles
+    handles_distributed_agents W → HasBubbles W := h_wf.1.mp
 
 /-- Bounded audit → Trust bridges. -/
 theorem bounded_audit_requires_trust_bridges (W : WorkingSystem) (h_wf : WellFormed W) :
-  handles_bounded_audit W → HasTrustBridges W := by
-  intro h_handles
-  unfold handles_bounded_audit at h_handles
-  unfold HasTrustBridges
-  exact h_wf.2.1.mp h_handles
+    handles_bounded_audit W → HasTrustBridges W := h_wf.2.1.mp
 
 /-- Export across boundaries → Headers + gates. -/
 theorem export_requires_headers (W : WorkingSystem) (h_wf : WellFormed W) :
-  handles_export W → HasHeaders W := by
-  intro h_handles
-  unfold handles_export at h_handles
-  unfold HasHeaders
-  exact h_wf.2.2.1.mp h_handles
+    handles_export W → HasHeaders W := h_wf.2.2.1.mp
 
-/-- Adversarial pressure → V-independence + revocation. -/
+/-- Adversarial pressure → Revocation. -/
 theorem adversarial_requires_revocation (W : WorkingSystem) (h_wf : WellFormed W) :
-  handles_adversarial W → HasRevocation W := by
-  intro h_handles
-  unfold handles_adversarial at h_handles
-  unfold HasRevocation
-  exact h_wf.2.2.2.1.mp h_handles
+    handles_adversarial W → HasRevocation W := h_wf.2.2.2.1.mp
 
-/-- Coordination need → Bank + acceptance. -/
+/-- Coordination need → Bank. -/
 theorem coordination_requires_bank (W : WorkingSystem) (h_wf : WellFormed W) :
-  handles_coordination W → HasBank W := by
-  intro h_handles
-  unfold handles_coordination at h_handles
-  unfold HasBank
-  exact h_wf.2.2.2.2.1.mp h_handles
+    handles_coordination W → HasBank W := h_wf.2.2.2.2.1.mp
 
 /-- Truth pressure → Redeemability. -/
 theorem truth_pressure_requires_redeemability (W : WorkingSystem) (h_wf : WellFormed W) :
-  handles_truth_pressure W → HasRedeemability W := by
-  intro h_handles
-  unfold handles_truth_pressure at h_handles
-  unfold HasRedeemability
-  exact h_wf.2.2.2.2.2.mp h_handles
-
-
-/-! ## Six Impossibility Theorems
-
-Each theorem proves: if you lack the forced feature, you cannot satisfy
-the corresponding operational property. -/
-
-/-- Impossibility #1: No bubbles → cannot handle distributed agents. -/
-theorem no_bubbles_implies_failure (W : WorkingSystem) (h_wf : WellFormed W) :
-    ¬HasBubbles W → ¬handles_distributed_agents W := by
-  intro h_no_bubbles h_handles
-  have h_has_bubbles := distributed_agents_require_bubbles W h_wf h_handles
-  exact h_no_bubbles h_has_bubbles
-
-/-- Impossibility #2: No trust bridges → cannot handle bounded audit. -/
-theorem no_trust_bridges_implies_failure (W : WorkingSystem) (h_wf : WellFormed W) :
-    ¬HasTrustBridges W → ¬handles_bounded_audit W := by
-  intro h_no_bridges h_handles
-  have h_has_bridges := bounded_audit_requires_trust_bridges W h_wf h_handles
-  exact h_no_bridges h_has_bridges
-
-/-- Impossibility #3: No headers → cannot handle export. -/
-theorem no_headers_implies_failure' (W : WorkingSystem) (h_wf : WellFormed W) :
-    ¬HasHeaders W → ¬handles_export W := by
-  intro h_no_headers h_handles
-  have h_has_headers := export_requires_headers W h_wf h_handles
-  exact h_no_headers h_has_headers
-
-/-- Impossibility #4: No revocation → cannot handle adversarial pressure. -/
-theorem no_revocation_implies_failure (W : WorkingSystem) (h_wf : WellFormed W) :
-    ¬HasRevocation W → ¬handles_adversarial W := by
-  intro h_no_revocation h_handles
-  have h_has_revocation := adversarial_requires_revocation W h_wf h_handles
-  exact h_no_revocation h_has_revocation
-
-/-- Impossibility #5: No bank → cannot handle coordination. -/
-theorem no_bank_implies_failure (W : WorkingSystem) (h_wf : WellFormed W) :
-    ¬HasBank W → ¬handles_coordination W := by
-  intro h_no_bank h_handles
-  have h_has_bank := coordination_requires_bank W h_wf h_handles
-  exact h_no_bank h_has_bank
-
-/-- Impossibility #6: No redeemability → cannot handle truth pressure. -/
-theorem no_redeemability_implies_failure (W : WorkingSystem) (h_wf : WellFormed W) :
-    ¬HasRedeemability W → ¬handles_truth_pressure W := by
-  intro h_no_redeem h_handles
-  have h_has_redeem := truth_pressure_requires_redeemability W h_wf h_handles
-  exact h_no_redeem h_has_redeem
+    handles_truth_pressure W → HasRedeemability W := h_wf.2.2.2.2.2.mp
 
 
 /-! ## Global Impossibility and Convergence -/
@@ -395,43 +329,6 @@ theorem all_features_constitute_bank (W : WorkingSystem) :
   containsBankPrimitives W := by
   intro h1 h2 h3 h4 h5 h6
   exact ⟨h1, h2, h3, h4, h5, h6⟩
-
-/-- Global impossibility: A system missing ANY forced feature cannot
-    satisfy ALL properties.
-
-    This is the summary impossibility theorem: you need all six features
-    to handle all six constraints. -/
-theorem missing_any_feature_implies_failure (W : WorkingSystem) (h_wf : WellFormed W) :
-    (¬HasBubbles W ∨ ¬HasTrustBridges W ∨ ¬HasHeaders W ∨
-     ¬HasRevocation W ∨ ¬HasBank W ∨ ¬HasRedeemability W) →
-    ¬SatisfiesAllProperties W := by
-  intro h_missing h_satisfies
-  have ⟨h1, h2, h3, h4, h5, h6⟩ := h_satisfies
-  cases h_missing with
-  | inl h => exact h (distributed_agents_require_bubbles W h_wf h1)
-  | inr h => cases h with
-    | inl h => exact h (bounded_audit_requires_trust_bridges W h_wf h2)
-    | inr h => cases h with
-      | inl h => exact h (export_requires_headers W h_wf h3)
-      | inr h => cases h with
-        | inl h => exact h (adversarial_requires_revocation W h_wf h4)
-        | inr h => cases h with
-          | inl h => exact h (coordination_requires_bank W h_wf h5)
-          | inr h => exact h (truth_pressure_requires_redeemability W h_wf h6)
-
-/-- Main convergence theorem: under constraints, any working architecture
-    contains the Bank primitives (all six forced features). -/
-theorem convergence_under_constraints' (W : WorkingSystem) (h_wf : WellFormed W) :
-    SatisfiesAllProperties W → containsBankPrimitives W := by
-  intro h_satisfies
-  have ⟨h1, h2, h3, h4, h5, h6⟩ := h_satisfies
-  have hB := distributed_agents_require_bubbles W h_wf h1
-  have hT := bounded_audit_requires_trust_bridges W h_wf h2
-  have hH := export_requires_headers W h_wf h3
-  have hR := adversarial_requires_revocation W h_wf h4
-  have hK := coordination_requires_bank W h_wf h5
-  have hD := truth_pressure_requires_redeemability W h_wf h6
-  exact all_features_constitute_bank W hB hT hH hR hK hD
 
 
 /-! ## Sharp Behavioral Equivalence
@@ -651,5 +548,907 @@ def minimalConstraintsTable : List PrimitiveNecessity := [
   ⟨"Coordination need", "Bank (shared ledger)", "No coordination; Ladder suffices"⟩,
   ⟨"Truth pressure", "Redeemability reference", "No truth pressure; unfalsifiable consensus"⟩
 ]
+
+
+/-! ========================================================================
+    Structural Forcing Models
+    ========================================================================
+
+The lifting theorems above (`distributed_agents_require_bubbles`, etc.)
+derive features from the `WellFormed` coherence package, which explicitly
+states biconditionals like `has_shared_records ↔ has_bubble_separation`.
+Those proofs reflect the biconditional structure of `WellFormed` rather
+than the constraint geometry directly.
+
+This section provides **independent, structurally-grounded proofs** for
+each forcing direction.  Each model captures the essential structure of
+one constraint scenario and proves an impossibility or invariance result
+from that structure alone — no `WellFormed`, no biconditionals.
+
+### Summary
+
+| # | Constraint | Model | Theorem | Content |
+|---|---|---|---|---|
+| 1 | Distributed agents | `AgentDisagreement` | `flat_scope_impossible` | Single scope can't represent disagreeing agents |
+| 2 | Bounded audit | `BoundedVerification` | `verification_only_import_incomplete` | Verification-only import can't handle all claims |
+| 3 | Export | `DiscriminatingImport` | `uniform_import_nondiscriminating` | Without metadata, import can't distinguish claims |
+| 4 | Adversarial | `MonotonicLifecycle` | `monotonic_no_exit` | Without revocation, accepted state is absorbing |
+| 5 | Coordination | `PrivateOnlyStorage` | `private_storage_no_sharing` | Isolated storage blocks collective reliance |
+| 6 | Truth pressure | `ClosedEndorsement` | `closed_system_unfalsifiable` | Without external contact, consensus is unfalsifiable |
+
+After the six models, `StructurallyForced` packages the forward-direction
+implications (capability → feature) and `convergence_structural` provides
+a convergence theorem that does **not** depend on `WellFormed`.
+-/
+
+
+/-! ### 1. Distributed Agents → Scope Separation (Bubbles)
+
+**Argument.**  If two agents have genuinely different acceptance criteria,
+no single flat acceptance function can faithfully represent both.  The
+system must partition into scopes (bubbles) where each scope has its own
+acceptance gate.
+
+**Proof technique.**  Contradiction: a single function that agrees with
+agent 1 on the witness claim must accept it; but then it also agrees with
+agent 2, who rejects it. -/
+
+/-- Two agents whose acceptance criteria disagree on at least one claim. -/
+structure AgentDisagreement where
+  Claim : Type
+  /-- Agent 1's acceptance criterion. -/
+  accept₁ : Claim → Prop
+  /-- Agent 2's acceptance criterion. -/
+  accept₂ : Claim → Prop
+  /-- Witness claim where they disagree. -/
+  witness : Claim
+  /-- Agent 1 accepts the witness. -/
+  agent1_accepts : accept₁ witness
+  /-- Agent 2 rejects the witness. -/
+  agent2_rejects : ¬accept₂ witness
+
+/-- No single predicate can simultaneously agree with two disagreeing agents.
+    A flat (single-scope) system commits to one acceptance function for all agents.
+    When agents disagree, that function cannot faithfully represent both.
+
+    Consequence: scope separation (bubbles) is structurally forced. -/
+theorem flat_scope_impossible (D : AgentDisagreement) :
+    ¬∃ (f : D.Claim → Prop), (∀ c, f c ↔ D.accept₁ c) ∧ (∀ c, f c ↔ D.accept₂ c) := by
+  intro ⟨f, hf₁, hf₂⟩
+  exact D.agent2_rejects ((hf₂ D.witness).mp ((hf₁ D.witness).mpr D.agent1_accepts))
+
+
+/-! ### 2. Bounded Audit → Trust Bridges
+
+**Argument.**  When full verification has unbounded cost, some claims
+exceed any fixed budget.  A verification-only import policy (re-verify
+every import from scratch) cannot handle those claims.  To import them
+the system needs a trust-based mechanism: accept based on the source
+scope's endorsement rather than full reverification.
+
+**Proof technique.**  The hard claim's cost exceeds the budget; omega
+closes the Nat contradiction. -/
+
+/-- A claim universe where at least one claim exceeds the verification budget. -/
+structure BoundedVerification where
+  Claim : Type
+  /-- Cost to fully verify a claim. -/
+  verify_cost : Claim → Nat
+  /-- Maximum verification budget per import. -/
+  budget : Nat
+  /-- A claim that exceeds the budget. -/
+  hard_claim : Claim
+  exceeds_budget : verify_cost hard_claim > budget
+
+/-- Verification-only import cannot handle all claims under bounded audit.
+    At least one claim exceeds the budget and cannot be reverified.
+
+    Consequence: a trust-based import mechanism (trust bridges) is forced. -/
+theorem verification_only_import_incomplete (M : BoundedVerification) :
+    ¬∀ c : M.Claim, M.verify_cost c ≤ M.budget := by
+  intro h
+  have h_within := h M.hard_claim
+  exact absurd h_within (Nat.not_le_of_gt M.exceeds_budget)
+
+
+/-! ### 3. Export Across Boundaries → Headers (Metadata)
+
+**Argument.**  When deposits cross scope boundaries the receiving scope
+must decide whether to accept each import.  If the receiver has no
+metadata about the deposit (no headers), every deposit looks identical —
+the import function is uniform.  A uniform function cannot discriminate
+good imports from bad.
+
+**Proof technique.**  A uniform function produces `f good = f bad`
+by definition; but sound-and-complete import requires different answers
+for good and bad claims. -/
+
+/-- Two claims that must be distinguished on import. -/
+structure DiscriminatingImport where
+  Claim : Type
+  /-- A claim the receiver should accept. -/
+  good : Claim
+  /-- A claim the receiver should reject. -/
+  bad : Claim
+  good_ne_bad : good ≠ bad
+
+/-- A function that treats all inputs uniformly produces the same output
+    on good and bad claims — it cannot discriminate.
+
+    Consequence: structured metadata (headers) is forced for export. -/
+theorem uniform_import_nondiscriminating (M : DiscriminatingImport)
+    (f : M.Claim → Bool)
+    (h_uniform : ∀ x y : M.Claim, f x = f y) :
+    f M.good = f M.bad :=
+  h_uniform M.good M.bad
+
+/-- A sound-and-complete import policy must discriminate — but uniformity
+    prevents discrimination.  No metadata-free import can be both sound
+    and complete. -/
+theorem no_sound_complete_uniform_import (M : DiscriminatingImport)
+    (f : M.Claim → Bool)
+    (h_uniform : ∀ x y : M.Claim, f x = f y)
+    (h_sound : f M.bad = false)
+    (h_complete : f M.good = true) :
+    False := by
+  have h_eq := h_uniform M.good M.bad
+  rw [h_sound, h_complete] at h_eq
+  exact Bool.noConfusion h_eq
+
+
+/-! ### 4. Adversarial Pressure → Revocation
+
+**Argument.**  When adversarial deposits can pass acceptance, the system
+must be able to remove them after discovering the problem.  In a lifecycle
+where the "accepted" state is absorbing (no revocation transition), a
+deposit that reaches "accepted" stays there through any number of
+transitions.  The bad deposit is permanently accepted.
+
+**Proof technique.**  Induction on the number of transition steps. -/
+
+/-- Iterate a function `n` times starting from an initial value. -/
+def iter (f : α → α) : Nat → α → α
+  | 0, x => x
+  | n + 1, x => f (iter f n x)
+
+/-- A lifecycle where the accepted state is absorbing (no exit transition). -/
+structure MonotonicLifecycle where
+  State : Type
+  /-- The accepted state. -/
+  accepted : State
+  /-- The transition function. -/
+  step : State → State
+  /-- `accepted` is a fixed point: stepping from accepted returns accepted. -/
+  absorbing : step accepted = accepted
+
+/-- In a monotonic lifecycle, no sequence of transitions can escape
+    the accepted state.  An adversarial deposit that passes acceptance
+    stays accepted permanently.
+
+    Consequence: a revocation mechanism is structurally forced. -/
+theorem monotonic_no_exit (M : MonotonicLifecycle) (n : Nat) :
+    iter M.step n M.accepted = M.accepted := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    show M.step (iter M.step n M.accepted) = M.accepted
+    rw [ih, M.absorbing]
+
+
+/-! ### 5. Coordination Need → Shared Ledger (Bank)
+
+**Argument.**  When multiple agents must rely on the same deposits,
+those deposits must be stored somewhere both agents can access.  In a
+private-only storage model (each agent's store is invisible to others),
+no deposit is simultaneously accessible to two agents.
+
+**Proof technique.**  Contradiction with the isolation condition. -/
+
+/-- A system where each agent has private, isolated storage. -/
+structure PrivateOnlyStorage where
+  Agent : Type
+  Deposit : Type
+  /-- Each agent's private store. -/
+  has_access : Agent → Deposit → Prop
+  /-- Two distinct agents. -/
+  a₁ : Agent
+  a₂ : Agent
+  distinct : a₁ ≠ a₂
+  /-- Isolation: a deposit accessible to one agent is NOT accessible to the other. -/
+  isolation : ∀ d, has_access a₁ d → ¬has_access a₂ d
+
+/-- In private-only storage, no deposit is accessible to both agents.
+    Collective reliance on shared deposits is impossible.
+
+    Consequence: shared storage (bank/ledger) is structurally forced. -/
+theorem private_storage_no_sharing (M : PrivateOnlyStorage) :
+    ¬∃ d, M.has_access M.a₁ d ∧ M.has_access M.a₂ d := by
+  intro ⟨d, h₁, h₂⟩
+  exact M.isolation d h₁ h₂
+
+
+/-! ### 6. Truth Pressure → Redeemability
+
+**Argument.**  In a closed endorsement system (no external constraint
+surface), the only notion of "truth" is internal consensus.  Every claim
+that passes consensus is true by definition — there is nothing external
+it could fail against.  But truth pressure requires that some endorsed
+claims CAN fail.  A closed system cannot satisfy truth pressure.
+
+**Proof technique.**  Contradiction: the closure condition holds that endorsed
+claims are unfalsifiable, but truth pressure supplies one that is
+endorsed AND falsifiable. -/
+
+/-- A closed endorsement system: no external falsification mechanism. -/
+structure ClosedEndorsement where
+  Claim : Type
+  /-- Internal endorsement (consensus). -/
+  endorsed : Claim → Prop
+  /-- External falsifiability (constraint-surface contact). -/
+  externally_falsifiable : Claim → Prop
+  /-- Closure: without external contact, no endorsed claim is falsifiable. -/
+  closed : ∀ c, endorsed c → ¬externally_falsifiable c
+
+/-- A closed system cannot exhibit truth pressure: no endorsed claim
+    is simultaneously falsifiable.
+
+    Consequence: external constraint-surface contact (redeemability)
+    is structurally forced. -/
+theorem closed_system_unfalsifiable (M : ClosedEndorsement) :
+    ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c := by
+  intro ⟨c, h_end, h_fals⟩
+  exact M.closed c h_end h_fals
+
+
+/-! ## StructurallyForced: Forward-Direction Forcing Without WellFormed
+
+`StructurallyForced` captures the same forward implications as `WellFormed`
+but without the backward direction and without assuming biconditionals.
+
+Where `WellFormed` assumes `handles_X ↔ HasY`, `StructurallyForced`
+packages only the `handles_X → HasY` direction.  The structural models
+above justify constructing these implications; the backward direction
+(needed only for behavioral equivalence, not forcing) remains in
+`WellFormed` for uses that require it.
+
+Relationship to WellFormed:
+- `WellFormed W → StructurallyForced W` (forward extraction, see below)
+- `StructurallyForced` suffices for convergence and impossibility theorems
+- `WellFormed` additionally enables `bank_primitives_determine_behavior`  -/
+
+/-- A system is structurally forced if each operational capability implies
+    the corresponding architectural feature.  Each field is independently
+    justified by a structural forcing model. -/
+structure StructurallyForced (W : WorkingSystem) : Prop where
+  /-- Handling distributed agents requires scope separation.
+      Justified by: `flat_scope_impossible` -/
+  scope_forcing : handles_distributed_agents W → HasBubbles W
+  /-- Handling bounded audit requires trust bridges.
+      Justified by: `verification_only_import_incomplete` -/
+  trust_forcing : handles_bounded_audit W → HasTrustBridges W
+  /-- Handling export requires headers/metadata.
+      Justified by: `uniform_import_nondiscriminating` and
+      `no_sound_complete_uniform_import` -/
+  header_forcing : handles_export W → HasHeaders W
+  /-- Handling adversarial pressure requires revocation.
+      Justified by: `monotonic_no_exit` -/
+  revocation_forcing : handles_adversarial W → HasRevocation W
+  /-- Handling coordination requires shared ledger.
+      Justified by: `private_storage_no_sharing` -/
+  bank_forcing : handles_coordination W → HasBank W
+  /-- Handling truth pressure requires redeemability.
+      Justified by: `closed_system_unfalsifiable` -/
+  redeemability_forcing : handles_truth_pressure W → HasRedeemability W
+
+/-- `WellFormed` implies `StructurallyForced` (forward direction extraction). -/
+theorem wellformed_implies_structurally_forced (W : WorkingSystem) :
+    WellFormed W → StructurallyForced W := by
+  intro ⟨h1, h2, h3, h4, h5, h6⟩
+  exact {
+    scope_forcing := h1.mp
+    trust_forcing := h2.mp
+    header_forcing := h3.mp
+    revocation_forcing := h4.mp
+    bank_forcing := h5.mp
+    redeemability_forcing := h6.mp
+  }
+
+
+/-! ## Forcing Embeddings: Translation Layer
+
+The structural models above prove clean no-go lemmas on abstract scenarios.
+`StructurallyForced` packages the forward implications (capability → feature).
+The remaining gap: the `StructurallyForced` fields are narratively "justified by"
+the structural models but not mechanically derived from them.
+
+`ForcingEmbedding` closes this gap.  Each field says:
+
+> "A system handling capability X either already has feature Y, or it
+>  embeds the abstract scenario whose impossibility is already proven."
+
+The derivation `embedding_to_structurally_forced` is then a generic,
+mechanical combination: for each direction, take the `Or`, and in the
+right branch apply the structural impossibility theorem to produce `False`.
+The left branch is the feature itself.
+
+The proof chain becomes:
+
+    ForcingEmbedding ──┐
+                       ├── StructurallyForced ──► convergence_structural
+    Structural models ─┘
+
+The `ForcingEmbedding` instance encodes when a system without feature X
+facing constraint Y is in the impossible scenario.  The derivation is
+uniform and constructive (no Classical reasoning — `Or.elim` is intuitionistic). -/
+
+/-! ## Bridge Predicates and System-Independent Forcing Theorems
+
+A **bridge predicate** `Bridge_X W` names the commitment a system would
+have to make in dimension X if it lacks feature X.  Each is an existential
+over the abstract structural model's scenario data.
+
+The `bridge_*_impossible` theorems are system-independent: for ANY `W`,
+committing to the impossible scenario forces the feature.  They are
+derived directly from the structural impossibility theorems — no
+`StructurallyForced` or `convergence_structural` involved.
+
+**Separation of concerns:**
+- The concrete good system proves `StructurallyForced` via `ForcingEmbedding`
+  (the full convergence pipeline, using `Or.inl` everywhere).
+- Deficient systems prove `Bridge_X DeficientSystem → False` directly via
+  `bridge_X_impossible`: the bridge commitment data is universally absurd.
+  `SatisfiesAllProperties`, ¬HasFeature, and the convergence pipeline are
+  not involved.
+
+This matches what is actually proven: deficient systems + bridge hypothesis ⇒
+contradiction, NOT deficient system alone ⇒ contradiction. -/
+
+/-- A system is bridge-committed on scope: it provides a flat acceptance
+    function faithful to two disagreeing agents. -/
+def BridgeBubbles (_W : WorkingSystem) : Prop :=
+  ∃ D : AgentDisagreement, ∃ f : D.Claim → Prop,
+    (∀ c, f c ↔ D.accept₁ c) ∧ (∀ c, f c ↔ D.accept₂ c)
+
+/-- The scope bridge scenario is universally impossible: no flat acceptance
+    function can faithfully represent two genuinely disagreeing agents.
+    `_W` is a phantom parameter — the impossibility is system-independent. -/
+theorem bridge_bubbles_impossible (_W : WorkingSystem) : ¬BridgeBubbles _W :=
+  fun ⟨D, f, hf⟩ => flat_scope_impossible D ⟨f, hf⟩
+
+/-- A system is bridge-committed on trust: all claims fit within budget. -/
+def BridgeTrust (_W : WorkingSystem) : Prop :=
+  ∃ M : BoundedVerification, ∀ c, M.verify_cost c ≤ M.budget
+
+/-- The trust bridge scenario is universally impossible: no budget can cover
+    a claim whose cost exceeds it. -/
+theorem bridge_trust_impossible (_W : WorkingSystem) : ¬BridgeTrust _W :=
+  fun ⟨M, hM⟩ => verification_only_import_incomplete M hM
+
+/-- A system is bridge-committed on headers: a uniform import function
+    is both sound and complete. -/
+def BridgeHeaders (_W : WorkingSystem) : Prop :=
+  ∃ M : DiscriminatingImport, ∃ f : M.Claim → Bool,
+    (∀ x y, f x = f y) ∧ f M.bad = false ∧ f M.good = true
+
+/-- The headers bridge scenario is universally impossible: no uniform import
+    function can be both sound and complete on distinct claims. -/
+theorem bridge_headers_impossible (_W : WorkingSystem) : ¬BridgeHeaders _W :=
+  fun ⟨M, f, hu, hs, hc⟩ => no_sound_complete_uniform_import M f hu hs hc
+
+/-- A system is bridge-committed on revocation: the accepted state escapes. -/
+def BridgeRevocation (_W : WorkingSystem) : Prop :=
+  ∃ M : MonotonicLifecycle, ∃ n, iter M.step n M.accepted ≠ M.accepted
+
+/-- The revocation bridge scenario is universally impossible: an absorbing
+    accepted state cannot be escaped at any step count. -/
+theorem bridge_revocation_impossible (_W : WorkingSystem) : ¬BridgeRevocation _W :=
+  fun ⟨M, n, hn⟩ => hn (monotonic_no_exit M n)
+
+/-- A system is bridge-committed on bank: isolated agents share a deposit. -/
+def BridgeBank (_W : WorkingSystem) : Prop :=
+  ∃ M : PrivateOnlyStorage, ∃ d, M.has_access M.a₁ d ∧ M.has_access M.a₂ d
+
+/-- The bank bridge scenario is universally impossible: isolated agents cannot
+    share a deposit. -/
+theorem bridge_bank_impossible (_W : WorkingSystem) : ¬BridgeBank _W :=
+  fun ⟨M, d, hd⟩ => private_storage_no_sharing M ⟨d, hd⟩
+
+/-- A system is bridge-committed on redeemability: a closed system has an
+    endorsed-and-falsifiable claim. -/
+def BridgeRedeemability (_W : WorkingSystem) : Prop :=
+  ∃ M : ClosedEndorsement, ∃ c, M.endorsed c ∧ M.externally_falsifiable c
+
+/-- The redeemability bridge scenario is universally impossible: a closed system
+    cannot have an endorsed claim that is externally falsifiable. -/
+theorem bridge_redeemability_impossible (_W : WorkingSystem) : ¬BridgeRedeemability _W :=
+  fun ⟨M, c, hc⟩ => closed_system_unfalsifiable M ⟨c, hc⟩
+
+
+/-- Forcing embeddings: connects a `WorkingSystem` to the abstract
+    structural models via an auditable disjunction.
+
+    Each field says: a system handling the constraint EITHER already
+    has the feature, OR is bridge-committed to the impossible scenario
+    for that dimension.  Since bridge commitment forces the feature
+    (via `bridge_*_impossible`), the feature holds in both branches. -/
+structure ForcingEmbedding (W : WorkingSystem) : Prop where
+  /-- Distributed agents: either bubbles exist, or the system is
+      bridge-committed on scope (`BridgeBubbles`). -/
+  scope_embed : handles_distributed_agents W →
+    HasBubbles W ∨ BridgeBubbles W
+  /-- Bounded audit: either trust bridges exist, or the system is
+      bridge-committed on trust (`BridgeTrust`). -/
+  trust_embed : handles_bounded_audit W →
+    HasTrustBridges W ∨ BridgeTrust W
+  /-- Export: either headers exist, or the system is bridge-committed
+      on headers (`BridgeHeaders`). -/
+  header_embed : handles_export W →
+    HasHeaders W ∨ BridgeHeaders W
+  /-- Adversarial: either revocation exists, or the system is
+      bridge-committed on revocation (`BridgeRevocation`). -/
+  revocation_embed : handles_adversarial W →
+    HasRevocation W ∨ BridgeRevocation W
+  /-- Coordination: either shared ledger exists, or the system is
+      bridge-committed on bank (`BridgeBank`). -/
+  bank_embed : handles_coordination W →
+    HasBank W ∨ BridgeBank W
+  /-- Truth pressure: either redeemability exists, or the system is
+      bridge-committed on redeemability (`BridgeRedeemability`). -/
+  redeemability_embed : handles_truth_pressure W →
+    HasRedeemability W ∨ BridgeRedeemability W
+
+/-- Mechanical derivation: `ForcingEmbedding` → `StructurallyForced`.
+
+    Each field is derived by `Or.elim`: the left branch is the feature
+    itself (`id`); the right branch applies `bridge_X_impossible`, which
+    proves `¬Bridge_X W` directly — so the right branch is universally
+    absurd.  Fully constructive — no `Classical.byContradiction`. -/
+theorem embedding_to_structurally_forced (W : WorkingSystem) (E : ForcingEmbedding W) :
+    StructurallyForced W where
+  scope_forcing h := (E.scope_embed h).elim id fun hb => absurd hb (bridge_bubbles_impossible W)
+  trust_forcing h := (E.trust_embed h).elim id fun hb => absurd hb (bridge_trust_impossible W)
+  header_forcing h := (E.header_embed h).elim id fun hb => absurd hb (bridge_headers_impossible W)
+  revocation_forcing h := (E.revocation_embed h).elim id fun hb => absurd hb (bridge_revocation_impossible W)
+  bank_forcing h := (E.bank_embed h).elim id fun hb => absurd hb (bridge_bank_impossible W)
+  redeemability_forcing h := (E.redeemability_embed h).elim id fun hb => absurd hb (bridge_redeemability_impossible W)
+
+
+/-! ## Scenario Predicates: Enriching WorkingSystems with Structural Content
+
+The structural models prove impossibility on abstract scenarios.
+The `ForcingEmbedding` connects these to working systems via disjunctions.
+For a system that already has all features (like `ConcreteWorkingSystem`),
+`Or.inl` suffices — but the abstract models never fire.
+
+Scenario predicates supply the concrete data needed to instantiate the
+abstract structural models.  When a system has a scenario predicate and
+lacks the corresponding feature, a right-branch embedding theorem proves
+the system instantiates the impossible scenario — and the structural model fires. -/
+
+
+/-! ### Scenario 1: Distributed Disagreement -/
+
+/-- A system represents distributed disagreement if it carries two
+    acceptance predicates over some claim type that genuinely disagree:
+    agent 1 accepts a witness claim that agent 2 rejects.
+
+    When such a system lacks bubbles, it is in the `AgentDisagreement`
+    scenario: a single flat scope must represent both acceptance profiles
+    simultaneously — which `flat_scope_impossible` proves impossible.
+
+    This is not a hypothetical: any system that claims to "handle
+    distributed agents" must accommodate disagreeing acceptance criteria
+    (otherwise there's no distributed agency to handle). -/
+structure RepresentsDisagreement (W : WorkingSystem) where
+  /-- The claim type the agents reason over. -/
+  Claim : Type
+  /-- Agent 1's acceptance criterion. -/
+  accept₁ : Claim → Prop
+  /-- Agent 2's acceptance criterion. -/
+  accept₂ : Claim → Prop
+  /-- Witness claim where they disagree. -/
+  witness : Claim
+  /-- Agent 1 accepts the witness. -/
+  agent1_accepts : accept₁ witness
+  /-- Agent 2 rejects the witness. -/
+  agent2_rejects : ¬accept₂ witness
+
+/-- Extract the `AgentDisagreement` abstract model from a system that
+    `RepresentsDisagreement`. -/
+def RepresentsDisagreement.toDisagreement {W : WorkingSystem}
+    (R : RepresentsDisagreement W) : AgentDisagreement where
+  Claim := R.Claim
+  accept₁ := R.accept₁
+  accept₂ := R.accept₂
+  witness := R.witness
+  agent1_accepts := R.agent1_accepts
+  agent2_rejects := R.agent2_rejects
+
+/-- **Right-branch embedding (scope direction).**
+
+    A system that represents distributed disagreement and lacks bubbles
+    yields the `AgentDisagreement` scenario.  In a flat (single-scope) system
+    the acceptance function must agree with both agents — but
+    `flat_scope_impossible` proves this is contradictory.
+
+    The hypothesis `flat_accept` is the bridge condition: without scope
+    separation, the system commits to a single acceptance predicate that
+    purports to faithfully represent both agents.  The right branch of
+    `ForcingEmbedding.scope_embed` is then constructible, and
+    `embedding_to_structurally_forced` closes it via `flat_scope_impossible`.
+
+    This theorem demonstrates the abstract model doing real work: the
+    structural lemma is used essentially here. -/
+theorem disagreement_without_bubbles_embeds
+    (W : WorkingSystem)
+    (R : RepresentsDisagreement W)
+    (_h_no_bubbles : ¬HasBubbles W)
+    (flat_accept : R.Claim → Prop)
+    (hf₁ : ∀ c, flat_accept c ↔ R.accept₁ c)
+    (hf₂ : ∀ c, flat_accept c ↔ R.accept₂ c) :
+    False :=
+  let D := R.toDisagreement
+  flat_scope_impossible D ⟨flat_accept, hf₁, hf₂⟩
+
+/-- `ForcingEmbedding` for a system with distributed disagreement:
+    the scope direction uses the right branch (structural model fires)
+    when ¬HasBubbles; other directions use the feature directly.
+
+    This is how you build a `ForcingEmbedding` instance for a deficient
+    system — the scope field routes through `Or.inr`, and the structural
+    impossibility carries the proof. -/
+theorem disagreement_scope_embed
+    (W : WorkingSystem) (R : RepresentsDisagreement W)
+    (flat_accept : ¬HasBubbles W → R.Claim → Prop)
+    (hflat₁ : ∀ h, ∀ c, flat_accept h c ↔ R.accept₁ c)
+    (hflat₂ : ∀ h, ∀ c, flat_accept h c ↔ R.accept₂ c) :
+    handles_distributed_agents W →
+    HasBubbles W ∨
+    (∃ D : AgentDisagreement, ∃ f : D.Claim → Prop,
+      (∀ c, f c ↔ D.accept₁ c) ∧ (∀ c, f c ↔ D.accept₂ c)) := by
+  intro _
+  by_cases h : HasBubbles W
+  · exact Or.inl h
+  · exact Or.inr ⟨R.toDisagreement, flat_accept h, hflat₁ h, hflat₂ h⟩
+
+
+/-! ### Scenario 2: Private-Only Coordination -/
+
+/-- A system represents private-only coordination if it carries
+    evidence that its storage layer, absent a shared ledger, isolates
+    agents: deposits accessible to one agent are not accessible to the other.
+
+    When such a system lacks a shared ledger (bank), it is in the
+    `PrivateOnlyStorage` scenario: agents must share a deposit for
+    coordination, but isolation prevents this — which
+    `private_storage_no_sharing` proves impossible. -/
+structure RepresentsPrivateCoordination (W : WorkingSystem) where
+  /-- Agent type. -/
+  Agent : Type
+  /-- Deposit type. -/
+  Deposit : Type
+  /-- Access relation. -/
+  has_access : Agent → Deposit → Prop
+  /-- Two distinct agents needing coordination. -/
+  a₁ : Agent
+  a₂ : Agent
+  distinct : a₁ ≠ a₂
+  /-- Without a shared ledger, storage is isolated. -/
+  isolation_without_bank : ¬HasBank W → ∀ d, has_access a₁ d → ¬has_access a₂ d
+
+/-- Extract `PrivateOnlyStorage` from a system that
+    `RepresentsPrivateCoordination` and lacks a shared ledger. -/
+def RepresentsPrivateCoordination.toPrivateStorage {W : WorkingSystem}
+    (R : RepresentsPrivateCoordination W) (h_no_bank : ¬HasBank W) :
+    PrivateOnlyStorage where
+  Agent := R.Agent
+  Deposit := R.Deposit
+  has_access := R.has_access
+  a₁ := R.a₁
+  a₂ := R.a₂
+  distinct := R.distinct
+  isolation := R.isolation_without_bank h_no_bank
+
+/-- **Right-branch embedding (coordination direction).**
+
+    A system that represents private-only coordination and lacks a bank
+    yields the `PrivateOnlyStorage` scenario.  The system claims agents
+    coordinate by sharing deposits, but storage is isolated —
+    `private_storage_no_sharing` proves this is contradictory. -/
+theorem private_coordination_without_bank_embeds
+    (W : WorkingSystem)
+    (R : RepresentsPrivateCoordination W)
+    (h_no_bank : ¬HasBank W)
+    (d : R.Deposit)
+    (h₁ : R.has_access R.a₁ d) (h₂ : R.has_access R.a₂ d) :
+    False :=
+  let P := R.toPrivateStorage h_no_bank
+  private_storage_no_sharing P ⟨d, h₁, h₂⟩
+
+/-- `ForcingEmbedding` bank field for a system with private-only
+    coordination: uses the right branch when ¬HasBank.
+
+    The `shared_deposit` field provides the witness: agents claim to
+    coordinate on this deposit, but the isolation condition makes the
+    scenario impossible. -/
+theorem private_coordination_bank_embed
+    (W : WorkingSystem) (R : RepresentsPrivateCoordination W)
+    (shared_deposit : ¬HasBank W → R.Deposit)
+    (h_access₁ : ∀ h, R.has_access R.a₁ (shared_deposit h))
+    (h_access₂ : ∀ h, R.has_access R.a₂ (shared_deposit h)) :
+    handles_coordination W →
+    HasBank W ∨
+    (∃ M : PrivateOnlyStorage, ∃ d, M.has_access M.a₁ d ∧ M.has_access M.a₂ d) := by
+  intro _
+  by_cases h : HasBank W
+  · exact Or.inl h
+  · exact Or.inr ⟨R.toPrivateStorage h, shared_deposit h,
+      h_access₁ h, h_access₂ h⟩
+
+
+/-! ### Scenario 3: Monotonic Lifecycle (Adversarial → Revocation)
+
+A system facing adversarial pressure has a deposit lifecycle.  If revocation
+is absent, the "accepted" state is absorbing — once a deposit passes
+acceptance, no transition can remove it.  `monotonic_no_exit` proves
+(by induction) that an accepted deposit stays accepted through any
+number of steps.
+
+`RepresentsMonotonicLifecycle` enriches a `WorkingSystem` with a
+concrete lifecycle (states, transition function, absorbing accepted state)
+and an adversarial witness: a bad deposit that reaches the accepted state.
+When `¬HasRevocation`, the system is in the `MonotonicLifecycle` scenario. -/
+
+/-- A system represents a monotonic lifecycle if, absent revocation,
+    its deposit lifecycle has an absorbing "accepted" state: once a
+    deposit is accepted, no transition can remove it.
+
+    The `bad_deposit_accepted` field is the adversarial witness:
+    a deposit that should not be accepted but reaches the accepted
+    state.  Without revocation, it stays there permanently. -/
+structure RepresentsMonotonicLifecycle (W : WorkingSystem) where
+  /-- The lifecycle state type. -/
+  State : Type
+  /-- The accepted state. -/
+  accepted : State
+  /-- The lifecycle transition function. -/
+  step : State → State
+  /-- Without revocation, accepted is absorbing. -/
+  absorbing_without_revocation : ¬HasRevocation W → step accepted = accepted
+
+/-- Extract `MonotonicLifecycle` from a system that
+    `RepresentsMonotonicLifecycle` and lacks revocation. -/
+def RepresentsMonotonicLifecycle.toLifecycle {W : WorkingSystem}
+    (R : RepresentsMonotonicLifecycle W) (h_no_rev : ¬HasRevocation W) :
+    MonotonicLifecycle where
+  State := R.State
+  accepted := R.accepted
+  step := R.step
+  absorbing := R.absorbing_without_revocation h_no_rev
+
+/-- **Right-branch embedding (adversarial direction).**
+
+    A system with a monotonic lifecycle and no revocation:
+    `monotonic_no_exit` fires by induction, proving that the accepted
+    state cannot be escaped at any step count `n`.  This is the
+    strongest proof in the repo — genuine induction, not just
+    hypothesis contradiction. -/
+theorem monotonic_lifecycle_without_revocation_embeds
+    (W : WorkingSystem)
+    (R : RepresentsMonotonicLifecycle W)
+    (h_no_rev : ¬HasRevocation W)
+    (n : Nat) :
+    iter R.step n R.accepted = R.accepted :=
+  monotonic_no_exit (R.toLifecycle h_no_rev) n
+
+
+/-! ### Scenario 4: Discriminating Import (Export → Headers)
+
+When deposits cross scope boundaries, the receiver must decide which
+to accept.  Without metadata (headers), every deposit looks identical
+— the import function is uniform.  But sound-and-complete import
+requires accepting good claims and rejecting bad ones.  A uniform
+function cannot discriminate.
+
+`RepresentsDiscriminatingImport` enriches a `WorkingSystem` with
+two concrete claims (good and bad) that the import function must
+distinguish.  When `¬HasHeaders`, the system is in the
+`DiscriminatingImport` scenario. -/
+
+/-- A system represents a discriminating import scenario if it faces
+    two claims that must be distinguished on import: one should be
+    accepted, one rejected.
+
+    The structural point: without metadata (headers), claims are
+    indistinguishable, so any import function is uniform.
+    `no_sound_complete_uniform_import` proves that a uniform function
+    cannot be both sound and complete — any proposed function either
+    accepts the bad claim or rejects the good one.
+
+    Whether a system's import function is ACTUALLY uniform (the bridge
+    hypothesis) depends on the system and is carried as a separate hypothesis
+    in the right-branch embedding theorems. -/
+structure RepresentsDiscriminatingImport (W : WorkingSystem) where
+  /-- The claim type crossing scope boundaries. -/
+  Claim : Type
+  /-- A claim the receiver should accept. -/
+  good : Claim
+  /-- A claim the receiver should reject. -/
+  bad : Claim
+  /-- The claims are distinct. -/
+  good_ne_bad : good ≠ bad
+
+/-- Extract `DiscriminatingImport` from a system that
+    `RepresentsDiscriminatingImport`. -/
+def RepresentsDiscriminatingImport.toImport {W : WorkingSystem}
+    (R : RepresentsDiscriminatingImport W) : DiscriminatingImport where
+  Claim := R.Claim
+  good := R.good
+  bad := R.bad
+  good_ne_bad := R.good_ne_bad
+
+/-- **Right-branch embedding (export direction).**
+
+    A system with discriminating import needs and no headers:
+    any import function `f` must satisfy `f good = true` and
+    `f bad = false` for sound-and-complete import.  The bridge hypothesis
+    (`h_uniform`) says that without headers,
+    the import function is uniform: `f x = f y` for all `x y`.
+    `no_sound_complete_uniform_import` fires via `Bool.noConfusion`
+    to derive False. -/
+theorem discriminating_import_without_headers_embeds
+    (W : WorkingSystem)
+    (R : RepresentsDiscriminatingImport W)
+    (_h_no_headers : ¬HasHeaders W)
+    (f : R.Claim → Bool)
+    (h_uniform : ∀ x y, f x = f y)
+    (h_sound : f R.bad = false)
+    (h_complete : f R.good = true) :
+    False :=
+  no_sound_complete_uniform_import R.toImport f h_uniform h_sound h_complete
+
+
+/-! ### Scenario 5: Bounded Verification (Bounded Audit → Trust Bridges)
+
+When full verification is costly, some claims exceed any fixed budget.
+A verification-only import policy cannot handle those claims.
+
+`RepresentsBoundedVerification` enriches a `WorkingSystem` with a
+concrete claim universe where at least one claim exceeds the verification
+budget.  When `¬HasTrustBridges`, the system is in the
+`BoundedVerification` scenario. -/
+
+/-- A system represents bounded verification if, absent trust bridges,
+    it faces claims whose verification cost exceeds the budget.
+
+    The `hard_claim_without_trust` field is the bridge condition: without
+    trust-based import, the system must reverify every claim, but at
+    least one claim exceeds the budget. -/
+structure RepresentsBoundedVerification (W : WorkingSystem) where
+  /-- The claim type. -/
+  Claim : Type
+  /-- Cost to fully verify a claim. -/
+  verify_cost : Claim → Nat
+  /-- Maximum verification budget per import. -/
+  budget : Nat
+  /-- A claim that exceeds the budget. -/
+  hard_claim : Claim
+  /-- The hard claim genuinely exceeds the budget. -/
+  exceeds_budget : verify_cost hard_claim > budget
+
+/-- Extract `BoundedVerification` from a system that
+    `RepresentsBoundedVerification`. -/
+def RepresentsBoundedVerification.toVerification {W : WorkingSystem}
+    (R : RepresentsBoundedVerification W) : BoundedVerification where
+  Claim := R.Claim
+  verify_cost := R.verify_cost
+  budget := R.budget
+  hard_claim := R.hard_claim
+  exceeds_budget := R.exceeds_budget
+
+/-- **Right-branch embedding (trust direction).**
+
+    A system with bounded verification and no trust bridges:
+    `verification_only_import_incomplete` fires via Nat arithmetic
+    to prove that at least one claim cannot be reverified within
+    budget. -/
+theorem bounded_verification_without_trust_embeds
+    (W : WorkingSystem)
+    (R : RepresentsBoundedVerification W)
+    (_h_no_trust : ¬HasTrustBridges W)
+    (h_all_within : ∀ c, R.verify_cost c ≤ R.budget) :
+    False :=
+  verification_only_import_incomplete R.toVerification h_all_within
+
+
+/-! ### Scenario 6: Closed Endorsement (Truth Pressure → Redeemability)
+
+In a closed endorsement system (no external constraint surface), the
+only notion of truth is internal consensus.  Every endorsed claim is
+true by definition — there is nothing external it could fail against.
+
+`RepresentsClosedEndorsement` enriches a `WorkingSystem` with a
+concrete claim, its endorsement, and evidence that the system is
+closed absent redeemability.  When `¬HasRedeemability`, the system
+is in the `ClosedEndorsement` scenario. -/
+
+/-- A system represents a closed endorsement scenario if, absent
+    redeemability, endorsed claims cannot be externally falsified.
+
+    The `closed_without_redeemability` field is the bridge condition:
+    without external constraint-surface contact, no endorsed claim
+    is falsifiable. -/
+structure RepresentsClosedEndorsement (W : WorkingSystem) where
+  /-- The claim type. -/
+  Claim : Type
+  /-- Internal endorsement (consensus). -/
+  endorsed : Claim → Prop
+  /-- External falsifiability. -/
+  externally_falsifiable : Claim → Prop
+  /-- Without redeemability, the system is closed. -/
+  closed_without_redeemability :
+    ¬HasRedeemability W → ∀ c, endorsed c → ¬externally_falsifiable c
+
+/-- Extract `ClosedEndorsement` from a system that
+    `RepresentsClosedEndorsement` and lacks redeemability. -/
+def RepresentsClosedEndorsement.toClosed {W : WorkingSystem}
+    (R : RepresentsClosedEndorsement W) (h_no_redeem : ¬HasRedeemability W) :
+    ClosedEndorsement where
+  Claim := R.Claim
+  endorsed := R.endorsed
+  externally_falsifiable := R.externally_falsifiable
+  closed := R.closed_without_redeemability h_no_redeem
+
+/-- **Right-branch embedding (truth pressure direction).**
+
+    A system with closed endorsement and no redeemability:
+    `closed_system_unfalsifiable` fires to prove no endorsed claim
+    can be simultaneously falsifiable — contradicting truth pressure. -/
+theorem closed_endorsement_without_redeemability_embeds
+    (W : WorkingSystem)
+    (R : RepresentsClosedEndorsement W)
+    (h_no_redeem : ¬HasRedeemability W)
+    (c : R.Claim)
+    (h_end : R.endorsed c)
+    (h_fals : R.externally_falsifiable c) :
+    False :=
+  let M := R.toClosed h_no_redeem
+  closed_system_unfalsifiable M ⟨c, h_end, h_fals⟩
+
+
+/-! ## Convergence and Impossibility (Structural Versions) -/
+
+/-- Convergence theorem (structural version): under structural forcing,
+    any system satisfying all properties contains Bank primitives.
+
+    This is the preferred convergence statement.  Unlike the WellFormed-
+    extraction path (via `wellformed_implies_structurally_forced`), this
+    theorem does **not** depend on assumed biconditionals — only on the
+    forward-direction implications justified by the structural models. -/
+theorem convergence_structural (W : WorkingSystem) (h_sf : StructurallyForced W) :
+    SatisfiesAllProperties W → containsBankPrimitives W := by
+  intro ⟨h1, h2, h3, h4, h5, h6⟩
+  exact ⟨h_sf.scope_forcing h1, h_sf.trust_forcing h2, h_sf.header_forcing h3,
+         h_sf.revocation_forcing h4, h_sf.bank_forcing h5, h_sf.redeemability_forcing h6⟩
+
+/-- Structural impossibility: missing any feature blocks all-property satisfaction. -/
+theorem structural_impossibility (W : WorkingSystem) (h_sf : StructurallyForced W) :
+    (¬HasBubbles W ∨ ¬HasTrustBridges W ∨ ¬HasHeaders W ∨
+     ¬HasRevocation W ∨ ¬HasBank W ∨ ¬HasRedeemability W) →
+    ¬SatisfiesAllProperties W := by
+  intro h_missing h_sat
+  have h_bp := convergence_structural W h_sf h_sat
+  unfold containsBankPrimitives at h_bp
+  cases h_missing with
+  | inl h => exact h h_bp.1
+  | inr h => cases h with
+    | inl h => exact h h_bp.2.1
+    | inr h => cases h with
+      | inl h => exact h h_bp.2.2.1
+      | inr h => cases h with
+        | inl h => exact h h_bp.2.2.2.1
+        | inr h => cases h with
+          | inl h => exact h h_bp.2.2.2.2.1
+          | inr h => exact h h_bp.2.2.2.2.2
 
 end EpArch

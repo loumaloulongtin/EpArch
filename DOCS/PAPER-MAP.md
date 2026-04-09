@@ -51,7 +51,7 @@ All paper claims should reference these definitions.
 | 10 | Export | StepSemantics.lean, Theorems.lean | A | ✅ Full | `no_strip_left_inverse` |
 | 11 | Availability/Consultation | Bank.lean | D | ⚠️ Partial | Bank structure only |
 | 12 | Failure Modes | Theorems.lean | A | ✅ Diagnoses | `no_revision_no_correction` |
-| 13 | Access/Orphaning | — | D | 📝 Future | Not formalized |
+| 13 | Access/Orphaning | — | D | 📝 Downstream | Kernel-external by design |
 | 14 | Bubble Hygiene | StepSemantics.lean, Theorems.lean | A | ✅ Full | `tick_can_cause_staleness` |
 | 15 | Explanatory Recipe | Diagnosability.lean, Theorems.lean | A | ✅ Full | `strip_reduces_diagnosability` |
 | 16 | Corroboration | Agent/Corroboration.lean | A | ✅ Full | `corroboration_package` |
@@ -59,8 +59,8 @@ All paper claims should reference these definitions.
 | 18 | Domain Self-Correction | StepSemantics.lean | A | ✅ Theorem | `self_correcting_domain_permits_revision` |
 | 19 | Conclusion | — | D | 📝 Paper-only | Not formalized |
 
-**Legend:** ✅ Full | ⚠️ Partial/opaque | 📝 Not formalized
-**Tiers:** A=Proved | B=Conditional | C=Spec | D=Future
+**Legend:** ✅ Full | ⚠️ Partial/opaque | 📝 Kernel-external
+**Tiers:** A=Proved | B=Conditional | C=Spec | D=Kernel-external (by design or paper-only)
 
 ---
 
@@ -145,6 +145,8 @@ All paper claims should reference these definitions.
 | `deposit_no_longer_active` | `def` | Theorems.lean:2765 | C |
 | `entrenchment_breaks_safe_withdrawal` | `theorem` | Theorems.lean:2784 | A |
 | `entrenched_cannot_withdraw` | `theorem` | Theorems.lean:2806 | A |
+
+> **Kernel note:** EpArch formalizes the ladder as a typed interface and boundary surface (`LadderStage`, `Entrenched`). Rich internal ladder dynamics — belief update rules, graded modulation, epistemic path-dependence — are intentionally outside the kernel to preserve agent agnosticism. Agents that do not operate on the full five-stage model remain first-class coordination participants.
 
 ---
 
@@ -509,6 +511,9 @@ All paper claims should reference these definitions.
 | `all_commitments_satisfiable` | `theorem` | ConcreteLedgerModel.lean:559 | A |
 | `concrete_satisfies_all_properties` | `theorem` | ConcreteLedgerModel.lean:~900 | A |
 | `concrete_has_*` | `theorem` family | ConcreteLedgerModel.lean:841-866 | A |
+| `concrete_forcing_embedding` | `def` | ConcreteLedgerModel.lean | A |
+| `concrete_structurally_forced` | `theorem` | ConcreteLedgerModel.lean | A |
+| `concrete_structural_convergence` | `theorem` | ConcreteLedgerModel.lean | A |
 | `existence_under_constraints` | `theorem` | Feasibility.lean | A |
 | `goals_force_bank_primitives` | `theorem` | Feasibility.lean | A |
 | `success_feasible` | `theorem` | Feasibility.lean | A |
@@ -537,18 +542,35 @@ All paper claims should reference these definitions.
 |----------|------|-----------|------|
 | `existence_under_constraints` | `theorem` | Feasibility.lean | A |
 | `goals_force_bank_primitives` | `theorem` | Feasibility.lean | A |
+| `structural_goals_force_bank_primitives` | `theorem` | Feasibility.lean | A |
+| `existence_under_constraints_structural` | `theorem` | Feasibility.lean | A |
+| `existence_under_constraints_embedding` | `theorem` | Feasibility.lean | A |
 | `success_feasible` | `theorem` | Feasibility.lean | A |
 | `SuccessfulSystem` | `structure` | Realizer.lean | C |
 | `ConcreteSuccessfulSystem` | `def` | Realizer.lean | A |
-| `convergence_under_constraints'` | `theorem` | Minimality.lean | A |
+| `convergence_structural` | `theorem` | Minimality.lean | A |
 
-**Math Form:**
+**Math Form (WellFormed path):**
 
 $$\exists W : \text{WorkingSystem}.\, \text{WellFormed}(W) \land \text{SatisfiesAllProperties}(W) \land \text{containsBankPrimitives}(W)$$
 
-**Supporting Theorem (Minimality):**
+**Math Form (structural path):**
+
+$$\exists W : \text{WorkingSystem}.\, \text{StructurallyForced}(W) \land \text{SatisfiesAllProperties}(W) \land \text{containsBankPrimitives}(W)$$
+
+**Math Form (embedding path):**
+
+$$\exists W : \text{WorkingSystem}.\, \text{ForcingEmbedding}(W) \land \text{SatisfiesAllProperties}(W) \land \text{containsBankPrimitives}(W)$$
+
+**Supporting Theorem (Minimality — WellFormed path):**
 
 $$\forall W.\, \text{WellFormed}(W) \to \text{SatisfiesAllProperties}(W) \to \text{containsBankPrimitives}(W)$$
+
+**Supporting Theorem (Minimality — structural path):**
+
+$$\forall W.\, \text{StructurallyForced}(W) \to \text{SatisfiesAllProperties}(W) \to \text{containsBankPrimitives}(W)$$
+
+**Structural chain:** `ForcingEmbedding` → `embedding_to_structurally_forced` → `convergence_structural` → `containsBankPrimitives`
 
 ---
 
@@ -572,14 +594,37 @@ $$\forall W.\, \text{WellFormed}(W) \to \text{SatisfiesAllProperties}(W) \to \te
 
 ---
 
-## Not Formalized (Tier D — Explicitly Future)
+## Kernel-External Items (Tier D)
 
-| Paper Concept | Section | Tier | Reason | Path to Formalize |
-|---------------|---------|------|--------|-------------------|
-| Full Ladder dynamics | §4 | D | Requires agent belief model | Add belief/credence module |
-| Availability vs Consultation | §11 | D | Complex access semantics | Refine Bank operators |
-| Orphaned deposit recovery | §13 | D | State tracking complexity | Add recovery transitions |
-| Domain-level self-correction | §18 | D | Sociological claim | Empirical, not formal |
+These are not missing features. The distinction matters: items here are excluded by deliberate architectural choice, not by planning shortfall.
+
+### Out of scope for the kernel by design
+
+Excluded to preserve agent agnosticism and heterogeneous applicability:
+
+| Paper Concept | Section | Reason |
+|---------------|---------|--------|
+| Full Ladder dynamics (belief update rules, graded modulation) | §4 | Requires agent-internal belief model — baking it in would break agent agnosticism |
+| Rich access/consultation semantics | §11 | Agent-specific; the kernel formalizes the typed interface surface only |
+
+### Paper-only / narrative-only
+
+These sections carry philosophical argument or motivation not intended as kernel theorems:
+
+| Paper Concept | Section | Notes |
+|---------------|---------|-------|
+| Institutional contexts | §17 | Narrative framing; no kernel theorem target |
+| Domain-level sociological self-correction | §18 | Broader sociological claim in the paper; `self_correcting_domain_permits_revision` captures the formal core |
+| Conclusion | §19 | Narrative synthesis only |
+
+### Possible downstream extensions
+
+Implementable as agent-specific overlays or application layers, but not part of the kernel:
+
+| Paper Concept | Section | Notes |
+|---------------|---------|-------|
+| Orphaned deposit recovery | §13 | State-tracking complexity belongs to application layers |
+| Domain-level correlated adversaries (graded independence) | — | Binary case is formalized; graded refinement is a downstream overlay |
 
 ---
 

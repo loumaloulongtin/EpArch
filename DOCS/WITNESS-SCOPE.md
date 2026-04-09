@@ -60,7 +60,7 @@ These are real results, but **this file is not where they live**.
 | Result | Where established | Notes |
 |--------|-------------------|-------|
 | World-bundle feasibility | `EpArch.WorldWitness`, `EpArch.Feasibility.world_bundles_feasible` | Witnessed at the world-bundle layer |
-| Existence-under-constraints | `EpArch.Feasibility.existence_under_constraints` | Packages non-vacuity + success + forced primitives |
+| Existence-under-constraints | `EpArch.Feasibility.existence_under_constraints` (original), `existence_under_constraints_structural` (via `StructurallyForced`), `existence_under_constraints_embedding` (via `ForcingEmbedding`) | Packages non-vacuity + success + forced primitives; three forms available |
 | Forced-primitives / minimality | `EpArch.Minimality`, `EpArch.Feasibility.goals_force_bank_primitives` | "Success forces Bank primitives" is not a witness-only claim |
 | Field-completeness / no hidden DOF | `EpArch.Header` (`observational_completeness_full`) | Type/completeness result, not a concrete witness |
 | Safe compatible extension | `EpArch.RevisionSafety` | Repo-level preservation theorem |

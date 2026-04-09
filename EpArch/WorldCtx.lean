@@ -321,7 +321,7 @@ def WorldCtx.localToLedger (C : WorldCtx) (f : C.LocalLedger) : C.Ledger :=
     by congruence — no external assumption about the ledger is needed. -/
 theorem WorldCtx.localLedger_is_obs_based (C : WorldCtx) (f : C.LocalLedger) :
     C.obs_based (C.localToLedger f) :=
-  fun P w0 w1 hPartial => Iff.of_eq (congrArg (f · P) hPartial)
+  fun P _ _ hPartial => Iff.of_eq (congrArg (f · P) hPartial)
 
 /-- **CAP theorem for locally-computed ledgers** — `hObs` is not a free hypothesis.
     For any bubble-local ledger (one that reads only from `C.obs`), partial

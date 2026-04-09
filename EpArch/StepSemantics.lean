@@ -22,8 +22,8 @@ Deposited status — making it impossible to withdraw without all three gates.
    then self-correction is impossible. This is the central impossibility
    result: domains that claim self-correction MUST permit revision.
 
-2. **Grounded Linking Axioms** (in `EpArch.LinkingAxioms` namespace):
-   All six linking axioms from Minimality.lean have operational groundings
+2. **Grounded Linking Theorems** (in `EpArch.LinkingAxioms` namespace):
+   All six linking theorems from Minimality.lean have operational groundings
    here, proved from Step preconditions rather than asserted, plus one
    supplementary theorem (`grounded_no_bridge_forces_revalidation`).
 
@@ -49,12 +49,12 @@ Deposited status — making it impossible to withdraw without all three gates.
 - Key lemmas and repair step theorems (~lines 1460–1565)
 - Feature predicates (~lines 1567–1590)
 - Coordination lemma (~lines 1594–1620)
-- Grounded linking axioms (~lines 1621–1805)
+- Grounded linking theorems (~lines 1621–1805)
 - Modal links (Safety ↔ V, Sensitivity ↔ E) (~lines 1825–2109)
 
 ## Relationship to Other Files
 
-- **Bank.lean**: Specification axioms (WHAT). StepSemantics provides the
+- **Bank.lean**: Specification operators (WHAT). StepSemantics provides the
   constructive HOW.
 - **ConcreteLedgerModel.lean**: A fully constructive concrete model that
   witnesses satisfiability of all commitments (zero axioms). Uses different
@@ -1735,11 +1735,11 @@ theorem coordination_uses_shared_ledger
 end EpArch.StepSemantics
 
 /-! =====================================================================
-    Grounded Linking Axioms
+    Grounded Linking Theorems
     =====================================================================
 
     This section proves that the Step relation's preconditions FORCE
-    the architectural features. The linking axioms in Minimality.lean
+    the architectural features. The linking theorems in Minimality.lean
     are not arbitrary—they follow from operational necessity.
 -/
 
@@ -1933,12 +1933,12 @@ theorem grounded_truth_pressure_requires_redeemability
    Challenge + Revoke → deposit was Quarantined between the two steps
    (Operational grounding for `truth_pressure_requires_redeemability`)
 
-These are the OPERATIONAL PROOFS that the linking axioms in Minimality.lean
+These are the OPERATIONAL PROOFS that the linking theorems in Minimality.lean
 are not arbitrary: they follow from the structure of the Step relation.
 The impossibility theorems now have genuine content:
 "If you can't do X, you can't perform Y" follows from Step preconditions.
 
-ALL SIX LINKING AXIOMS NOW HAVE OPERATIONAL GROUNDINGS:
+ALL SIX LINKING THEOREMS NOW HAVE OPERATIONAL GROUNDINGS:
 - distributed_agents_require_bubbles     → grounded_distributed_agents_require_bubbles
 - bounded_audit_requires_trust_bridges   → grounded_bounded_audit_requires_bridges
 - export_requires_headers                → grounded_export_requires_headers

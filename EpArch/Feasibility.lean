@@ -117,11 +117,12 @@ theorem success_feasible :
 /-- Paper-facing name: success forces Bank primitives.
 
     Any working system that is WellFormed and satisfies all operational
-    properties MUST contain Bank primitives. This is the minimality /
-    forced-primitives direction. -/
+    properties contains Bank primitives.  The proof routes through
+    `convergence_structural` via `wellformed_implies_structurally_forced`. -/
 theorem goals_force_bank_primitives :
     ∀ W : WorkingSystem, WellFormed W → SatisfiesAllProperties W → containsBankPrimitives W :=
-  convergence_under_constraints'
+  fun W h_wf h_sat =>
+    convergence_structural W (wellformed_implies_structurally_forced W h_wf) h_sat
 
 
 /-! ## Headline Theorem: Existence Under Constraints -/
@@ -158,5 +159,40 @@ theorem joint_feasible :
       Nonempty C.W_partial_observability) ∧
     (∃ _ : EpArch.Realizer, True) := by
   exact ⟨constraints_feasible, objectives_feasible⟩
+
+
+/-! ## Structural Convergence -/
+
+/-- Paper-facing name (structural version): success forces Bank primitives
+    without depending on WellFormed biconditionals. -/
+theorem structural_goals_force_bank_primitives :
+    ∀ W : WorkingSystem,
+      StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W :=
+  convergence_structural
+
+/-- Headline theorem (structural version): the concrete model is
+    structurally forced, satisfies all properties, and contains Bank
+    primitives — without going through WellFormed. -/
+theorem existence_under_constraints_structural :
+    ∃ W : WorkingSystem,
+      StructurallyForced W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W := by
+  refine ⟨EpArch.ConcreteInstance.ConcreteWorkingSystem, ?_⟩
+  refine ⟨EpArch.ConcreteInstance.concrete_structurally_forced,
+          EpArch.ConcreteInstance.concrete_satisfies_all_properties, ?_⟩
+  exact convergence_structural EpArch.ConcreteInstance.ConcreteWorkingSystem
+    EpArch.ConcreteInstance.concrete_structurally_forced
+    EpArch.ConcreteInstance.concrete_satisfies_all_properties
+
+/-- Headline theorem (embedding version): full chain from
+    `ForcingEmbedding` through `StructurallyForced` to convergence.
+    This is the strongest form — the design judgment is localised
+    in `concrete_forcing_embedding`, and the derivation is mechanical. -/
+theorem existence_under_constraints_embedding :
+    ∃ W : WorkingSystem,
+      ForcingEmbedding W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W :=
+  ⟨EpArch.ConcreteInstance.ConcreteWorkingSystem,
+   EpArch.ConcreteInstance.concrete_forcing_embedding,
+   EpArch.ConcreteInstance.concrete_satisfies_all_properties,
+   EpArch.ConcreteInstance.concrete_structural_convergence⟩
 
 end EpArch.Feasibility

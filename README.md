@@ -2,6 +2,8 @@
 
 Standalone Lean 4 framework for reasoning about bounded epistemic systems under adversarial pressure.
 
+> **Scope note.** EpArch is a framework for determining which architectural mechanisms are *required* under recognizable constraint and goal profiles — the kinds of real-world operational regimes we actually build epistemic systems for. It is not a claim that every conceivable world or system must instantiate the same mechanisms.
+
 [![CI](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml/badge.svg)](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml)
 
 **539 theorems. 0 axiom declarations. 0 sorries.**
@@ -50,7 +52,7 @@ def myConfig : EpArchConfig := {
 
 ## The EpArch Framework
 
-EpArch is a machine-checked framework for reasoning about bounded epistemic systems under adversarial pressure. Starting from minimal operational constraints on agents and the world, it derives a cluster of structurally forced primitives: scoped authorization zones (**Bubbles**), a shared deposit ledger (**Bank**) with lifecycle gates, structured validation headers (**S/E/V**), and temporal validity (**τ**). These are not design choices — they are machine-proved forced features.
+EpArch is a machine-checked framework for reasoning about bounded epistemic systems under adversarial pressure. Starting from minimal operational constraints on agents and the world, it derives a cluster of structurally forced primitives: scoped authorization zones (**Bubbles**), a shared deposit ledger (**Bank**) with lifecycle gates, structured validation headers (**S/E/V**), and temporal validity (**τ**). These are not design choices — they are machine-proved forced features. The domain scoping is what makes the results strong: declaring a constraint/goal profile is a precondition, not a limitation — within any declared profile the derivations are machine-checked necessities, not conditional recommendations.
 
 The framework has three layers:
 - **Formal architecture** — core types, lifecycle semantics, commitments, forcing results, adversarial obligations, revision safety.
@@ -73,7 +75,7 @@ The framework has three layers:
 | Adversarial obligation theorems | `EpArch/AdversarialObligations.lean` |
 | Revision safety (extensions can't break existing results) | `EpArch/RevisionSafety.lean` |
 
-**A notable result:** The notation-invariance theorems (`notation_invariance_of_redeemability`, `math_practice_is_bubble_distinct`) show that mathematical practice is itself a bubble in the architecture's terms, with Lean's kernel as the constraint surface — and these claims are discharged by that same kernel.
+**Notable derived interpretations:** The notation-invariance theorems (`notation_invariance_of_redeemability`, `math_practice_is_bubble_distinct`) show that mathematical practice is itself a bubble in the architecture's terms, with Lean's kernel as the constraint surface — and these claims are discharged by that same kernel.
 
 ---
 
@@ -171,16 +173,28 @@ See [DOCS/AXIOMS.md](DOCS/AXIOMS.md) for the full account.
 
 ---
 
-## What Is Not Formalized
+## Kernel Boundary
 
-Some paper concepts are explicitly out of scope for this formalization:
+EpArch identifies and formalizes the **minimal mechanisms** required for heterogeneous agents to coordinate together — that is, the architectural layer every coordination participant must share regardless of its internal epistemology, cognition model, or constraint bundle. The kernel boundary follows from this goal: anything specific to one class of agent's internals is, by definition, not part of the shared coordination substrate and belongs in a downstream overlay. This includes minimal agents such as an odometer-like system that tracks position without facing the full human-style constraint bundle; such agents are first-class coordination participants, and the kernel must scale down to accommodate them without losing its guarantees. The mechanisms this kernel identifies are precisely what `Minimality.lean`'s forcing theorems derive as necessary under recognizable profiles — the boundary is not a design choice but a proof obligation.
+
+### Out of scope for the kernel
+
+These are not missing features. They are excluded to preserve agent-agnostic applicability:
 
 | Concept | Reason |
 |---|---|
-| Full Ladder dynamics (belief update rules) | Requires an agent belief model beyond the scope of this spec |
-| Multi-bubble conflict routing | High formal cost; attachment points exist for future extension |
-| Domain-level correlated adversaries (graded independence) | Current model handles binary independent/common-mode; graded spectrum is future work |
+| Full Ladder dynamics (belief update rules, graded modulation) | Requires an agent-internal belief model; including it would break agent agnosticism |
+| Rich access/consultation semantics beyond the typed interface | Agent-specific; the kernel formalizes the interface surface only |
+| Agent phenomenology, consciousness, or omniscience-adjacent claims | Not coordination-relevant unless they change theorem-level coordination requirements |
 | Empirical implementation correspondence | Deliberately not claimed — architectural spec, not deployment protocol |
+
+### Possible downstream extensions
+
+| Concept | Notes |
+|---|---|
+| Multi-bubble conflict routing | Attachment points exist; implementable as an agent-specific overlay |
+| Domain-level correlated adversaries (graded independence) | Binary independent/common-mode is formalized; graded refinement belongs to an overlay |
+| Richer deposit recovery transitions | Application-layer state tracking; not a kernel requirement |
 
 ---
 
