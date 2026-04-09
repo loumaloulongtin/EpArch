@@ -1057,6 +1057,182 @@ theorem embedding_to_structurally_forced (W : WorkingSystem) (E : ForcingEmbeddi
       absurd ⟨c, hc⟩ (closed_system_unfalsifiable M)
 
 
+/-! ## Scenario Predicates: Enriching WorkingSystems with Structural Content
+
+The structural models prove impossibility on abstract scenarios.
+The `ForcingEmbedding` connects these to working systems via disjunctions.
+For a system that already has all features (like `ConcreteWorkingSystem`),
+`Or.inl` suffices — but the abstract models never fire.
+
+Scenario predicates supply the missing piece: they enrich a `WorkingSystem`
+with the concrete data needed to construct the abstract witnesses.  When a
+system has a scenario predicate AND lacks the corresponding feature, a
+right-branch embedding theorem proves the system instantiates the impossible
+scenario — and the structural model fires for real.
+
+This is how the abstract lemmas stop being decorative and become load-bearing. -/
+
+
+/-! ### Scenario 1: Distributed Disagreement -/
+
+/-- A system represents distributed disagreement if it carries two
+    acceptance predicates over some claim type that genuinely disagree:
+    agent 1 accepts a witness claim that agent 2 rejects.
+
+    When such a system lacks bubbles, it is in the `AgentDisagreement`
+    scenario: a single flat scope must represent both acceptance profiles
+    simultaneously — which `flat_scope_impossible` proves impossible.
+
+    This is not a hypothetical: any system that claims to "handle
+    distributed agents" must accommodate disagreeing acceptance criteria
+    (otherwise there's no distributed agency to handle). -/
+structure RepresentsDisagreement (W : WorkingSystem) where
+  /-- The claim type the agents reason over. -/
+  Claim : Type
+  /-- Agent 1's acceptance criterion. -/
+  accept₁ : Claim → Prop
+  /-- Agent 2's acceptance criterion. -/
+  accept₂ : Claim → Prop
+  /-- Witness claim where they disagree. -/
+  witness : Claim
+  /-- Agent 1 accepts the witness. -/
+  agent1_accepts : accept₁ witness
+  /-- Agent 2 rejects the witness. -/
+  agent2_rejects : ¬accept₂ witness
+
+/-- Extract the `AgentDisagreement` abstract model from a system that
+    `RepresentsDisagreement`. -/
+def RepresentsDisagreement.toDisagreement {W : WorkingSystem}
+    (R : RepresentsDisagreement W) : AgentDisagreement where
+  Claim := R.Claim
+  accept₁ := R.accept₁
+  accept₂ := R.accept₂
+  witness := R.witness
+  agent1_accepts := R.agent1_accepts
+  agent2_rejects := R.agent2_rejects
+
+/-- **Right-branch embedding (scope direction).**
+
+    A system that represents distributed disagreement and lacks bubbles
+    yields the `AgentDisagreement` scenario.  In a flat (single-scope) system
+    the acceptance function must agree with both agents — but
+    `flat_scope_impossible` proves this is contradictory.
+
+    The hypothesis `flat_accept` is the embedding axiom: without scope
+    separation, the system commits to a single acceptance predicate that
+    purports to faithfully represent both agents.  The right branch of
+    `ForcingEmbedding.scope_embed` is then constructible, and
+    `embedding_to_structurally_forced` closes it via `flat_scope_impossible`.
+
+    This theorem demonstrates the abstract model doing real work: the
+    structural lemma is not decorative. -/
+theorem disagreement_without_bubbles_embeds
+    (W : WorkingSystem)
+    (R : RepresentsDisagreement W)
+    (_h_no_bubbles : ¬HasBubbles W)
+    (flat_accept : R.Claim → Prop)
+    (hf₁ : ∀ c, flat_accept c ↔ R.accept₁ c)
+    (hf₂ : ∀ c, flat_accept c ↔ R.accept₂ c) :
+    False :=
+  let D := R.toDisagreement
+  flat_scope_impossible D ⟨flat_accept, hf₁, hf₂⟩
+
+/-- `ForcingEmbedding` for a system with distributed disagreement:
+    the scope direction uses the right branch (structural model fires)
+    when ¬HasBubbles; other directions use the feature directly.
+
+    This is how you build a `ForcingEmbedding` instance for a deficient
+    system — the scope field routes through `Or.inr`, and the structural
+    impossibility carries the proof. -/
+theorem disagreement_scope_embed
+    (W : WorkingSystem) (R : RepresentsDisagreement W)
+    (flat_accept : ¬HasBubbles W → R.Claim → Prop)
+    (hflat₁ : ∀ h, ∀ c, flat_accept h c ↔ R.accept₁ c)
+    (hflat₂ : ∀ h, ∀ c, flat_accept h c ↔ R.accept₂ c) :
+    handles_distributed_agents W →
+    HasBubbles W ∨
+    (∃ D : AgentDisagreement, ∃ f : D.Claim → Prop,
+      (∀ c, f c ↔ D.accept₁ c) ∧ (∀ c, f c ↔ D.accept₂ c)) := by
+  intro _
+  by_cases h : HasBubbles W
+  · exact Or.inl h
+  · exact Or.inr ⟨R.toDisagreement, flat_accept h, hflat₁ h, hflat₂ h⟩
+
+
+/-! ### Scenario 2: Private-Only Coordination -/
+
+/-- A system represents private-only coordination if it carries
+    evidence that its storage layer, absent a shared ledger, isolates
+    agents: deposits accessible to one agent are not accessible to the other.
+
+    When such a system lacks a shared ledger (bank), it is in the
+    `PrivateOnlyStorage` scenario: agents must share a deposit for
+    coordination, but isolation prevents this — which
+    `private_storage_no_sharing` proves impossible. -/
+structure RepresentsPrivateCoordination (W : WorkingSystem) where
+  /-- Agent type. -/
+  Agent : Type
+  /-- Deposit type. -/
+  Deposit : Type
+  /-- Access relation. -/
+  has_access : Agent → Deposit → Prop
+  /-- Two distinct agents needing coordination. -/
+  a₁ : Agent
+  a₂ : Agent
+  distinct : a₁ ≠ a₂
+  /-- Without a shared ledger, storage is isolated. -/
+  isolation_without_bank : ¬HasBank W → ∀ d, has_access a₁ d → ¬has_access a₂ d
+
+/-- Extract `PrivateOnlyStorage` from a system that
+    `RepresentsPrivateCoordination` and lacks a shared ledger. -/
+def RepresentsPrivateCoordination.toPrivateStorage {W : WorkingSystem}
+    (R : RepresentsPrivateCoordination W) (h_no_bank : ¬HasBank W) :
+    PrivateOnlyStorage where
+  Agent := R.Agent
+  Deposit := R.Deposit
+  has_access := R.has_access
+  a₁ := R.a₁
+  a₂ := R.a₂
+  distinct := R.distinct
+  isolation := R.isolation_without_bank h_no_bank
+
+/-- **Right-branch embedding (coordination direction).**
+
+    A system that represents private-only coordination and lacks a bank
+    yields the `PrivateOnlyStorage` scenario.  The system claims agents
+    coordinate by sharing deposits, but storage is isolated —
+    `private_storage_no_sharing` proves this is contradictory. -/
+theorem private_coordination_without_bank_embeds
+    (W : WorkingSystem)
+    (R : RepresentsPrivateCoordination W)
+    (h_no_bank : ¬HasBank W)
+    (d : R.Deposit)
+    (h₁ : R.has_access R.a₁ d) (h₂ : R.has_access R.a₂ d) :
+    False :=
+  let P := R.toPrivateStorage h_no_bank
+  private_storage_no_sharing P ⟨d, h₁, h₂⟩
+
+/-- `ForcingEmbedding` bank field for a system with private-only
+    coordination: uses the right branch when ¬HasBank.
+
+    The `shared_deposit` field provides the witness: agents claim to
+    coordinate on this deposit, but the isolation axiom makes the
+    scenario impossible. -/
+theorem private_coordination_bank_embed
+    (W : WorkingSystem) (R : RepresentsPrivateCoordination W)
+    (shared_deposit : ¬HasBank W → R.Deposit)
+    (h_access₁ : ∀ h, R.has_access R.a₁ (shared_deposit h))
+    (h_access₂ : ∀ h, R.has_access R.a₂ (shared_deposit h)) :
+    handles_coordination W →
+    HasBank W ∨
+    (∃ M : PrivateOnlyStorage, ∃ d, M.has_access M.a₁ d ∧ M.has_access M.a₂ d) := by
+  intro _
+  by_cases h : HasBank W
+  · exact Or.inl h
+  · exact Or.inr ⟨R.toPrivateStorage h, shared_deposit h,
+      h_access₁ h, h_access₂ h⟩
+
+
 /-! ## Convergence and Impossibility (Structural Versions) -/
 
 /-- Convergence theorem (structural version): under structural forcing,
