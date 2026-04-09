@@ -55,7 +55,7 @@ theorem goals_force_bank_primitives :
 ```
 
 Any successful system MUST contain Bank primitives. This is the minimality
-direction (re-export of `convergence_under_constraints'`).
+direction — routes through `convergence_structural` via `wellformed_implies_structurally_forced`.
 
 ### `success_feasible`
 

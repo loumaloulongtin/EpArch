@@ -540,7 +540,7 @@ All paper claims should reference these definitions.
 | `success_feasible` | `theorem` | Feasibility.lean | A |
 | `SuccessfulSystem` | `structure` | Realizer.lean | C |
 | `ConcreteSuccessfulSystem` | `def` | Realizer.lean | A |
-| `convergence_under_constraints'` | `theorem` | Minimality.lean | A |
+| `convergence_structural` | `theorem` | Minimality.lean | A |
 
 **Math Form:**
 

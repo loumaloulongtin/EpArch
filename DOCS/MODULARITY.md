@@ -308,16 +308,16 @@ They are not bundled — disabling one constraint does not affect the others.
 
 **File:** `Minimality.lean`
 
-| Constraint | Operational predicate | Forced feature | Theorem | Impossibility theorem |
-|---|---|---|---|---|
-| `distributed_agents` | `handles_distributed_agents` | `HasBubbles` | `distributed_agents_require_bubbles` | `no_bubbles_implies_failure` |
-| `bounded_audit` | `handles_bounded_audit` | `HasTrustBridges` | `bounded_audit_requires_trust_bridges` | `no_trust_bridges_implies_failure` |
-| `export_across_boundaries` | `handles_export` | `HasHeaders` | `export_requires_headers` | `no_headers_implies_failure'` |
-| `adversarial_pressure` | `handles_adversarial` | `HasRevocation` | `adversarial_requires_revocation` | `no_revocation_implies_failure` |
-| `coordination_need` | `handles_coordination` | `HasBank` | `coordination_requires_bank` | `no_bank_implies_failure` |
-| `truth_pressure` | `handles_truth_pressure` | `HasRedeemability` | `truth_pressure_requires_redeemability` | `no_redeemability_implies_failure` |
+| Constraint | Operational predicate | Forced feature | Theorem |
+|---|---|---|---|
+| `distributed_agents` | `handles_distributed_agents` | `HasBubbles` | `distributed_agents_require_bubbles` |
+| `bounded_audit` | `handles_bounded_audit` | `HasTrustBridges` | `bounded_audit_requires_trust_bridges` |
+| `export_across_boundaries` | `handles_export` | `HasHeaders` | `export_requires_headers` |
+| `adversarial_pressure` | `handles_adversarial` | `HasRevocation` | `adversarial_requires_revocation` |
+| `coordination_need` | `handles_coordination` | `HasBank` | `coordination_requires_bank` |
+| `truth_pressure` | `handles_truth_pressure` | `HasRedeemability` | `truth_pressure_requires_redeemability` |
 
-**Global theorem:** `convergence_under_constraints'` = conjunction of all six. If you only accept k constraints, use the k individual forcing theorems instead — they all still hold.
+**Global theorem:** `convergence_structural` = conjunction of all six (via `StructurallyForced`). `goals_force_bank_primitives` re-exports this under the `WellFormed` signature for backward compatibility. If you only accept k constraints, use the k individual forcing theorems instead — they all still hold.
 
 **Relation to world bundles:** `adversarial_pressure` is downstream of `W_lies_possible` (lies possible + imperfect gate → adversarial deposits pass). They operate at different layers and are not interchangeable.
 
@@ -453,7 +453,7 @@ This is the real Cluster C result — not just the competition gate but the full
 ## 9. Product / User Handbook
 
 **"I want to disable constraint X for my product."**
-→ Go to Tier 2. Find X in the constraint table. The k forcing theorems not involving X all still apply. The global `convergence_under_constraints'` no longer applies.
+→ Go to Tier 2. Find X in the constraint table. The k forcing theorems not involving X all still apply. The global `convergence_structural` / `goals_force_bank_primitives` no longer applies.
 
 **"I want to disable health goal G for my product."**
 → Go to Tier 3. Find G in the health goal table. Note which `CoreOps` fields it references.
