@@ -1,16 +1,17 @@
 /-
 Minimality and Impossibility Theorems
 
-This is where "only possible solution" becomes theorem-grade:
-- Constraints + desiderata → must have these primitives
-- Remove primitive X → cannot satisfy properties Y
+Formal convergence result: if a system is well-formed
+and satisfies all operational properties, it necessarily contains
+the Bank primitives.  The theorems here prove this via structural
+impossibility: remove primitive X and constraint Y cannot be satisfied.
 
 The core claim is CONVERGENCE under constraints, not metaphysical necessity.
 These theorems formalize that convergence.
 
 ## Central Role
 
-This file contains the paper's HEADLINE RESULT: if a system is well-formed
+This file contains the central convergence result: if a system is well-formed
 and satisfies all operational properties (withdrawal-safety, export-gating,
 revision-capability, temporal-expiry, redeemability-grounding), then it
 necessarily contains the Bank primitives (scoped bubbles, header-bearing
@@ -876,10 +877,9 @@ The proof chain becomes:
                        ├── StructurallyForced ──► convergence_structural
     Structural models ─┘
 
-The design judgment ("a system without X facing constraint Y is in the
-impossible scenario") now lives in the `ForcingEmbedding` instance,
-localised and auditable.  The derivation is uniform and constructive
-(no Classical reasoning — `Or.elim` is intuitionistic). -/
+The `ForcingEmbedding` instance encodes when a system without feature X
+facing constraint Y is in the impossible scenario.  The derivation is
+uniform and constructive (no Classical reasoning — `Or.elim` is intuitionistic). -/
 
 /-! ## Bridge Predicates and System-Independent Forcing Theorems
 
@@ -887,7 +887,7 @@ A **bridge predicate** `Bridge_X W` names the commitment a system would
 have to make in dimension X if it lacks feature X.  Each is an existential
 over the abstract structural model's scenario data.
 
-The `*_forced_by_bridge` theorems are system-independent: for ANY `W`,
+The `bridge_*_impossible` theorems are system-independent: for ANY `W`,
 committing to the impossible scenario forces the feature.  They are
 derived directly from the structural impossibility theorems — no
 `StructurallyForced` or `convergence_structural` involved.
@@ -970,7 +970,7 @@ theorem bridge_redeemability_impossible (_W : WorkingSystem) : ¬BridgeRedeemabi
     Each field says: a system handling the constraint EITHER already
     has the feature, OR is bridge-committed to the impossible scenario
     for that dimension.  Since bridge commitment forces the feature
-    (via `*_forced_by_bridge`), the feature holds in both branches. -/
+    (via `bridge_*_impossible`), the feature holds in both branches. -/
 structure ForcingEmbedding (W : WorkingSystem) : Prop where
   /-- Distributed agents: either bubbles exist, or the system is
       bridge-committed on scope (`BridgeBubbles`). -/
@@ -1020,13 +1020,10 @@ The `ForcingEmbedding` connects these to working systems via disjunctions.
 For a system that already has all features (like `ConcreteWorkingSystem`),
 `Or.inl` suffices — but the abstract models never fire.
 
-Scenario predicates supply the missing piece: they enrich a `WorkingSystem`
-with the concrete data needed to construct the abstract witnesses.  When a
-system has a scenario predicate AND lacks the corresponding feature, a
-right-branch embedding theorem proves the system instantiates the impossible
-scenario — and the structural model fires for real.
-
-This is how the abstract lemmas stop being decorative and become load-bearing. -/
+Scenario predicates supply the concrete data needed to instantiate the
+abstract structural models.  When a system has a scenario predicate and
+lacks the corresponding feature, a right-branch embedding theorem proves
+the system instantiates the impossible scenario — and the structural model fires. -/
 
 
 /-! ### Scenario 1: Distributed Disagreement -/
@@ -1081,7 +1078,7 @@ def RepresentsDisagreement.toDisagreement {W : WorkingSystem}
     `embedding_to_structurally_forced` closes it via `flat_scope_impossible`.
 
     This theorem demonstrates the abstract model doing real work: the
-    structural lemma is not decorative. -/
+    structural lemma is load-bearing. -/
 theorem disagreement_without_bubbles_embeds
     (W : WorkingSystem)
     (R : RepresentsDisagreement W)

@@ -151,10 +151,9 @@ def constraintProof (c : EnabledConstraintCluster) : ConstraintProof := (constra
 
 Indexed proof-carrying inductive for Tier 3 health-goal transport clusters.
 Each constructor stores the polymorphic transport theorem schema as a Prop-valued
-argument.  Lean 4's impredicativity of `Prop` means `∀ (E : ExtModel), ...P...`
-is in `Prop` when `P` is in `Prop`, even though `ExtModel` lives at `Type (u+1)`.
-This sidesteps the `def`-body universe isolation rule while still delivering
-the real transport theorem to callers. -/
+argument.  Prop impredicativity keeps `∀ (E : ExtModel), ...P...` in `Prop`
+even when `ExtModel` lives at `Type (u+1)`, delivering transport theorems
+without universe conflicts. -/
 
 /-- Indexed proof carrier for Tier 3 goal clusters.
     Each constructor `c (h : <transport schema>)` witnesses that the transport
@@ -202,10 +201,9 @@ def goalWitness : (c : EnabledGoalCluster) → GoalWitness c
 
 /-! ## §4d  World Witness Carrier
 
-Same indexed-inductive pattern for world-bundle clusters.
-`WorldCtx.{u}` is universe-polymorphic; the constructor args are Prop-valued
-(impredicative ∀ over WorldCtx instantiations), so `WorldWitness` itself lives
-in `Type 1` without a universe parameter conflict. -/
+Indexed proof carrier for world-bundle clusters.
+Constructor arguments are Prop-valued (∀ over `WorldCtx` instantiations),
+so `WorldWitness` lives in `Type 1`. -/
 
 /-- Indexed proof carrier for world-bundle clusters. -/
 inductive WorldWitness : EnabledWorldCluster → Type 1 where
@@ -253,10 +251,10 @@ def worldWitness : (c : EnabledWorldCluster) → WorldWitness c
 
 /-! ## §4e  Tier 4 Witness Carrier
 
-Same indexed-inductive pattern for Tier 4 library clusters.
-`commitments` and `structural` quantify over `Type`-universe type variables;
-`ltsUniversal` additionally quantifies over `Reason` and `Evidence` types.
-All constructor args are Prop-valued by Prop impredicativity. -/
+Indexed proof carrier for Tier 4 library clusters.
+`commitments` and `structural` quantify over `Type`-universe variables;
+`ltsUniversal` additionally quantifies over `Reason` and `Evidence`.
+All constructor arguments are Prop-valued. -/
 
 /-- Indexed proof carrier for Tier 4 clusters. -/
 inductive Tier4Witness : EnabledTier4Cluster → Type 1 where
@@ -350,10 +348,9 @@ def tier4Witness : (c : EnabledTier4Cluster) → Tier4Witness c
 
 /-! ## §4eↇ  Meta-Modularity Witness Carrier
 
-Constraint-subset modularity (`EpArch.Meta.Modular`): `WorkingSystem` and
-`ConstraintSubset` are monomorphic, so the propositions are purely Prop-valued
-with no universe-polymorphism concerns.  The indexed inductive pattern is used
-for consistency with the other witness families. -/
+Indexed proof carrier for constraint-modularity meta-theorem clusters.
+`WorkingSystem` and `ConstraintSubset` are monomorphic, so propositions are
+purely Prop-valued; pattern is consistent with other witness families. -/
 
 /-- Indexed proof carrier for constraint-modularity meta-theorem clusters. -/
 inductive MetaModularWitness : EnabledMetaModularCluster → Type 1 where
@@ -374,10 +371,9 @@ def metaModularWitness : (c : EnabledMetaModularCluster) → MetaModularWitness 
 
 /-! ## §4e←  Lattice-Stability Witness Carrier
 
-Lattice-stability / graceful-degradation (`EpArch.Modularity`): quantifies over
-`CoreModel` and `ExtModel` (universe-polymorphic) but all constructor arguments
-are Prop-valued, so Lean 4's Prop impredicativity keeps this in `Type 1`
-by the same reasoning as `GoalWitness` and `WorldWitness`. -/
+Indexed proof carrier for lattice-stability clusters (`EpArch.Modularity`).
+Quantifies over `CoreModel` and `ExtModel`, but all constructor arguments
+are Prop-valued, keeping `LatticeWitness` in `Type 1`. -/
 
 /-- Indexed proof carrier for lattice-stability clusters. -/
 inductive LatticeWitness : EnabledLatticeCluster → Type 1 where
@@ -407,8 +403,8 @@ def latticeWitness : (c : EnabledLatticeCluster) → LatticeWitness c
 
 The `allXxxClusters` canonical lists used by `certify` and the membership
 lemmas below are defined in `ClusterRegistry.lean` (they are metadata objects,
-not proof objects).  The `filterMap_mem_of_pos` helper fills the gap left by
-the absent `List.mem_filterMap` in Lean 4.3.0.
+not proof objects).  `filterMap_mem_of_pos` is a local helper for
+`List.filterMap` membership.
 
 For ergonomic extraction of the schema carried by a witness, use the `cluster_*`
 named theorems in §5b, or pattern-match directly:

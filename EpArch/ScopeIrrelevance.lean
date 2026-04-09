@@ -114,8 +114,7 @@ theorem extra_state_erasure {Agent X : Type} (P : Agent → Prop)
   Iff.rfl
 
 /-- **Seam theorem.** Names the psychology boundary for citation purposes.
-    Proof is `Iff.rfl` (same pattern as `extra_state_erasure`); the content is that
-    `system_property` never inspects the second component.
+    `system_property` does not inspect the second component.
     Paper-facing binding: `psychology_irrelevant_paper_facing`. -/
 theorem psychology_irrelevant {Agent Psychology : Type}
     (system_property : Agent → Prop)
@@ -124,7 +123,6 @@ theorem psychology_irrelevant {Agent Psychology : Type}
   Iff.rfl
 
 /-- **Seam theorem.** Names the consciousness/qualia boundary for citation purposes.
-    Proof is `Iff.rfl` (same pattern as `extra_state_erasure`).
     Paper-facing binding: `consciousness_irrelevant_paper_facing`. -/
 theorem consciousness_irrelevant {Agent Qualia : Type}
     (functional_property : Agent → Prop)
@@ -132,8 +130,7 @@ theorem consciousness_irrelevant {Agent Qualia : Type}
     functional_property a ↔ functional_property (a, q).1 :=
   Iff.rfl
 
-/-- **Seam theorem.** Names the embodiment boundary.
-    Proof is `Iff.rfl` (same pattern as `extra_state_erasure`). -/
+/-- **Seam theorem.** Names the embodiment boundary. -/
 theorem embodiment_irrelevant {Agent Embodiment : Type}
     (abstract_property : Agent → Prop)
     (a : Agent) (e : Embodiment) :
@@ -152,13 +149,10 @@ examine `agentTraction`.
 
 /-- **Seam theorem.** Names the traction substitution boundary.
 
-    Proof is trivial (the hypothesis *is* the conclusion) because the real content
-    is architectural: `agentTraction` has no other observable surface besides
-    `ladder_stage`. If two implementations agree on a claim P, they produce the
-    same stage output — *by construction*, not by a deep lemma.
-
+    `agentTraction` has no observable surface beyond `ladder_stage`: if two
+    implementations agree on a claim P, they produce the same stage output.
     Consequence: psychology, neural architecture, and institutional policy can
-    freely modulate `agentTraction` without touching any other system predicate. -/
+    freely modulate `agentTraction` without affecting any other system predicate. -/
 theorem traction_modulation_confined
     (_a : Agent) (P : Claim)
     (f g : Claim → LadderStage)
@@ -167,11 +161,9 @@ theorem traction_modulation_confined
 
 /-- **Seam theorem.** Names the traction implementation boundary for system properties.
 
-    Proof is one rewrite (`h ▸ Iff.rfl`) because the entire architectural claim
-    is already in the hypothesis: stages agree, so properties agree.
-    HOW the agent arrives at a stage (psychology, pattern-matching, neurology,
-    utility calculation) does not affect which system theorems hold — only the
-    resulting `ladder_stage` values matter.
+    Stages agree, so properties agree. The mechanism by which the agent
+    arrives at a stage (psychology, pattern-matching, utility calculation)
+    does not affect which system theorems hold.
 
     This is the `agentTraction` analog of `psychology_irrelevant`. -/
 theorem traction_implementation_irrelevant
@@ -208,7 +200,7 @@ theorem traction_implementation_irrelevant
 
 3. **Claim completeness** — other fundamentals could be added similarly.
 
-The module establishes the PATTERN for scope-irrelevance claims.
+The module establishes the pattern for scope-irrelevance claims.
 Extending to all paper-facing theorems is straightforward but verbose.
 -/
 
@@ -306,7 +298,7 @@ theorem extra_state_paper_facing_transport (C : CoreModel)
     PaperFacing C → PaperFacing (forget (extendWithExtraState C AgentExtra WorldExtra)) :=
   transport_core _ C (extra_state_compatible C AgentExtra WorldExtra)
 
-/-- **Named plug-in point.** Not a deep proof — delegates to `extra_state_paper_facing_transport`.
+/-- **Named plug-in point.** Delegates to `extra_state_paper_facing_transport`.
     Instantiates X = ConsciousnessState so citation sites are self-documenting.
     ConsciousnessState can be any inhabited type (Unit for trivial consciousness). -/
 theorem consciousness_irrelevant_paper_facing (C : CoreModel)
@@ -314,14 +306,14 @@ theorem consciousness_irrelevant_paper_facing (C : CoreModel)
     PaperFacing C → PaperFacing (forget (extendWithExtraState C ConsciousnessState Unit)) :=
   extra_state_paper_facing_transport C ConsciousnessState Unit
 
-/-- **Named plug-in point.** Not a deep proof — delegates to `extra_state_paper_facing_transport`.
+/-- **Named plug-in point.** Delegates to `extra_state_paper_facing_transport`.
     Instantiates X = PsychologyState so citation sites are self-documenting. -/
 theorem psychology_irrelevant_paper_facing (C : CoreModel)
     (PsychologyState : Type) [Inhabited PsychologyState] :
     PaperFacing C → PaperFacing (forget (extendWithExtraState C PsychologyState Unit)) :=
   extra_state_paper_facing_transport C PsychologyState Unit
 
-/-- **Named plug-in point.** Not a deep proof — delegates to `extra_state_paper_facing_transport`.
+/-- **Named plug-in point.** Delegates to `extra_state_paper_facing_transport`.
     Instantiates X = QualiaState so citation sites are self-documenting. -/
 theorem qualia_irrelevant_paper_facing (C : CoreModel)
     (QualiaState : Type) [Inhabited QualiaState] :

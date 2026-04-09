@@ -970,7 +970,7 @@ theorem concrete_structural_convergence :
 /-! ## Deficient Systems: Structural Models Fire on Real Data
 
 The concrete model above uses `Or.inl` everywhere — it has all features,
-so the abstract impossibility models in `ForcingEmbedding` are decorative.
+so the abstract impossibility models in `ForcingEmbedding` are not exercised.
 
 Below, we construct **deficient** working systems: systems that lack a feature
 but carry rich scenario predicates (`RepresentsDisagreement`,
@@ -1043,9 +1043,7 @@ def noBubblesDisagreement : RepresentsDisagreement NoBubblesSystem where
     `flat_scope_impossible` proves: no single acceptance function can
     faithfully represent both agents.
 
-    This is NOT vacuous: the scenario data is constructible, the model
-    fires on it, and the result is a genuine negation.  The system's
-    claim data makes the abstract model load-bearing. -/
+    The scenario data is constructible and the result is a genuine negation. -/
 theorem noBubbles_no_flat_scope :
     ¬∃ f : DisagreementClaim → Prop,
       (∀ c, f c ↔ agent1_accept c) ∧ (∀ c, f c ↔ agent2_accept c) :=
@@ -1054,7 +1052,7 @@ theorem noBubbles_no_flat_scope :
 /-- The structural model's impossibility applied to a specific function.
     If someone claims `f` faithfully represents both agents,
     `flat_scope_impossible` derives False.  The structural model
-    does the real work here: it catches the contradiction between
+    catches the contradiction between
     `f witness ↔ True` and `f witness ↔ False`. -/
 theorem noBubbles_flat_scope_fires
     (f : DisagreementClaim → Prop)
@@ -1066,8 +1064,8 @@ theorem noBubbles_flat_scope_fires
 /-- **Bridge impossibility for the no-bubbles system.**
 
     If the system commits to a flat acceptance function faithful to both
-    agents, `bubbles_forced_by_bridge` derives `HasBubbles` — but
-    `no_bubbles_lacks_bubbles` refutes it.  One step; no convergence
+    agents, `bridge_bubbles_impossible` derives the contradiction — and
+    `no_bubbles_lacks_bubbles` supplies the refutation.  One step; no convergence
     pipeline involved.
 
     This is `deficient system + Bridge* hypothesis ⇒ contradiction`, not
@@ -1162,8 +1160,8 @@ theorem noBank_shared_deposit_fires
 /-- **Bridge impossibility for the no-bank system.**
 
     If a shared deposit `d` is accessible to both alice and bob,
-    `bank_forced_by_bridge` derives `HasBank` — but `no_bank_lacks_bank`
-    refutes it. -/
+    `bridge_bank_impossible` derives the contradiction — and `no_bank_lacks_bank`
+    supplies the refutation. -/
 theorem noBank_bridge_impossible
     (d : CoordinationDeposit)
     (h₁ : private_access .alice d)
@@ -1177,9 +1175,7 @@ theorem noBank_bridge_impossible
 
 A system with all features except `has_revocation`.  It carries
 `RepresentsMonotonicLifecycle`: a concrete 2-state lifecycle where
-the accepted state is absorbing.  Without revocation, `monotonic_no_exit`
-fires by induction to prove that an accepted deposit can never escape
-— the strongest proof in the repo. -/
+the accepted state is absorbing. -/
 
 /-- A simple 2-state lifecycle: pending or accepted. -/
 inductive LifecycleState where
@@ -1232,9 +1228,9 @@ def noRevocationLifecycle : RepresentsMonotonicLifecycle NoRevocationSystem wher
     - Step: `step (iter step n accepted) = step accepted = accepted`
       by the absorbing property.
 
-    This is the richest proof in the repo — genuine mathematical
+    Uses genuine mathematical
     induction, not just hypothesis contradiction.  The lifecycle data
-    is fully constructible; the model does real work. -/
+    is fully constructible. -/
 theorem noRevocation_accepted_permanent (n : Nat) :
     iter lifecycle_step n LifecycleState.accepted = LifecycleState.accepted :=
   monotonic_no_exit (noRevocationLifecycle.toLifecycle no_revocation_lacks_revocation) n
@@ -1255,10 +1251,10 @@ theorem noRevocation_bad_deposit_stuck (n : Nat) :
 
 /-- **Bridge impossibility for the no-revocation system.**
 
-    If some `n` steps escape the accepted state, `revocation_forced_by_bridge`
-    derives `HasRevocation` via induction — but `no_revocation_lacks_revocation`
-    refutes it.  The inductive force of `monotonic_no_exit` is fully preserved
-    in the `revocation_forced_by_bridge` theorem in Minimality.lean. -/
+    If some `n` steps escape the accepted state, `bridge_revocation_impossible`
+    derives the contradiction via induction — and `no_revocation_lacks_revocation`
+    supplies the refutation.  The inductive force of `monotonic_no_exit` is
+    fully preserved in the `bridge_revocation_impossible` theorem in Minimality.lean. -/
 theorem noRevocation_bridge_impossible
     (n : Nat)
     (h : iter lifecycle_step n LifecycleState.accepted ≠ LifecycleState.accepted) :
@@ -1348,8 +1344,8 @@ theorem noHeaders_uniform_import
 /-- **Bridge impossibility for the no-headers system.**
 
     If a uniform import function is both sound and complete,
-    `headers_forced_by_bridge` derives `HasHeaders` via `Bool.noConfusion`
-    — but `no_headers_lacks_headers` refutes it. -/
+    `bridge_headers_impossible` derives the contradiction via `Bool.noConfusion`
+    — and `no_headers_lacks_headers` supplies the refutation. -/
 theorem noHeaders_bridge_impossible
     (f : ImportClaim → Bool)
     (h_uniform : ∀ x y : ImportClaim, f x = f y)
@@ -1429,9 +1425,9 @@ theorem noTrust_hard_claim_exceeds :
 
 /-- **Bridge impossibility for the no-trust system.**
 
-    If all verification costs fit within budget, `trust_forced_by_bridge`
-    derives `HasTrustBridges` via Nat arithmetic — but `no_trust_lacks_trust`
-    refutes it. -/
+    If all verification costs fit within budget, `bridge_trust_impossible`
+    derives the contradiction via Nat arithmetic — and `no_trust_lacks_trust`
+    supplies the refutation. -/
 theorem noTrust_bridge_impossible
     (h : ∀ c : AuditClaim, audit_verify_cost c ≤ 100) :
     False :=
@@ -1518,8 +1514,8 @@ theorem noRedeemability_no_truth_pressure :
 /-- **Bridge impossibility for the no-redeemability system.**
 
     If a claim is both endorsed and externally falsifiable under closure,
-    `redeemability_forced_by_bridge` derives `HasRedeemability` — but
-    `no_redeemability_lacks_redeemability` refutes it. -/
+    `bridge_redeemability_impossible` derives the contradiction — and
+    `no_redeemability_lacks_redeemability` supplies the refutation. -/
 theorem noRedeemability_bridge_impossible
     (c : TruthClaim)
     (h_end : truth_endorsed c)
@@ -1540,34 +1536,32 @@ The concrete model demonstrates:
 
 The deficient systems demonstrate six bridge-impossibility theorems:
 6. Scope: `noBubbles_bridge_impossible` — flat scope bridge hypothesis
-   → `bubbles_forced_by_bridge` → HasBubbles → contradiction.
+   → `bridge_bubbles_impossible` → contradiction.
    Structural model: `flat_scope_impossible`.
 7. Bank: `noBank_bridge_impossible` — shared deposit bridge hypothesis
-   → `bank_forced_by_bridge` → HasBank → contradiction.
+   → `bridge_bank_impossible` → contradiction.
    Structural model: `private_storage_no_sharing`.
 8. Revocation: `noRevocation_bridge_impossible` — escape bridge hypothesis
-   → `revocation_forced_by_bridge` (induction) → HasRevocation → contradiction.
+   → `bridge_revocation_impossible` (induction) → contradiction.
    Structural model: `monotonic_no_exit`.
 9. Headers: `noHeaders_bridge_impossible` — uniform+sound+complete import predicate
-   → `headers_forced_by_bridge` (Bool.noConfusion) → HasHeaders → contradiction.
+   → `bridge_headers_impossible` (Bool.noConfusion) → contradiction.
    Structural model: `no_sound_complete_uniform_import`.
 10. Trust: `noTrust_bridge_impossible` — within-budget bridge hypothesis
-    → `trust_forced_by_bridge` (Nat arithmetic) → HasTrustBridges → contradiction.
+    → `bridge_trust_impossible` (Nat arithmetic) → contradiction.
     Structural model: `verification_only_import_incomplete`.
 11. Redeemability: `noRedeemability_bridge_impossible` — endorsed+falsifiable predicate
-    → `redeemability_forced_by_bridge` → HasRedeemability → contradiction.
+    → `bridge_redeemability_impossible` → contradiction.
     Structural model: `closed_system_unfalsifiable`.
 
 **Separation of concerns:**
 The concrete system uses ForcingEmbedding → StructurallyForced → convergence_structural
-(the full pipeline).  Deficient systems use Bridge_X → *_forced_by_bridge → ¬HasX
-(direct contradiction, no convergence pipeline).  This matches what is actually
-proven: deficient system + Bridge* hypothesis ⇒ contradiction — NOT deficient system alone.
+(the full pipeline).  Deficient systems apply `bridge_*_impossible` directly
+(no convergence pipeline): deficient system + Bridge* hypothesis ⇒ contradiction.
 
-This proves the axioms are CONSISTENT: they don't rule out all possible
-systems. The Bank architecture is realizable, not just hypothetical.
-And the structural models are GENUINE: they catch contradictions in
-systems that lack required features. -/
+The commitments are consistent: they do not rule out all possible systems.
+The Bank architecture is realizable, and the structural models catch genuine
+contradictions in systems that lack required features. -/
 
 
 /-! ## Advanced Non-Vacuity Proofs
@@ -2017,8 +2011,7 @@ theorem competition_gate_non_vacuity_stripping :
     the antecedent is not trivially false — there ARE states that
     don't prohibit revision, and they CAN self-correct.
 
-    The theorem has bite: it separates ideological (revision-prohibiting)
-    from epistemic (revision-permitting) domains. -/
+    This separates revision-prohibiting from revision-permitting domains. -/
 
 
 /-! ## Non-Vacuity Proofs for Modal Links -/
