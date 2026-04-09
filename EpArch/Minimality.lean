@@ -606,8 +606,8 @@ delay, or delegated verification markets escape `verification_only_import_incomp
 
 Each alternative is instantiated below.  All hit the same ceiling: at least
 one claim exceeds the budget, and the alternative mechanism either (a) itself
-exceeds the budget (same contradiction), or (b) relies on a trusted third
-party / endorsing scope — which IS a trust bridge under EpArch's vocabulary.
+exceeds the budget (same contradiction), or (b) relies on an endorsing scope
+that bridges the local scope's budget shortfall.
 
 **Staged acceptance.**  A multi-round protocol assigns partial costs per round.
 If the sum of round costs for the hard claim still exceeds the budget, the
@@ -615,8 +615,8 @@ cumulative cost model is a `BoundedVerification` instance — contradiction fire
 
 **Delegated verification market.**  A third-party verifier handles hard claims.
 The delegation is itself a trust relationship: the importing scope accepts
-the delegate's endorsement without reverifying from scratch.  That is exactly
-a trust bridge.  The name changes; the structure does not. -/
+the delegate's endorsement without reverifying from scratch — a `DelegatedVerification`
+instance under the structural definition above. -/
 
 /-- Staged (multi-round) verification: total cost is the sum of per-round costs. -/
 structure StagedVerification where
@@ -652,12 +652,10 @@ structure DelegatedVerification where
       The importer relies on the delegate — it cannot self-verify hard claims. -/
   relies_on_delegate : ∀ c, verify_cost c > budget → delegate_accepts c
 
-/-- DelegatedVerification embeds directly into BoundedVerification: the local scope's
-    budget problem is unchanged regardless of the delegation arrangement.
-    The `delegate_accepts` / `relies_on_delegate` fields formalise the trust relationship —
-    they route around the budget shortfall, not through it.
-    This embedding makes the identification mechanically unavoidable:
-    DelegatedVerification IS a BoundedVerification instance, i.e., a trust bridge. -/
+/-- DelegatedVerification embeds into BoundedVerification: the local budget problem
+    is unchanged regardless of the delegation arrangement.
+    The `delegate_accepts` / `relies_on_delegate` fields formalise the trust relationship;
+    they route around the budget shortfall, not through it. -/
 def delegated_to_bounded (M : DelegatedVerification) : BoundedVerification where
   Claim          := M.Claim
   verify_cost    := M.verify_cost
@@ -666,8 +664,7 @@ def delegated_to_bounded (M : DelegatedVerification) : BoundedVerification where
   exceeds_budget := M.exceeds_budget
 
 /-- Delegated verification is incomplete at the local scope: `verification_only_import_incomplete`
-    fires via the embedding.  The delegation IS a trust bridge — the code name does not change
-    the structural identity, and the impossibility is inherited identically. -/
+    fires via the embedding. -/
 theorem delegated_is_trust_bridge (M : DelegatedVerification) :
     ¬∀ c : M.Claim, M.verify_cost c ≤ M.budget :=
   verification_only_import_incomplete (delegated_to_bounded M)
@@ -676,29 +673,16 @@ theorem delegated_is_trust_bridge (M : DelegatedVerification) :
 def LocallyVerifiable (M : DelegatedVerification) (c : M.Claim) : Prop :=
   M.verify_cost c ≤ M.budget
 
-/-- Trust-based import is required for a claim **if and only if** local verification is
-    insufficient.  This is the tight formal biconditional that closes the gap:
-    "delegated verification = trust bridge" is not a classificatory gloss but a
-    provable equivalence grounded in Nat arithmetic.
-
-    Left: a claim exceeding the budget cannot be handled locally.
-    Right: budget failure is the exact structural condition that forces trust-based import.
-    Both directions follow from core Nat order lemmas — no additional structural
-    assumption is needed beyond the arithmetic. -/
+/-- A claim exceeds local verification capacity iff its cost is not within budget.
+    Both directions follow from `Nat` order lemmas. -/
 theorem trust_required_iff_not_locally_verifiable (M : DelegatedVerification) (c : M.Claim) :
     M.verify_cost c > M.budget ↔ ¬LocallyVerifiable M c :=
   ⟨fun hgt hle => absurd hle (Nat.not_le_of_gt hgt),
    fun h => (Nat.lt_or_ge M.budget (M.verify_cost c)).elim id (fun h' => (h h').elim)⟩
 
-/-- At the system level: delegation is necessary **if and only if** local verification is
-    insufficient for at least one claim.
-
-    Left-to-right: if some claim exceeds the budget, the universal adequacy predicate fails.
-    Right-to-left: `M.hard_claim` witnesses the shortfall — the evidence is already in the
-    DelegatedVerification fields.
-
-    Together with `delegated_is_trust_bridge`, this completes the equivalence: trust bridges
-    arise precisely when, and only when, local verification is inadequate. -/
+/-- At the system level, existence of a claim exceeding the budget is equivalent to
+    failure of universal local verifiability.  `M.hard_claim` witnesses the
+    right-to-left direction. -/
 theorem delegation_necessary_iff_locally_inadequate (M : DelegatedVerification) :
     (∃ c : M.Claim, M.verify_cost c > M.budget) ↔
     ¬∀ c : M.Claim, LocallyVerifiable M c :=
@@ -750,23 +734,13 @@ theorem no_sound_complete_uniform_import (M : DiscriminatingImport)
   rw [h_sound, h_complete] at h_eq
   exact Bool.noConfusion h_eq
 
-/-- A function `f : M.Claim → Bool` **is a header** for import scenario `M` if it
-    discriminates good from bad claims.  This is the *minimality definition* of a header:
-    the least structure needed to route correctly.
-
-    Any routing function that successfully distinguishes good from bad claims IS a header
-    by this definition — the label is not a classificatory gloss but a formal property of
-    the routing function itself.  The definition absorbs the interpretive step:
-    "non-uniform discrimination = metadata = header" is built into the type. -/
+/-- `IsHeader M f` means that `f` distinguishes the good and bad claims in import
+    scenario `M`: the minimal routing condition for correct import. -/
 def IsHeader (M : DiscriminatingImport) (f : M.Claim → Bool) : Prop :=
   f M.good ≠ f M.bad
 
-/-- A sound-and-complete import function IS a header: it must disagree on good and bad
-    claims.  This closes the classificatory gap as a theorem rather than a gloss.
-
-    Proof: `h_complete` forces `f good = true`; `h_sound` forces `f bad = false`;
-    so `f good ≠ f bad` follows by `Bool.noConfusion`.  No appeal to "header-like"
-    language is needed — the routing function satisfies the definition directly. -/
+/-- A sound-and-complete import function satisfies `IsHeader`: it must disagree on good
+    and bad claims.  Follows from `h_complete`, `h_sound`, and `Bool.noConfusion`. -/
 theorem sound_complete_import_is_header (M : DiscriminatingImport)
     (f : M.Claim → Bool)
     (h_sound : f M.bad = false)
@@ -776,11 +750,8 @@ theorem sound_complete_import_is_header (M : DiscriminatingImport)
   rw [h_complete, h_sound] at h_eq
   exact Bool.noConfusion h_eq
 
-/-- Non-uniform routing requires a header: any sound-and-complete import policy carries
-    a header in the sense of `IsHeader`.  The formal identity is unavoidable: the only
-    way to discriminate good from bad imports is to carry per-claim metadata.
-    No assumption about the routing mechanism (hash, state, format) is needed beyond
-    soundness and completeness. -/
+/-- Any sound-and-complete routing policy yields a function satisfying `IsHeader`.
+    No assumption beyond soundness and completeness is needed. -/
 theorem routing_requires_header (M : DiscriminatingImport) :
     (∃ f : M.Claim → Bool, f M.bad = false ∧ f M.good = true) →
     ∃ f : M.Claim → Bool, IsHeader M f :=
@@ -794,13 +765,14 @@ escape `no_sound_complete_uniform_import`?
 
 Both alternatives are instantiated below.  In each case the routing mechanism
 either acts uniformly on claim content (same contradiction) or carries
-structured per-claim metadata — which is a header under EpArch's vocabulary.
+structured per-claim metadata — a function satisfying `IsHeader`.
 
 **Content-addressed routing.**  Import decisions are based solely on a content
 hash.  If the hash function is collision-resistant, good and bad claims have
 different hashes — but the import function now maps hash → Bool, and it must
 still discriminate good from bad.  A uniform function over hashes collapses
-the same way.  A non-uniform function IS discriminating metadata — i.e., a header.
+the same way.  A non-uniform function over hashes maps distinct hashes to
+distinct decisions, satisfying `IsHeader` on the embedded `DiscriminatingImport`.
 
 **Contextual routing state.**  The receiver maintains external state that
 routes each claim.  If the state is stored per-claim, it carries all the
@@ -842,20 +814,16 @@ theorem content_addressed_uniform_impossible (M : ContentAddressedImport)
 
 /-- A ContentAddressedImport with distinguishing hashes embeds into DiscriminatingImport:
     good and bad are distinct claims — inequality is derived from `hash_distinguishes`
-    via congruence (if good = bad then hash good = hash bad, contradicting the field).
-    This embedding makes the classification unavoidable: working content-addressed
-    routing IS a DiscriminatingImport, i.e., it carries per-claim metadata (a header). -/
+    via congruence. -/
 def content_addressed_to_discriminating (M : ContentAddressedImport) : DiscriminatingImport where
   Claim       := M.Claim
   good        := M.good
   bad         := M.bad
   good_ne_bad := fun h => M.hash_distinguishes (congrArg M.hash h)
 
-/-- A sound-and-complete content-addressed policy is a header: `import_by_hash ∘ hash`
-    is a per-claim discriminating metadata function.  This theorem fires through
-    `no_sound_complete_uniform_import` on the embedded `DiscriminatingImport` — the
-    impossibility is inherited structurally, not by analogy.
-    Non-uniform hash-based routing IS a header; the embedding proves it formally. -/
+/-- A sound-and-complete content-addressed policy with uniform hash routing is
+    impossible: contradicts `no_sound_complete_uniform_import` on the embedded
+    `DiscriminatingImport`. -/
 theorem content_addressed_is_header (M : ContentAddressedImport)
     (h_uniform : ∀ x y : M.Claim, M.import_by_hash (M.hash x) = M.import_by_hash (M.hash y))
     (h_sound : M.import_by_hash (M.hash M.bad) = false)
@@ -865,14 +833,8 @@ theorem content_addressed_is_header (M : ContentAddressedImport)
     (fun c => M.import_by_hash (M.hash c))
     h_uniform h_sound h_complete
 
-/-- A sound-and-complete content-addressed policy **carries a header**: the composite
-    routing function `import_by_hash ∘ hash` IS a header for the embedded
-    `DiscriminatingImport` scenario.
-
-    This replaces the interpretive gloss "non-uniform hash-based routing is header-like"
-    with a formal identity proven via `sound_complete_import_is_header`.  The `IsHeader`
-    definition absorbs the classificatory step — the routing function satisfies the
-    minimality definition of a header directly, without any additional argument. -/
+/-- The composite routing function `import_by_hash ∘ hash` satisfies `IsHeader` for
+    the embedded `DiscriminatingImport` scenario, via `sound_complete_import_is_header`. -/
 theorem content_addressed_has_header (M : ContentAddressedImport)
     (h_sound : M.import_by_hash (M.hash M.bad) = false)
     (h_complete : M.import_by_hash (M.hash M.good) = true) :
@@ -1237,10 +1199,9 @@ def partial_to_closed (M : PartialContestation) : ClosedEndorsement where
   closed                 := fun c h_end h_fals =>
     M.endorsed_not_contestable c h_end (M.contestable_only c h_fals)
 
-/-- Partial contestation that excludes endorsed claims IS a ClosedEndorsement:
+/-- Partial contestation that excludes endorsed claims embeds into `ClosedEndorsement`:
     `closed_system_unfalsifiable` fires via the parameter-free embedding.
-    The identification is unavoidable — no endorsed claim is externally falsifiable,
-    derived structurally rather than by inline proof. -/
+    No endorsed claim is externally falsifiable. -/
 theorem partial_contestation_closed_on_endorsed (M : PartialContestation) :
     ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c :=
   closed_system_unfalsifiable (partial_to_closed M)
@@ -1285,28 +1246,18 @@ theorem soft_closed_when_universal (M : SoftFalsifiability)
 
 The six forcing dimensions do not all have the same tightness.
 
-**Hard forcing:** the bridge scenario is self-refuting from its structural fields alone,
-without additional behavioral coverage assumptions.  Scope, revocation, bank, and
-partial contestation all belong to this tier.
+Hard forcing: impossibility follows from the structure alone, without additional
+behavioral coverage assumptions.  Scope, revocation, bank, and partial contestation
+belong to this tier.
 
-**Soft forcing:** the impossibility fires only under a maximal coverage assumption
-(`∀ c, endorsed c → emits_anomaly c` / `flagged c`).  That assumption cannot be
-discharged from the structure alone — it describes a behavioral property of the system
-that the type does not enforce.
+Soft forcing: impossibility requires an additional coverage assumption
+(`∀ c, endorsed c → emits_anomaly c` / `flagged c`), which cannot be
+discharged from the structure fields alone.
 
-`anomaly_not_hard_forced` and `soft_falsifiability_not_hard_forced` prove this
-stratification constructively: each exhibits a consistent `AnomalySignaling /
-SoftFalsifiability` instance with an endorsed, externally-falsifiable claim, showing
-the structure does not rule out the gap that hard forcing closes.
-
-`partial_contestation_hard_forced` distinguishes partial contestation from the soft
-alternatives: its parameter-free embedding places it at the hard tier alongside
-`ClosedEndorsement` itself.
-
-This stratification is a theorem, not a caveat.  It proves what the alternatives
-establish (soft closure under coverage assumptions) and what they do not (hard
-self-refutation from structure alone).
--/
+`anomaly_not_hard_forced` and `soft_falsifiability_not_hard_forced` exhibit consistent
+`AnomalySignaling` / `SoftFalsifiability` instances with an endorsed, externally-falsifiable
+claim.  `partial_contestation_hard_forced` shows partial contestation does not require
+a coverage assumption. -/
 
 /-- Redeemability is hard-forced: `ClosedEndorsement` is self-refuting from its
     structural fields alone.  The impossibility fires unconditionally — no coverage
@@ -1315,24 +1266,17 @@ theorem redeemability_hard_forced (M : ClosedEndorsement) :
     ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c :=
   closed_system_unfalsifiable M
 
-/-- Anomaly signaling requires a coverage assumption for its closure to hold:
-    the impossibility fires only when all endorsed claims trigger signals.  This is
-    soft forcing — `h_all` cannot be discharged from the `AnomalySignaling` structure
-    alone, making this a strictly weaker forcing tier than `ClosedEndorsement`. -/
+/-- Under the coverage assumption that all endorsed claims emit anomaly signals,
+    no endorsed claim is externally falsifiable. -/
 theorem anomaly_requires_coverage_for_closure (M : AnomalySignaling)
     (h_all : ∀ c, M.endorsed c → M.emits_anomaly c) :
     ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c :=
   anomaly_closed_when_universal M h_all
 
-/-- Anomaly signaling is NOT hard-forced: there exists an `AnomalySignaling` instance
-    with an endorsed, externally-falsifiable claim.
-
-    Counterexample: everything is endorsed and externally falsifiable, but nothing
-    signals.  `signal_does_not_open` is vacuously satisfied — the antecedent
-    `emits_anomaly c` is never met, so the implication holds without forcing closure.
-
-    This is the formal lower-bound on truth-pressure alternative forcing: anomaly
-    signaling occupies a weaker tier than `ClosedEndorsement`. -/
+/-- There exists an `AnomalySignaling` instance with an endorsed, externally-falsifiable
+    claim: everything is endorsed and externally falsifiable, but nothing signals.
+    `signal_does_not_open` is vacuously satisfied, so `AnomalySignaling` alone does
+    not imply closure over endorsed claims. -/
 theorem anomaly_not_hard_forced :
     ¬∀ M : AnomalySignaling, ¬∃ c : M.Claim, M.endorsed c ∧ M.externally_falsifiable c := by
   intro h
@@ -1345,13 +1289,10 @@ theorem anomaly_not_hard_forced :
   }
   exact h M ⟨(), trivial, trivial⟩
 
-/-- Soft falsifiability is NOT hard-forced: there exists a `SoftFalsifiability` instance
-    with an endorsed, externally-falsifiable claim.
-
-    Counterexample: everything is endorsed and externally falsifiable, but nothing is
-    flagged.  `flag_not_falsifiable` is vacuously satisfied — the antecedent `flagged c`
-    is never met.  The gap that the coverage assumption closes is real and cannot be
-    eliminated by structure alone. -/
+/-- There exists a `SoftFalsifiability` instance with an endorsed, externally-falsifiable
+    claim: everything is endorsed and externally falsifiable, but nothing is flagged.
+    `flag_not_falsifiable` is vacuously satisfied, so `SoftFalsifiability` alone does
+    not imply closure over endorsed claims. -/
 theorem soft_falsifiability_not_hard_forced :
     ¬∀ M : SoftFalsifiability, ¬∃ c : M.Claim, M.endorsed c ∧ M.externally_falsifiable c := by
   intro h
@@ -1364,11 +1305,8 @@ theorem soft_falsifiability_not_hard_forced :
   }
   exact h M ⟨(), trivial, trivial⟩
 
-/-- Partial contestation IS hard-forced: the parameter-free embedding `partial_to_closed`
-    means `closed_system_unfalsifiable` fires without any coverage assumption.
-    Partial contestation is structurally equivalent to `ClosedEndorsement` and occupies
-    the same (hard) forcing tier — unlike anomaly signaling and soft falsifiability,
-    which require coverage assumptions and therefore belong to the soft tier. -/
+/-- `PartialContestation` embeds into `ClosedEndorsement` without a coverage assumption:
+    `closed_system_unfalsifiable` fires via `partial_to_closed` directly. -/
 theorem partial_contestation_hard_forced (M : PartialContestation) :
     ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c :=
   partial_contestation_closed_on_endorsed M
