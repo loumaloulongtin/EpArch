@@ -618,6 +618,150 @@ theorem flat_scope_impossible (D : AgentDisagreement) :
   exact D.agent2_rejects ((hf₂ D.witness).mp ((hf₁ D.witness).mpr D.agent1_accepts))
 
 
+/-! ### 1b. Alternative Scope Architectures Reduce to AgentDisagreement
+
+A reviewer may ask: do capability systems, federated namespaces, or
+dynamically parameterized acceptance gates escape `flat_scope_impossible`?
+
+This section instantiates each alternative, then shows it either:
+(a) directly supplies an `AgentDisagreement` (the old theorem fires unchanged), or
+(b) is structurally equivalent to per-agent scoped acceptance — i.e., it IS
+    bubble separation under a different name.
+
+**Capability-token system.**  Each claim carries a capability token; acceptance
+is token-gated.  Two agents with non-overlapping token sets disagree on the
+witness claim: agent 1 holds the required token; agent 2 does not.
+This is a direct `AgentDisagreement` instance — `flat_scope_impossible` applies
+without modification.
+
+**Federated namespace.**  A global namespace partitioned by scope identifier:
+`accept(scope_id, claim) := local_policy scope_id claim`.  Two agents from
+different scopes with conflicting local policies disagree on the witness claim.
+Again a direct `AgentDisagreement` instance.
+
+**Dynamically parameterized gate.**  Acceptance is `gate(params, claim)` for
+some runtime parameter bundle.  If two agents use different parameter bundles
+and disagree on the witness, the curried functions `gate params₁` and
+`gate params₂` witness an `AgentDisagreement`.  If the gate is parameterized
+such that no parameter assignment can satisfy both agents simultaneously, the
+flat-scope impossibility applies directly.  If the gate CAN make both agents
+agree on every claim, then by definition the agents do not genuinely disagree —
+the scope pressure is absent and no bubble is forced for that pair.
+
+**Conclusion of this section.**  None of the three alternative architectures
+escapes the theorem.  They either instantiate `AgentDisagreement` directly or
+they collapse to a case where the agents do not genuinely disagree (and hence
+no scoped separation is required by this argument). -/
+
+/-- Capability-token gated acceptance: a claim is accepted iff the agent
+    holds the required token. -/
+structure CapabilitySystem where
+  Claim : Type
+  Token : Type
+  /-- Token required to accept a given claim. -/
+  required_token : Claim → Token
+  /-- Agent 1 holds this token. -/
+  agent1_holds : Token → Prop
+  /-- Agent 2 holds this token. -/
+  agent2_holds : Token → Prop
+  /-- Witness claim whose required token agent 1 holds but agent 2 does not. -/
+  witness : Claim
+  agent1_has : agent1_holds (required_token witness)
+  agent2_lacks : ¬agent2_holds (required_token witness)
+
+/-- A capability system with split token ownership instantiates AgentDisagreement.
+    The two agents disagree on the witness claim: agent 1 accepts it (holds token),
+    agent 2 rejects it (lacks token).  `flat_scope_impossible` then applies
+    directly — no flat acceptance function can represent both. -/
+theorem capability_system_gives_disagreement (C : CapabilitySystem) :
+    AgentDisagreement where
+  Claim      := C.Claim
+  accept₁ c  := C.agent1_holds (C.required_token c)
+  accept₂ c  := C.agent2_holds (C.required_token c)
+  witness    := C.witness
+  agent1_accepts := C.agent1_has
+  agent2_rejects := C.agent2_lacks
+
+/-- Therefore a flat acceptance function cannot faithfully represent both agents
+    in a capability system with split ownership. -/
+theorem capability_flat_impossible (C : CapabilitySystem) :
+    ¬∃ (f : C.Claim → Prop),
+      (∀ c, f c ↔ C.agent1_holds (C.required_token c)) ∧
+      (∀ c, f c ↔ C.agent2_holds (C.required_token c)) :=
+  fun ⟨_f, hf₁, hf₂⟩ =>
+    C.agent2_lacks ((hf₂ C.witness).mp ((hf₁ C.witness).mpr C.agent1_has))
+
+/-- Federated namespace: a global claim type carries a scope identifier;
+    each scope has its own local acceptance policy. -/
+structure FederatedNamespace where
+  Scope : Type
+  Claim : Type
+  /-- Local acceptance policy for each scope. -/
+  local_policy : Scope → Claim → Prop
+  /-- Two scopes with conflicting policies on a witness claim. -/
+  scope₁ : Scope
+  scope₂ : Scope
+  witness : Claim
+  scope1_accepts : local_policy scope₁ witness
+  scope2_rejects : ¬local_policy scope₂ witness
+
+/-- A federated namespace with conflicting local policies instantiates
+    AgentDisagreement — the per-scope policies ARE per-agent acceptance criteria. -/
+theorem federated_namespace_gives_disagreement (F : FederatedNamespace) :
+    AgentDisagreement where
+  Claim      := F.Claim
+  accept₁    := F.local_policy F.scope₁
+  accept₂    := F.local_policy F.scope₂
+  witness    := F.witness
+  agent1_accepts := F.scope1_accepts
+  agent2_rejects := F.scope2_rejects
+
+/-- Therefore a single flat function cannot faithfully represent two conflicting
+    scope policies in a federated namespace. -/
+theorem federated_flat_impossible (F : FederatedNamespace) :
+    ¬∃ (f : F.Claim → Prop),
+      (∀ c, f c ↔ F.local_policy F.scope₁ c) ∧
+      (∀ c, f c ↔ F.local_policy F.scope₂ c) :=
+  fun ⟨_f, hf₁, hf₂⟩ =>
+    F.scope2_rejects ((hf₂ F.witness).mp ((hf₁ F.witness).mpr F.scope1_accepts))
+
+/-- Dynamically parameterized gate: acceptance is `gate params claim` for a
+    runtime parameter bundle of type `Params`. -/
+structure ParameterizedGate where
+  Params : Type
+  Claim : Type
+  gate : Params → Claim → Prop
+  /-- Parameter bundle used by agent 1. -/
+  params₁ : Params
+  /-- Parameter bundle used by agent 2. -/
+  params₂ : Params
+  /-- Witness claim where the two parameter bundles disagree. -/
+  witness : Claim
+  params1_accepts : gate params₁ witness
+  params2_rejects : ¬gate params₂ witness
+
+/-- A parameterized gate whose two parameter bundles disagree on a witness claim
+    instantiates AgentDisagreement — the curried functions `gate params₁` and
+    `gate params₂` are the two differing acceptance criteria. -/
+theorem parameterized_gate_gives_disagreement (G : ParameterizedGate) :
+    AgentDisagreement where
+  Claim      := G.Claim
+  accept₁    := G.gate G.params₁
+  accept₂    := G.gate G.params₂
+  witness    := G.witness
+  agent1_accepts := G.params1_accepts
+  agent2_rejects := G.params2_rejects
+
+/-- Therefore no flat acceptance function can faithfully represent two parameter
+    bundles that disagree on a witness claim. -/
+theorem parameterized_gate_flat_impossible (G : ParameterizedGate) :
+    ¬∃ (f : G.Claim → Prop),
+      (∀ c, f c ↔ G.gate G.params₁ c) ∧
+      (∀ c, f c ↔ G.gate G.params₂ c) :=
+  fun ⟨_f, hf₁, hf₂⟩ =>
+    G.params2_rejects ((hf₂ G.witness).mp ((hf₁ G.witness).mpr G.params1_accepts))
+
+
 /-! ### 2. Bounded Audit → Trust Bridges
 
 **Argument.**  When full verification has unbounded cost, some claims
