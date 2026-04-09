@@ -200,11 +200,23 @@ WorldWitness.WitnessCtx ──────────┐
 ConcreteInstance ─────────────────┼──────────────────────────────┐
   .ConcreteWorkingSystem          │                              │
   .concrete_wellformed            ▼                              ▼
-  .concrete_satisfies_all     success_feasible         goals_force_bank_primitives
+  .concrete_satisfies_all     success_feasible     goals_force_bank_primitives
+  .concrete_forcing_embedding     │                (via convergence_structural)
                                   │                              │
                                   └──────────────┬───────────────┘
                                                  ▼
-                               existence_under_constraints (HEADLINE)
+                          existence_under_constraints (WellFormed path)
+
+concrete_forcing_embedding
+  │
+  ▼
+  embedding_to_structurally_forced
+  │
+  ▼
+  convergence_structural
+  │
+  ▼
+  existence_under_constraints_structural / _embedding
 ```
 
 

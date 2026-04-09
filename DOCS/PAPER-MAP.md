@@ -548,13 +548,27 @@ All paper claims should reference these definitions.
 | `ConcreteSuccessfulSystem` | `def` | Realizer.lean | A |
 | `convergence_structural` | `theorem` | Minimality.lean | A |
 
-**Math Form:**
+**Math Form (WellFormed path):**
 
 $$\exists W : \text{WorkingSystem}.\, \text{WellFormed}(W) \land \text{SatisfiesAllProperties}(W) \land \text{containsBankPrimitives}(W)$$
 
-**Supporting Theorem (Minimality):**
+**Math Form (structural path):**
+
+$$\exists W : \text{WorkingSystem}.\, \text{StructurallyForced}(W) \land \text{SatisfiesAllProperties}(W) \land \text{containsBankPrimitives}(W)$$
+
+**Math Form (embedding path):**
+
+$$\exists W : \text{WorkingSystem}.\, \text{ForcingEmbedding}(W) \land \text{SatisfiesAllProperties}(W) \land \text{containsBankPrimitives}(W)$$
+
+**Supporting Theorem (Minimality — WellFormed path):**
 
 $$\forall W.\, \text{WellFormed}(W) \to \text{SatisfiesAllProperties}(W) \to \text{containsBankPrimitives}(W)$$
+
+**Supporting Theorem (Minimality — structural path):**
+
+$$\forall W.\, \text{StructurallyForced}(W) \to \text{SatisfiesAllProperties}(W) \to \text{containsBankPrimitives}(W)$$
+
+**Structural chain:** `ForcingEmbedding` → `embedding_to_structurally_forced` → `convergence_structural` → `containsBankPrimitives`
 
 ---
 
