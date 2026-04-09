@@ -842,18 +842,31 @@ structure DelegatedVerification where
   budget : Nat
   hard_claim : Claim
   exceeds_budget : verify_cost hard_claim > budget
-  /-- The delegate's endorsement for claims over budget. -/
-  delegate_endorses : Claim → Prop
-  /-- The importer accepts the delegate's endorsement without reverifying. -/
-  accepts_on_endorsement : ∀ c, verify_cost c > budget → delegate_endorses c → True
+  /-- The delegate's acceptance predicate for claims over budget. -/
+  delegate_accepts : Claim → Prop
+  /-- Hard claims are accepted via the delegate, not local verification.
+      The importer relies on the delegate — it cannot self-verify hard claims. -/
+  relies_on_delegate : ∀ c, verify_cost c > budget → delegate_accepts c
 
-/-- Delegated verification is a `BoundedVerification` instance at the local scope:
-    the hard claim still exceeds local budget — the delegate handles it via
-    a trust relationship (endorsement), not local reverification.
-    This IS a trust bridge — the naming changes, not the structure. -/
-theorem delegated_still_exceeds_budget (M : DelegatedVerification) :
+/-- DelegatedVerification embeds directly into BoundedVerification: the local scope's
+    budget problem is unchanged regardless of the delegation arrangement.
+    The `delegate_accepts` / `relies_on_delegate` fields formalise the trust relationship —
+    they route around the budget shortfall, not through it.
+    This embedding makes the identification mechanically unavoidable:
+    DelegatedVerification IS a BoundedVerification instance, i.e., a trust bridge. -/
+def delegated_to_bounded (M : DelegatedVerification) : BoundedVerification where
+  Claim          := M.Claim
+  verify_cost    := M.verify_cost
+  budget         := M.budget
+  hard_claim     := M.hard_claim
+  exceeds_budget := M.exceeds_budget
+
+/-- Delegated verification is incomplete at the local scope: `verification_only_import_incomplete`
+    fires via the embedding.  The delegation IS a trust bridge — the code name does not change
+    the structural identity, and the impossibility is inherited identically. -/
+theorem delegated_is_trust_bridge (M : DelegatedVerification) :
     ¬∀ c : M.Claim, M.verify_cost c ≤ M.budget :=
-  fun h => absurd (h M.hard_claim) (Nat.not_le_of_gt M.exceeds_budget)
+  verification_only_import_incomplete (delegated_to_bounded M)
 
 
 /-! ### 3. Export Across Boundaries → Headers (Metadata)
@@ -954,6 +967,31 @@ theorem content_addressed_uniform_impossible (M : ContentAddressedImport)
   rw [h_sound, h_complete] at h_eq
   exact Bool.noConfusion h_eq
 
+/-- A ContentAddressedImport with distinguishing hashes embeds into DiscriminatingImport:
+    good and bad are distinct claims — inequality is derived from `hash_distinguishes`
+    via congruence (if good = bad then hash good = hash bad, contradicting the field).
+    This embedding makes the classification unavoidable: working content-addressed
+    routing IS a DiscriminatingImport, i.e., it carries per-claim metadata (a header). -/
+def content_addressed_to_discriminating (M : ContentAddressedImport) : DiscriminatingImport where
+  Claim       := M.Claim
+  good        := M.good
+  bad         := M.bad
+  good_ne_bad := fun h => M.hash_distinguishes (congrArg M.hash h)
+
+/-- A sound-and-complete content-addressed policy is a header: `import_by_hash ∘ hash`
+    is a per-claim discriminating metadata function.  This theorem fires through
+    `no_sound_complete_uniform_import` on the embedded `DiscriminatingImport` — the
+    impossibility is inherited structurally, not by analogy.
+    Non-uniform hash-based routing IS a header; the embedding proves it formally. -/
+theorem content_addressed_is_header (M : ContentAddressedImport)
+    (h_uniform : ∀ x y : M.Claim, M.import_by_hash (M.hash x) = M.import_by_hash (M.hash y))
+    (h_sound : M.import_by_hash (M.hash M.bad) = false)
+    (h_complete : M.import_by_hash (M.hash M.good) = true) : False :=
+  no_sound_complete_uniform_import
+    (content_addressed_to_discriminating M)
+    (fun c => M.import_by_hash (M.hash c))
+    h_uniform h_sound h_complete
+
 /-- Global contextual routing state: a single shared routing predicate
     applied to all claims (not per-claim metadata). -/
 structure GlobalRoutingState where
@@ -1032,7 +1070,7 @@ the absorbing condition fails.  If hold is unreachable from accepted, the
 bad deposit remains effectively accepted and the system fails corrigibility.
 
 **Rollback.**  Rollback restores a prior state — it is a non-absorbing
-transition out of accepted.  Again the absorbing condition is violated;  
+transition out of accepted.  Again the absorbing condition is violated;
 EpArch calls this revocation. -/
 
 /-- A lifecycle with a quarantine state reachable from accepted. -/
@@ -1266,6 +1304,27 @@ theorem anomaly_signal_insufficient (M : AnomalySignaling) :
     ¬∃ c, M.endorsed c ∧ M.emits_anomaly c ∧ M.externally_falsifiable c :=
   fun ⟨c, h_end, h_sig, h_fals⟩ => M.signal_does_not_open c h_end h_sig h_fals
 
+/-- When all endorsed claims trigger anomaly signals (worst-case: maximal scrutiny),
+    AnomalySignaling embeds into ClosedEndorsement: the closure condition is derived
+    from `signal_does_not_open`.  The identification is mechanically forced:
+    anomaly signaling without external-contact action IS a ClosedEndorsement. -/
+def anomaly_to_closed (M : AnomalySignaling)
+    (h_all : ∀ c, M.endorsed c → M.emits_anomaly c) : ClosedEndorsement where
+  Claim                  := M.Claim
+  endorsed               := M.endorsed
+  externally_falsifiable := M.externally_falsifiable
+  closed                 := fun c h_end h_fals =>
+    M.signal_does_not_open c h_end (h_all c h_end) h_fals
+
+/-- Under maximal anomaly coverage (all endorsed claims signal), the full
+    `closed_system_unfalsifiable` impossibility fires via the embedding.
+    No endorsed claim is externally falsifiable — signals accomplish nothing
+    without a genuine constraint-surface contact mechanism. -/
+theorem anomaly_closed_when_universal (M : AnomalySignaling)
+    (h_all : ∀ c, M.endorsed c → M.emits_anomaly c) :
+    ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c :=
+  closed_system_unfalsifiable (anomaly_to_closed M h_all)
+
 /-- Partial contestation: only unendorsed claims are contestable. -/
 structure PartialContestation where
   Claim : Type
@@ -1277,12 +1336,24 @@ structure PartialContestation where
   /-- Only contestable claims are externally falsifiable. -/
   contestable_only : ∀ c, externally_falsifiable c → contestable c
 
-/-- Partial contestation that excludes endorsed claims is effectively closed
-    over the endorsed sub-population: no endorsed claim is externally falsifiable. -/
+/-- PartialContestation embeds directly (no extra parameter) into ClosedEndorsement:
+    the closure over the full endorsed sub-population is derived from the two structural
+    conditions, not assumed.  This is the cleanest of the §6b identifications:
+    the structure IS ClosedEndorsement — the embedding is parameter-free. -/
+def partial_to_closed (M : PartialContestation) : ClosedEndorsement where
+  Claim                  := M.Claim
+  endorsed               := M.endorsed
+  externally_falsifiable := M.externally_falsifiable
+  closed                 := fun c h_end h_fals =>
+    M.endorsed_not_contestable c h_end (M.contestable_only c h_fals)
+
+/-- Partial contestation that excludes endorsed claims IS a ClosedEndorsement:
+    `closed_system_unfalsifiable` fires via the parameter-free embedding.
+    The identification is unavoidable — no endorsed claim is externally falsifiable,
+    derived structurally rather than by inline proof. -/
 theorem partial_contestation_closed_on_endorsed (M : PartialContestation) :
     ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c :=
-  fun ⟨c, h_end, h_fals⟩ =>
-    M.endorsed_not_contestable c h_end (M.contestable_only c h_fals)
+  closed_system_unfalsifiable (partial_to_closed M)
 
 /-- Soft falsifiability: claims can be flagged, but flagging ≠ external falsifiability. -/
 structure SoftFalsifiability where
@@ -1298,6 +1369,26 @@ structure SoftFalsifiability where
 theorem soft_falsifiability_closed (M : SoftFalsifiability) :
     ¬∃ c, M.endorsed c ∧ M.flagged c ∧ M.externally_falsifiable c :=
   fun ⟨c, h_end, h_flag, h_fals⟩ => M.flag_not_falsifiable c h_end h_flag h_fals
+
+/-- When all endorsed claims are flagged (maximal soft-falsifiability coverage),
+    SoftFalsifiability embeds into ClosedEndorsement: the closure condition is derived
+    from `flag_not_falsifiable`.  The identification is structural:
+    flagging without external contact IS a ClosedEndorsement. -/
+def soft_to_closed (M : SoftFalsifiability)
+    (h_all : ∀ c, M.endorsed c → M.flagged c) : ClosedEndorsement where
+  Claim                  := M.Claim
+  endorsed               := M.endorsed
+  externally_falsifiable := M.externally_falsifiable
+  closed                 := fun c h_end h_fals =>
+    M.flag_not_falsifiable c h_end (h_all c h_end) h_fals
+
+/-- Under maximal flag coverage (all endorsed claims flagged), the full
+    `closed_system_unfalsifiable` impossibility fires via the embedding.
+    Soft falsifiability IS a ClosedEndorsement when it lacks genuine external contact. -/
+theorem soft_closed_when_universal (M : SoftFalsifiability)
+    (h_all : ∀ c, M.endorsed c → M.flagged c) :
+    ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c :=
+  closed_system_unfalsifiable (soft_to_closed M h_all)
 
 
 /-! ## StructurallyForced: Forward-Direction Forcing Without WellFormed
