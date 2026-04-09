@@ -159,4 +159,27 @@ theorem joint_feasible :
     (∃ _ : EpArch.Realizer, True) := by
   exact ⟨constraints_feasible, objectives_feasible⟩
 
+
+/-! ## Structural Convergence -/
+
+/-- Paper-facing name (structural version): success forces Bank primitives
+    without depending on WellFormed biconditionals. -/
+theorem structural_goals_force_bank_primitives :
+    ∀ W : WorkingSystem,
+      StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W :=
+  convergence_structural
+
+/-- Headline theorem (structural version): the concrete model is
+    structurally forced, satisfies all properties, and contains Bank
+    primitives — without going through WellFormed. -/
+theorem existence_under_constraints_structural :
+    ∃ W : WorkingSystem,
+      StructurallyForced W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W := by
+  refine ⟨EpArch.ConcreteInstance.ConcreteWorkingSystem, ?_⟩
+  refine ⟨EpArch.ConcreteInstance.concrete_structurally_forced,
+          EpArch.ConcreteInstance.concrete_satisfies_all_properties, ?_⟩
+  exact convergence_structural EpArch.ConcreteInstance.ConcreteWorkingSystem
+    EpArch.ConcreteInstance.concrete_structurally_forced
+    EpArch.ConcreteInstance.concrete_satisfies_all_properties
+
 end EpArch.Feasibility

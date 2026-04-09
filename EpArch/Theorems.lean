@@ -1618,7 +1618,7 @@ theorem deposits_survive_revision_free_trace
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (t : Trace (Reason := Reason) (Evidence := Evidence) s s')
     (h_no_rev : t.hasRevision = false)
-    (B : Bubble) (d_idx : Nat)
+    (_B : Bubble) (d_idx : Nat)
     (h_dep : isDeposited s d_idx) :
     isDeposited s' d_idx :=
   StepSemantics.trace_no_revision_preserves_deposited s s' t h_no_rev d_idx h_dep

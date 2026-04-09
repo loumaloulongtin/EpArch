@@ -938,6 +938,35 @@ theorem concrete_convergence_applies :
   ⟩
 
 
+/-! ## StructurallyForced Instance
+
+The concrete model is `StructurallyForced`: each operational capability
+implies the corresponding feature.  Since ConcreteWorkingSystem has all
+features enabled, each implication is trivially satisfied.
+
+The structural forcing models in Minimality.lean justify WHY the
+concrete model was defined with these features: `flat_scope_impossible`
+justifies scope separation, `verification_only_import_incomplete`
+justifies trust bridges, etc. -/
+
+/-- The concrete model is structurally forced. -/
+theorem concrete_structurally_forced : StructurallyForced ConcreteWorkingSystem where
+  scope_forcing := fun _ => concrete_has_bubbles
+  trust_forcing := fun _ => concrete_has_trust_bridges
+  header_forcing := fun _ => concrete_has_headers
+  revocation_forcing := fun _ => concrete_has_revocation
+  bank_forcing := fun _ => concrete_has_bank
+  redeemability_forcing := fun _ => concrete_has_redeemability
+
+/-- Structural convergence applies to the concrete model.
+    This is the preferred convergence result — it does not go through
+    WellFormed biconditionals. -/
+theorem concrete_structural_convergence :
+    containsBankPrimitives ConcreteWorkingSystem :=
+  convergence_structural ConcreteWorkingSystem concrete_structurally_forced
+    concrete_satisfies_all_properties
+
+
 /-! ## Concrete Instance Summary
 
 The concrete model demonstrates:

@@ -160,7 +160,7 @@ examine `agentTraction`.
     Consequence: psychology, neural architecture, and institutional policy can
     freely modulate `agentTraction` without touching any other system predicate. -/
 theorem traction_modulation_confined
-    (a : Agent) (P : Claim)
+    (_a : Agent) (P : Claim)
     (f g : Claim → LadderStage)
     (h : f P = g P) :
     f P = g P := h
@@ -175,7 +175,7 @@ theorem traction_modulation_confined
 
     This is the `agentTraction` analog of `psychology_irrelevant`. -/
 theorem traction_implementation_irrelevant
-    (a : Agent) (P : Claim)
+    (_a : Agent) (P : Claim)
     (system_property : LadderStage → Prop)
     (f g : Claim → LadderStage)
     (h : f P = g P) :

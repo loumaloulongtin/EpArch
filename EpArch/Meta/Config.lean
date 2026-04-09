@@ -210,7 +210,7 @@ in `Type 1` without a universe parameter conflict. -/
 /-- Indexed proof carrier for world-bundle clusters. -/
 inductive WorldWitness : EnabledWorldCluster → Type 1 where
   | liesPossible :
-      (∀ (C : WorldCtx) (W : C.W_lies_possible), ∃ w a P, C.Lie w a P) →
+      (∀ (C : WorldCtx) (_ : C.W_lies_possible), ∃ w a P, C.Lie w a P) →
       WorldWitness .world_lies_possible
   | boundedAudit :
       (∀ (C : WorldCtx) (w : C.World) (P : C.Claim) (k t : Nat),
@@ -220,11 +220,11 @@ inductive WorldWitness : EnabledWorldCluster → Type 1 where
       (∀ (C : WorldCtx) (W : C.W_asymmetric_costs), W.export_cost < W.defense_cost) →
       WorldWitness .world_asymmetric_costs
   | partialObservability :
-      (∀ (C : WorldCtx) (W : C.W_partial_observability), ∃ P, C.NotDeterminedByObs P) →
+      (∀ (C : WorldCtx) (_ : C.W_partial_observability), ∃ P, C.NotDeterminedByObs P) →
       WorldWitness .world_partial_observability
   | spoofedV :
       (∀ {PL SL EL PrL : Type}
-        (W : W_spoofedV (PropLike := PL) (Standard := SL) (ErrorModel := EL) (Provenance := PrL))
+        (_ : W_spoofedV (PropLike := PL) (Standard := SL) (ErrorModel := EL) (Provenance := PrL))
         (d : Deposit PL SL EL PrL) (v : V_Spoofed_State d) (p : PathExists d),
         is_V_spoofed v → ¬has_path p) →
       WorldWitness .world_spoofed_v
@@ -235,7 +235,7 @@ inductive WorldWitness : EnabledWorldCluster → Type 1 where
       (∀ (W : W_rolex_ddos), same_structure W.rolex_structure W.ddos_structure) →
       WorldWitness .world_rolex_ddos
   | ddos :
-      (∀ (W : W_ddos) (a : Agent) (s : DDoSState a) (c : CollapsedState a),
+      (∀ (_ : W_ddos) (a : Agent) (s : DDoSState a) (c : CollapsedState a),
         some_vector_overwhelmed s → is_collapsed c) →
       WorldWitness .world_ddos
 
@@ -307,10 +307,10 @@ inductive Tier4Witness : EnabledTier4Cluster → Type 1 where
            ∃ d', d' ∈ s'.ledger ∧ d'.status = DepositStatus.Candidate)) →
       Tier4Witness .tier4_lts_universal
   | bankGoalsCompat :
-      (∀ (E : ExtModel) (C : CoreModel) (h : Compatible E C)
-        (h_sw : SafeWithdrawalGoal C) (h_re : ReliableExportGoal C)
-        (h_sd : SoundDepositsGoal C) (h_sc : SelfCorrectionGoal C)
-        (h_cl : CorrigibleLedgerGoal C),
+      (∀ (E : ExtModel) (C : CoreModel) (_ : Compatible E C)
+        (_ : SafeWithdrawalGoal C) (_ : ReliableExportGoal C)
+        (_ : SoundDepositsGoal C) (_ : SelfCorrectionGoal C)
+        (_ : CorrigibleLedgerGoal C),
         SafeWithdrawalGoal (forget E) ∧ ReliableExportGoal (forget E) ∧
         SoundDepositsGoal (forget E) ∧ SelfCorrectionGoal (forget E) ∧
         (∀ B_E : (forget E).sig.Bubble, (forget E).ops.hasRevision B_E →
@@ -318,10 +318,10 @@ inductive Tier4Witness : EnabledTier4Cluster → Type 1 where
          (forget E).ops.revise B_E d_E d'_E → (forget E).ops.truth B_E d'_E)) →
       Tier4Witness .tier4_bank_goals_compat
   | bankGoalsSurj :
-      (∀ (E : ExtModel) (C : CoreModel) (h : SurjectiveCompatible E C)
-        (h_sw : SafeWithdrawalGoal C) (h_re : ReliableExportGoal C)
-        (h_sd : SoundDepositsGoal C) (h_sc : SelfCorrectionGoal C)
-        (h_cl : CorrigibleLedgerGoal C),
+      (∀ (E : ExtModel) (C : CoreModel) (_ : SurjectiveCompatible E C)
+        (_ : SafeWithdrawalGoal C) (_ : ReliableExportGoal C)
+        (_ : SoundDepositsGoal C) (_ : SelfCorrectionGoal C)
+        (_ : CorrigibleLedgerGoal C),
         SafeWithdrawalGoal (forget E) ∧ ReliableExportGoal (forget E) ∧
         SoundDepositsGoal (forget E) ∧ SelfCorrectionGoal (forget E) ∧
         CorrigibleLedgerGoal (forget E)) →
