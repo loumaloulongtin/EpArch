@@ -182,4 +182,16 @@ theorem existence_under_constraints_structural :
     EpArch.ConcreteInstance.concrete_structurally_forced
     EpArch.ConcreteInstance.concrete_satisfies_all_properties
 
+/-- Headline theorem (embedding version): full chain from
+    `ForcingEmbedding` through `StructurallyForced` to convergence.
+    This is the strongest form — the design judgment is localised
+    in `concrete_forcing_embedding`, and the derivation is mechanical. -/
+theorem existence_under_constraints_embedding :
+    ∃ W : WorkingSystem,
+      ForcingEmbedding W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W :=
+  ⟨EpArch.ConcreteInstance.ConcreteWorkingSystem,
+   EpArch.ConcreteInstance.concrete_forcing_embedding,
+   EpArch.ConcreteInstance.concrete_satisfies_all_properties,
+   EpArch.ConcreteInstance.concrete_structural_convergence⟩
+
 end EpArch.Feasibility

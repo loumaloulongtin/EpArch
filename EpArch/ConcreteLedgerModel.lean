@@ -938,29 +938,33 @@ theorem concrete_convergence_applies :
   ⟩
 
 
-/-! ## StructurallyForced Instance
+/-! ## ForcingEmbedding Instance
 
-The concrete model is `StructurallyForced`: each operational capability
-implies the corresponding feature.  Since ConcreteWorkingSystem has all
-features enabled, each implication is trivially satisfied.
+The concrete model instantiates `ForcingEmbedding`: since all features
+are present, each embedding returns `Or.inl` (the feature itself).
+The right disjunct (the impossible scenario) is never reached.
 
-The structural forcing models in Minimality.lean justify WHY the
-concrete model was defined with these features: `flat_scope_impossible`
-justifies scope separation, `verification_only_import_incomplete`
-justifies trust bridges, etc. -/
+The derivation chain for the concrete model is now:
+    concrete_forcing_embedding → embedding_to_structurally_forced →
+    convergence_structural → containsBankPrimitives -/
 
-/-- The concrete model is structurally forced. -/
-theorem concrete_structurally_forced : StructurallyForced ConcreteWorkingSystem where
-  scope_forcing := fun _ => concrete_has_bubbles
-  trust_forcing := fun _ => concrete_has_trust_bridges
-  header_forcing := fun _ => concrete_has_headers
-  revocation_forcing := fun _ => concrete_has_revocation
-  bank_forcing := fun _ => concrete_has_bank
-  redeemability_forcing := fun _ => concrete_has_redeemability
+/-- The concrete model's forcing embedding.  Every field is `Or.inl`
+    because all features are present. -/
+def concrete_forcing_embedding : ForcingEmbedding ConcreteWorkingSystem where
+  scope_embed _ := Or.inl concrete_has_bubbles
+  trust_embed _ := Or.inl concrete_has_trust_bridges
+  header_embed _ := Or.inl concrete_has_headers
+  revocation_embed _ := Or.inl concrete_has_revocation
+  bank_embed _ := Or.inl concrete_has_bank
+  redeemability_embed _ := Or.inl concrete_has_redeemability
+
+/-- The concrete model is structurally forced — derived mechanically
+    from the forcing embedding via the generic translation layer. -/
+theorem concrete_structurally_forced : StructurallyForced ConcreteWorkingSystem :=
+  embedding_to_structurally_forced ConcreteWorkingSystem concrete_forcing_embedding
 
 /-- Structural convergence applies to the concrete model.
-    This is the preferred convergence result — it does not go through
-    WellFormed biconditionals. -/
+    Full chain: ForcingEmbedding → StructurallyForced → convergence. -/
 theorem concrete_structural_convergence :
     containsBankPrimitives ConcreteWorkingSystem :=
   convergence_structural ConcreteWorkingSystem concrete_structurally_forced

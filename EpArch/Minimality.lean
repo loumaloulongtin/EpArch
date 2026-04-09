@@ -809,7 +809,7 @@ transitions.  The bad deposit is permanently accepted.
 **Proof technique.**  Induction on the number of transition steps. -/
 
 /-- Iterate a function `n` times starting from an initial value. -/
-private def iter (f : α → α) : Nat → α → α
+def iter (f : α → α) : Nat → α → α
   | 0, x => x
   | n + 1, x => f (iter f n x)
 
@@ -954,6 +954,107 @@ theorem wellformed_implies_structurally_forced (W : WorkingSystem) :
     bank_forcing := h5.mp
     redeemability_forcing := h6.mp
   }
+
+
+/-! ## Forcing Embeddings: Translation Layer
+
+The structural models above prove clean no-go lemmas on abstract scenarios.
+`StructurallyForced` packages the forward implications (capability → feature).
+The remaining gap: the `StructurallyForced` fields are narratively "justified by"
+the structural models but not mechanically derived from them.
+
+`ForcingEmbedding` closes this gap.  Each field says:
+
+> "A system handling capability X either already has feature Y, or it
+>  embeds the abstract scenario whose impossibility is already proven."
+
+The derivation `embedding_to_structurally_forced` is then a generic,
+mechanical combination: for each direction, take the `Or`, and in the
+right branch apply the structural impossibility theorem to produce `False`.
+The left branch is the feature itself.
+
+The proof chain becomes:
+
+    ForcingEmbedding ──┐
+                       ├── StructurallyForced ──► convergence_structural
+    Structural models ─┘
+
+The design judgment ("a system without X facing constraint Y is in the
+impossible scenario") now lives in the `ForcingEmbedding` instance,
+localised and auditable.  The derivation is uniform and constructive
+(no Classical reasoning — `Or.elim` is intuitionistic). -/
+
+/-- Forcing embeddings: connects a `WorkingSystem` to the abstract
+    structural models via an auditable disjunction.
+
+    Each field says: a system handling the constraint EITHER already
+    has the feature, OR instantiates the scenario proven impossible
+    by the corresponding structural model.  Since the right disjunct
+    is impossible, the feature holds. -/
+structure ForcingEmbedding (W : WorkingSystem) : Prop where
+  /-- Distributed agents: either bubbles exist, or disagreeing agents
+      share a single flat scope — contradicted by `flat_scope_impossible`. -/
+  scope_embed : handles_distributed_agents W →
+    HasBubbles W ∨
+    (∃ D : AgentDisagreement, ∃ f : D.Claim → Prop,
+      (∀ c, f c ↔ D.accept₁ c) ∧ (∀ c, f c ↔ D.accept₂ c))
+  /-- Bounded audit: either trust bridges exist, or ALL claims are
+      within the verification budget — contradicted by
+      `verification_only_import_incomplete`. -/
+  trust_embed : handles_bounded_audit W →
+    HasTrustBridges W ∨
+    (∃ M : BoundedVerification, ∀ c, M.verify_cost c ≤ M.budget)
+  /-- Export: either headers exist, or a uniform import function is both
+      sound and complete — contradicted by
+      `no_sound_complete_uniform_import`. -/
+  header_embed : handles_export W →
+    HasHeaders W ∨
+    (∃ M : DiscriminatingImport, ∃ f : M.Claim → Bool,
+      (∀ x y, f x = f y) ∧ f M.bad = false ∧ f M.good = true)
+  /-- Adversarial: either revocation exists, or the accepted state can
+      be escaped despite being absorbing — contradicted by
+      `monotonic_no_exit`. -/
+  revocation_embed : handles_adversarial W →
+    HasRevocation W ∨
+    (∃ M : MonotonicLifecycle, ∃ n, iter M.step n M.accepted ≠ M.accepted)
+  /-- Coordination: either shared ledger exists, or isolated agents share
+      a deposit — contradicted by `private_storage_no_sharing`. -/
+  bank_embed : handles_coordination W →
+    HasBank W ∨
+    (∃ M : PrivateOnlyStorage, ∃ d, M.has_access M.a₁ d ∧ M.has_access M.a₂ d)
+  /-- Truth pressure: either redeemability exists, or a closed system
+      has an endorsed-and-falsifiable claim — contradicted by
+      `closed_system_unfalsifiable`. -/
+  redeemability_embed : handles_truth_pressure W →
+    HasRedeemability W ∨
+    (∃ M : ClosedEndorsement, ∃ c, M.endorsed c ∧ M.externally_falsifiable c)
+
+/-- Mechanical derivation: `ForcingEmbedding` → `StructurallyForced`.
+
+    Each field is derived by `Or.elim`: the left branch is the feature
+    itself (`id`); the right branch feeds the scenario into the structural
+    impossibility theorem, producing `False`, which closes any goal.
+    Fully constructive — no `Classical.byContradiction`. -/
+theorem embedding_to_structurally_forced (W : WorkingSystem) (E : ForcingEmbedding W) :
+    StructurallyForced W where
+  scope_forcing h :=
+    (E.scope_embed h).elim id fun ⟨D, f, hf⟩ =>
+      absurd ⟨f, hf⟩ (flat_scope_impossible D)
+  trust_forcing h :=
+    (E.trust_embed h).elim id fun ⟨M, hM⟩ =>
+      absurd hM (verification_only_import_incomplete M)
+  header_forcing h :=
+    (E.header_embed h).elim id fun ⟨M, f, hu, hs, hc⟩ =>
+      (no_sound_complete_uniform_import M f hu hs hc).elim
+  revocation_forcing h :=
+    (E.revocation_embed h).elim id fun ⟨M, n, hn⟩ =>
+      absurd (monotonic_no_exit M n) hn
+  bank_forcing h :=
+    (E.bank_embed h).elim id fun ⟨M, d, hd⟩ =>
+      absurd ⟨d, hd⟩ (private_storage_no_sharing M)
+  redeemability_forcing h :=
+    (E.redeemability_embed h).elim id fun ⟨M, c, hc⟩ =>
+      absurd ⟨c, hc⟩ (closed_system_unfalsifiable M)
 
 
 /-! ## Convergence and Impossibility (Structural Versions) -/
