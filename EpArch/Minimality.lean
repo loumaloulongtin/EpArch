@@ -24,7 +24,10 @@ these structural elements, but implementations can differ.
 - `Constraints` — typeclass capturing the minimal system predicates
 - `WorkingSystem` — a system satisfying all operational properties
 - `WellFormed` — no trivially-degenerate configurations
-- `convergence_under_constraints'` — WorkingSystem + WellFormed → has all Bank primitives
+- `StructurallyForced` — forward-only implications justified by structural models
+- `convergence_structural` — WorkingSystem + StructurallyForced → has all Bank primitives
+  (preferred convergence theorem; `WellFormed → StructurallyForced` via
+  `wellformed_implies_structurally_forced`)
 
 ## Dependencies
 
@@ -280,107 +283,38 @@ def WellFormed (W : WorkingSystem) : Prop :=
   (W.supports_correction = true ↔ W.spec.has_redeemability = true)
 
 
-/-! ## Linking Theorems: Constraint → Forced Feature
+/-! ## WellFormed Extractions (Kept for Meta/Config Compatibility)
 
-Each theorem formalizes one row of the "What It Forces" column.
-These are the load-bearing connections between operational requirements
-and architectural primitives. -/
+Each theorem extracts the forward direction of one biconditional from the
+`WellFormed` coherence package.  These are logical consequences of
+`WellFormed`, not independently derived forcing results.  They are
+preserved because `EpArch.Meta.Config` registers them as named proof
+witnesses; the independent structural grounding for each implication is
+in the Structural Forcing Models section below. -/
 
-/-- Distributed agents → Bubbles. -/
+/-- Distributed agents → Bubbles. Extraction of WellFormed.1.mp. -/
 theorem distributed_agents_require_bubbles (W : WorkingSystem) (h_wf : WellFormed W) :
-  handles_distributed_agents W → HasBubbles W := by
-  intro h_handles
-  unfold handles_distributed_agents at h_handles
-  unfold HasBubbles
-  exact h_wf.1.mp h_handles
+    handles_distributed_agents W → HasBubbles W := h_wf.1.mp
 
-/-- Bounded audit → Trust bridges. -/
+/-- Bounded audit → Trust bridges. Extraction of WellFormed.2.1.mp. -/
 theorem bounded_audit_requires_trust_bridges (W : WorkingSystem) (h_wf : WellFormed W) :
-  handles_bounded_audit W → HasTrustBridges W := by
-  intro h_handles
-  unfold handles_bounded_audit at h_handles
-  unfold HasTrustBridges
-  exact h_wf.2.1.mp h_handles
+    handles_bounded_audit W → HasTrustBridges W := h_wf.2.1.mp
 
-/-- Export across boundaries → Headers + gates. -/
+/-- Export across boundaries → Headers + gates. Extraction of WellFormed.2.2.1.mp. -/
 theorem export_requires_headers (W : WorkingSystem) (h_wf : WellFormed W) :
-  handles_export W → HasHeaders W := by
-  intro h_handles
-  unfold handles_export at h_handles
-  unfold HasHeaders
-  exact h_wf.2.2.1.mp h_handles
+    handles_export W → HasHeaders W := h_wf.2.2.1.mp
 
-/-- Adversarial pressure → V-independence + revocation. -/
+/-- Adversarial pressure → Revocation. Extraction of WellFormed.2.2.2.1.mp. -/
 theorem adversarial_requires_revocation (W : WorkingSystem) (h_wf : WellFormed W) :
-  handles_adversarial W → HasRevocation W := by
-  intro h_handles
-  unfold handles_adversarial at h_handles
-  unfold HasRevocation
-  exact h_wf.2.2.2.1.mp h_handles
+    handles_adversarial W → HasRevocation W := h_wf.2.2.2.1.mp
 
-/-- Coordination need → Bank + acceptance. -/
+/-- Coordination need → Bank. Extraction of WellFormed.2.2.2.2.1.mp. -/
 theorem coordination_requires_bank (W : WorkingSystem) (h_wf : WellFormed W) :
-  handles_coordination W → HasBank W := by
-  intro h_handles
-  unfold handles_coordination at h_handles
-  unfold HasBank
-  exact h_wf.2.2.2.2.1.mp h_handles
+    handles_coordination W → HasBank W := h_wf.2.2.2.2.1.mp
 
-/-- Truth pressure → Redeemability. -/
+/-- Truth pressure → Redeemability. Extraction of WellFormed.2.2.2.2.2.mp. -/
 theorem truth_pressure_requires_redeemability (W : WorkingSystem) (h_wf : WellFormed W) :
-  handles_truth_pressure W → HasRedeemability W := by
-  intro h_handles
-  unfold handles_truth_pressure at h_handles
-  unfold HasRedeemability
-  exact h_wf.2.2.2.2.2.mp h_handles
-
-
-/-! ## Six Impossibility Theorems
-
-Each theorem proves: if you lack the forced feature, you cannot satisfy
-the corresponding operational property. -/
-
-/-- Impossibility #1: No bubbles → cannot handle distributed agents. -/
-theorem no_bubbles_implies_failure (W : WorkingSystem) (h_wf : WellFormed W) :
-    ¬HasBubbles W → ¬handles_distributed_agents W := by
-  intro h_no_bubbles h_handles
-  have h_has_bubbles := distributed_agents_require_bubbles W h_wf h_handles
-  exact h_no_bubbles h_has_bubbles
-
-/-- Impossibility #2: No trust bridges → cannot handle bounded audit. -/
-theorem no_trust_bridges_implies_failure (W : WorkingSystem) (h_wf : WellFormed W) :
-    ¬HasTrustBridges W → ¬handles_bounded_audit W := by
-  intro h_no_bridges h_handles
-  have h_has_bridges := bounded_audit_requires_trust_bridges W h_wf h_handles
-  exact h_no_bridges h_has_bridges
-
-/-- Impossibility #3: No headers → cannot handle export. -/
-theorem no_headers_implies_failure' (W : WorkingSystem) (h_wf : WellFormed W) :
-    ¬HasHeaders W → ¬handles_export W := by
-  intro h_no_headers h_handles
-  have h_has_headers := export_requires_headers W h_wf h_handles
-  exact h_no_headers h_has_headers
-
-/-- Impossibility #4: No revocation → cannot handle adversarial pressure. -/
-theorem no_revocation_implies_failure (W : WorkingSystem) (h_wf : WellFormed W) :
-    ¬HasRevocation W → ¬handles_adversarial W := by
-  intro h_no_revocation h_handles
-  have h_has_revocation := adversarial_requires_revocation W h_wf h_handles
-  exact h_no_revocation h_has_revocation
-
-/-- Impossibility #5: No bank → cannot handle coordination. -/
-theorem no_bank_implies_failure (W : WorkingSystem) (h_wf : WellFormed W) :
-    ¬HasBank W → ¬handles_coordination W := by
-  intro h_no_bank h_handles
-  have h_has_bank := coordination_requires_bank W h_wf h_handles
-  exact h_no_bank h_has_bank
-
-/-- Impossibility #6: No redeemability → cannot handle truth pressure. -/
-theorem no_redeemability_implies_failure (W : WorkingSystem) (h_wf : WellFormed W) :
-    ¬HasRedeemability W → ¬handles_truth_pressure W := by
-  intro h_no_redeem h_handles
-  have h_has_redeem := truth_pressure_requires_redeemability W h_wf h_handles
-  exact h_no_redeem h_has_redeem
+    handles_truth_pressure W → HasRedeemability W := h_wf.2.2.2.2.2.mp
 
 
 /-! ## Global Impossibility and Convergence -/
@@ -395,43 +329,6 @@ theorem all_features_constitute_bank (W : WorkingSystem) :
   containsBankPrimitives W := by
   intro h1 h2 h3 h4 h5 h6
   exact ⟨h1, h2, h3, h4, h5, h6⟩
-
-/-- Global impossibility: A system missing ANY forced feature cannot
-    satisfy ALL properties.
-
-    This is the summary impossibility theorem: you need all six features
-    to handle all six constraints. -/
-theorem missing_any_feature_implies_failure (W : WorkingSystem) (h_wf : WellFormed W) :
-    (¬HasBubbles W ∨ ¬HasTrustBridges W ∨ ¬HasHeaders W ∨
-     ¬HasRevocation W ∨ ¬HasBank W ∨ ¬HasRedeemability W) →
-    ¬SatisfiesAllProperties W := by
-  intro h_missing h_satisfies
-  have ⟨h1, h2, h3, h4, h5, h6⟩ := h_satisfies
-  cases h_missing with
-  | inl h => exact h (distributed_agents_require_bubbles W h_wf h1)
-  | inr h => cases h with
-    | inl h => exact h (bounded_audit_requires_trust_bridges W h_wf h2)
-    | inr h => cases h with
-      | inl h => exact h (export_requires_headers W h_wf h3)
-      | inr h => cases h with
-        | inl h => exact h (adversarial_requires_revocation W h_wf h4)
-        | inr h => cases h with
-          | inl h => exact h (coordination_requires_bank W h_wf h5)
-          | inr h => exact h (truth_pressure_requires_redeemability W h_wf h6)
-
-/-- Main convergence theorem: under constraints, any working architecture
-    contains the Bank primitives (all six forced features). -/
-theorem convergence_under_constraints' (W : WorkingSystem) (h_wf : WellFormed W) :
-    SatisfiesAllProperties W → containsBankPrimitives W := by
-  intro h_satisfies
-  have ⟨h1, h2, h3, h4, h5, h6⟩ := h_satisfies
-  have hB := distributed_agents_require_bubbles W h_wf h1
-  have hT := bounded_audit_requires_trust_bridges W h_wf h2
-  have hH := export_requires_headers W h_wf h3
-  have hR := adversarial_requires_revocation W h_wf h4
-  have hK := coordination_requires_bank W h_wf h5
-  have hD := truth_pressure_requires_redeemability W h_wf h6
-  exact all_features_constitute_bank W hB hT hH hR hK hD
 
 
 /-! ## Sharp Behavioral Equivalence
@@ -1527,10 +1424,10 @@ theorem closed_endorsement_without_redeemability_embeds
 /-- Convergence theorem (structural version): under structural forcing,
     any system satisfying all properties contains Bank primitives.
 
-    This is the preferred convergence statement.  Unlike
-    `convergence_under_constraints'`, it does **not** depend on
-    assumed biconditionals — only on the forward-direction implications
-    justified by the structural models. -/
+    This is the preferred convergence statement.  Unlike the WellFormed-
+    extraction path (via `wellformed_implies_structurally_forced`), this
+    theorem does **not** depend on assumed biconditionals — only on the
+    forward-direction implications justified by the structural models. -/
 theorem convergence_structural (W : WorkingSystem) (h_sf : StructurallyForced W) :
     SatisfiesAllProperties W → containsBankPrimitives W := by
   intro ⟨h1, h2, h3, h4, h5, h6⟩

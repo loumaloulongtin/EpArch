@@ -116,12 +116,13 @@ theorem success_feasible :
 
 /-- Paper-facing name: success forces Bank primitives.
 
-    Any working system that is WellFormed and satisfies all operational
-    properties MUST contain Bank primitives. This is the minimality /
-    forced-primitives direction. -/
+    Accepts the WellFormed hypothesis for backward compatibility, but
+    routes through `convergence_structural` via `wellformed_implies_structurally_forced`.
+    The proof is therefore structurally grounded, not a biconditional projection. -/
 theorem goals_force_bank_primitives :
     ∀ W : WorkingSystem, WellFormed W → SatisfiesAllProperties W → containsBankPrimitives W :=
-  convergence_under_constraints'
+  fun W h_wf h_sat =>
+    convergence_structural W (wellformed_implies_structurally_forced W h_wf) h_sat
 
 
 /-! ## Headline Theorem: Existence Under Constraints -/

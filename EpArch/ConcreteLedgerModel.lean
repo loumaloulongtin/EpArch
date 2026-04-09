@@ -928,14 +928,9 @@ theorem concrete_convergence_applies :
     handles_truth_pressure ConcreteWorkingSystem →
     containsBankPrimitives ConcreteWorkingSystem := by
   intro h_wf h_dist h_audit h_export h_adv h_coord h_truth
-  exact ⟨
-    distributed_agents_require_bubbles ConcreteWorkingSystem h_wf h_dist,
-    bounded_audit_requires_trust_bridges ConcreteWorkingSystem h_wf h_audit,
-    export_requires_headers ConcreteWorkingSystem h_wf h_export,
-    adversarial_requires_revocation ConcreteWorkingSystem h_wf h_adv,
-    coordination_requires_bank ConcreteWorkingSystem h_wf h_coord,
-    truth_pressure_requires_redeemability ConcreteWorkingSystem h_wf h_truth
-  ⟩
+  exact convergence_structural ConcreteWorkingSystem
+    (wellformed_implies_structurally_forced ConcreteWorkingSystem h_wf)
+    ⟨h_dist, h_audit, h_export, h_adv, h_coord, h_truth⟩
 
 
 /-! ## ForcingEmbedding Instance
