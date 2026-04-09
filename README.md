@@ -173,16 +173,28 @@ See [DOCS/AXIOMS.md](DOCS/AXIOMS.md) for the full account.
 
 ---
 
-## What Is Not Formalized
+## Kernel Boundary
 
-Some paper concepts are explicitly out of scope for this formalization:
+EpArch formalizes the coordination-relevant architectural layer, not the full internal epistemology of every possible agent. The boundary is drawn to preserve **agent agnosticism**: the kernel must remain applicable across heterogeneous systems — including minimal agents such as an odometer-like system that tracks position without facing the full human-style constraint bundle — and must scale down gracefully without assuming a thick cognition model.
+
+### Out of scope for the kernel
+
+These are not missing features. They are excluded to preserve agent-agnostic applicability:
 
 | Concept | Reason |
 |---|---|
-| Full Ladder dynamics (belief update rules) | Requires an agent belief model beyond the scope of this spec |
-| Multi-bubble conflict routing | High formal cost; attachment points exist for future extension |
-| Domain-level correlated adversaries (graded independence) | Current model handles binary independent/common-mode; graded spectrum is future work |
+| Full Ladder dynamics (belief update rules, graded modulation) | Requires an agent-internal belief model; including it would break agent agnosticism |
+| Rich access/consultation semantics beyond the typed interface | Agent-specific; the kernel formalizes the interface surface only |
+| Agent phenomenology, consciousness, or omniscience-adjacent claims | Not coordination-relevant unless they change theorem-level coordination requirements |
 | Empirical implementation correspondence | Deliberately not claimed — architectural spec, not deployment protocol |
+
+### Possible downstream extensions
+
+| Concept | Notes |
+|---|---|
+| Multi-bubble conflict routing | Attachment points exist; implementable as an agent-specific overlay |
+| Domain-level correlated adversaries (graded independence) | Binary independent/common-mode is formalized; graded refinement belongs to an overlay |
+| Richer deposit recovery transitions | Application-layer state tracking; not a kernel requirement |
 
 ---
 

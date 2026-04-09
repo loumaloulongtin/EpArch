@@ -29,6 +29,8 @@ unconditionally and require no configuration.
 
 The 30 `ClusterTag` values in `ClusterRegistry.lean` are the canonical names for all of these.
 
+**Why this matters architecturally:** Modularity is not only a proof-engineering convenience — it is a kernel design constraint. EpArch must remain applicable across agents that do not share the same internal epistemology or constraint bundle, including minimal agents (e.g., an odometer-like system tracking position) that face only a sub-bundle of the full set. The cluster architecture ensures the kernel scales down gracefully: a system that does not face `FallibilityConstraint` simply does not receive the clusters that depend on it, and the remaining claims stay sound. This is why the kernel boundary stops at coordination-relevant architectural requirements rather than agent-internal dynamics models.
+
 ---
 
 ## 2. User-Facing vs. Internal
