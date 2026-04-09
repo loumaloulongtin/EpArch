@@ -1355,6 +1355,114 @@ theorem discriminating_import_without_headers_embeds
   no_sound_complete_uniform_import R.toImport f h_uniform h_sound h_complete
 
 
+/-! ### Scenario 5: Bounded Verification (Bounded Audit → Trust Bridges)
+
+When full verification is costly, some claims exceed any fixed budget.
+A verification-only import policy cannot handle those claims.
+
+`RepresentsBoundedVerification` enriches a `WorkingSystem` with a
+concrete claim universe where at least one claim exceeds the verification
+budget.  When `¬HasTrustBridges`, the system is in the
+`BoundedVerification` scenario. -/
+
+/-- A system represents bounded verification if, absent trust bridges,
+    it faces claims whose verification cost exceeds the budget.
+
+    The `hard_claim_without_trust` field is the bridge axiom: without
+    trust-based import, the system must reverify every claim, but at
+    least one claim exceeds the budget. -/
+structure RepresentsBoundedVerification (W : WorkingSystem) where
+  /-- The claim type. -/
+  Claim : Type
+  /-- Cost to fully verify a claim. -/
+  verify_cost : Claim → Nat
+  /-- Maximum verification budget per import. -/
+  budget : Nat
+  /-- A claim that exceeds the budget. -/
+  hard_claim : Claim
+  /-- The hard claim genuinely exceeds the budget. -/
+  exceeds_budget : verify_cost hard_claim > budget
+
+/-- Extract `BoundedVerification` from a system that
+    `RepresentsBoundedVerification`. -/
+def RepresentsBoundedVerification.toVerification {W : WorkingSystem}
+    (R : RepresentsBoundedVerification W) : BoundedVerification where
+  Claim := R.Claim
+  verify_cost := R.verify_cost
+  budget := R.budget
+  hard_claim := R.hard_claim
+  exceeds_budget := R.exceeds_budget
+
+/-- **Right-branch embedding (trust direction).**
+
+    A system with bounded verification and no trust bridges:
+    `verification_only_import_incomplete` fires via Nat arithmetic
+    to prove that at least one claim cannot be reverified within
+    budget. -/
+theorem bounded_verification_without_trust_embeds
+    (W : WorkingSystem)
+    (R : RepresentsBoundedVerification W)
+    (_h_no_trust : ¬HasTrustBridges W)
+    (h_all_within : ∀ c, R.verify_cost c ≤ R.budget) :
+    False :=
+  verification_only_import_incomplete R.toVerification h_all_within
+
+
+/-! ### Scenario 6: Closed Endorsement (Truth Pressure → Redeemability)
+
+In a closed endorsement system (no external constraint surface), the
+only notion of truth is internal consensus.  Every endorsed claim is
+true by definition — there is nothing external it could fail against.
+
+`RepresentsClosedEndorsement` enriches a `WorkingSystem` with a
+concrete claim, its endorsement, and evidence that the system is
+closed absent redeemability.  When `¬HasRedeemability`, the system
+is in the `ClosedEndorsement` scenario. -/
+
+/-- A system represents a closed endorsement scenario if, absent
+    redeemability, endorsed claims cannot be externally falsified.
+
+    The `closed_without_redeemability` field is the bridge axiom:
+    without external constraint-surface contact, no endorsed claim
+    is falsifiable. -/
+structure RepresentsClosedEndorsement (W : WorkingSystem) where
+  /-- The claim type. -/
+  Claim : Type
+  /-- Internal endorsement (consensus). -/
+  endorsed : Claim → Prop
+  /-- External falsifiability. -/
+  externally_falsifiable : Claim → Prop
+  /-- Without redeemability, the system is closed. -/
+  closed_without_redeemability :
+    ¬HasRedeemability W → ∀ c, endorsed c → ¬externally_falsifiable c
+
+/-- Extract `ClosedEndorsement` from a system that
+    `RepresentsClosedEndorsement` and lacks redeemability. -/
+def RepresentsClosedEndorsement.toClosed {W : WorkingSystem}
+    (R : RepresentsClosedEndorsement W) (h_no_redeem : ¬HasRedeemability W) :
+    ClosedEndorsement where
+  Claim := R.Claim
+  endorsed := R.endorsed
+  externally_falsifiable := R.externally_falsifiable
+  closed := R.closed_without_redeemability h_no_redeem
+
+/-- **Right-branch embedding (truth pressure direction).**
+
+    A system with closed endorsement and no redeemability:
+    `closed_system_unfalsifiable` fires to prove no endorsed claim
+    can be simultaneously falsifiable — contradicting truth pressure. -/
+theorem closed_endorsement_without_redeemability_embeds
+    (W : WorkingSystem)
+    (R : RepresentsClosedEndorsement W)
+    (h_no_redeem : ¬HasRedeemability W)
+    (c : R.Claim)
+    (h_end : R.endorsed c)
+    (h_fals : R.externally_falsifiable c) :
+    False :=
+  let M := R.toClosed h_no_redeem
+  closed_system_unfalsifiable M ⟨c, h_end, h_fals⟩
+
+
 /-! ## Convergence and Impossibility (Structural Versions) -/
 
 /-- Convergence theorem (structural version): under structural forcing,
