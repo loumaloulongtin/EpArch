@@ -1083,9 +1083,8 @@ theorem noBubbles_bridge_impossible
     (hf₁ : ∀ c, f c ↔ agent1_accept c)
     (hf₂ : ∀ c, f c ↔ agent2_accept c) :
     False :=
-  absurd (bubbles_forced_by_bridge NoBubblesSystem
-    ⟨noBubblesDisagreement.toDisagreement, f, hf₁, hf₂⟩)
-    no_bubbles_lacks_bubbles
+  bridge_bubbles_impossible NoBubblesSystem
+    ⟨noBubblesDisagreement.toDisagreement, f, hf₁, hf₂⟩
 
 
 /-! ### Deficient System 2: No Shared Ledger (Bank) -/
@@ -1174,9 +1173,8 @@ theorem noBank_bridge_impossible
     (h₁ : private_access .alice d)
     (h₂ : private_access .bob d) :
     False :=
-  absurd (bank_forced_by_bridge NoBankSystem
-    ⟨noBankCoordination.toPrivateStorage no_bank_lacks_bank, d, h₁, h₂⟩)
-    no_bank_lacks_bank
+  bridge_bank_impossible NoBankSystem
+    ⟨noBankCoordination.toPrivateStorage no_bank_lacks_bank, d, h₁, h₂⟩
 
 
 /-! ### Deficient System 3: No Revocation (Adversarial → Revocation)
@@ -1269,9 +1267,8 @@ theorem noRevocation_bridge_impossible
     (n : Nat)
     (h : iter lifecycle_step n LifecycleState.accepted ≠ LifecycleState.accepted) :
     False :=
-  absurd (revocation_forced_by_bridge NoRevocationSystem
-    ⟨noRevocationLifecycle.toLifecycle no_revocation_lacks_revocation, n, h⟩)
-    no_revocation_lacks_revocation
+  bridge_revocation_impossible NoRevocationSystem
+    ⟨noRevocationLifecycle.toLifecycle no_revocation_lacks_revocation, n, h⟩
 
 
 /-! ### Deficient System 4: No Headers (Export → Headers)
@@ -1363,9 +1360,8 @@ theorem noHeaders_bridge_impossible
     (h_sound : f .bad_data = false)
     (h_complete : f .good_data = true) :
     False :=
-  absurd (headers_forced_by_bridge NoHeadersSystem
-    ⟨noHeadersImport.toImport, f, h_uniform, h_sound, h_complete⟩)
-    no_headers_lacks_headers
+  bridge_headers_impossible NoHeadersSystem
+    ⟨noHeadersImport.toImport, f, h_uniform, h_sound, h_complete⟩
 
 
 /-! ### Deficient System 5: No Trust Bridges (Bounded Audit → Trust)
@@ -1443,9 +1439,8 @@ theorem noTrust_hard_claim_exceeds :
 theorem noTrust_bridge_impossible
     (h : ∀ c : AuditClaim, audit_verify_cost c ≤ 100) :
     False :=
-  absurd (trust_forced_by_bridge NoTrustSystem
-    ⟨noTrustVerification.toVerification, h⟩)
-    no_trust_lacks_trust
+  bridge_trust_impossible NoTrustSystem
+    ⟨noTrustVerification.toVerification, h⟩
 
 
 /-! ### Deficient System 6: No Redeemability (Truth Pressure → Redeemability)
@@ -1534,9 +1529,8 @@ theorem noRedeemability_bridge_impossible
     (h_end : truth_endorsed c)
     (h_fals : truth_falsifiable_closed c) :
     False :=
-  absurd (redeemability_forced_by_bridge NoRedeemabilitySystem
-    ⟨noRedeemabilityClosed.toClosed no_redeemability_lacks_redeemability, c, h_end, h_fals⟩)
-    no_redeemability_lacks_redeemability
+  bridge_redeemability_impossible NoRedeemabilitySystem
+    ⟨noRedeemabilityClosed.toClosed no_redeemability_lacks_redeemability, c, h_end, h_fals⟩
 
 
 /-! ## Concrete Instance Summary
