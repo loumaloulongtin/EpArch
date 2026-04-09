@@ -32,7 +32,7 @@ these structural elements, but implementations can differ.
 ## Dependencies
 
 - **SystemSpec.lean:** provides the `SystemSpec` structure that `MinimalConstraints` wraps
-- **Commitments.lean:** the axioms that are shown to be forced
+- **Commitments.lean:** the commitments that are shown to be forced
 - **ConcreteLedgerModel.lean:** proves `WorkingSystem` is nonempty (non-vacuity)
 -/
 
@@ -252,7 +252,7 @@ def SatisfiesAllProperties (W : WorkingSystem) : Prop :=
 
 A system is "well-formed" if its behavioral capabilities are backed by
 the corresponding architectural features. This is the key invariant that
-allows the linking axioms to become theorems.
+grounds the linking theorems operationally.
 
 In a real system, you can't "handle distributed agents" without bubbles,
 you can't "handle export" without headers, etc. The well-formedness predicate
@@ -741,7 +741,7 @@ those deposits must be stored somewhere both agents can access.  In a
 private-only storage model (each agent's store is invisible to others),
 no deposit is simultaneously accessible to two agents.
 
-**Proof technique.**  Contradiction with the isolation axiom. -/
+**Proof technique.**  Contradiction with the isolation condition. -/
 
 /-- A system where each agent has private, isolated storage. -/
 structure PrivateOnlyStorage where
@@ -774,7 +774,7 @@ that passes consensus is true by definition — there is nothing external
 it could fail against.  But truth pressure requires that some endorsed
 claims CAN fail.  A closed system cannot satisfy truth pressure.
 
-**Proof technique.**  Contradiction: the closure axiom says endorsed
+**Proof technique.**  Contradiction: the closure condition holds that endorsed
 claims are unfalsifiable, but truth pressure supplies one that is
 endorsed AND falsifiable. -/
 
@@ -900,7 +900,7 @@ derived directly from the structural impossibility theorems — no
   `SatisfiesAllProperties`, ¬HasFeature, and the convergence pipeline are
   not involved.
 
-This matches what is actually proven: deficient systems + bridge axiom ⇒
+This matches what is actually proven: deficient systems + bridge hypothesis ⇒
 contradiction, NOT deficient system alone ⇒ contradiction. -/
 
 /-- A system is bridge-committed on scope: it provides a flat acceptance
@@ -1074,7 +1074,7 @@ def RepresentsDisagreement.toDisagreement {W : WorkingSystem}
     the acceptance function must agree with both agents — but
     `flat_scope_impossible` proves this is contradictory.
 
-    The hypothesis `flat_accept` is the embedding axiom: without scope
+    The hypothesis `flat_accept` is the bridge condition: without scope
     separation, the system commits to a single acceptance predicate that
     purports to faithfully represent both agents.  The right branch of
     `ForcingEmbedding.scope_embed` is then constructible, and
@@ -1172,7 +1172,7 @@ theorem private_coordination_without_bank_embeds
     coordination: uses the right branch when ¬HasBank.
 
     The `shared_deposit` field provides the witness: agents claim to
-    coordinate on this deposit, but the isolation axiom makes the
+    coordinate on this deposit, but the isolation condition makes the
     scenario impossible. -/
 theorem private_coordination_bank_embed
     (W : WorkingSystem) (R : RepresentsPrivateCoordination W)
@@ -1235,7 +1235,7 @@ def RepresentsMonotonicLifecycle.toLifecycle {W : WorkingSystem}
     `monotonic_no_exit` fires by induction, proving that the accepted
     state cannot be escaped at any step count `n`.  This is the
     strongest proof in the repo — genuine induction, not just
-    axiom contradiction. -/
+    hypothesis contradiction. -/
 theorem monotonic_lifecycle_without_revocation_embeds
     (W : WorkingSystem)
     (R : RepresentsMonotonicLifecycle W)
@@ -1269,7 +1269,7 @@ distinguish.  When `¬HasHeaders`, the system is in the
     accepts the bad claim or rejects the good one.
 
     Whether a system's import function is ACTUALLY uniform (the bridge
-    axiom) depends on the system and is carried as a separate hypothesis
+    hypothesis) depends on the system and is carried as a separate hypothesis
     in the right-branch embedding theorems. -/
 structure RepresentsDiscriminatingImport (W : WorkingSystem) where
   /-- The claim type crossing scope boundaries. -/
@@ -1294,8 +1294,8 @@ def RepresentsDiscriminatingImport.toImport {W : WorkingSystem}
 
     A system with discriminating import needs and no headers:
     any import function `f` must satisfy `f good = true` and
-    `f bad = false` for sound-and-complete import.  The bridge axiom
-    (taken as hypothesis `h_uniform`) says that without headers,
+    `f bad = false` for sound-and-complete import.  The bridge hypothesis
+    (`h_uniform`) says that without headers,
     the import function is uniform: `f x = f y` for all `x y`.
     `no_sound_complete_uniform_import` fires via `Bool.noConfusion`
     to derive False. -/
@@ -1324,7 +1324,7 @@ budget.  When `¬HasTrustBridges`, the system is in the
 /-- A system represents bounded verification if, absent trust bridges,
     it faces claims whose verification cost exceeds the budget.
 
-    The `hard_claim_without_trust` field is the bridge axiom: without
+    The `hard_claim_without_trust` field is the bridge condition: without
     trust-based import, the system must reverify every claim, but at
     least one claim exceeds the budget. -/
 structure RepresentsBoundedVerification (W : WorkingSystem) where
@@ -1378,7 +1378,7 @@ is in the `ClosedEndorsement` scenario. -/
 /-- A system represents a closed endorsement scenario if, absent
     redeemability, endorsed claims cannot be externally falsified.
 
-    The `closed_without_redeemability` field is the bridge axiom:
+    The `closed_without_redeemability` field is the bridge condition:
     without external constraint-surface contact, no endorsed claim
     is falsifiable. -/
 structure RepresentsClosedEndorsement (W : WorkingSystem) where

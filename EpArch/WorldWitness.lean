@@ -7,7 +7,7 @@ semantics, proving that the W_* bundles are satisfiable (not vacuous).
 ## Purpose
 
 The witness model is NOT a claim about "how the real world works."
-It's a satisfiability proof: the axiom bundles we use in obligation
+It's a satisfiability proof: the assumption bundles we use in obligation
 theorems are consistent—there exists at least one model satisfying them.
 
 ## Design

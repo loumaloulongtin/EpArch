@@ -1233,7 +1233,7 @@ def noRevocationLifecycle : RepresentsMonotonicLifecycle NoRevocationSystem wher
       by the absorbing property.
 
     This is the richest proof in the repo — genuine mathematical
-    induction, not just axiom contradiction.  The lifecycle data
+    induction, not just hypothesis contradiction.  The lifecycle data
     is fully constructible; the model does real work. -/
 theorem noRevocation_accepted_permanent (n : Nat) :
     iter lifecycle_step n LifecycleState.accepted = LifecycleState.accepted :=

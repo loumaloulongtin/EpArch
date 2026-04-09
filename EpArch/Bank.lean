@@ -138,7 +138,7 @@ def repair (_B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance)
   { d with status := .Candidate }
 
 
-/-! ## Consensus (for anti-relativism axioms) -/
+/-! ## Consensus (for anti-relativism claims) -/
 
 /-- Consensus: claim P is endorsed within bubble B.
     Purely intra-bubble — no external constraint-surface contact required.

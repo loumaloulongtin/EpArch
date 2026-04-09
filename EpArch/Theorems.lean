@@ -39,8 +39,8 @@ and the "competition gate corners" that test each architectural feature.
 - Skepticism, Regress, Testimony, Higher-Order Evidence, etc.
 - Each mapped to a field failure or type-level mismatch
 
-### Bridge Axioms & Pathology Summary (lines ~1717–1860)
-- Linking axioms connecting abstract commitments to StepSemantics
+### Bridge Theorems & Pathology Summary (lines ~1717–1860)
+- Linking theorems connecting abstract commitments to StepSemantics
 - Key grounding relationships
 
 ### Competition Gate Corners (lines ~1867–2814)
@@ -1754,13 +1754,13 @@ theorem extended_cognition_dissolution (e : extended_case) :
   artifact_bubble_membership e
 
 
-/-! ## Bridge Axioms
+/-! ## Bridge Theorems
 
-These axioms were moved from StepSemantics.lean to restore the clean
+These theorems were moved from StepSemantics.lean to restore the clean
 semantics layer.  Now proved via structural definitions.
 
-StepSemantics.lean is the discharge layer where axioms become theorems.
-Both bridge axioms are now theorems via structural analysis. -/
+StepSemantics.lean is the discharge layer where forced conditions become theorems.
+Both bridge theorems follow from structural analysis. -/
 
 /-- Monolithic case: no factorization means no localization possible.
 
