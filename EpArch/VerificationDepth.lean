@@ -7,11 +7,10 @@ EpArch/VerificationDepth.lean — Kernel-grounded verification depth
 It follows from the structural properties of the verification relation
 itself, as witnessed by the `DepthClaim` proposition family.
 
-`DepthClaim n` is a proposition with a unique canonical proof of syntactic
-depth n — one `step` constructor per level.  To check a proof of
-`DepthClaim n`, the kernel must perform exactly n ι-reductions.  There is
-no shorter closed proof term.  A budget-d verifier that terminates in fewer
-than n steps is incomplete: it rejects `DepthClaim (d+1)`, which is true.
+`DepthClaim n` is a depth-indexed proposition family — one `step` constructor
+per level.  `bounded_verify`, the budget-d checker defined here, traverses
+exactly n recursive steps to decide a claim of depth n.  A budget-d verifier
+rejects `DepthClaim (d+1)`, which is true — making any fixed budget incomplete.
 
 ## Architecture connection
 
@@ -56,16 +55,15 @@ inductive DepthClaim : Nat → Prop where
   | base : DepthClaim 0
   | step : DepthClaim n → DepthClaim (n + 1)
 
-/-- Every `DepthClaim n` is provable.  The canonical proof term has exactly
-    n constructors — there is no shorter closed proof of the same type. -/
+/-- Every `DepthClaim n` is provable.  The canonical proof has n constructors. -/
 theorem depth_claim_provable (n : Nat) : DepthClaim n := by
   induction n with
   | zero      => exact .base
   | succ n ih => exact .step ih
 
 /-- A budget-d decision procedure: accepts "claim of depth n" iff n ≤ d.
-    The recursion on both arguments is the verification cost — it cannot be
-    collapsed to a non-recursive function without losing completeness. -/
+    Recurses on both depth and budget; `bounded_verify_incomplete` shows
+    every fixed budget misses some true claim in the family. -/
 def bounded_verify : Nat → Nat → Bool
   | _,     0     => true
   | 0,     _ + 1 => false
