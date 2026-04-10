@@ -6,7 +6,7 @@ Standalone Lean 4 framework for reasoning about bounded epistemic systems under 
 
 [![CI](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml/badge.svg)](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml)
 
-**539 theorems. 0 axiom declarations. 0 sorries.**
+**640 theorems. 0 axiom declarations. 0 sorries.**
 
 ```bash
 lake build   # Lean 4.3.0, no Mathlib
