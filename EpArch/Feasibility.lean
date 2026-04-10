@@ -239,51 +239,45 @@ theorem w_bounded_forces_incompleteness (C : @EpArch.WorldCtx.{0})
   let M : BoundedVerification := ⟨C.Claim, fun _ => k, 0, P, h_pos⟩
   exact ⟨P, k, M, h_pos, h_req, rfl, verification_only_import_incomplete M⟩
 
-/-- Given a world satisfying W_lies_possible and a lifecycle step function
-    where every false claim is absorbing (h_absorb), the world's false claim
-    is permanently injectable and permanently trapped.
+/-- Any world satisfying W_lies_possible contains a false claim that is permanently
+    trapped in every revocation-free lifecycle over that world's claim type.
 
-    This is a bridge schema: `step` and `h_absorb` are extra parameters
-    representing a candidate revocation-free lifecycle.  The theorem shows
-    that such a lifecycle, operating in a world with lies, cannot escape a
-    false claim — it does not conclude that revocation is forced from
-    W_lies_possible alone.
+    For any step function where every false claim is absorbing, the same false claim
+    supplied by W is injectable by every agent (W.unrestricted_utterance) and
+    indelible under that step function (monotonic_no_exit).
 
-    The SAME P from W is the claim that is injectable by every agent
-    (W.unrestricted_utterance) and indelible under the given step function
-    (monotonic_no_exit). -/
+    The schema parameters `step` and `h_absorb` are universally quantified in the
+    conclusion: the result holds for all candidate revocation-free lifecycles, not
+    just a specific one supplied as a hypothesis. -/
 theorem w_lies_forces_revocation_need (C : @EpArch.WorldCtx.{0})
-    (W : C.W_lies_possible)
-    -- Lifecycle over the world's claim type; step fixes every false claim
-    (step : C.Claim → C.Claim)
-    (h_absorb : ∀ w P, ¬C.Truth w P → step P = P) :
-    -- The SAME false claim is injectable by every agent AND permanently trapped
-    ∃ w P, ¬C.Truth w P ∧ (∀ a, C.Utter a P) ∧ ∀ n, iter step n P = P := by
+    (W : C.W_lies_possible) :
+    ∃ w P, ¬C.Truth w P ∧ (∀ a, C.Utter a P) ∧
+      ∀ (step : C.Claim → C.Claim),
+        (∀ w' P', ¬C.Truth w' P' → step P' = P') →
+        ∀ n, iter step n P = P := by
   have ⟨w, P, h_false⟩ := W.some_false
-  let lc : MonotonicLifecycle := ⟨C.Claim, P, step, h_absorb w P h_false⟩
-  exact ⟨w, P, h_false, fun a => W.unrestricted_utterance a P, monotonic_no_exit lc⟩
+  exact ⟨w, P, h_false, fun a => W.unrestricted_utterance a P,
+    fun step h_absorb => monotonic_no_exit ⟨C.Claim, P, step, h_absorb w P h_false⟩⟩
 
-/-- Given a world satisfying W_partial_observability, an endorsement predicate,
-    obs_stable (same observations → same endorsement), and closed (endorsed → true),
-    no obs-stable closed endorsement system can endorse the world's underdetermined claim.
+/-- Any world satisfying W_partial_observability has a claim that cannot be endorsed
+    by any obs-stable closed endorsement system.
 
-    This is a bridge schema: `endorsed`, `obs_stable`, and `closed` are extra
-    parameters representing a candidate closed endorsement system.  The theorem
-    shows such a system cannot endorse every claim the world has.  The connection
-    to redeemability in the architecture follows from this gap, not from the
-    theorem statement alone.
+    For any endorsement predicate that is obs-stable (same observations → same
+    endorsement) and closed (endorsed → true), the underdetermined claim from W
+    cannot be endorsed in some world.
 
-    Proof: the underdetermined P from W is endorsed in w0 (by assumption),
-    propagated to w1 via obs_stable, forcing Truth in both worlds via closed —
-    contradicting the biconditional from W.obs_underdetermines. -/
+    The schema parameters `endorsed`, `obs_stable`, and `closed` are universally
+    quantified in the conclusion: the result holds for all candidate closed
+    endorsement systems, not just a specific one supplied as a hypothesis. -/
 theorem w_partial_obs_forces_redeemability (C : @EpArch.WorldCtx.{0})
-    (W : C.W_partial_observability)
-    (endorsed : C.World → C.Claim → Prop)
-    (obs_stable : ∀ P w0 w1, C.PartialObs w0 w1 → endorsed w0 P → endorsed w1 P)
-    (closed : ∀ w P, endorsed w P → C.Truth w P) :
-    ∃ P w0, ¬endorsed w0 P := by
+    (W : C.W_partial_observability) :
+    ∃ P w0,
+      ∀ (endorsed : C.World → C.Claim → Prop),
+        (∀ P' w0' w1', C.PartialObs w0' w1' → endorsed w0' P' → endorsed w1' P') →
+        (∀ w P', endorsed w P' → C.Truth w P') →
+        ¬endorsed w0 P := by
   have ⟨P, w0, w1, h_obs, h_bic⟩ := W.obs_underdetermines
-  exact ⟨P, w0, fun h_end =>
+  exact ⟨P, w0, fun endorsed obs_stable closed h_end =>
     (h_bic.mp (closed w0 P h_end)) (closed w1 P (obs_stable P w0 w1 h_obs h_end))⟩
 
 
