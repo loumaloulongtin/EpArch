@@ -6,7 +6,7 @@ Standalone Lean 4 framework for reasoning about bounded epistemic systems under 
 
 [![CI](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml/badge.svg)](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml)
 
-**657 theorems. 0 axiom declarations. 0 sorries.**
+**648 theorems. 0 axiom declarations. 0 sorries.**
 
 ```bash
 lake build   # Lean 4.3.0, no Mathlib
@@ -37,7 +37,7 @@ def myConfig : EpArchConfig := {
   worlds      := [.lies_possible, .partial_observability]
 }
 
--- Which of the 30 clusters are active for this configuration:
+-- Which of the 29 clusters are active for this configuration:
 #eval EpArch.Meta.Config.showConfig myConfig
 
 -- Proof-carrying record: one machine-checked witness per cluster family:
@@ -57,7 +57,7 @@ EpArch is a machine-checked framework for reasoning about bounded epistemic syst
 The framework has three layers:
 - **Formal architecture** — core types, lifecycle semantics, commitments, forcing results, adversarial obligations, revision safety.
 - **Configurable certification surface** — `EpArchConfig` selects active constraints, goals, and world bundles; `certify` returns a `CertifiedProjection` for exactly the applicable theorem clusters.
-- **Modular extension substrate** — 30-cluster registry with explicit routing, proof-carrier layers, and contributor-facing extension recipes.
+- **Modular extension substrate** — 29-cluster registry with explicit routing, proof-carrier layers, and contributor-facing extension recipes.
 
 ---
 
@@ -130,8 +130,9 @@ The framework has three layers:
 | `AdversarialObligations.lean` | Attack/defense obligation theorems under world bundles |
 | `Agent/Corroboration.lean` | k-of-n corroboration guarantees and independence conditions |
 | `Commitments.lean` | The paper's 8 structural commitments; all proved as standalone theorems; `commitments_pack` bundles the unconditional ones (C3/C4b/C7b/C8) |
-| `Minimality.lean` | Structural impossibility models + alternative-architecture dismissals |
-| `Convergence.lean` | `StructurallyForced`, `ForcingEmbedding`, `convergence_structural`, bridge predicates |
+| `Minimality.lean` | Structural impossibility models + alternative-architecture dismissals; `Pressure` inductive as canonical dimension index |
+| `Convergence.lean` | `StructurallyForced`, `ForcingEmbedding`, `convergence_structural`, bridge predicates; six per-dimension `*_forces_*` theorems; `SystemOperationalBundle`, `WorldBridgeBundle` |
+| `VerificationDepth.lean` | Kernel-grounded verification depth: `DepthClaim` constructive witness; `bounded_verify` budget decision procedure; `DepthWorldCtx` instantiates `W_bounded_verification` by construction |
 | `BehavioralEquivalence.lean` | Observation-boundary equivalence; Bank flags determine behavior |
 | `Feasibility.lean` | Feasibility witnesses; world-to-structural bridge theorems; `world_assumptions_force_bank_primitives` (W_* bundles → `containsBankPrimitives`); `kernel_world_forces_bank_primitives` (zero-assumption corollary) |
 | `Health.lean` | Health goal predicates and necessity theorems |
@@ -139,9 +140,9 @@ The framework has three layers:
 | `Modularity.lean` | Lattice-stability: graceful scale-down and sub-level RevisionSafety (9 theorems) |
 | `Meta/TheoremTransport.lean` | Health-goal transport schema: all 5 health goals are transport-safe under Compatible extensions (Tier 3 closure) |
 | `Meta/Tier4Transport.lean` | Main theorem library transport: standalone commitments, structural, and ConcreteBankModel clusters (Tier 4 closure) |
-| `Meta/Modular.lean` | Constraint-subset modularity: `PartialWellFormed`, `modular` (∀ S ⊆ constraints, WellFormed-fragment → forcing results), `wellformed_is_modular` |
-| `Meta/ClusterRegistry.lean` | 30-cluster tag registry: `ClusterTag`, `EnabledXxxCluster` inductives, per-family canonical lists, `clusterEnabled`/`clusterDescription` routing |
-| `Meta/Config.lean` | Configurable certification engine: `CertifiedProjection`, `certify`, named proof witnesses for all 30 clusters |
+| `Meta/Modular.lean` | Constraint-subset modularity: `PartialWellFormed`, `modular` (∀ S ⊆ constraints, biconditional fragment → forcing projection), `allConstraints`/`noConstraints` |
+| `Meta/ClusterRegistry.lean` | 29-cluster tag registry: `ClusterTag`, `EnabledXxxCluster` inductives, per-family canonical lists, `clusterEnabled`/`clusterDescription` routing |
+| `Meta/Config.lean` | Configurable certification engine: `CertifiedProjection`, `certify`, named proof witnesses for all 29 clusters |
 
 ### Safety and Scope
 

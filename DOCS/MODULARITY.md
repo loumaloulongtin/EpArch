@@ -20,7 +20,7 @@ unconditionally and require no configuration.
 
 | Family | Count | What it covers |
 |---|---|---|
-| **Forcing clusters** (Tier 2) | 6 | Each constraint forces a structural feature. Two paths: (1) `PartialWellFormed`/`handles_X W` biconditional path via `StructurallyForced`; (2) structural `Represents*`/`*_forces_*` path — no `handles_X W`, no biconditionals, strictly stronger. Per-dimension `*_forces_*` theorems are orthogonal: each fires independently (`disagreement_forces_bubbles`, `private_coordination_forces_bank`, `monotonic_lifecycle_forces_revocation`, `discriminating_import_forces_headers`, `bounded_verification_forces_trust_bridges`, `closed_endorsement_forces_redeemability`). |
+| **Forcing clusters** (Tier 2) | 6 | Each constraint forces a structural feature. Two paths: (1) `StructurallyForced W`/`handles_X W` operational path — `StructurallyForced.forcing : ∀ P : Pressure, handles_pressure W P → forced_feature W P`; (2) structural `Represents*`/`*_forces_*` path — no `handles_X W`, no biconditionals, strictly stronger. Per-dimension `*_forces_*` theorems are orthogonal: each fires independently (`disagreement_forces_bubbles`, `private_coordination_forces_bank`, `monotonic_lifecycle_forces_revocation`, `discriminating_import_forces_headers`, `bounded_verification_forces_trust_bridges`, `closed_endorsement_forces_redeemability`). |
 | **Goal transport** (Tier 3) | 6 | Each health goal is preserved under compatible model extension |
 | **Tier 4 library clusters** | 5 | Commitments pack, structural theorems, LTS-universal gates, bank-goal transport |
 | **World obligations** (Tier 1) | 8 | Each `W_*` bundle enables a slice of adversarial/world theorems |
@@ -33,6 +33,18 @@ The 29 `ClusterTag` values in `ClusterRegistry.lean` are the canonical names for
 
 **Structural forcing path (stronger than biconditionals):** Beyond the `PartialWellFormed`/`handles_X W` biconditional path, each Tier 2 cluster has a direct `Represents*`/`*_forces_*` proof that requires no `WellFormed`, no `handles_X W`, and no biconditionals. Any system that concretely instantiates one EpArch operational pressure (by supplying a `Represents*` witness) is forced to have the matching primitive. These six theorems are strictly orthogonal — each fires independently. Bundled together, `SystemOperationalBundle W` (scope + headers + bank) and `WorldBridgeBundle W` (revocation + trust + redeemability) feed the headline `bundled_structure_forces_bank_primitives` theorem in Feasibility.lean: four arguments, any world, no `WorldCtx`.
 
+### What exhaustiveness means here
+
+EpArch does not claim that reality contains only six possible pressures in every conceivable theory. It claims that, at EpArch's chosen agent-agnostic architectural boundary, the kernel currently recognizes six pressure classes. The `Pressure` inductive type makes that inventory machine-exhaustive within the theory: every `cases P` in a proof is checked for coverage by Lean's kernel, so nothing can be silently missing.
+
+A proposed seventh dimension is not a counterexample merely because it exists in some field-specific vocabulary. To qualify, it must:
+
+1. live at the same agent-agnostic architectural level (not an implementation detail or domain-local jargon);
+2. be a genuine operational pressure, not a sub-case of one of the existing six;
+3. admit the same forcing treatment — a `Represents*` structural witness, a `handles_*`/`Has*` pair, and the corresponding impossibility model.
+
+If it fails that test, it is outside EpArch's scope rather than against it. If it passes, the theory extends cleanly: add a new `Pressure` constructor and the compiler immediately flags every `cases P` site that requires the new forcing chain to be supplied. The exhaustiveness is architectural discipline, not a metaphysical claim about the number of pressures in the world.
+
 ---
 
 ## 2. User-Facing vs. Internal
@@ -42,7 +54,7 @@ does what prevents confusion about where to look and where to edit.
 
 ### User-facing surface
 - **`EpArchConfig`** — user-supplied record of `constraints`, `goals`, `worlds` lists.
-- **`ClusterTag`** — the 30 cluster identifiers; what a user cites when requesting certification.
+- **`ClusterTag`** — the 29 cluster identifiers; what a user cites when requesting certification.
 - **`certify`** — `certify : EpArchConfig → CertifiedProjection cfg`; returns a record with
   one indexed witness per family. Access proof content via:
   `(certify myConfig).goalWitnesses`, `.tier4Witnesses`, `.worldWitnesses`,
@@ -209,7 +221,7 @@ is a documentation bug. The three layers must always agree:
 ```lean
 -- Minimality.lean
 theorem my_constraint_requires_feature (W : WorkingSystem)
-    (h : WellFormed W) (hC : handles_my_constraint W) : HasMyFeature W := ...
+    (h : StructurallyForced W) (hC : handles_my_constraint W) : HasMyFeature W := ...
 
 -- ClusterRegistry.lean — add to ClusterTag:
 | forcing_my_constraint
@@ -219,8 +231,8 @@ theorem my_constraint_requires_feature (W : WorkingSystem)
 
 -- Config.lean — add arm to constraintSpec match:
 | .forcing_my_constraint => {
-    statement := ∀ W, WellFormed W → handles_my_constraint W → HasMyFeature W
-    proof     := my_constraint_requires_feature }
+    statement := ∀ W, StructurallyForced W → handles_my_constraint W → HasMyFeature W
+    proof     := fun W sf => sf.forcing .my_constraint (by exact hC) }
 ```
 
 ### New goal / world / Tier 4 cluster
@@ -269,7 +281,7 @@ These rules prevent the registry, config, and docs from drifting apart.
 | **I3** | Named `cluster_*` pack theorems (e.g. `commitments_pack`, `structural_theorems_unconditional`, `lts_theorems_step_universal`) remain the authoritative typed witnesses. Config.lean match arms must reference them by name, not re-prove inline. |
 | **I4** | Every `ClusterTag` constructor that exists must have a matching witness constructor in `Config.lean` and a description in `ClusterRegistry.lean`. Orphaned tags are a build-time bug. |
 | **I5** | Documentation describes the cluster semantics as they exist now. Stale historical scaffolding (old transport wrappers, superseded pack shapes) must be removed — not left as comments or empty shells. |
-| **I6** | The cluster count (currently 30) is a documented fact. If you add or remove a cluster, update the count in this doc and in `README.md`. |
+| **I6** | The cluster count (currently 29) is a documented fact. If you add or remove a cluster, update the count in this doc and in `README.md`. |
 
 ---
 
@@ -309,9 +321,11 @@ The type system then mechanically excludes all and only the theorems that depend
 
 ## Tier 2 — Constraints / Forcing Results (already modular by conjunction separation)
 
-**Mechanism:** The six lifting theorems in `Minimality.lean` (`distributed_agents_require_bubbles`, etc.) are each stated independently. Each takes `WellFormed W` plus the operational predicate for *that* constraint; they are logical consequences of the `WellFormed` biconditionals.
+**Mechanism:** The six individual forcing theorems in `Minimality.lean` (`distributed_agents_require_bubbles`, etc.) are each proved from independent structural impossibility models — no biconditionals, no `WellFormed` dependency. Each takes `StructurallyForced W` plus the operational predicate for *that* dimension and returns the forced feature.
 
-The **preferred forcing path** is `StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W` (`convergence_structural`), where `StructurallyForced` packages the six forward implications independently justified by the structural impossibility models (`flat_scope_impossible`, `monotonic_no_exit`, etc.). `WellFormed W → StructurallyForced W` via `wellformed_implies_structurally_forced`, so the two paths are compatible. New forcing contributions should be added as `StructurallyForced` fields, not as additional `WellFormed`-taking theorems.
+The **preferred forcing path** is `StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W` (`convergence_structural`), where `StructurallyForced` packages the six `handles_X W → HasFeature_X W` forward implications, each independently justified by structural impossibility models (`flat_scope_impossible`, `monotonic_no_exit`, etc.). New forcing contributions should be added as implications inside `StructurallyForced.forcing`, now expressed as a single `∀ P : Pressure, handles_pressure W P → forced_feature W P` field — adding a seventh `Pressure` constructor forces the proof to supply the seventh forcing chain.
+
+The **strongest path** is the direct `Represents*`/`*_forces_*` route: six per-dimension theorems in `Convergence.lean` that require nothing but a concrete structural witness.
 
 **Files:** `Minimality.lean` (six individual lifting theorems); `Convergence.lean` (`StructurallyForced`, `convergence_structural`, impossibility models, §1b–§6b alternative dismissals)
 
@@ -324,13 +338,13 @@ The **preferred forcing path** is `StructurallyForced W → SatisfiesAllProperti
 | `coordination_need` | `handles_coordination` | `HasBank` | `coordination_requires_bank` |
 | `truth_pressure` | `handles_truth_pressure` | `HasRedeemability` | `truth_pressure_requires_redeemability` |
 
-**Global theorem:** `convergence_structural` = conjunction of all six (via `StructurallyForced`). `goals_force_bank_primitives` re-exports this under the `WellFormed` signature for backward compatibility. If you only accept k constraints, use the k individual forcing theorems instead — they all still hold.
+**Global theorem:** `convergence_structural` = all six implemented by `∀ P : Pressure, handles_pressure W P → forced_feature W P` (via `StructurallyForced`). If you only accept k constraints, the k individual forcing theorems not involving the dropped dimension still hold independently.
 
 **Relation to world bundles:** `adversarial_pressure` is downstream of `W_lies_possible` (lies possible + imperfect gate → adversarial deposits pass). They operate at different layers and are not interchangeable.
 
 **Gap:** ✅ Closed by `Meta/Modular.lean`. The two previously missing pieces are now proved:
 
-1. **`PartialWellFormed W S`** — a `WellFormed`-fragment type parameterized by a `ConstraintSubset` (6-Bool vector). For each constraint X with `S.X = false`, nothing is required. For `S.X = true`, the biconditional `handles_X W ↔ HasFeature_X W` is required. `WellFormed W ↔ PartialWellFormed W allConstraints`.
+1. **`PartialWellFormed W S`** — a biconditional-fragment type parameterized by a `ConstraintSubset` (6-Bool vector). For each constraint X with `S.X = false`, nothing is required. For `S.X = true`, the biconditional `handles_X W ↔ HasFeature_X W` is required.
 
 2. **`modular`** — the universally-quantified meta-theorem:
    ```
@@ -339,8 +353,6 @@ The **preferred forcing path** is `StructurallyForced W → SatisfiesAllProperti
        (S.distributed = true → handles_distributed_agents W → HasBubbles W) ∧ ...
    ```
    This is a machine-checked proof, not a structural observation. Dropping constraint X = setting `S.X := false`; the X-conjunct becomes vacuously true.
-
-3. **`wellformed_is_modular`** — every fully well-formed system is modular on every constraint subset.
 
 ---
 
@@ -453,14 +465,14 @@ This is the real Cluster C result — not just the competition gate but the full
 | `PaperFacing` / competition gate | `transport_core` + `sub_revision_safety` | ✅ Complete | `RevisionSafety.lean`, `Modularity.lean` |
 | Health goals (5 predicates) | `CoreModel`-parameterized + individual transport theorems | ✅ Complete | `Health.lean`, `Meta/TheoremTransport.lean` |
 | Main theorem library (109+) | Four-part schema: standalone commitments, structural unconditional, LTS-universal operational, all-five-health-goals bank bridge | ✅ Complete | `Meta/Tier4Transport.lean` |
-| Certified cluster surface (30 clusters) | `EpArchConfig → ClusterTag → Bool` routing + indexed witness carriers; all 6 cluster families are proof-carrying; constraint/goal/world families are config-selectable; Tier 4/meta-modular/lattice families are always-on | ✅ Complete | `Meta/ClusterRegistry.lean`, `Meta/Config.lean` |
+| Certified cluster surface (29 clusters) | `EpArchConfig → ClusterTag → Bool` routing + indexed witness carriers; all 6 cluster families are proof-carrying; constraint/goal/world families are config-selectable; Tier 4/meta-modular/lattice families are always-on | ✅ Complete | `Meta/ClusterRegistry.lean`, `Meta/Config.lean` |
 
 ---
 
 ## 9. Product / User Handbook
 
 **"I want to disable constraint X for my product."**
-→ Go to Tier 2. Find X in the constraint table. The k forcing theorems not involving X all still apply. The global `convergence_structural` / `goals_force_bank_primitives` no longer applies.
+→ Go to Tier 2. Find X in the constraint table. The k forcing theorems not involving X all still apply. The global `convergence_structural` no longer applies (it quantifies over all pressures; removing X means its `Pressure` dimension no longer has a justification).
 
 **"I want to disable health goal G for my product."**
 → Go to Tier 3. Find G in the health goal table. Note which `CoreOps` fields it references.
@@ -470,6 +482,6 @@ This is the real Cluster C result — not just the competition gate but the full
 → Go to Tier 1. Find W. Every theorem listed in that row becomes inapplicable. Everything else is unaffected — mechanically, by the type system.
 
 **"I want to add my own constraint/goal on top."**
-→ Tier 2: add a new forcing theorem of shape `WellFormed W → handles_yourConstraint W → HasYourFeature W`.
+→ Tier 2: add a new `Pressure` constructor (e.g., `.myConstraint`) and supply the `handles_pressure`/`forced_feature` dispatch arms, plus the impossibility model; then prove the `StructurallyForced.forcing` obligation for that new constructor.
 → Tier 3: add a new `CoreModel`-parameterized predicate and its necessity theorem.
 → `RevisionSafety.lean` `premise_strengthening` guarantees adding constraints can't invalidate existing implications.

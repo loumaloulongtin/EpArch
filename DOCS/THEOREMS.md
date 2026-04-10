@@ -375,13 +375,40 @@ The six forcing dimensions differ in strength; §6c establishes this with explic
 
 `anomaly_not_hard_forced` and `soft_falsifiability_not_hard_forced` exhibit explicit counterexamples (vacuous `emits_anomaly`/`flagged`) confirming soft closure is genuinely weaker than hard forcing.
 
+### Pressure Dimension Index (Minimality.lean)
+
+The `Pressure` inductive type is the canonical dimension index for the EpArch forcing layer. All six forcing dimensions are cases of a single type; every forcing-layer predicate is now a function `Pressure → Prop` rather than six separate fields.
+
+```lean
+inductive Pressure where
+  | scope | trust | headers | revocation | bank | redeemability
+  deriving DecidableEq, Repr
+```
+
+| Dispatch function | Type | What it routes |
+|-------------------|------|----------------|
+| `handles_pressure W` | `Pressure → Prop` | Maps each dimension to its operational handle predicate (`handles_distributed_agents`, `handles_bounded_audit`, …) |
+| `forced_feature W` | `Pressure → Prop` | Maps each dimension to its forced structural feature (`HasBubbles`, `HasTrustBridges`, …) |
+| `bridge_scenario W` | `Pressure → Prop` | Maps each dimension to its bridge predicate (`BridgeBubbles`, `BridgeTrust`, …) |
+
+Using `Pressure` as the index means every `cases P` in a proof is machine-exhaustiveness-checked by Lean's kernel. A proposed seventh dimension must be added as a new `Pressure` constructor — at which point the compiler flags every `cases P` site until the new forcing chain is supplied. This is architectural enforcement, not documentation convention. See `DOCS/MODULARITY.md § "What exhaustiveness means here"` for the scope boundary this claim carries.
+
+Key definitions that are now universally quantified over `Pressure`:
+- `SatisfiesAllProperties W := ∀ P : Pressure, handles_pressure W P`
+- `containsBankPrimitives W := ∀ P : Pressure, forced_feature W P`
+- `StructurallyForced W` — single field `forcing : ∀ P, handles_pressure W P → forced_feature W P`
+- `ForcingEmbedding W` — single field `embed : ∀ P, handles_pressure W P → forced_feature W P ∨ bridge_scenario W P`
+- `all_bridges_impossible W P : ¬bridge_scenario W P` — exhaustive impossibility theorem (proves by `cases P`)
+
 ### Forcing Package (Convergence.lean)
 
 | Structure/Theorem | Description |
 |-------------------|-------------|
-| `StructurallyForced W` | Packages six `handles_X W → HasFeature_X W` implications; each independently justified by the structural models above |
-| `ForcingEmbedding W` | For each dimension: `handles_X W → HasFeature_X W ∨ Bridge_X W`; connects concrete system data to the abstract scenario witnesses |
-| `embedding_to_structurally_forced` | `ForcingEmbedding W → StructurallyForced W` (mechanical, constructive, no Classical reasoning) |
+| `StructurallyForced W` | Single field `forcing : ∀ P : Pressure, handles_pressure W P → forced_feature W P`; replaces the old six named fields |
+| `ForcingEmbedding W` | Single field `embed : ∀ P : Pressure, handles_pressure W P → forced_feature W P ∨ bridge_scenario W P`; replaces old six named fields |
+| `embedding_to_structurally_forced` | `ForcingEmbedding W → StructurallyForced W` (one line: `.embed` + `all_bridges_impossible`; no Classical reasoning) |
+| `convergence_structural` | `StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W` — preferred convergence path; one line via `∀ P` |
+| `structural_impossibility` | `StructurallyForced W → (∃ P, ¬forced_feature W P) → ¬SatisfiesAllProperties W` — existential form |
 
 ### Per-Dimension Structural Forcing Theorems (Convergence.lean)
 
@@ -461,6 +488,35 @@ The six per-dimension `*_forces_*` theorems are built directly on these predicat
 | `same_flags_same_behavior` | Identical flags → identical behavior | Core lemma; `Behavior` is flag-determined |
 | `satisfies_all_fixes_flags` | `SatisfiesAllProperties W` → all four flags are `true` | Bridges property satisfaction to flag values |
 | `working_systems_equivalent` | Both satisfy all properties → behaviorally equivalent | Main theorem; cited when closing the behavioral claim |
+
+---
+
+## Bucket 9d: Kernel Verification Depth (VerificationDepth.lean)
+
+**Paper Role:** Provides a *constructive* kernel-level witness that `W_bounded_verification` is not an empirical world assumption but follows from the structural properties of the verification relation itself. `DepthClaim n` is a depth-indexed proposition family with exactly n constructors; a budget-d verifier traverses only d constructors and therefore cannot decide `DepthClaim (d+1)`, which is genuinely true. This justifies the §2 bounded-audit forcing argument for trust bridges by construction rather than supposition.
+
+### Definitions
+
+| Definition | Description |
+|------------|-------------|
+| `DepthClaim : Nat → Prop` | Inductive family: `DepthClaim n` has exactly n constructors (`base`, n × `step`); represents a proposition whose verification cost is structurally n |
+| `bounded_verify : Nat → Nat → Bool` | Budget-d decision procedure; `bounded_verify d n = true ↔ n ≤ d` |
+| `DepthWorldCtx : WorldCtx` | Concrete `WorldCtx` where `Claim := Nat`, `Truth _ n := DepthClaim n`, `VerifyWithin _ n t ↔ n ≤ t`; `W_bounded_verification` holds by construction |
+
+### Theorems
+
+| Theorem | Statement | Role |
+|---------|-----------|------|
+| `depth_claim_provable` | `∀ n, DepthClaim n` | Every claim in the family is true; ensures incompleteness is genuine, not vacuous |
+| `bounded_verify_sound` | `n ≤ d → bounded_verify d n = true` | Budget-d verifier correctly accepts depth-≤-d claims |
+| `bounded_verify_incomplete` | `bounded_verify d (d+1) = false` | Budget-d verifier rejects the true depth-(d+1) claim |
+| `no_budget_is_sufficient` | `∀ d, ∃ n, DepthClaim n ∧ bounded_verify d n = false` | No finite budget covers the full family |
+| `endorser_cannot_self_verify` | `bounded_verify n (n+1) = false` | An endorsement of depth-n has depth n+1; budget-n verifiers cannot check their own endorsements (kernel shadow of trust-bridge / redeemability forcing) |
+| `DepthWorldCtx_requires_steps` | `(∀ w, DepthWorldCtx.RequiresSteps w n k) ↔ k ≤ n` | Step-cost characterization of `DepthWorldCtx` |
+| `depth_world_satisfies_bounded_verification` | `Nonempty DepthWorldCtx.W_bounded_verification` | `W_bounded_verification` holds in `DepthWorldCtx` — no empirical assumption needed |
+| `depth_world_exceeds_any_budget` | `∀ d w, DepthWorldCtx.RequiresSteps w (d+1) (d+1)` | For any budget d, a harder claim exists in the kernel world |
+
+**Architectural note:** `DepthWorldCtx` shows that `W_bounded_verification` is satisfiable (and hence the forcing argument is non-vacuous) via a `WorldCtx` whose verification cost is structurally intrinsic. This is the `Type`-side constructive companion to the `Prop`-side `WorldWitness.lean` non-vacuity proof for `W_bounded_verification`.
 
 ---
 
@@ -1232,14 +1288,14 @@ other selected constraints remain live implications backed by the required bicon
 
 ## Bucket 28: Configurable Certification Engine — `EpArchConfig → ClusterTag → certified proof`
 
-**Paper Role:** Closes the claim that all 30 theorem clusters are individually certified:
+**Paper Role:** Closes the claim that all 29 theorem clusters are individually certified:
 25 clusters (constraint, goal, Tier 4, world) are user-selectable via `EpArchConfig`;
-the remaining 5 (2 constraint-modularity meta-theorem clusters + 3 lattice-stability
+the remaining 4 (1 constraint-modularity meta-theorem cluster + 3 lattice-stability
 clusters) are always enabled because they depend on no config gate. Given any
 `EpArchConfig`, the engine computes exactly which clusters apply and provides
 machine-checked justification for each enabled cluster. This includes 8 world-bundle
 obligation clusters wiring `EpArchConfig.worlds` to proved obligation theorems in
-`WorldCtx.lean` and `AdversarialObligations.lean`, 2 constraint-modularity clusters from
+`WorldCtx.lean` and `AdversarialObligations.lean`, 1 constraint-modularity cluster from
 `Meta/Modular.lean`, and 3 lattice-stability clusters from `Modularity.lean`.
 
 **Note on `.partial_observability`:** Now fully wired. `WorldCtx.partial_obs_no_omniscience`
@@ -1260,7 +1316,7 @@ for each cluster.
 **Three-layer architecture:**
 1. **Routing layer** — `clusterEnabled`, `enabled`, `complete`, `sound` (all clusters, routing only, `clusterValid := True`)
 2. **Constraint proof layer** — `constraintProof`/`constraintWitnesses` (Tier 2 forcing clusters: real `ConstraintProof` with genuine proposition + proof; possible because `WorkingSystem` is monomorphic)
-3. **Proof-content layer** — `cluster_*` universe-polymorphic theorems (all 30 clusters; goal/Tier4/world/meta-modular/lattice clusters reference universe-polymorphic types and live in `Meta/Config.lean`)
+3. **Proof-content layer** — `cluster_*` universe-polymorphic theorems (all 29 clusters; goal/Tier4/world/meta-modular/lattice clusters reference universe-polymorphic types and live in `Meta/Config.lean`)
 
 ### Definitions / Configuration Language
 
@@ -1270,12 +1326,12 @@ for each cluster.
 | `GoalTag` | Meta/Config.lean | 5 health-goal tags (safeWithdrawal … selfCorrection) |
 | `WorldTag` | Meta/Config.lean | 8 world-bundle tags (lies_possible … ddos) |
 | `EpArchConfig` | Meta/Config.lean | User-supplied config: lists of active constraints/goals/worlds |
-| `ClusterTag` | Meta/ClusterRegistry.lean | 30 cluster tags spanning Tiers 2–4, world obligations, constraint-modularity, and lattice-stability |
+| `ClusterTag` | Meta/ClusterRegistry.lean | 29 cluster tags spanning Tiers 2–4, world obligations, constraint-modularity, and lattice-stability |
 | `EnabledConstraintCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 6 Tier 2 forcing cluster tags |
 | `EnabledGoalCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 6 Tier 3 health-goal transport cluster tags |
 | `EnabledTier4Cluster` | Meta/ClusterRegistry.lean | Sub-inductive: 5 Tier 4 library cluster tags |
 | `EnabledWorldCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 8 world-bundle cluster tags |
-| `EnabledMetaModularCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 2 constraint-modularity meta-theorem cluster tags |
+| `EnabledMetaModularCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 1 constraint-modularity meta-theorem cluster tag |
 | `EnabledLatticeCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 3 lattice-stability cluster tags |
 | `EnabledConstraintCluster.toClusterTag` | Meta/ClusterRegistry.lean | Embed constraint sub-tag into `ClusterTag` |
 | `EnabledGoalCluster.toClusterTag` | Meta/ClusterRegistry.lean | Embed goal sub-tag into `ClusterTag` |
@@ -1287,9 +1343,9 @@ for each cluster.
 | `allGoalClusters` | Meta/ClusterRegistry.lean | Canonical list of 6 Tier 3 cluster tags |
 | `allTier4Clusters` | Meta/ClusterRegistry.lean | Canonical list of 5 Tier 4 cluster tags |
 | `allWorldClusters` | Meta/ClusterRegistry.lean | Canonical list of 8 world-bundle cluster tags |
-| `allMetaModularClusters` | Meta/ClusterRegistry.lean | Canonical list of 2 constraint-modularity cluster tags |
+| `allMetaModularClusters` | Meta/ClusterRegistry.lean | Canonical list of 1 constraint-modularity cluster tag |
 | `allLatticeClusters` | Meta/ClusterRegistry.lean | Canonical list of 3 lattice-stability cluster tags |
-| `allClusters` | Meta/ClusterRegistry.lean | Canonical ordered list of all 30 ClusterTags (derived from 6 per-family lists) |
+| `allClusters` | Meta/ClusterRegistry.lean | Canonical ordered list of all 29 ClusterTags (derived from 6 per-family lists) |
 | `clusterEnabled` | Meta/ClusterRegistry.lean | `EpArchConfig → ClusterTag → Bool` (computable routing); meta-modular and lattice always enabled |
 | `clusterDescription` | Meta/ClusterRegistry.lean | `ClusterTag → String` — one-line human-readable description |
 | `explainConfig` | Meta/Config.lean | `EpArchConfig → List ClusterTag` — enabled clusters |
@@ -1297,7 +1353,7 @@ for each cluster.
 | `showConfig` | Meta/Config.lean | `EpArchConfig → List String` — `#eval`-able routing report |
 | `ConstraintProof` | Meta/Config.lean | Proof-carrying record: `statement : Prop`, `proof : statement` (Tier 2 only) |
 | `constraintProof` | Meta/Config.lean | `EnabledConstraintCluster → ConstraintProof` — real proposition + proof for each forcing cluster |
-| `MetaModularWitness` | Meta/Config.lean | Indexed proof carrier for constraint-modularity clusters (2 constructors: `.modular`, `.wellformed`) |
+| `MetaModularWitness` | Meta/Config.lean | Indexed proof carrier for constraint-modularity cluster (1 constructor: `.modular`) |
 | `metaModularWitness` | Meta/Config.lean | `(c : EnabledMetaModularCluster) → MetaModularWitness c` — delivers the proof |
 | `LatticeWitness` | Meta/Config.lean | Indexed proof carrier for lattice-stability clusters (3 constructors: `.graceful`, `.subSafety`, `.pack`) |
 | `latticeWitness` | Meta/Config.lean | `(c : EnabledLatticeCluster) → LatticeWitness c` — delivers the proof |
@@ -1330,12 +1386,12 @@ for each cluster.
 
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
-| `cluster_forcing_distributed_agents` | Meta/Config.lean | `WellFormed W → handles_distributed_agents W → HasBubbles W` | Witness for `.forcing_distributed_agents` |
-| `cluster_forcing_bounded_audit` | Meta/Config.lean | `WellFormed W → handles_bounded_audit W → HasTrustBridges W` | Witness for `.forcing_bounded_audit` |
-| `cluster_forcing_export` | Meta/Config.lean | `WellFormed W → handles_export W → HasHeaders W` | Witness for `.forcing_export` |
-| `cluster_forcing_adversarial` | Meta/Config.lean | `WellFormed W → handles_adversarial W → HasRevocation W` | Witness for `.forcing_adversarial` |
-| `cluster_forcing_coordination` | Meta/Config.lean | `WellFormed W → handles_coordination W → HasBank W` | Witness for `.forcing_coordination` |
-| `cluster_forcing_truth` | Meta/Config.lean | `WellFormed W → handles_truth_pressure W → HasRedeemability W` | Witness for `.forcing_truth` |
+| `cluster_forcing_distributed_agents` | Meta/Config.lean | `StructurallyForced W → handles_distributed_agents W → HasBubbles W` | Witness for `.forcing_distributed_agents` |
+| `cluster_forcing_bounded_audit` | Meta/Config.lean | `StructurallyForced W → handles_bounded_audit W → HasTrustBridges W` | Witness for `.forcing_bounded_audit` |
+| `cluster_forcing_export` | Meta/Config.lean | `StructurallyForced W → handles_export W → HasHeaders W` | Witness for `.forcing_export` |
+| `cluster_forcing_adversarial` | Meta/Config.lean | `StructurallyForced W → handles_adversarial W → HasRevocation W` | Witness for `.forcing_adversarial` |
+| `cluster_forcing_coordination` | Meta/Config.lean | `StructurallyForced W → handles_coordination W → HasBank W` | Witness for `.forcing_coordination` |
+| `cluster_forcing_truth` | Meta/Config.lean | `StructurallyForced W → handles_truth_pressure W → HasRedeemability W` | Witness for `.forcing_truth` |
 
 #### Tier 3 Named Proof Witnesses (Health-Goal Transport)
 
@@ -1407,4 +1463,20 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 **New definitions (original +14, Phase F +8 = +22):**
 - Original: 4 sub-family inductives, 4 `*.toClusterTag`, `ConstraintProof` + `constraintProof`, `CertifiedProjection` (updated) + `certify`
 - Phase F: `EnabledMetaModularCluster` + `EnabledLatticeCluster` + 2 `toClusterTag` + `MetaModularWitness` + `metaModularWitness` + `LatticeWitness` + `latticeWitness`
+
+---
+
+### verification-depth branch additions
+
+**Net count: 648 theorems** (640 base + branch additions − WellFormed removal)
+
+**VerificationDepth.lean (+8):** `depth_claim_provable`, `bounded_verify_sound`, `bounded_verify_incomplete`, `no_budget_is_sufficient`, `endorser_cannot_self_verify`, `DepthWorldCtx_requires_steps`, `depth_world_satisfies_bounded_verification`, `depth_world_exceeds_any_budget`
+
+**Convergence.lean structural forcing additions (+6 per-dimension theorems + 2 impossible helpers):** `disagreement_forces_bubbles`, `private_coordination_forces_bank`, `monotonic_lifecycle_forces_revocation`, `discriminating_import_forces_headers`, `bounded_verification_forces_trust_bridges`, `closed_endorsement_forces_redeemability`; `all_bridges_impossible`
+
+**Feasibility.lean world-to-structural additions (+4):** `w_lies_forces_revocation_need`, `w_bounded_forces_incompleteness`, `w_partial_obs_forces_redeemability`; `world_assumptions_force_bank_primitives`, `structurally_forced_is_world_aware`, `grounded_world_and_structure_force_bank_primitives`, `bundled_structure_forces_bank_primitives`, `kernel_world_forces_bank_primitives`
+
+**WellFormed removal (−):** `WellFormed`, `wellFormed_iff`, `wellformed_implies_structurally_forced`, `partial_all_is_wellformed`, `wellformed_implies_partial`, `wellformed_is_modular`, `goals_force_bank_primitives`, `existence_under_constraints`, `success_feasible`, `bank_primitives_determine_behavior`, `cluster_meta_modular_wellformed` and 1 `MetaModularWitness` constructor removed
+
+**Pressure refactoring (±0 net theorems, architectural change):** `Pressure` inductive type + `handles_pressure`/`forced_feature`/`bridge_scenario` dispatch defs introduced; `SatisfiesAllProperties` and `containsBankPrimitives` redefined as `∀ P : Pressure`; `StructurallyForced` and `ForcingEmbedding` collapsed from 6-field to single `∀ P` field; all `cases P` proofs now machine-exhaustiveness-checked
 

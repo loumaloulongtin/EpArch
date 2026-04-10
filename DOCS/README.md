@@ -58,10 +58,9 @@ For the full paper-section-to-Lean-artifact mapping (with math notation, A.# lab
 | 7 | Invariant Preservation — Truth and gate invariants under trace induction |
 | 8 | Modal Properties — Safety/Sensitivity ↔ S/E/V header preservation |
 | 9 | Grounded Minimality — Each feature necessary for specific capabilities |
-| 9b | Abstract Structural Forcing — Six `*_forces_*` theorems (no `WellFormed`, no `handles_X W`); `SystemOperationalBundle`, `WorldBridgeBundle`; headline `bundled_structure_forces_bank_primitives` |
-| 9c | Observation-Boundary Equivalence — Bank primitive flags fully determine observable behavior |
-| 9b | Abstract Structural Forcing — six impossibility models + alternative dismissals; `StructurallyForced` / `convergence_structural` (`Minimality.lean` + `Convergence.lean`) |
+| 9b | Abstract Structural Forcing — Six per-dimension `*_forces_*` theorems (no `WellFormed`, no biconditionals) + `SystemOperationalBundle` / `WorldBridgeBundle`; headline `bundled_structure_forces_bank_primitives`; six structural impossibility models + `StructurallyForced` / `convergence_structural` (`Minimality.lean` + `Convergence.lean`) |
 | 9c | Observation-Boundary Equivalence — Bank primitive flags fully determine observable behavior (`BehavioralEquivalence.lean`) |
+| 9d | Kernel Verification Depth — `DepthClaim` constructive witness; `bounded_verify` budget decision procedure; `DepthWorldCtx` closes `W_bounded_verification` by construction (`VerificationDepth.lean`) |
 | 10 | Adversarial Model — Attack structures, DDoS vectors, obligation theorems |
 | 11 | Repair Loop Semantics — Challenge-repair-revalidation cycle |
 | 12 | Withdrawal Gates — Three-gate model (Status ∧ ACL ∧ τ) |
@@ -80,7 +79,7 @@ For the full paper-section-to-Lean-artifact mapping (with math notation, A.# lab
 | 25 | Theorem Transport — Health Goal Layer (Tier 3 closure) |
 | 26 | Theorem Transport — Main Library Layer (Tier 4 closure: standalone commitments + structural + LTS + health goals) |
 | 27 | Modularity Meta-Theorem — ∀ S ⊆ Constraints, projection_valid S |
-| 28 | Certification Engine — `EpArchConfig → ClusterTag → certified proof` (30 clusters) |
+| 28 | Certification Engine — `EpArchConfig → ClusterTag → certified proof` (29 clusters) |
 
 ### Key Files
 
