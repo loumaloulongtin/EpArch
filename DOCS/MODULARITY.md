@@ -12,7 +12,7 @@ certify that?
 
 ## 1. What Modularity Means in This Repo
 
-EpArch's theorem corpus is sliced into **30 certified clusters** across six families.
+EpArch's theorem corpus is sliced into **29 certified clusters** across six families.
 Constraint, goal, and world clusters are config-driven — activated by the `EpArchConfig`
 a user provides. Meta-modularity, lattice-stability, and all Tier 4 clusters (commitments,
 structural, LTS-universal, and bank-goal transport) are always-on: they hold
@@ -24,10 +24,10 @@ unconditionally and require no configuration.
 | **Goal transport** (Tier 3) | 6 | Each health goal is preserved under compatible model extension |
 | **Tier 4 library clusters** | 5 | Commitments pack, structural theorems, LTS-universal gates, bank-goal transport |
 | **World obligations** (Tier 1) | 8 | Each `W_*` bundle enables a slice of adversarial/world theorems |
-| **Meta-modularity** | 2 | `modular` + `wellformed_is_modular` — constraint-subset independence |
+| **Meta-modularity** | 1 | `modular` — constraint-subset independence (`PartialWellFormed W S → projection_valid S W`) |
 | **Lattice-stability** | 3 | `graceful_degradation`, `sub_revision_safety`, `modularity_pack` |
 
-The 30 `ClusterTag` values in `ClusterRegistry.lean` are the canonical names for all of these.
+The 29 `ClusterTag` values in `ClusterRegistry.lean` are the canonical names for all of these.
 
 **Why this matters architecturally:** Modularity is not only a proof-engineering convenience — it is a kernel design constraint. EpArch must remain applicable across agents that do not share the same internal epistemology or constraint bundle, including minimal agents (e.g., an odometer-like system tracking position) that face only a sub-bundle of the full set. The cluster architecture ensures the kernel scales down gracefully: a system that does not face `FallibilityConstraint` simply does not receive the clusters that depend on it, and the remaining claims stay sound. This is why the kernel boundary stops at coordination-relevant architectural requirements rather than agent-internal dynamics models.
 
@@ -91,7 +91,7 @@ It must be a fully closed term — no `sorry`, no empty structure fields.
 ```lean
 -- Example: new Tier 2 forcing theorem in Minimality.lean
 theorem my_constraint_requires_feature (W : WorkingSystem)
-    (h : WellFormed W) (hC : handles_my_constraint W) : HasMyFeature W := ...
+    (h : StructurallyForced W) (hC : handles_my_constraint W) : HasMyFeature W := ...
 ```
 
 ### Step 2 — Update `ClusterRegistry.lean`
@@ -117,8 +117,8 @@ in the certifying function.
 ```lean
 -- In constraintSpec match (constraintProof is derived from this):
 | .forcing_my_constraint => {
-    statement := ∀ W, WellFormed W → handles_my_constraint W → HasMyFeature W
-    proof     := my_constraint_requires_feature }
+    statement := ∀ W, StructurallyForced W → handles_my_constraint W → HasMyFeature W
+    proof     := fun W sf => sf.my_forcing }
 ```
 
 ### Step 4 — Update `MODULARITY.md`
@@ -134,14 +134,14 @@ Not all families are added the same way. The asymmetry is architectural, not sty
 
 ### Tier 2 — Forcing clusters
 
-Use **direct `ConstraintProof`**: the theorem takes `WellFormed W` plus the
+Use **direct `ConstraintProof`**: the theorem takes `StructurallyForced W` plus the
 operational predicate for that constraint and returns the forced feature.
 No witness inductive is needed — the proof term is the carrier.
 
 ```lean
 -- Minimal pattern:
 theorem my_constraint_requires_feature (W : WorkingSystem)
-    (h : WellFormed W) (hC : handles_my_constraint W) : HasMyFeature W :=
+    (h : StructurallyForced W) (hC : handles_my_constraint W) : HasMyFeature W :=
   ... -- prove from h and hC
 ```
 

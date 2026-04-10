@@ -324,7 +324,7 @@ Applications of the safety/sensitivity framework to specific epistemological cas
 
 ## Bucket 9b: Abstract Structural Forcing Layer (Minimality.lean + Convergence.lean)
 
-**Paper Role:** Provide structurally-grounded, WellFormed-independent proofs that each constraint forces its feature. The six lifting theorems (`distributed_agents_require_bubbles`, etc.) derive from `WellFormed`; these theorems justify the implications independently. The §1b–§6b alternative-dismissal theorems cover the completeness side: each evaluated alternative either reproduces the same impossibility or satisfies the forced-primitive definition.
+**Paper Role:** Provide structurally-grounded proofs that each constraint forces its feature. The six structural impossibility models in Minimality.lean independently justify each `handles_X → HasY` implication. The §1b–§6b alternative-dismissal theorems cover the completeness side: each evaluated alternative either reproduces the same impossibility or satisfies the forced-primitive definition.
 
 **Strongest result:** Six per-dimension `*_forces_*` theorems (Convergence.lean) each take a single `Represents*` witness and directly force the `Has*` feature — no `handles_X W`, no biconditionals, no `WellFormed`. These are orthogonal: each fires independently of the other five. Bundled into `SystemOperationalBundle` / `WorldBridgeBundle`, they feed the headline `bundled_structure_forces_bank_primitives` theorem in Feasibility.lean.
 
@@ -380,7 +380,6 @@ The six forcing dimensions differ in strength; §6c establishes this with explic
 | Structure/Theorem | Description |
 |-------------------|-------------|
 | `StructurallyForced W` | Packages six `handles_X W → HasFeature_X W` implications; each independently justified by the structural models above |
-| `wellformed_implies_structurally_forced` | `WellFormed W → StructurallyForced W` (forward extraction from the biconditionals) |
 | `ForcingEmbedding W` | For each dimension: `handles_X W → HasFeature_X W ∨ Bridge_X W`; connects concrete system data to the abstract scenario witnesses |
 | `embedding_to_structurally_forced` | `ForcingEmbedding W → StructurallyForced W` (mechanical, constructive, no Classical reasoning) |
 
@@ -462,7 +461,6 @@ The six per-dimension `*_forces_*` theorems are built directly on these predicat
 | `same_flags_same_behavior` | Identical flags → identical behavior | Core lemma; `Behavior` is flag-determined |
 | `satisfies_all_fixes_flags` | `SatisfiesAllProperties W` → all four flags are `true` | Bridges property satisfaction to flag values |
 | `working_systems_equivalent` | Both satisfy all properties → behaviorally equivalent | Main theorem; cited when closing the behavioral claim |
-| `bank_primitives_determine_behavior` | `WellFormed` + `containsBankPrimitives` on both → equivalent | Strongest form; requires `WellFormed` backward direction |
 
 ---
 
@@ -958,21 +956,14 @@ File: `Agent/Imposition.lean`
 
 **Paper Role:** Establishes that the constraint+objective package is consistent AND that success forces Bank primitives.
 
-### Headline Theorem
+### Headline Theorems
 
 | Theorem | File | Statement | Paper Claim |
 |---------|------|-----------|-------------|
-| `existence_under_constraints` | Feasibility.lean | ∃ W. WellFormed W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W | Appendix: Existence + forced primitives |
-
-### Core Theorems
-
-| Theorem | File | Statement | Paper Claim |
-|---------|------|-----------|-------------|
-| `goals_force_bank_primitives` | Feasibility.lean | ∀ W. WellFormed W → SatisfiesAllProperties W → containsBankPrimitives W | Minimality: forced primitives (WellFormed path) |
 | `structural_goals_force_bank_primitives` | Feasibility.lean | ∀ W. StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W | Minimality: forced primitives (structural path) |
 | `existence_under_constraints_structural` | Feasibility.lean | ∃ W. StructurallyForced W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W | Existence via structural path |
 | `existence_under_constraints_embedding` | Feasibility.lean | ∃ W. ForcingEmbedding W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W | Existence via embedding path (strongest form) |
-| `success_feasible` | Feasibility.lean | ∃ W. WellFormed W ∧ SatisfiesAllProperties W | Success bundle non-empty |
+| `bundled_structure_forces_bank_primitives` | Feasibility.lean | `SystemOperationalBundle W → WorldBridgeBundle W → SatisfiesAllProperties W → containsBankPrimitives W` | Headline 4-argument form; no `WorldCtx` |
 | `world_bundles_feasible` | Feasibility.lean | World bundles satisfiable | Appendix: World non-vacuity |
 | `commitments_feasible` | Feasibility.lean | 8 commitments satisfiable | Appendix: Model non-vacuity |
 | `joint_feasible` | Feasibility.lean | Constraints + objectives jointly satisfiable | Non-vacuity |
@@ -985,7 +976,7 @@ File: `Agent/Imposition.lean`
 | Structure | File | Purpose |
 |-----------|------|---------|
 | `Realizer` | Realizer.lean | Type packaging commitment proofs |
-| `SuccessfulSystem` | Realizer.lean | Type packaging successful system (W + wf + sat) |
+| `SuccessfulSystem` | Realizer.lean | Type packaging successful system (W + sf + sat) |
 | `ConcreteRealizer` | Realizer.lean | Realizer witness instance |
 | `ConcreteSuccessfulSystem` | Realizer.lean | SuccessfulSystem witness instance |
 | `WitnessCtx` | WorldWitness.lean | Concrete WorldCtx instance |
@@ -1214,8 +1205,8 @@ universally-quantified theorem over all subsets of the six constraints, and a
 | Definition | File | Purpose |
 |------------|------|---------|
 | `ConstraintSubset` | Meta/Modular.lean | 6-Bool vector selecting which constraints are active |
-| `PartialWellFormed W S` | Meta/Modular.lean | Fragment of WellFormed for subset S; requires only the biconditionals for selected constraints |
-| `allConstraints` | Meta/Modular.lean | `⟨true,true,true,true,true,true⟩` — full WellFormed recovered |
+| `PartialWellFormed W S` | Meta/Modular.lean | Subset-parameterized biconditional fragment; `allConstraints` is the strongest subset |
+| `allConstraints` | Meta/Modular.lean | `⟨true,true,true,true,true,true⟩` — strongest subset (all six biconditionals) |
 | `noConstraints` | Meta/Modular.lean | `⟨false,false,false,false,false,false⟩` — nothing required |
 
 ### Theorems
@@ -1223,18 +1214,13 @@ universally-quantified theorem over all subsets of the six constraints, and a
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
 | `partial_no_constraints` | Meta/Modular.lean | `PartialWellFormed W noConstraints` holds for every W | Base case: empty subset |
-| `wellformed_implies_partial` | Meta/Modular.lean | `WellFormed W → ∀ S, PartialWellFormed W S` | Full → partial for any subset |
-| `partial_all_is_wellformed` | Meta/Modular.lean | `PartialWellFormed W allConstraints → WellFormed W` | Partial at full subset → full |
 | `modular` | Meta/Modular.lean | `∀ S W, PartialWellFormed W S → projection_valid S W` | **The meta-theorem** |
-| `wellformed_is_modular` | Meta/Modular.lean | `∀ S W, WellFormed W → projection_valid S W` | Corollary: WF systems modular on every subset |
 
 ### Math Form
 
 $$\text{PartialWellFormed}(W, S) :\equiv \bigwedge_{X \in S} (\text{handles}_X(W) \leftrightarrow \text{HasFeature}_X(W))$$
 
 $$\texttt{modular}: \forall S \subseteq \text{Constraints},\; \forall W,\; \text{PartialWellFormed}(W, S) \Rightarrow \bigwedge_{X \in S} (\text{handles}_X(W) \Rightarrow \text{HasFeature}_X(W))$$
-
-$$\text{WellFormed}(W) \iff \text{PartialWellFormed}(W, \text{allConstraints})$$
 
 ### Design Note
 
@@ -1391,7 +1377,6 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
 | `cluster_meta_modular` | Meta/Config.lean | `∀ S W, PartialWellFormed W S → projection_valid S W` | Witness for `.meta_modular` |
-| `cluster_meta_modular_wellformed` | Meta/Config.lean | `∀ S W, WellFormed W → projection_valid S W` | Witness for `.meta_modular_wellformed` |
 
 #### Lattice-Stability Witnesses (Phase F)
 
@@ -1412,7 +1397,7 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 
 **Phase F additions (+7):**
 - 2 completeness theorems (`mem_enabledMetaModularWitnesses_of_enabled`, `mem_enabledLatticeWitnesses_of_enabled`)
-- 2 constraint-modularity witnesses (`cluster_meta_modular`, `cluster_meta_modular_wellformed`)
+- 1 constraint-modularity witness (`cluster_meta_modular`)
 - 3 lattice-stability witnesses (`cluster_lattice_graceful`, `cluster_lattice_sub_safety`, `cluster_lattice_pack`)
 
 **scope-alternatives additions (+101):**
