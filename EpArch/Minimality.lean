@@ -11,11 +11,11 @@ These theorems formalize that convergence.
 
 ## Central Role
 
-This file contains the central convergence result: any `WorkingSystem`
-— satisfying the operational constraints (withdrawal-safety, export-gating,
-revision-capability, temporal-expiry, redeemability-grounding) — necessarily
-contains the Bank primitives (scoped bubbles, header-bearing deposits,
-redeemability, export gates, revision protocol).
+This file contains the structural impossibility models from which the
+convergence result follows.  The convergence theorem itself
+(`convergence_structural`) lives in `Convergence.lean`.  Each scenario
+proves: remove primitive X and the system cannot satisfy operational
+constraint Y — establishing necessity per dimension.
 
 This is convergence, not uniqueness: any working solution must contain
 these structural elements, but implementations can differ.
@@ -23,7 +23,7 @@ these structural elements, but implementations can differ.
 ## Key Definitions
 
 - `Constraints` — typeclass capturing the minimal system predicates
-- `WorkingSystem` — a system satisfying all operational properties
+- `WorkingSystem` — record wrapping the `SystemSpec` configuration flags
 - `StructurallyForced` — forward-direction forcing implications (in Convergence.lean)
 - `PrimitiveNecessity` — minimal constraints table as data
 
@@ -253,8 +253,9 @@ def containsBankPrimitives (W : WorkingSystem) : Prop :=
 
 /-- All six forced features together constitute Bank-like architecture.
 
-    This is a definitional theorem: containsBankPrimitives
-    is defined as the conjunction of the six Has* predicates. -/
+    This is a definitional theorem: `containsBankPrimitives W` is
+    `∀ P : Pressure, forced_feature W P` — providing the six `Has*`
+    witnesses satisfies it by case analysis on `P`. -/
 theorem all_features_constitute_bank (W : WorkingSystem) :
   HasBubbles W → HasTrustBridges W → HasHeaders W →
   HasRevocation W → HasBank W → HasRedeemability W →

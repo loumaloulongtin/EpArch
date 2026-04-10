@@ -31,7 +31,7 @@ are active, this module computes and certifies:
   `metaModularWitness`, `latticeWitness`: one indexed inductive per family,
   constructors store the real transport theorem as a Prop-valued argument.
 - **Named witnesses** — `cluster_*` in §5b: universe-polymorphic standalone theorems
-  for all 30 clusters, the authoritative typed form.
+  for all 29 clusters, the authoritative typed form.
 
 ## Usage
 
@@ -87,12 +87,12 @@ universe u
 
 /-! ## §4  Cluster Validity
 
-`clusterValid c := True` unconditionally: all 30 clusters are machine-proved.
+`clusterValid c := True` unconditionally: all 29 clusters are machine-proved.
 The routing layer uses this so `certify` type-checks without universe complications;
 typed proof content lives in the indexed witnesses (§4b–§4e') and `cluster_*`
 witnesses (§5b). -/
 
-/-- Every cluster is valid: holds unconditionally (all 30 are machine-proved).
+/-- Every cluster is valid: holds unconditionally (all 29 are machine-proved).
     See the `cluster_*` witnesses in §5b for real typed propositions. -/
 @[simp] def clusterValid : ClusterTag → Prop := fun _ => True
 
@@ -480,7 +480,7 @@ cluster and holds machine-checked evidence that each one is valid. -/
 
 /-- A certified bundle: the enabled clusters for `cfg`, with proofs.
 
-    **Layer 1 (routing):** `enabled`, `complete`, `sound` — all 30 cluster tags,
+    **Layer 1 (routing):** `enabled`, `complete`, `sound` — all 29 cluster tags,
     routing only, `clusterValid c = True`.
 
     **Layer 2 (constraint proofs):** `constraintWitnesses` — full `ConstraintProof`
@@ -492,7 +492,7 @@ cluster and holds machine-checked evidence that each one is valid. -/
     `enabledGoalWitnesses`, `enabledWorldWitnesses`, `enabledTier4Witnesses` — filtered
     to only the clusters enabled by `cfg` (using dependent pairs `Σ c, WitnessType c`).
 
-    **Layer 4 (proof-content):** `cluster_*` witnesses in §5b cover all 30 clusters. -/
+    **Layer 4 (proof-content):** `cluster_*` witnesses in §5b cover all 29 clusters. -/
 structure CertifiedProjection (cfg : EpArchConfig) where
   /-- The list of enabled clusters (equal to `explainConfig cfg`). -/
   enabled                   : List ClusterTag
@@ -525,7 +525,7 @@ structure CertifiedProjection (cfg : EpArchConfig) where
   metaModularWitnesses       : (c : EnabledMetaModularCluster) → MetaModularWitness c
   /-- Lattice-stability proof carriers (all three, config-independent). -/
   latticeWitnesses           : (c : EnabledLatticeCluster) → LatticeWitness c
-  /-- Filtered meta-modularity witnesses: clusters enabled by `cfg` (always all two). -/
+  /-- Filtered meta-modularity witnesses: clusters enabled by `cfg` (always all one). -/
   enabledMetaModularWitnesses : List (Σ c : EnabledMetaModularCluster, MetaModularWitness c)
   /-- Filtered lattice-stability witnesses: clusters enabled by `cfg` (always all three). -/
   enabledLatticeWitnesses    : List (Σ c : EnabledLatticeCluster, LatticeWitness c)

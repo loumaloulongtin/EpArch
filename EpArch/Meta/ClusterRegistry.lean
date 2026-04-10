@@ -169,27 +169,27 @@ def constraintMeta : EnabledConstraintCluster → ConstraintClusterMeta
   | .forcing_distributed_agents => {
       globalTag   := .forcing_distributed_agents
       enabledBy   := fun cfg => cfg.constraints.contains .distributed_agents
-      description := "[Tier 2] distributed_agents → HasBubbles  (distributed_agents_require_bubbles)" }
+      description := "[Tier 2] distributed_agents → HasBubbles  (disagreement_forces_bubbles)" }
   | .forcing_bounded_audit => {
       globalTag   := .forcing_bounded_audit
       enabledBy   := fun cfg => cfg.constraints.contains .bounded_audit
-      description := "[Tier 2] bounded_audit → HasTrustBridges  (bounded_audit_requires_trust_bridges)" }
+      description := "[Tier 2] bounded_audit → HasTrustBridges  (bounded_verification_forces_trust_bridges)" }
   | .forcing_export => {
       globalTag   := .forcing_export
       enabledBy   := fun cfg => cfg.constraints.contains .export_across_boundaries
-      description := "[Tier 2] export_across_boundaries → HasHeaders  (export_requires_headers)" }
+      description := "[Tier 2] export_across_boundaries → HasHeaders  (discriminating_import_forces_headers)" }
   | .forcing_adversarial => {
       globalTag   := .forcing_adversarial
       enabledBy   := fun cfg => cfg.constraints.contains .adversarial_pressure
-      description := "[Tier 2] adversarial_pressure → HasRevocation  (adversarial_requires_revocation)" }
+      description := "[Tier 2] adversarial_pressure → HasRevocation  (monotonic_lifecycle_forces_revocation)" }
   | .forcing_coordination => {
       globalTag   := .forcing_coordination
       enabledBy   := fun cfg => cfg.constraints.contains .coordination_need
-      description := "[Tier 2] coordination_need → HasBank  (coordination_requires_bank)" }
+      description := "[Tier 2] coordination_need → HasBank  (private_coordination_forces_bank)" }
   | .forcing_truth => {
       globalTag   := .forcing_truth
       enabledBy   := fun cfg => cfg.constraints.contains .truth_pressure
-      description := "[Tier 2] truth_pressure → HasRedeemability  (truth_pressure_requires_redeemability)" }
+      description := "[Tier 2] truth_pressure → HasRedeemability  (closed_endorsement_forces_redeemability)" }
 
 
 /-- Embed a constraint cluster into the global tag space.

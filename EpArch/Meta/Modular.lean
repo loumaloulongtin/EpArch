@@ -10,7 +10,7 @@ is proved separately in `Meta/TheoremTransport.lean` and `Meta/Tier4Transport.le
 
 This file provides two pieces:
 
-  (1) `PartialWellFormed W S` — a WellFormed type parameterized by a subset S of
+  (1) `PartialWellFormed W S` — a biconditional-subset type parameterized by a subset S of
       the six constraints. You only supply the biconditionals for the constraints
       you care about; the rest are not required.
 
@@ -53,7 +53,7 @@ open EpArch
     6-boolean vector. `true` = constraint included; `false` = dropped.
 
     Examples:
-    - `allConstraints`  — all six included (recovers full WellFormed)
+    - `allConstraints`  — all six included (strongest case; equivalent to the former `WellFormed`)
     - `noConstraints`   — none included (no forcing theorems claimed)
     - `⟨true, false, false, false, true, false⟩` — only distributed + coordination -/
 structure ConstraintSubset where

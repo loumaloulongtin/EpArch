@@ -107,7 +107,7 @@ theorem objectives_feasible : ∃ _ : EpArch.Realizer, True := by
 
 /-- Joint feasibility: world constraints and objectives are both nonempty.
 
-    Kept for backward compatibility. The stronger `existence_under_constraints`
+    Kept for backward compatibility. The stronger `existence_under_constraints_structural`
     is the preferred reference. -/
 theorem joint_feasible :
     (∃ C : @EpArch.WorldCtx.{0},
@@ -427,8 +427,9 @@ theorem grounded_world_and_structure_force_bank_primitives
     | `SystemOperationalBundle`| scope · headers · bank               |
     | `WorldBridgeBundle`      | revocation · trust · redeemability   |
 
-    **"Any world" status:** No `WorldCtx` or W_* bundle appears in this
-    signature.  The theorem holds for *any* world whatsoever.  The W_*
+    **World-agnostic status:** No `WorldCtx` or W_* bundle appears in this
+    signature.  The theorem's statement is world-agnostic — no formal world
+    precondition is required.  The W_*
     bundles (W_lies_possible, W_bounded_verification, W_partial_observability)
     that characterise the EpArch world semantics are the natural *sources*
     for the `WorldBridgeBundle` data, but they are not formal preconditions

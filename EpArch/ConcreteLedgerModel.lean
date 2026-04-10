@@ -8,8 +8,8 @@ import EpArch.Theorems
 /-!
 # ConcreteLedgerModel.lean — Zero-Axiom Constructive Witness
 
-A concrete model of a decentralized ledger that satisfies ALL commitments
-from Commitments.lean, ALL Bank governance theorems, and ALL Invariants.
+A concrete model of a decentralized ledger that serves as the
+non-vacuity constructive witness for the EpArch framework.
 
 ## Purpose
 
@@ -27,7 +27,7 @@ This is a consistency proof, not a uniqueness claim.
   CProvenance = List String. These are intentionally simple — the point
   is satisfiability, not realism.
 - **Full coverage:** Witnesses all 8 commitments (Commitments.lean),
-  all Bank theorems and operators (Bank.lean), and all 5 invariants (Invariants.lean).
+  all Bank operators (Bank.lean), and all 5 invariants (Invariants.lean).
 
 ## Role in Architecture
 
@@ -678,8 +678,7 @@ def CBehaviorallyEquivalent (acl1 acl2 : CACL) (bubble1 bubble2 : CBubble) : Pro
 
 /-- Theorem: Systems with the same deposits and ACL behave identically.
 
-    This grounds the abstract `bank_primitives_determine_behavior` theorem:
-    the primitives (deposits, ACL, lifecycle) determine the behavior. -/
+    The primitives (deposits, ACL, lifecycle) determine the behavior. -/
 theorem concrete_bank_determines_behavior (acl : CACL) (B1 B2 : CBubble) :
     B1.deposits = B2.deposits → B1.id = B2.id → CBehaviorallyEquivalent acl acl B1 B2 := by
   intro h_eq h_id

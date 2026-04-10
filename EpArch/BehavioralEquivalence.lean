@@ -2,8 +2,8 @@
 EpArch/BehavioralEquivalence.lean — Observation-Boundary Equivalence
 
 Defines the abstract input/observation interface for WorkingSystems and
-proves that any two systems sharing identical Bank primitive flags produce
-identical observations on all inputs.
+proves that any two systems both satisfying all operational properties
+produce identical observations on all inputs.
 
 ## Definitions
 

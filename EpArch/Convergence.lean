@@ -280,7 +280,7 @@ def RepresentsDisagreement.toDisagreement {W : WorkingSystem}
     The hypothesis `flat_accept` is the bridge condition: without scope
     separation, the system commits to a single acceptance predicate that
     purports to faithfully represent both agents.  The right branch of
-    `ForcingEmbedding.scope_embed` is then constructible, and
+    `disagreement_scope_embed` is then constructible, and
     `embedding_to_structurally_forced` closes it via `flat_scope_impossible`.
 
     This theorem demonstrates the abstract model doing real work: the
@@ -401,8 +401,8 @@ theorem private_coordination_forces_bank
   · exact h
   · exact (private_coordination_without_bank_embeds W R h (shared_deposit h) (h₁ h) (h₂ h)).elim
 
-/-- `ForcingEmbedding` bank field for a system with private-only
-    coordination: uses the right branch when ¬HasBank.
+/-- **Right-branch embedding (bank direction):** for a system with private-only
+    coordination, uses the right branch when ¬HasBank.
 
     The `shared_deposit` field provides the witness: agents claim to
     coordinate on this deposit, but the isolation condition makes the
