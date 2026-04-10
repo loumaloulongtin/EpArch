@@ -1304,7 +1304,7 @@ that no agent can determine from observations alone — independent of the PRP c
 argument. Together, PRP (cost) and partial observability (underdetermination) give two
 orthogonal reasons terminal epistemic closure is unreachable.
 
-**Files:** `Meta/ClusterRegistry.lean` (30-cluster tag registry, routing, per-family canonical lists) and `Meta/Config.lean` (witness carriers, `certify`, completeness theorems, named proof witnesses)
+**Files:** `Meta/ClusterRegistry.lean` (29-cluster tag registry, routing, per-family canonical lists) and `Meta/Config.lean` (witness carriers, `certify`, completeness theorems, named proof witnesses)
 
 **Design:** `clusterEnabled cfg c : Bool` is the computable routing function. `showConfig cfg`
 is `#eval`-able and returns human-readable cluster descriptions. `certify cfg` returns a
@@ -1474,7 +1474,7 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 
 **Convergence.lean structural forcing additions (+6 per-dimension theorems + 2 impossible helpers):** `disagreement_forces_bubbles`, `private_coordination_forces_bank`, `monotonic_lifecycle_forces_revocation`, `discriminating_import_forces_headers`, `bounded_verification_forces_trust_bridges`, `closed_endorsement_forces_redeemability`; `all_bridges_impossible`
 
-**Feasibility.lean world-to-structural additions (+4):** `w_lies_forces_revocation_need`, `w_bounded_forces_incompleteness`, `w_partial_obs_forces_redeemability`; `world_assumptions_force_bank_primitives`, `structurally_forced_is_world_aware`, `grounded_world_and_structure_force_bank_primitives`, `bundled_structure_forces_bank_primitives`, `kernel_world_forces_bank_primitives`
+**Feasibility.lean world-to-structural additions (+8):** `w_lies_forces_revocation_need`, `w_bounded_forces_incompleteness`, `w_partial_obs_forces_redeemability`; `world_assumptions_force_bank_primitives`, `structurally_forced_is_world_aware`, `grounded_world_and_structure_force_bank_primitives`, `bundled_structure_forces_bank_primitives`, `kernel_world_forces_bank_primitives`
 
 **WellFormed removal (−):** `WellFormed`, `wellFormed_iff`, `wellformed_implies_structurally_forced`, `partial_all_is_wellformed`, `wellformed_implies_partial`, `wellformed_is_modular`, `goals_force_bank_primitives`, `existence_under_constraints`, `success_feasible`, `bank_primitives_determine_behavior`, `cluster_meta_modular_wellformed` and 1 `MetaModularWitness` constructor removed
 

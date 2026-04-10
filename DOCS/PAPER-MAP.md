@@ -514,17 +514,16 @@ All paper claims should reference these definitions.
 | `concrete_forcing_embedding` | `def` | ConcreteLedgerModel.lean | A |
 | `concrete_structurally_forced` | `theorem` | ConcreteLedgerModel.lean | A |
 | `concrete_structural_convergence` | `theorem` | ConcreteLedgerModel.lean | A |
-| `existence_under_constraints` | `theorem` | Feasibility.lean | A |
-| `goals_force_bank_primitives` | `theorem` | Feasibility.lean | A |
-| `success_feasible` | `theorem` | Feasibility.lean | A |
+| `existence_under_constraints_structural` | `theorem` | Feasibility.lean | A |
+| `bundled_structure_forces_bank_primitives` | `theorem` | Feasibility.lean | A |
 | `joint_feasible` | `theorem` | Feasibility.lean | A |
 | `ConcreteSuccessfulSystem` | `def` | Realizer.lean | A |
 | `ConcreteRealizer` | `def` | Realizer.lean | A |
 
-**Headline Theorem:** `existence_under_constraints` packages:
+**Headline Theorem:** `existence_under_constraints_structural` packages:
 1. **Non-vacuity** — a working system exists
-2. **Success** — it's well-formed and satisfies all properties
-3. **Forced primitives** — success implies Bank primitives (via minimality)
+2. **Success** — it is structurally forced and satisfies all properties
+3. **Forced primitives** — Bank primitives are necessary (via `convergence_structural`)
 
 **Status:** Zero axioms in ConcreteLedgerModel.lean, Realizer.lean, Feasibility.lean (fully constructive).
 
@@ -540,19 +539,14 @@ All paper claims should reference these definitions.
 
 | Artifact | Type | File:Line | Tier |
 |----------|------|-----------|------|
-| `existence_under_constraints` | `theorem` | Feasibility.lean | A |
-| `goals_force_bank_primitives` | `theorem` | Feasibility.lean | A |
 | `structural_goals_force_bank_primitives` | `theorem` | Feasibility.lean | A |
 | `existence_under_constraints_structural` | `theorem` | Feasibility.lean | A |
 | `existence_under_constraints_embedding` | `theorem` | Feasibility.lean | A |
-| `success_feasible` | `theorem` | Feasibility.lean | A |
+| `bundled_structure_forces_bank_primitives` | `theorem` | Feasibility.lean | A |
+| `kernel_world_forces_bank_primitives` | `theorem` | Feasibility.lean | A |
 | `SuccessfulSystem` | `structure` | Realizer.lean | C |
 | `ConcreteSuccessfulSystem` | `def` | Realizer.lean | A |
 | `convergence_structural` | `theorem` | Convergence.lean | A |
-
-**Math Form (WellFormed path):**
-
-$$\exists W : \text{WorkingSystem}.\, \text{WellFormed}(W) \land \text{SatisfiesAllProperties}(W) \land \text{containsBankPrimitives}(W)$$
 
 **Math Form (structural path):**
 
@@ -561,10 +555,6 @@ $$\exists W : \text{WorkingSystem}.\, \text{StructurallyForced}(W) \land \text{S
 **Math Form (embedding path):**
 
 $$\exists W : \text{WorkingSystem}.\, \text{ForcingEmbedding}(W) \land \text{SatisfiesAllProperties}(W) \land \text{containsBankPrimitives}(W)$$
-
-**Supporting Theorem (Minimality — WellFormed path):**
-
-$$\forall W.\, \text{WellFormed}(W) \to \text{SatisfiesAllProperties}(W) \to \text{containsBankPrimitives}(W)$$
 
 **Supporting Theorem (Minimality — structural path):**
 
@@ -694,8 +684,8 @@ This closes the argument: given realistic agents and desired properties, you **c
 
 | Paper Claim | Lean Theorem | Location | Tier |
 |-------------|--------------|----------|------|
-| Existence under constraints | `existence_under_constraints` | Feasibility.lean | A |
-| Success forces Bank | `goals_force_bank_primitives` | Feasibility.lean | A |
+| Existence under constraints | `existence_under_constraints_structural` | Feasibility.lean | A |
+| Bank primitives forced (structural) | `bundled_structure_forces_bank_primitives` | Feasibility.lean | A |
 | Self-correction requires revision | `no_revision_no_correction` | StepSemantics.lean:807 | A |
 | Strip has no left inverse | `no_strip_left_inverse` | Theorems.lean:1962 | A |
 | Lottery dissolved | `lottery_paradox_dissolved_architecturally` | Theorems.lean:2692 | A |
@@ -721,7 +711,6 @@ This closes the argument: given realistic agents and desired properties, you **c
 | `PartialWellFormed W S` | `def` | Meta/Modular.lean | A |
 | `allConstraints` / `noConstraints` | `def` | Meta/Modular.lean | A |
 | `modular` | `theorem` | Meta/Modular.lean | A |
-| `wellformed_is_modular` | `theorem` | Meta/Modular.lean | A |
 
 **Key result:** `modular : ∀ S W, PartialWellFormed W S → projection_valid S W` — dropping constraint X = setting `S.X := false`; the X-conjunct becomes vacuously true.
 
@@ -731,10 +720,10 @@ This closes the argument: given realistic agents and desired properties, you **c
 
 | Artifact | Type | Purpose |
 |----------|------|---------|
-| `ClusterTag` | `inductive` | 30 cluster tags (Tiers 2–4 + world + meta-modular + lattice) |
+| `ClusterTag` | `inductive` | 29 cluster tags (Tiers 2–4 + world + meta-modular + lattice) |
 | `EnabledConstraintCluster` … `EnabledLatticeCluster` | `inductive` (×6) | Per-family sub-inductives with `toClusterTag` |
 | `allConstraintClusters` … `allLatticeClusters` | `def` (×6) | Per-family canonical lists |
-| `allClusters` | `def` | All 30 tags derived from the 6 lists |
+| `allClusters` | `def` | All 29 tags derived from the 6 lists |
 | `clusterEnabled` | `def` | `EpArchConfig → ClusterTag → Bool`; meta-modular and lattice always enabled |
 | `clusterDescription` | `def` | Human-readable one-line description per tag |
 
@@ -742,14 +731,14 @@ This closes the argument: given realistic agents and desired properties, you **c
 
 | Artifact | Type | Purpose |
 |----------|------|---------|
-| `MetaModularWitness` | `inductive` | Indexed proof carrier for 2 constraint-modularity clusters |
+| `MetaModularWitness` | `inductive` | Indexed proof carrier for 1 constraint-modularity cluster |
 | `LatticeWitness` | `inductive` | Indexed proof carrier for 3 lattice-stability clusters |
 | `metaModularWitness` / `latticeWitness` | `def` | Proof-delivering functions for each family |
 | `CertifiedProjection` | `structure` | Full proof bundle: enabled clusters + all witness families + filtered enabled lists |
 | `certify` | `def` | `EpArchConfig → CertifiedProjection cfg` |
 | `mem_enabledMetaModularWitnesses_of_enabled` | `theorem` | Completeness: enabled cluster → witness in filtered list |
 | `mem_enabledLatticeWitnesses_of_enabled` | `theorem` | Completeness: enabled cluster → witness in filtered list |
-| `cluster_meta_modular` … `cluster_lattice_pack` | `theorem` (×5) | Named proof witnesses for all 5 new clusters (Phase F) |
+| `cluster_meta_modular` … `cluster_lattice_pack` | `theorem` (×4) | Named proof witnesses for all 4 new clusters (Phase F) |
 
 ---
 

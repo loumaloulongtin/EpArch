@@ -42,7 +42,7 @@ These are concrete-instance results, not merely abstract theorems.
 | Bank primitive exists | `concrete_has_bank` |
 | Redeemability exists | `concrete_has_redeemability` |
 | All operational properties satisfied | `concrete_satisfies_all_properties` |
-| Well-formedness holds | `concrete_wellformed` |
+| Structural forcing holds | `concrete_structurally_forced` |
 | Revision traces exist | `concrete_revision_trace_exists'` |
 | Self-correction is supported | `concrete_model_supports_self_correction7` |
 | SEV factorization exists | `concrete_has_factorization8` |
@@ -60,8 +60,8 @@ These are real results, but **this file is not where they live**.
 | Result | Where established | Notes |
 |--------|-------------------|-------|
 | World-bundle feasibility | `EpArch.WorldWitness`, `EpArch.Feasibility.world_bundles_feasible` | Witnessed at the world-bundle layer |
-| Existence-under-constraints | `EpArch.Feasibility.existence_under_constraints` (original), `existence_under_constraints_structural` (via `StructurallyForced`), `existence_under_constraints_embedding` (via `ForcingEmbedding`) | Packages non-vacuity + success + forced primitives; three forms available |
-| Forced-primitives / minimality | `EpArch.Minimality`, `EpArch.Feasibility.goals_force_bank_primitives` | "Success forces Bank primitives" is not a witness-only claim |
+| Existence-under-constraints | `existence_under_constraints_structural` (via `StructurallyForced`), `existence_under_constraints_embedding` (via `ForcingEmbedding`), `bundled_structure_forces_bank_primitives` (headline bundled form) | Packages non-vacuity + success + forced primitives; multiple forms available |
+| Forced-primitives / minimality | `EpArch.Minimality`, `EpArch.Feasibility.structural_goals_force_bank_primitives`, `bundled_structure_forces_bank_primitives` | "Bank primitives are necessary" is not a witness-only claim |
 | Field-completeness / no hidden DOF | `EpArch.Header` (`observational_completeness_full`) | Type/completeness result, not a concrete witness |
 | Safe compatible extension | `EpArch.RevisionSafety` | Repo-level preservation theorem |
 | LTS refinement / operational grounding | `EpArch.StepSemantics`, `EpArch.Theorems` | Proved abstractly, not by inspecting one concrete model |
@@ -92,7 +92,7 @@ At minimum, the concrete witness supports:
 
 ```lean
 ∃ W : WorkingSystem,
-  WellFormed W ∧
+  StructurallyForced W ∧
   SatisfiesAllProperties W
 ```
 
@@ -100,12 +100,12 @@ At repo level this is packaged more strongly as:
 
 ```lean
 ∃ W : WorkingSystem,
-  WellFormed W ∧
+  StructurallyForced W ∧
   SatisfiesAllProperties W ∧
   containsBankPrimitives W
 ```
 
-via `EpArch.Feasibility.existence_under_constraints`.
+via `EpArch.Feasibility.existence_under_constraints_structural`.
 
 The architecture is **not vacuous**: there is at least one concrete successful instance, and the repo separately proves that success forces Bank primitives.
 
