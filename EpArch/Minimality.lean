@@ -1,21 +1,21 @@
 /-
 Minimality and Impossibility Theorems
 
-Formal convergence result: if a system is well-formed
-and satisfies all operational properties, it necessarily contains
-the Bank primitives.  The theorems here prove this via structural
-impossibility: remove primitive X and constraint Y cannot be satisfied.
+Formal convergence result: any system satisfying the operational
+constraints necessarily contains the Bank primitives.  The theorems
+here prove this via structural impossibility: remove primitive X and
+constraint Y cannot be satisfied.
 
 The core claim is convergence under constraints, not metaphysical necessity.
 These theorems formalize that convergence.
 
 ## Central Role
 
-This file contains the central convergence result: if a system is well-formed
-and satisfies all operational properties (withdrawal-safety, export-gating,
-revision-capability, temporal-expiry, redeemability-grounding), then it
-necessarily contains the Bank primitives (scoped bubbles, header-bearing
-deposits, redeemability, export gates, revision protocol).
+This file contains the central convergence result: any `WorkingSystem`
+— satisfying the operational constraints (withdrawal-safety, export-gating,
+revision-capability, temporal-expiry, redeemability-grounding) — necessarily
+contains the Bank primitives (scoped bubbles, header-bearing deposits,
+redeemability, export gates, revision protocol).
 
 This is convergence, not uniqueness: any working solution must contain
 these structural elements, but implementations can differ.
@@ -621,7 +621,7 @@ hypothesis.
 
 The kernel must traverse all n constructors to type-check any proof of
 `DepthClaim n`.  No budget below n suffices.  `bounded_verify_incomplete`
-prooves this by structural recursion on `Nat` — the recursion is the cost.
+proves this by structural recursion on `Nat` — the recursion is the cost.
 
 Consequence for trust bridges: a budget-n verifier cannot verify an
 endorsement of `DepthClaim n`, since that endorsement has depth n+1
