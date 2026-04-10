@@ -336,6 +336,21 @@ theorem disagreement_without_bubbles_embeds
   let D := R.toDisagreement
   flat_scope_impossible D ⟨flat_accept, hf₁, hf₂⟩
 
+/-- **Per-dimension structural forcing (scope).**
+
+    Any system carrying a `RepresentsDisagreement` witness and a flat
+    acceptance function is forced to have bubbles.  No `handles_distributed_agents W`
+    required — the structural contradiction alone suffices. -/
+theorem disagreement_forces_bubbles
+    (W : WorkingSystem) (R : RepresentsDisagreement W)
+    (flat_accept : ¬HasBubbles W → R.Claim → Prop)
+    (hf₁ : ∀ h c, flat_accept h c ↔ R.accept₁ c)
+    (hf₂ : ∀ h c, flat_accept h c ↔ R.accept₂ c) :
+    HasBubbles W := by
+  by_cases h : HasBubbles W
+  · exact h
+  · exact (disagreement_without_bubbles_embeds W R h (flat_accept h) (hf₁ h) (hf₂ h)).elim
+
 /-- `ForcingEmbedding` for a system with distributed disagreement:
     the scope direction uses the right branch (structural model fires)
     when ¬HasBubbles; other directions use the feature directly.
@@ -410,6 +425,21 @@ theorem private_coordination_without_bank_embeds
     False :=
   let P := R.toPrivateStorage h_no_bank
   private_storage_no_sharing P ⟨d, h₁, h₂⟩
+
+/-- **Per-dimension structural forcing (bank).**
+
+    Any system carrying a `RepresentsPrivateCoordination` witness and a
+    shared deposit is forced to have a bank.  No `handles_coordination W`
+    required. -/
+theorem private_coordination_forces_bank
+    (W : WorkingSystem) (R : RepresentsPrivateCoordination W)
+    (shared_deposit : ¬HasBank W → R.Deposit)
+    (h₁ : ∀ h, R.has_access R.a₁ (shared_deposit h))
+    (h₂ : ∀ h, R.has_access R.a₂ (shared_deposit h)) :
+    HasBank W := by
+  by_cases h : HasBank W
+  · exact h
+  · exact (private_coordination_without_bank_embeds W R h (shared_deposit h) (h₁ h) (h₂ h)).elim
 
 /-- `ForcingEmbedding` bank field for a system with private-only
     coordination: uses the right branch when ¬HasBank.
@@ -487,6 +517,20 @@ theorem monotonic_lifecycle_without_revocation_embeds
     iter R.step n R.accepted = R.accepted :=
   monotonic_no_exit (R.toLifecycle h_no_rev) n
 
+/-- **Per-dimension structural forcing (revocation).**
+
+    Any system carrying a `RepresentsMonotonicLifecycle` witness and evidence
+    that the accepted state escapes after `n` steps is forced to have revocation.
+    No `handles_adversarial W` required. -/
+theorem monotonic_lifecycle_forces_revocation
+    (W : WorkingSystem) (R : RepresentsMonotonicLifecycle W)
+    (n : Nat)
+    (h_escape : ¬HasRevocation W → iter R.step n R.accepted ≠ R.accepted) :
+    HasRevocation W := by
+  by_cases h : HasRevocation W
+  · exact h
+  · exact absurd (monotonic_lifecycle_without_revocation_embeds W R h n) (h_escape h)
+
 
 /-! ### Scenario 4: Discriminating Import (Export → Headers)
 
@@ -553,6 +597,22 @@ theorem discriminating_import_without_headers_embeds
     False :=
   no_sound_complete_uniform_import R.toImport f h_uniform h_sound h_complete
 
+/-- **Per-dimension structural forcing (headers).**
+
+    Any system carrying a `RepresentsDiscriminatingImport` witness and a
+    uniform-yet-sound-and-complete import function is forced to have headers.
+    No `handles_export W` required. -/
+theorem discriminating_import_forces_headers
+    (W : WorkingSystem) (R : RepresentsDiscriminatingImport W)
+    (f : ¬HasHeaders W → R.Claim → Bool)
+    (h_unif : ∀ h x y, f h x = f h y)
+    (h_sound : ∀ h, f h R.bad = false)
+    (h_complete : ∀ h, f h R.good = true) :
+    HasHeaders W := by
+  by_cases h : HasHeaders W
+  · exact h
+  · exact (discriminating_import_without_headers_embeds W R h (f h) (h_unif h) (h_sound h) (h_complete h)).elim
+
 
 /-! ### Scenario 5: Bounded Verification (Bounded Audit → Trust Bridges)
 
@@ -605,6 +665,19 @@ theorem bounded_verification_without_trust_embeds
     (h_all_within : ∀ c, R.verify_cost c ≤ R.budget) :
     False :=
   verification_only_import_incomplete R.toVerification h_all_within
+
+/-- **Per-dimension structural forcing (trust bridges).**
+
+    Any system carrying a `RepresentsBoundedVerification` witness and evidence
+    that all claims fit within the budget is forced to have trust bridges.
+    No `handles_bounded_audit W` required. -/
+theorem bounded_verification_forces_trust_bridges
+    (W : WorkingSystem) (R : RepresentsBoundedVerification W)
+    (h_all : ¬HasTrustBridges W → ∀ c, R.verify_cost c ≤ R.budget) :
+    HasTrustBridges W := by
+  by_cases h : HasTrustBridges W
+  · exact h
+  · exact (bounded_verification_without_trust_embeds W R h (h_all h)).elim
 
 
 /-! ### Scenario 6: Closed Endorsement (Truth Pressure → Redeemability)
@@ -660,6 +733,21 @@ theorem closed_endorsement_without_redeemability_embeds
     False :=
   let M := R.toClosed h_no_redeem
   closed_system_unfalsifiable M ⟨c, h_end, h_fals⟩
+
+/-- **Per-dimension structural forcing (redeemability).**
+
+    Any system carrying a `RepresentsClosedEndorsement` witness, an endorsed
+    claim, and evidence that it is externally falsifiable absent redeemability,
+    is forced to have redeemability.  No `handles_truth_pressure W` required. -/
+theorem closed_endorsement_forces_redeemability
+    (W : WorkingSystem) (R : RepresentsClosedEndorsement W)
+    (c : R.Claim)
+    (h_end : R.endorsed c)
+    (h_fals : ¬HasRedeemability W → R.externally_falsifiable c) :
+    HasRedeemability W := by
+  by_cases h : HasRedeemability W
+  · exact h
+  · exact (closed_endorsement_without_redeemability_embeds W R h c h_end (h_fals h)).elim
 
 
 /-! ## Convergence and Impossibility (Structural Versions) -/
