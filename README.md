@@ -133,8 +133,8 @@ The framework has three layers:
 | `Minimality.lean` | Structural impossibility models + alternative-architecture dismissals; `Pressure` inductive as canonical dimension index |
 | `Convergence.lean` | `StructurallyForced`, `ForcingEmbedding`, `convergence_structural`, bridge predicates; six per-dimension `*_forces_*` theorems; `SystemOperationalBundle`, `WorldBridgeBundle` |
 | `VerificationDepth.lean` | Kernel-grounded verification depth: `DepthClaim` constructive witness; `bounded_verify` budget decision procedure; `DepthWorldCtx` instantiates `W_bounded_verification` by construction |
-| `BehavioralEquivalence.lean` | Observation-boundary equivalence; Bank flags determine behavior |
-| `Feasibility.lean` | Feasibility witnesses; world-to-structural bridge theorems; `world_assumptions_force_bank_primitives` (W_* bundles → `containsBankPrimitives`); `kernel_world_forces_bank_primitives` (zero-assumption corollary) |
+| `BehavioralEquivalence.lean` | Observation-boundary equivalence; `working_systems_equivalent` — any two `SatisfiesAllProperties` systems are behaviorally equivalent |
+| `Feasibility.lean` | Feasibility witnesses; structural and world-to-structural bridge theorems; `bundled_structure_forces_bank_primitives` (headline: `SystemOperationalBundle` + `WorldBridgeBundle` → `containsBankPrimitives`); `world_assumptions_force_bank_primitives` (W_* bundle path); `kernel_world_forces_bank_primitives` (zero-assumption corollary) |
 | `Health.lean` | Health goal predicates and necessity theorems |
 | `Invariants.lean` | System invariants (grounded operational theorems, 0 axiom declarations) |
 | `Modularity.lean` | Lattice-stability: graceful scale-down and sub-level RevisionSafety (9 theorems) |
