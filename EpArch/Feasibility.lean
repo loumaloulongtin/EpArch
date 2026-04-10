@@ -239,18 +239,19 @@ theorem w_bounded_forces_incompleteness (C : @EpArch.WorldCtx.{0})
   let M : BoundedVerification := ⟨C.Claim, fun _ => k, 0, P, h_pos⟩
   exact ⟨P, k, M, h_pos, h_req, rfl, verification_only_import_incomplete M⟩
 
-/-- Any world satisfying W_lies_possible forces revocation into the architecture.
+/-- Given a world satisfying W_lies_possible and a lifecycle step function
+    where every false claim is absorbing (h_absorb), the world's false claim
+    is permanently injectable and permanently trapped.
 
-    The lifecycle is typed over C.Claim and h_absorb references C.Truth directly:
-    any false claim is a fixed point of step.  This connects the world's truth
-    semantics to the lifecycle's revocation-free structure — they are not two
-    separate arguments bolted together.  The SAME P from W is the claim that is
-    injectable (lie reach) and indelible (trapped forever).
+    This is a bridge schema: `step` and `h_absorb` are extra parameters
+    representing a candidate revocation-free lifecycle.  The theorem shows
+    that such a lifecycle, operating in a world with lies, cannot escape a
+    false claim — it does not conclude that revocation is forced from
+    W_lies_possible alone.
 
-    h_absorb says: "your step function cannot exit any false claim" —
-    the formal statement of a revocation-free lifecycle WITH RESPECT TO
-    the world's truth semantics.  Revocation is forced precisely because
-    false claims exist and no monotone step can undo their acceptance. -/
+    The SAME P from W is the claim that is injectable by every agent
+    (W.unrestricted_utterance) and indelible under the given step function
+    (monotonic_no_exit). -/
 theorem w_lies_forces_revocation_need (C : @EpArch.WorldCtx.{0})
     (W : C.W_lies_possible)
     -- Lifecycle over the world's claim type; step fixes every false claim
@@ -262,24 +263,19 @@ theorem w_lies_forces_revocation_need (C : @EpArch.WorldCtx.{0})
   let lc : MonotonicLifecycle := ⟨C.Claim, P, step, h_absorb w P h_false⟩
   exact ⟨w, P, h_false, fun a => W.unrestricted_utterance a P, monotonic_no_exit lc⟩
 
-/-- Any world satisfying W_partial_observability forces redeemability into the architecture.
+/-- Given a world satisfying W_partial_observability, an endorsement predicate,
+    obs_stable (same observations → same endorsement), and closed (endorsed → true),
+    no obs-stable closed endorsement system can endorse the world's underdetermined claim.
 
-    W.obs_underdetermines supplies a claim P where observationally equivalent
-    worlds disagree on P's truth.  In any closed endorsement system (no external
-    constraint-surface contact), P would be endorsed in one world and that
-    endorsement could never be falsified — the closure condition holds.
-    closed_system_unfalsifiable then fires: no endorsed claim can be
-    simultaneously externally falsifiable.
+    This is a bridge schema: `endorsed`, `obs_stable`, and `closed` are extra
+    parameters representing a candidate closed endorsement system.  The theorem
+    shows such a system cannot endorse every claim the world has.  The connection
+    to redeemability in the architecture follows from this gap, not from the
+    theorem statement alone.
 
-    But P's truth IS falsifiable — the other observationally-equivalent world
-    witnesses the opposite truth value.  The closed system cannot represent this:
-    external contact (redeemability) is structurally forced.
-
-    The proof: take the underdetermined P and worlds w0, w1 from W.
-    Suppose endorsed w0 P.  By closed, Truth w0 P.  By the biconditional,
-    ¬Truth w1 P.  But by obs_stable (same obs → same endorsement), endorsed w1 P.
-    By closed again, Truth w1 P.  Contradiction.  So no obs-stable closed system
-    can endorse the underdetermined claim — redeemability is forced. -/
+    Proof: the underdetermined P from W is endorsed in w0 (by assumption),
+    propagated to w1 via obs_stable, forcing Truth in both worlds via closed —
+    contradicting the biconditional from W.obs_underdetermines. -/
 theorem w_partial_obs_forces_redeemability (C : @EpArch.WorldCtx.{0})
     (W : C.W_partial_observability)
     (endorsed : C.World → C.Claim → Prop)
@@ -313,15 +309,17 @@ def WorldAwareSystem (C : @EpArch.WorldCtx.{0}) (W : WorkingSystem) : Prop :=
   (handles_export W             → HasHeaders W)  ∧
   (handles_coordination W       → HasBank W)
 
-/-- Headline theorem: a working system operating in any world satisfying all
-    three EpArch world assumptions, that is world-aware and satisfies all
-    operational properties, necessarily contains Bank primitives.
+/-- A working system satisfying WorldAwareSystem and SatisfiesAllProperties,
+    in a world satisfying all three W_* bundles, necessarily contains Bank primitives.
 
-    The W_* bundles are the direct antecedent of convergence.  The proof
-    constructs StructurallyForced W from WorldAwareSystem by threading Wv, Wl,
-    Wo through the three world-conditional implications, then applies
-    convergence_structural.  All three W_* bundles are non-trivially consumed:
-    removing any one leaves the corresponding forcing implication unprovable. -/
+    WorldAwareSystem holds the structural work: it contains the three
+    world-conditional capability→feature implications (trust, revocation,
+    redeemability) plus the three unconditional ones.  The W_* bundles discharge
+    the world-bundle guards in WorldAwareSystem; convergence_structural then
+    closes the proof from StructurallyForced + SatisfiesAllProperties.
+
+    All three W_* bundles are consumed: removing any one leaves the corresponding
+    guard in WorldAwareSystem undischarged. -/
 theorem world_assumptions_force_bank_primitives (C : @EpArch.WorldCtx.{0})
     (Wl : C.W_lies_possible)
     (Wv : C.W_bounded_verification)
