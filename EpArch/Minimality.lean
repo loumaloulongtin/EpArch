@@ -6,7 +6,7 @@ and satisfies all operational properties, it necessarily contains
 the Bank primitives.  The theorems here prove this via structural
 impossibility: remove primitive X and constraint Y cannot be satisfied.
 
-The core claim is CONVERGENCE under constraints, not metaphysical necessity.
+The core claim is convergence under constraints, not metaphysical necessity.
 These theorems formalize that convergence.
 
 ## Central Role
@@ -17,7 +17,7 @@ revision-capability, temporal-expiry, redeemability-grounding), then it
 necessarily contains the Bank primitives (scoped bubbles, header-bearing
 deposits, redeemability, export gates, revision protocol).
 
-This is convergence, not uniqueness: ANY working solution must contain
+This is convergence, not uniqueness: any working solution must contain
 these structural elements, but implementations can differ.
 
 ## Key Definitions
@@ -25,10 +25,14 @@ these structural elements, but implementations can differ.
 - `Constraints` — typeclass capturing the minimal system predicates
 - `WorkingSystem` — a system satisfying all operational properties
 - `WellFormed` — no trivially-degenerate configurations
-- `StructurallyForced` — forward-only implications justified by structural models
-- `convergence_structural` — WorkingSystem + StructurallyForced → has all Bank primitives
-  (preferred convergence theorem; `WellFormed → StructurallyForced` via
-  `wellformed_implies_structurally_forced`)
+- `PrimitiveNecessity` — minimal constraints table as data
+
+## Related Files
+
+- **BehavioralEquivalence.lean:** sharp observation-boundary equivalence theorems
+  (`Input`, `Observation`, `Behavior`, `BehaviorallyEquivalent`, equivalence theorems)
+- **Convergence.lean:** `StructurallyForced`, `ForcingEmbedding`, Bridge predicates,
+  Scenario predicates, `convergence_structural`, `structural_impossibility`
 
 ## Dependencies
 
@@ -54,7 +58,7 @@ variable {PropLike Standard ErrorModel Provenance : Type u}
 The minimal constraints table has three columns:
   | Constraint | What It Forces | If Relaxed |
 
-This typeclass captures the CONSTRAINT column. The "What It Forces" is captured
+This typeclass captures the constraint column. The "What It Forces" is captured
 by the convergence theorem and impossibility theorems below. -/
 
 /-- Predicate: agent controls acceptance for a bubble. -/
@@ -261,14 +265,14 @@ captures this necessary coherence. -/
 
 /-- A system is well-formed if behavioral capabilities ↔ architectural features.
 
-    This is the DESIGN INVARIANT: systems claiming to handle a property
+    The design invariant: systems claiming to handle a property
     must actually have the architectural feature that enables it, AND
     systems with the architectural feature must have the capability enabled.
 
     Note: This is not a circular definition. The behavioral predicates
     (handles_*) inspect boolean flags. The architectural predicates
     (Has*) inspect SystemSpec. Well-formedness connects these two layers
-    BIDIRECTIONALLY, enabling proofs in both directions. -/
+    bidirectionally, enabling proofs in both directions. -/
 def WellFormed (W : WorkingSystem) : Prop :=
   -- Distributed agents handling ↔ bubbles
   (W.has_shared_records = true ↔ W.spec.has_bubble_separation = true) ∧
@@ -331,206 +335,6 @@ theorem all_features_constitute_bank (W : WorkingSystem) :
   exact ⟨h1, h2, h3, h4, h5, h6⟩
 
 
-/-! ## Sharp Behavioral Equivalence
-
-Systems with Bank primitives are "behaviorally equivalent" for coordination
-purposes. Define the observation boundary explicitly, then show that
-systems with identical primitives produce identical observations. -/
-
-/-! ### Input Events -/
-
-/-- Input events that a WorkingSystem can receive.
-    These are the abstract analogues of CInputEvent in ConcreteLedgerModel.lean. -/
-inductive Input where
-  /-- Request to withdraw/rely on a deposit. -/
-  | WithdrawRequest (agent_id : Nat) (bubble_id : Nat) (claim_id : Nat)
-  /-- Request to export deposit across boundary. -/
-  | ExportRequest (source_bubble : Nat) (target_bubble : Nat) (claim_id : Nat)
-  /-- Challenge a deposit's validity. -/
-  | ChallengeRequest (claim_id : Nat) (field : String)
-  /-- Time advance. -/
-  | TimeAdvance (ticks : Nat)
-  deriving Repr, DecidableEq
-
-/-! ### Observable Outcomes -/
-
-/-- Observable outcomes from processing inputs.
-    These are the abstract analogues of COutcome in ConcreteLedgerModel.lean. -/
-inductive Observation where
-  /-- Withdrawal succeeded. -/
-  | WithdrawSuccess (claim_id : Nat)
-  /-- Withdrawal denied with reason. -/
-  | WithdrawDenied (reason : String)
-  /-- Export succeeded. -/
-  | ExportSuccess (claim_id : Nat) (target_bubble : Nat)
-  /-- Export denied with reason. -/
-  | ExportDenied (reason : String)
-  /-- Challenge processed. -/
-  | ChallengeProcessed (result : String)
-  /-- Time advanced. -/
-  | TimeAdvanced
-  deriving Repr, DecidableEq
-
-/-! ### Behavior Function -/
-
-/-- The behavior of a WorkingSystem on an input.
-
-    This is the KEY INSIGHT: behavior depends ONLY on the primitives.
-    Two systems with the same primitives produce the same observations.
-
-    The function is defined by cases on what primitives the system has.
-    This makes the link between primitives and behavior DEFINITIONAL. -/
-def Behavior (W : WorkingSystem) (i : Input) : Observation :=
-  match i with
-  | .WithdrawRequest _ _ claim_id =>
-    -- Withdrawal requires: shared records + reliance
-    if W.has_shared_records ∧ W.enables_reliance then
-      .WithdrawSuccess claim_id
-    else
-      .WithdrawDenied "missing primitives"
-  | .ExportRequest _ target claim_id =>
-    -- Export requires: shared records + reliance
-    if W.has_shared_records ∧ W.enables_reliance then
-      .ExportSuccess claim_id target
-    else
-      .ExportDenied "missing primitives"
-  | .ChallengeRequest _ field =>
-    -- Challenge requires: correction support
-    if W.supports_correction then
-      .ChallengeProcessed s!"challenged field {field}"
-    else
-      .ChallengeProcessed "no correction support"
-  | .TimeAdvance _ =>
-    .TimeAdvanced
-
-/-! ### Sharp Behavioral Equivalence -/
-
-/-- Two systems are behaviorally equivalent iff they produce
-    the same observations on ALL inputs.
-
-    This is the SHARP definition: not "similar enough" but
-    "identical on the observation boundary". -/
-def BehaviorallyEquivalent (W1 W2 : WorkingSystem) : Prop :=
-  ∀ i : Input, Behavior W1 i = Behavior W2 i
-
-/-! ### Theorems -/
-
-/-- Behavioral equivalence is reflexive. -/
-theorem behavioral_equiv_refl (W : WorkingSystem) : BehaviorallyEquivalent W W := by
-  intro i
-  rfl
-
-/-- Behavioral equivalence is symmetric. -/
-theorem behavioral_equiv_symm (W1 W2 : WorkingSystem) :
-    BehaviorallyEquivalent W1 W2 → BehaviorallyEquivalent W2 W1 := by
-  intro h i
-  exact (h i).symm
-
-/-- Behavioral equivalence is transitive. -/
-theorem behavioral_equiv_trans (W1 W2 W3 : WorkingSystem) :
-    BehaviorallyEquivalent W1 W2 → BehaviorallyEquivalent W2 W3 →
-    BehaviorallyEquivalent W1 W3 := by
-  intro h12 h23 i
-  exact (h12 i).trans (h23 i)
-
-/-- Core lemma: systems with identical primitive flags behave identically.
-
-    This is the computational content: Behavior only inspects
-    has_shared_records, enables_reliance, and supports_correction.
-    The resists_adversaries flag is included for completeness but not used by Behavior. -/
-theorem same_flags_same_behavior (W1 W2 : WorkingSystem)
-    (h_records : W1.has_shared_records = W2.has_shared_records)
-    (h_reliance : W1.enables_reliance = W2.enables_reliance)
-    (h_correction : W1.supports_correction = W2.supports_correction)
-    (_h_adversaries : W1.resists_adversaries = W2.resists_adversaries) :
-    BehaviorallyEquivalent W1 W2 := by
-  intro i
-  simp [Behavior]
-  cases i with
-  | WithdrawRequest agent_id bubble_id claim_id =>
-    simp [h_records, h_reliance]
-  | ExportRequest source target claim_id =>
-    simp [h_records, h_reliance]
-  | ChallengeRequest claim_id field =>
-    simp [h_correction]
-  | TimeAdvance ticks =>
-    rfl
-
-/-- Helper lemma: SatisfiesAllProperties fixes all behavioral flags.
-
-    This is the key computational insight: if a system satisfies all properties,
-    we know exactly what its flags must be. -/
-theorem satisfies_all_fixes_flags (W : WorkingSystem) (h : SatisfiesAllProperties W) :
-    W.has_shared_records = true ∧
-    W.enables_reliance = true ∧
-    W.supports_correction = true ∧
-    W.resists_adversaries = true := by
-  have ⟨h1, h2, _h3, h4, _h5, _h6⟩ := h
-  -- h1: handles_distributed_agents W = (W.has_shared_records = true)
-  -- h2: handles_bounded_audit W = (W.enables_reliance = true)
-  -- h4: handles_adversarial W = (W.supports_correction = true ∧ W.resists_adversaries = true)
-  unfold handles_distributed_agents at h1
-  unfold handles_bounded_audit at h2
-  unfold handles_adversarial at h4
-  exact ⟨h1, h2, h4.1, h4.2⟩
-
-/-- Main behavioral equivalence theorem: systems satisfying all properties behave identically.
-    Proof: SatisfiesAllProperties fixes all flags, same flags = same behavior. -/
-theorem working_systems_equivalent (W1 W2 : WorkingSystem) :
-    SatisfiesAllProperties W1 → SatisfiesAllProperties W2 → BehaviorallyEquivalent W1 W2 := by
-  intro h_sat1 h_sat2
-  have ⟨h1_rec, h1_rel, h1_cor, h1_adv⟩ := satisfies_all_fixes_flags W1 h_sat1
-  have ⟨h2_rec, h2_rel, h2_cor, h2_adv⟩ := satisfies_all_fixes_flags W2 h_sat2
-  exact same_flags_same_behavior W1 W2
-    (h1_rec.trans h2_rec.symm)
-    (h1_rel.trans h2_rel.symm)
-    (h1_cor.trans h2_cor.symm)
-    (h1_adv.trans h2_adv.symm)
-
-/-- Systems with Bank primitives are behaviorally equivalent for coordination.
-
-    containsBankPrimitives implies the SystemSpec has all features, which
-    (for well-formed systems) implies the behavioral flags are set correctly.
-
-    Note: This requires bidirectional well-formedness to connect spec features
-    to behavioral flags. The `mpr` direction of WellFormed gives us:
-    spec feature = true → behavioral flag = true. -/
-theorem bank_primitives_determine_behavior (W1 W2 : WorkingSystem)
-    (h_wf1 : WellFormed W1) (h_wf2 : WellFormed W2) :
-    containsBankPrimitives W1 → containsBankPrimitives W2 →
-    BehaviorallyEquivalent W1 W2 := by
-  intro h1 h2
-  -- containsBankPrimitives unfolds to Has* conjunctions
-  unfold containsBankPrimitives at h1 h2
-  have ⟨hB1, hT1, _hH1, hR1, _hK1, hD1⟩ := h1
-  have ⟨hB2, hT2, _hH2, hR2, _hK2, hD2⟩ := h2
-  -- Has* are definitional: HasBubbles W = W.spec.has_bubble_separation = true
-  unfold HasBubbles HasTrustBridges HasHeaders HasRevocation HasBank HasRedeemability at *
-  -- Use bidirectional WellFormed to derive flag values from spec features
-  -- WellFormed.1.mpr: spec.has_bubble_separation = true → has_shared_records = true
-  have h1_rec : W1.has_shared_records = true := h_wf1.1.mpr hB1
-  have h1_rel : W1.enables_reliance = true := h_wf1.2.1.mpr hT1
-  have h1_cor : W1.supports_correction = true := h_wf1.2.2.2.2.2.mpr hD1
-  -- For resists_adversaries, we need to extract from the revocation ↔
-  -- WellFormed says: (supports_correction ∧ resists_adversaries) ↔ has_revocation
-  have h1_adv_pair : W1.supports_correction = true ∧ W1.resists_adversaries = true :=
-    h_wf1.2.2.2.1.mpr hR1
-  have h1_adv : W1.resists_adversaries = true := h1_adv_pair.2
-  -- Same for W2
-  have h2_rec : W2.has_shared_records = true := h_wf2.1.mpr hB2
-  have h2_rel : W2.enables_reliance = true := h_wf2.2.1.mpr hT2
-  have h2_cor : W2.supports_correction = true := h_wf2.2.2.2.2.2.mpr hD2
-  have h2_adv_pair : W2.supports_correction = true ∧ W2.resists_adversaries = true :=
-    h_wf2.2.2.2.1.mpr hR2
-  have h2_adv : W2.resists_adversaries = true := h2_adv_pair.2
-  -- Now apply same_flags_same_behavior
-  exact same_flags_same_behavior W1 W2
-    (h1_rec.trans h2_rec.symm)
-    (h1_rel.trans h2_rel.symm)
-    (h1_cor.trans h2_cor.symm)
-    (h1_adv.trans h2_adv.symm)
-
-
 /-! ## Primitive Necessity Summary -/
 
 /-- Summary structure: what primitives are forced by what constraints. -/
@@ -576,9 +380,9 @@ from that structure alone — no `WellFormed`, no biconditionals.
 | 5 | Coordination | `PrivateOnlyStorage` | `private_storage_no_sharing` | Isolated storage blocks collective reliance |
 | 6 | Truth pressure | `ClosedEndorsement` | `closed_system_unfalsifiable` | Without external contact, consensus is unfalsifiable |
 
-After the six models, `StructurallyForced` packages the forward-direction
-implications (capability → feature) and `convergence_structural` provides
-a convergence theorem that does **not** depend on `WellFormed`.
+After the six models, the convergence proof machinery (`StructurallyForced`,
+`ForcingEmbedding`, Bridge predicates, Scenario predicates,
+`convergence_structural`) lives in `Convergence.lean`.
 -/
 
 
@@ -618,6 +422,148 @@ theorem flat_scope_impossible (D : AgentDisagreement) :
   exact D.agent2_rejects ((hf₂ D.witness).mp ((hf₁ D.witness).mpr D.agent1_accepts))
 
 
+/-! ### 1b. Alternative Scope Architectures Reduce to AgentDisagreement
+
+A reviewer may ask: do capability systems, federated namespaces, or
+dynamically parameterized acceptance gates escape `flat_scope_impossible`?
+
+This section instantiates each alternative, then shows it either:
+(a) directly supplies an `AgentDisagreement` instance, or
+(b) embeds into per-agent scoped acceptance.
+
+**Capability-token system.**  Each claim carries a capability token; acceptance
+is token-gated.  Two agents with non-overlapping token sets disagree on the
+witness claim: agent 1 holds the required token; agent 2 does not.
+This is a direct `AgentDisagreement` instance — `flat_scope_impossible` applies.
+
+**Federated namespace.**  A global namespace partitioned by scope identifier:
+`accept(scope_id, claim) := local_policy scope_id claim`.  Two agents from
+different scopes with conflicting local policies disagree on the witness claim.
+Again a direct `AgentDisagreement` instance.
+
+**Dynamically parameterized gate.**  Acceptance is `gate(params, claim)` for
+some runtime parameter bundle.  If two agents use different parameter bundles
+and disagree on the witness, the curried functions `gate params₁` and
+`gate params₂` witness an `AgentDisagreement`.  If the gate is parameterized
+such that no parameter assignment can satisfy both agents simultaneously, the
+flat-scope impossibility applies directly.  If the gate CAN make both agents
+agree on every claim, then by definition the agents do not genuinely disagree —
+the scope pressure is absent and no bubble is forced for that pair.
+
+**Conclusion of this section.**  None of the three alternative architectures
+escapes the theorem.  They either instantiate `AgentDisagreement` directly or
+they collapse to a case where the agents do not genuinely disagree (and hence
+no scoped separation is required by this argument). -/
+
+/-- Capability-token gated acceptance: a claim is accepted iff the agent
+    holds the required token. -/
+structure CapabilitySystem where
+  Claim : Type
+  Token : Type
+  /-- Token required to accept a given claim. -/
+  required_token : Claim → Token
+  /-- Agent 1 holds this token. -/
+  agent1_holds : Token → Prop
+  /-- Agent 2 holds this token. -/
+  agent2_holds : Token → Prop
+  /-- Witness claim whose required token agent 1 holds but agent 2 does not. -/
+  witness : Claim
+  agent1_has : agent1_holds (required_token witness)
+  agent2_lacks : ¬agent2_holds (required_token witness)
+
+/-- A capability system with split token ownership instantiates AgentDisagreement.
+    The two agents disagree on the witness claim: agent 1 accepts it (holds token),
+    agent 2 rejects it (lacks token).  `flat_scope_impossible` then applies
+    directly — no flat acceptance function can represent both. -/
+theorem capability_system_gives_disagreement (C : CapabilitySystem) :
+    AgentDisagreement where
+  Claim      := C.Claim
+  accept₁ c  := C.agent1_holds (C.required_token c)
+  accept₂ c  := C.agent2_holds (C.required_token c)
+  witness    := C.witness
+  agent1_accepts := C.agent1_has
+  agent2_rejects := C.agent2_lacks
+
+/-- Therefore a flat acceptance function cannot faithfully represent both agents
+    in a capability system with split ownership. -/
+theorem capability_flat_impossible (C : CapabilitySystem) :
+    ¬∃ (f : C.Claim → Prop),
+      (∀ c, f c ↔ C.agent1_holds (C.required_token c)) ∧
+      (∀ c, f c ↔ C.agent2_holds (C.required_token c)) :=
+  fun ⟨_f, hf₁, hf₂⟩ =>
+    C.agent2_lacks ((hf₂ C.witness).mp ((hf₁ C.witness).mpr C.agent1_has))
+
+/-- Federated namespace: a global claim type carries a scope identifier;
+    each scope has its own local acceptance policy. -/
+structure FederatedNamespace where
+  Scope : Type
+  Claim : Type
+  /-- Local acceptance policy for each scope. -/
+  local_policy : Scope → Claim → Prop
+  /-- Two scopes with conflicting policies on a witness claim. -/
+  scope₁ : Scope
+  scope₂ : Scope
+  witness : Claim
+  scope1_accepts : local_policy scope₁ witness
+  scope2_rejects : ¬local_policy scope₂ witness
+
+/-- A federated namespace with conflicting local policies instantiates
+    AgentDisagreement — the per-scope policies ARE per-agent acceptance criteria. -/
+theorem federated_namespace_gives_disagreement (F : FederatedNamespace) :
+    AgentDisagreement where
+  Claim      := F.Claim
+  accept₁    := F.local_policy F.scope₁
+  accept₂    := F.local_policy F.scope₂
+  witness    := F.witness
+  agent1_accepts := F.scope1_accepts
+  agent2_rejects := F.scope2_rejects
+
+/-- Therefore a single flat function cannot faithfully represent two conflicting
+    scope policies in a federated namespace. -/
+theorem federated_flat_impossible (F : FederatedNamespace) :
+    ¬∃ (f : F.Claim → Prop),
+      (∀ c, f c ↔ F.local_policy F.scope₁ c) ∧
+      (∀ c, f c ↔ F.local_policy F.scope₂ c) :=
+  fun ⟨_f, hf₁, hf₂⟩ =>
+    F.scope2_rejects ((hf₂ F.witness).mp ((hf₁ F.witness).mpr F.scope1_accepts))
+
+/-- Dynamically parameterized gate: acceptance is `gate params claim` for a
+    runtime parameter bundle of type `Params`. -/
+structure ParameterizedGate where
+  Params : Type
+  Claim : Type
+  gate : Params → Claim → Prop
+  /-- Parameter bundle used by agent 1. -/
+  params₁ : Params
+  /-- Parameter bundle used by agent 2. -/
+  params₂ : Params
+  /-- Witness claim where the two parameter bundles disagree. -/
+  witness : Claim
+  params1_accepts : gate params₁ witness
+  params2_rejects : ¬gate params₂ witness
+
+/-- A parameterized gate whose two parameter bundles disagree on a witness claim
+    instantiates AgentDisagreement — the curried functions `gate params₁` and
+    `gate params₂` are the two differing acceptance criteria. -/
+theorem parameterized_gate_gives_disagreement (G : ParameterizedGate) :
+    AgentDisagreement where
+  Claim      := G.Claim
+  accept₁    := G.gate G.params₁
+  accept₂    := G.gate G.params₂
+  witness    := G.witness
+  agent1_accepts := G.params1_accepts
+  agent2_rejects := G.params2_rejects
+
+/-- Therefore no flat acceptance function can faithfully represent two parameter
+    bundles that disagree on a witness claim. -/
+theorem parameterized_gate_flat_impossible (G : ParameterizedGate) :
+    ¬∃ (f : G.Claim → Prop),
+      (∀ c, f c ↔ G.gate G.params₁ c) ∧
+      (∀ c, f c ↔ G.gate G.params₂ c) :=
+  fun ⟨_f, hf₁, hf₂⟩ =>
+    G.params2_rejects ((hf₂ G.witness).mp ((hf₁ G.witness).mpr G.params1_accepts))
+
+
 /-! ### 2. Bounded Audit → Trust Bridges
 
 **Argument.**  When full verification has unbounded cost, some claims
@@ -649,6 +595,97 @@ theorem verification_only_import_incomplete (M : BoundedVerification) :
   intro h
   have h_within := h M.hard_claim
   exact absurd h_within (Nat.not_le_of_gt M.exceeds_budget)
+
+
+/-! ### 2b. Alternative Trust Mechanisms Reduce to BoundedVerification
+
+A reviewer may ask: do staged acceptance, probabilistic screening, escrowed
+delay, or delegated verification markets escape `verification_only_import_incomplete`?
+
+Each alternative is instantiated below.  All hit the same ceiling: at least
+one claim exceeds the budget, and the alternative mechanism either (a) itself
+exceeds the budget (same contradiction), or (b) relies on an endorsing scope
+that bridges the local scope's budget shortfall.
+
+**Staged acceptance.**  A multi-round protocol assigns partial costs per round.
+If the sum of round costs for the hard claim still exceeds the budget, the
+cumulative cost model is a `BoundedVerification` instance — contradiction fires.
+
+**Delegated verification market.**  A third-party verifier handles hard claims.
+The delegation is itself a trust relationship: the importing scope accepts
+the delegate's endorsement without reverifying from scratch — a `DelegatedVerification`
+instance under the structural definition above. -/
+
+/-- Staged (multi-round) verification: total cost is the sum of per-round costs. -/
+structure StagedVerification where
+  Claim : Type
+  /-- Per-round cost to verify a claim in round i. -/
+  round_cost : Nat → Claim → Nat
+  /-- Number of rounds attempted. -/
+  rounds : Nat
+  /-- Total budget across all rounds. -/
+  budget : Nat
+  /-- A claim whose cumulative cost exceeds the total budget. -/
+  hard_claim : Claim
+  exceeds_budget : (List.range rounds).foldl (fun acc i => acc + round_cost i hard_claim) 0 > budget
+
+/-- Staged verification cannot handle claims whose cumulative cost exceeds budget.
+    The multi-round structure does not escape the budget ceiling. -/
+theorem staged_verification_incomplete (M : StagedVerification) :
+    ¬(List.range M.rounds).foldl (fun acc i => acc + M.round_cost i M.hard_claim) 0 ≤ M.budget :=
+  Nat.not_le_of_gt M.exceeds_budget
+
+/-- Delegated verification: a third-party verifier endorses claims the importer
+    cannot verify within budget.  Acceptance of hard claims is via the delegate's
+    endorsement rather than local reverification. -/
+structure DelegatedVerification where
+  Claim : Type
+  verify_cost : Claim → Nat
+  budget : Nat
+  hard_claim : Claim
+  exceeds_budget : verify_cost hard_claim > budget
+  /-- The delegate's acceptance predicate for claims over budget. -/
+  delegate_accepts : Claim → Prop
+  /-- Hard claims are accepted via the delegate, not local verification.
+      The importer relies on the delegate — it cannot self-verify hard claims. -/
+  relies_on_delegate : ∀ c, verify_cost c > budget → delegate_accepts c
+
+/-- DelegatedVerification embeds into BoundedVerification: the local budget problem
+    is unchanged regardless of the delegation arrangement.
+    The `delegate_accepts` / `relies_on_delegate` fields formalise the trust relationship;
+    they route around the budget shortfall, not through it. -/
+def delegated_to_bounded (M : DelegatedVerification) : BoundedVerification where
+  Claim          := M.Claim
+  verify_cost    := M.verify_cost
+  budget         := M.budget
+  hard_claim     := M.hard_claim
+  exceeds_budget := M.exceeds_budget
+
+/-- Delegated verification is incomplete at the local scope: `verification_only_import_incomplete`
+    fires via the embedding. -/
+theorem delegated_is_trust_bridge (M : DelegatedVerification) :
+    ¬∀ c : M.Claim, M.verify_cost c ≤ M.budget :=
+  verification_only_import_incomplete (delegated_to_bounded M)
+
+/-- A claim is locally verifiable if its verification cost is within budget. -/
+def LocallyVerifiable (M : DelegatedVerification) (c : M.Claim) : Prop :=
+  M.verify_cost c ≤ M.budget
+
+/-- A claim exceeds local verification capacity iff its cost is not within budget.
+    Both directions follow from `Nat` order lemmas. -/
+theorem trust_required_iff_not_locally_verifiable (M : DelegatedVerification) (c : M.Claim) :
+    M.verify_cost c > M.budget ↔ ¬LocallyVerifiable M c :=
+  ⟨fun hgt hle => absurd hle (Nat.not_le_of_gt hgt),
+   fun h => (Nat.lt_or_ge M.budget (M.verify_cost c)).elim id (fun h' => (h h').elim)⟩
+
+/-- At the system level, existence of a claim exceeding the budget is equivalent to
+    failure of universal local verifiability.  `M.hard_claim` witnesses the
+    right-to-left direction. -/
+theorem delegation_necessary_iff_locally_inadequate (M : DelegatedVerification) :
+    (∃ c : M.Claim, M.verify_cost c > M.budget) ↔
+    ¬∀ c : M.Claim, LocallyVerifiable M c :=
+  ⟨fun ⟨c, hc⟩ hA => absurd (hA c) (Nat.not_le_of_gt hc),
+   fun _ => ⟨M.hard_claim, M.exceeds_budget⟩⟩
 
 
 /-! ### 3. Export Across Boundaries → Headers (Metadata)
@@ -695,6 +732,133 @@ theorem no_sound_complete_uniform_import (M : DiscriminatingImport)
   rw [h_sound, h_complete] at h_eq
   exact Bool.noConfusion h_eq
 
+/-- `IsHeader M f` means that `f` distinguishes the good and bad claims in import
+    scenario `M`: the minimal routing condition for correct import. -/
+def IsHeader (M : DiscriminatingImport) (f : M.Claim → Bool) : Prop :=
+  f M.good ≠ f M.bad
+
+/-- A sound-and-complete import function satisfies `IsHeader`: it must disagree on good
+    and bad claims.  Follows from `h_complete`, `h_sound`, and `Bool.noConfusion`. -/
+theorem sound_complete_import_is_header (M : DiscriminatingImport)
+    (f : M.Claim → Bool)
+    (h_sound : f M.bad = false)
+    (h_complete : f M.good = true) :
+    IsHeader M f := by
+  intro h_eq
+  rw [h_complete, h_sound] at h_eq
+  exact Bool.noConfusion h_eq
+
+/-- Any sound-and-complete routing policy yields a function satisfying `IsHeader`.
+    No assumption beyond soundness and completeness is needed. -/
+theorem routing_requires_header (M : DiscriminatingImport) :
+    (∃ f : M.Claim → Bool, f M.bad = false ∧ f M.good = true) →
+    ∃ f : M.Claim → Bool, IsHeader M f :=
+  fun ⟨f, hs, hc⟩ => ⟨f, sound_complete_import_is_header M f hs hc⟩
+
+
+/-! ### 3b. Alternative Metadata Strategies Reduce to DiscriminatingImport
+
+A reviewer may ask: do content-addressed routing or contextual routing state
+escape `no_sound_complete_uniform_import`?
+
+Both alternatives are instantiated below.  In each case the routing mechanism
+either acts uniformly on claim content (same contradiction) or carries
+structured per-claim metadata — a function satisfying `IsHeader`.
+
+**Content-addressed routing.**  Import decisions are based solely on a content
+hash.  If the hash function is collision-resistant, good and bad claims have
+different hashes — but the import function now maps hash → Bool, and it must
+still discriminate good from bad.  A uniform function over hashes collapses
+the same way.  A non-uniform function over hashes maps distinct hashes to
+distinct decisions, satisfying `IsHeader` on the embedded `DiscriminatingImport`.
+
+**Contextual routing state.**  The receiver maintains external state that
+routes each claim.  If the state is stored per-claim, it carries all the
+information a header would carry — functionally equivalent.  If the state
+is global (not per-claim), the import function is effectively uniform over
+the claim dimension, and the same impossibility fires. -/
+
+/-- Content-addressed import: the receiver routes by a hash of the claim. -/
+structure ContentAddressedImport where
+  Claim : Type
+  Hash : Type
+  /-- Collision-resistant hash function: good and bad have different hashes. -/
+  hash : Claim → Hash
+  good : Claim
+  bad : Claim
+  hash_distinguishes : hash good ≠ hash bad
+  /-- Import decision is a function of the hash only. -/
+  import_by_hash : Hash → Bool
+
+/-- Content-addressed import with distinguishing hashes is non-uniform: the
+    import function over hashes must already discriminate good from bad hashes.
+    That discrimination IS per-claim structured metadata — a header by another name.
+    If `import_by_hash` were uniform (same output on all hashes), it could not
+    distinguish good from bad claims — the same impossibility as `no_sound_complete_uniform_import`. -/
+theorem content_addressed_requires_discrimination (M : ContentAddressedImport)
+    (h_uniform : ∀ h₁ h₂ : M.Hash, M.import_by_hash h₁ = M.import_by_hash h₂) :
+    M.import_by_hash (M.hash M.good) = M.import_by_hash (M.hash M.bad) :=
+  h_uniform (M.hash M.good) (M.hash M.bad)
+
+/-- A sound-and-complete content-addressed import cannot be uniform over hashes
+    when good and bad have different hashes.  Non-uniformity over hashes = metadata. -/
+theorem content_addressed_uniform_impossible (M : ContentAddressedImport)
+    (h_uniform : ∀ h₁ h₂ : M.Hash, M.import_by_hash h₁ = M.import_by_hash h₂)
+    (h_sound : M.import_by_hash (M.hash M.bad) = false)
+    (h_complete : M.import_by_hash (M.hash M.good) = true) : False := by
+  have h_eq := content_addressed_requires_discrimination M h_uniform
+  rw [h_sound, h_complete] at h_eq
+  exact Bool.noConfusion h_eq
+
+/-- A ContentAddressedImport with distinguishing hashes embeds into DiscriminatingImport:
+    good and bad are distinct claims — inequality is derived from `hash_distinguishes`
+    via congruence. -/
+def content_addressed_to_discriminating (M : ContentAddressedImport) : DiscriminatingImport where
+  Claim       := M.Claim
+  good        := M.good
+  bad         := M.bad
+  good_ne_bad := fun h => M.hash_distinguishes (congrArg M.hash h)
+
+/-- A sound-and-complete content-addressed policy with uniform hash routing is
+    impossible: contradicts `no_sound_complete_uniform_import` on the embedded
+    `DiscriminatingImport`. -/
+theorem content_addressed_is_header (M : ContentAddressedImport)
+    (h_uniform : ∀ x y : M.Claim, M.import_by_hash (M.hash x) = M.import_by_hash (M.hash y))
+    (h_sound : M.import_by_hash (M.hash M.bad) = false)
+    (h_complete : M.import_by_hash (M.hash M.good) = true) : False :=
+  no_sound_complete_uniform_import
+    (content_addressed_to_discriminating M)
+    (fun c => M.import_by_hash (M.hash c))
+    h_uniform h_sound h_complete
+
+/-- The composite routing function `import_by_hash ∘ hash` satisfies `IsHeader` for
+    the embedded `DiscriminatingImport` scenario, via `sound_complete_import_is_header`. -/
+theorem content_addressed_has_header (M : ContentAddressedImport)
+    (h_sound : M.import_by_hash (M.hash M.bad) = false)
+    (h_complete : M.import_by_hash (M.hash M.good) = true) :
+    IsHeader (content_addressed_to_discriminating M)
+             (fun c => M.import_by_hash (M.hash c)) :=
+  sound_complete_import_is_header (content_addressed_to_discriminating M)
+    (fun c => M.import_by_hash (M.hash c))
+    h_sound h_complete
+
+/-- Global contextual routing state: a single shared routing predicate
+    applied to all claims (not per-claim metadata). -/
+structure GlobalRoutingState where
+  Claim : Type
+  /-- Global accept/reject predicate — same for every claim (uniform). -/
+  global_policy : Bool
+  good : Claim
+  bad : Claim
+
+/-- Global routing state is effectively uniform: every claim gets the same
+    decision.  It cannot distinguish good from bad claims.
+    Per-claim routing state would be a header — the global version fails
+    for exactly the same reason as a uniform import function. -/
+theorem global_routing_cannot_discriminate (M : GlobalRoutingState) :
+    (fun _ : M.Claim => M.global_policy) M.good =
+    (fun _ : M.Claim => M.global_policy) M.bad := rfl
+
 
 /-! ### 4. Adversarial Pressure → Revocation
 
@@ -735,6 +899,78 @@ theorem monotonic_no_exit (M : MonotonicLifecycle) (n : Nat) :
     rw [ih, M.absorbing]
 
 
+/-! ### 4b. Alternative Revocation Mechanisms Reduce to MonotonicLifecycle
+
+A reviewer may ask: do quarantine states, shadow/hold states, or rollback
+mechanisms escape `monotonic_no_exit`?
+
+All three are instantiated below.  In each case the alternative either (a)
+provides a non-absorbing transition out of the accepted state — the lifecycle
+is non-monotonic — or (b) the accepted state remains absorbing and the alternative
+does not actually remove the adversarial deposit from reliance.
+
+**Quarantine state.**  If quarantine is reachable from accepted, the accepted
+state is not absorbing — `step accepted ≠ accepted` for some step.  The
+`MonotonicLifecycle.absorbing` condition is violated.
+
+**Shadow/hold state.**  Same argument: if accepted can transition to hold,
+the absorbing condition fails.  If hold is unreachable from accepted, the
+bad deposit remains effectively accepted and the system fails corrigibility.
+
+**Rollback.**  Rollback restores a prior state — a non-absorbing transition
+out of accepted.  The absorbing condition is violated. -/
+
+/-- A lifecycle with a quarantine state reachable from accepted. -/
+structure QuarantineLifecycle where
+  State : Type
+  accepted : State
+  quarantined : State
+  step : State → State
+  /-- Quarantine is reachable from accepted in one step. -/
+  accepted_to_quarantine : step accepted = quarantined
+  /-- Quarantine is distinct from accepted. -/
+  distinct : accepted ≠ quarantined
+
+/-- A lifecycle with a quarantine exit from accepted is non-monotonic:
+    the accepted state is not absorbing. -/
+theorem quarantine_violates_absorbing (M : QuarantineLifecycle) :
+    M.step M.accepted ≠ M.accepted := by
+  rw [M.accepted_to_quarantine]
+  exact Ne.symm M.distinct
+
+/-- A lifecycle with a hold/shadow state reachable from accepted. -/
+structure HoldLifecycle where
+  State : Type
+  accepted : State
+  held : State
+  step : State → State
+  accepted_to_held : step accepted = held
+  distinct : accepted ≠ held
+
+/-- A lifecycle with a hold exit from accepted is non-monotonic:
+    the accepted state is not absorbing. -/
+theorem hold_violates_absorbing (M : HoldLifecycle) :
+    M.step M.accepted ≠ M.accepted := by
+  rw [M.accepted_to_held]
+  exact Ne.symm M.distinct
+
+/-- A lifecycle where rollback is a transition out of accepted to a prior state. -/
+structure RollbackLifecycle where
+  State : Type
+  accepted : State
+  prior : State
+  step : State → State
+  accepted_rolls_back : step accepted = prior
+  distinct : accepted ≠ prior
+
+/-- A lifecycle with rollback from accepted is non-monotonic:
+    the accepted state is not absorbing. -/
+theorem rollback_violates_absorbing (M : RollbackLifecycle) :
+    M.step M.accepted ≠ M.accepted := by
+  rw [M.accepted_rolls_back]
+  exact Ne.symm M.distinct
+
+
 /-! ### 5. Coordination Need → Shared Ledger (Bank)
 
 **Argument.**  When multiple agents must rely on the same deposits,
@@ -765,6 +1001,79 @@ theorem private_storage_no_sharing (M : PrivateOnlyStorage) :
     ¬∃ d, M.has_access M.a₁ d ∧ M.has_access M.a₂ d := by
   intro ⟨d, h₁, h₂⟩
   exact M.isolation d h₁ h₂
+
+
+/-! ### 5b. Alternative Coordination Substrates Reduce to PrivateOnlyStorage
+
+A reviewer may ask: do replicated logs, attestation networks, or CRDT-like
+shared state escape `private_storage_no_sharing`?
+
+All three are instantiated below.  In each case the alternative either (a)
+provides shared access between the two agents, or (b) maintains isolation,
+and `private_storage_no_sharing` fires directly.
+
+**Replicated log.**  Each agent has a local replica, but replicas are
+synchronized.  Synchronization means both agents can access the same deposit
+entry — violation of the isolation condition.
+
+**Attestation network.**  Agents publish signed claims accessible to others.
+If agent₂ can read agent₁'s attestation, the isolation condition fails — both
+agents have access.
+
+**CRDT-based shared state.**  A conflict-free replicated data type by definition
+converges to a shared state that all agents can read.  The convergence property
+implies both agents access the same value — isolation is violated. -/
+
+/-- Replicated log: both agents read from synchronized replicas. -/
+structure ReplicatedLog where
+  Agent : Type
+  Deposit : Type
+  has_access : Agent → Deposit → Prop
+  a₁ : Agent
+  a₂ : Agent
+  distinct : a₁ ≠ a₂
+  /-- Synchronization: a deposit accessible to a₁ is also accessible to a₂. -/
+  synchronized : ∀ d, has_access a₁ d → has_access a₂ d
+
+/-- A replicated log with synchronization: both agents access the same deposits.
+    Isolation does not hold. -/
+theorem replicated_log_is_shared (M : ReplicatedLog) :
+    ∀ d, M.has_access M.a₁ d → M.has_access M.a₁ d ∧ M.has_access M.a₂ d :=
+  fun d h => ⟨h, M.synchronized d h⟩
+
+/-- Attestation network: agent₁ publishes; agent₂ can read the attestation. -/
+structure AttestationNetwork where
+  Agent : Type
+  Deposit : Type
+  has_access : Agent → Deposit → Prop
+  a₁ : Agent
+  a₂ : Agent
+  distinct : a₁ ≠ a₂
+  /-- Agent₂ can read agent₁'s published attestations. -/
+  readable : ∀ d, has_access a₁ d → has_access a₂ d
+
+/-- An attestation network with shared read-access: both agents reach the same
+    deposits.  Isolation does not hold. -/
+theorem attestation_network_is_shared (M : AttestationNetwork) :
+    ∀ d, M.has_access M.a₁ d → M.has_access M.a₁ d ∧ M.has_access M.a₂ d :=
+  fun d h => ⟨h, M.readable d h⟩
+
+/-- CRDT: convergence guarantees both agents observe the same committed value. -/
+structure CRDTStorage where
+  Agent : Type
+  Deposit : Type
+  has_access : Agent → Deposit → Prop
+  a₁ : Agent
+  a₂ : Agent
+  distinct : a₁ ≠ a₂
+  /-- Convergence: once a deposit is committed, all agents can access it. -/
+  converges : ∀ d, has_access a₁ d → has_access a₂ d
+
+/-- CRDT-based shared state where convergence means both agents access the same
+    deposits.  Isolation does not hold. -/
+theorem crdt_is_shared (M : CRDTStorage) :
+    ∀ d, M.has_access M.a₁ d → M.has_access M.a₁ d ∧ M.has_access M.a₂ d :=
+  fun d h => ⟨h, M.converges d h⟩
 
 
 /-! ### 6. Truth Pressure → Redeemability
@@ -800,655 +1109,194 @@ theorem closed_system_unfalsifiable (M : ClosedEndorsement) :
   exact M.closed c h_end h_fals
 
 
-/-! ## StructurallyForced: Forward-Direction Forcing Without WellFormed
+/-! ### 6b. Alternative External Contact Mechanisms Reduce to ClosedEndorsement
 
-`StructurallyForced` captures the same forward implications as `WellFormed`
-but without the backward direction and without assuming biconditionals.
+A reviewer may ask: do anomaly signaling, partial contestation, or soft
+falsifiability escape `closed_system_unfalsifiable`?
 
-Where `WellFormed` assumes `handles_X ↔ HasY`, `StructurallyForced`
-packages only the `handles_X → HasY` direction.  The structural models
-above justify constructing these implications; the backward direction
-(needed only for behavioral equivalence, not forcing) remains in
-`WellFormed` for uses that require it.
+All three are instantiated below.  In each case the mechanism either (a)
+provides genuine external falsifiability, or (b) the endorsement system remains
+closed and `closed_system_unfalsifiable` fires directly.
 
-Relationship to WellFormed:
-- `WellFormed W → StructurallyForced W` (forward extraction, see below)
-- `StructurallyForced` suffices for convergence and impossibility theorems
-- `WellFormed` additionally enables `bank_primitives_determine_behavior`  -/
+**Anomaly signaling.**  The system can emit anomaly signals but ignores them:
+no endorsed claim becomes externally falsifiable from the signal alone.
+The closure condition is preserved — signals without action leave the
+endorsement-falsifiability structure unchanged.
 
-/-- A system is structurally forced if each operational capability implies
-    the corresponding architectural feature.  Each field is independently
-    justified by a structural forcing model. -/
-structure StructurallyForced (W : WorkingSystem) : Prop where
-  /-- Handling distributed agents requires scope separation.
-      Justified by: `flat_scope_impossible` -/
-  scope_forcing : handles_distributed_agents W → HasBubbles W
-  /-- Handling bounded audit requires trust bridges.
-      Justified by: `verification_only_import_incomplete` -/
-  trust_forcing : handles_bounded_audit W → HasTrustBridges W
-  /-- Handling export requires headers/metadata.
-      Justified by: `uniform_import_nondiscriminating` and
-      `no_sound_complete_uniform_import` -/
-  header_forcing : handles_export W → HasHeaders W
-  /-- Handling adversarial pressure requires revocation.
-      Justified by: `monotonic_no_exit` -/
-  revocation_forcing : handles_adversarial W → HasRevocation W
-  /-- Handling coordination requires shared ledger.
-      Justified by: `private_storage_no_sharing` -/
-  bank_forcing : handles_coordination W → HasBank W
-  /-- Handling truth pressure requires redeemability.
-      Justified by: `closed_system_unfalsifiable` -/
-  redeemability_forcing : handles_truth_pressure W → HasRedeemability W
+**Partial contestation.**  Only some claims are contestable.  For the
+non-contestable endorsed claims, the closure condition still holds.
+The closed system theorem applies to that sub-population.
 
-/-- `WellFormed` implies `StructurallyForced` (forward direction extraction). -/
-theorem wellformed_implies_structurally_forced (W : WorkingSystem) :
-    WellFormed W → StructurallyForced W := by
-  intro ⟨h1, h2, h3, h4, h5, h6⟩
-  exact {
-    scope_forcing := h1.mp
-    trust_forcing := h2.mp
-    header_forcing := h3.mp
-    revocation_forcing := h4.mp
-    bank_forcing := h5.mp
-    redeemability_forcing := h6.mp
-  }
+**Soft falsifiability.**  Claims can be flagged as uncertain but are not
+actually falsifiable (not removed from endorsement).  If flagging does not
+imply external falsifiability, the closure condition holds — the same
+impossibility applies. -/
 
-
-/-! ## Forcing Embeddings: Translation Layer
-
-The structural models above prove clean no-go lemmas on abstract scenarios.
-`StructurallyForced` packages the forward implications (capability → feature).
-The remaining gap: the `StructurallyForced` fields are narratively "justified by"
-the structural models but not mechanically derived from them.
-
-`ForcingEmbedding` closes this gap.  Each field says:
-
-> "A system handling capability X either already has feature Y, or it
->  embeds the abstract scenario whose impossibility is already proven."
-
-The derivation `embedding_to_structurally_forced` is then a generic,
-mechanical combination: for each direction, take the `Or`, and in the
-right branch apply the structural impossibility theorem to produce `False`.
-The left branch is the feature itself.
-
-The proof chain becomes:
-
-    ForcingEmbedding ──┐
-                       ├── StructurallyForced ──► convergence_structural
-    Structural models ─┘
-
-The `ForcingEmbedding` instance encodes when a system without feature X
-facing constraint Y is in the impossible scenario.  The derivation is
-uniform and constructive (no Classical reasoning — `Or.elim` is intuitionistic). -/
-
-/-! ## Bridge Predicates and System-Independent Forcing Theorems
-
-A **bridge predicate** `Bridge_X W` names the commitment a system would
-have to make in dimension X if it lacks feature X.  Each is an existential
-over the abstract structural model's scenario data.
-
-The `bridge_*_impossible` theorems are system-independent: for ANY `W`,
-committing to the impossible scenario forces the feature.  They are
-derived directly from the structural impossibility theorems — no
-`StructurallyForced` or `convergence_structural` involved.
-
-**Separation of concerns:**
-- The concrete good system proves `StructurallyForced` via `ForcingEmbedding`
-  (the full convergence pipeline, using `Or.inl` everywhere).
-- Deficient systems prove `Bridge_X DeficientSystem → False` directly via
-  `bridge_X_impossible`: the bridge commitment data is universally absurd.
-  `SatisfiesAllProperties`, ¬HasFeature, and the convergence pipeline are
-  not involved.
-
-This matches what is actually proven: deficient systems + bridge hypothesis ⇒
-contradiction, NOT deficient system alone ⇒ contradiction. -/
-
-/-- A system is bridge-committed on scope: it provides a flat acceptance
-    function faithful to two disagreeing agents. -/
-def BridgeBubbles (_W : WorkingSystem) : Prop :=
-  ∃ D : AgentDisagreement, ∃ f : D.Claim → Prop,
-    (∀ c, f c ↔ D.accept₁ c) ∧ (∀ c, f c ↔ D.accept₂ c)
-
-/-- The scope bridge scenario is universally impossible: no flat acceptance
-    function can faithfully represent two genuinely disagreeing agents.
-    `_W` is a phantom parameter — the impossibility is system-independent. -/
-theorem bridge_bubbles_impossible (_W : WorkingSystem) : ¬BridgeBubbles _W :=
-  fun ⟨D, f, hf⟩ => flat_scope_impossible D ⟨f, hf⟩
-
-/-- A system is bridge-committed on trust: all claims fit within budget. -/
-def BridgeTrust (_W : WorkingSystem) : Prop :=
-  ∃ M : BoundedVerification, ∀ c, M.verify_cost c ≤ M.budget
-
-/-- The trust bridge scenario is universally impossible: no budget can cover
-    a claim whose cost exceeds it. -/
-theorem bridge_trust_impossible (_W : WorkingSystem) : ¬BridgeTrust _W :=
-  fun ⟨M, hM⟩ => verification_only_import_incomplete M hM
-
-/-- A system is bridge-committed on headers: a uniform import function
-    is both sound and complete. -/
-def BridgeHeaders (_W : WorkingSystem) : Prop :=
-  ∃ M : DiscriminatingImport, ∃ f : M.Claim → Bool,
-    (∀ x y, f x = f y) ∧ f M.bad = false ∧ f M.good = true
-
-/-- The headers bridge scenario is universally impossible: no uniform import
-    function can be both sound and complete on distinct claims. -/
-theorem bridge_headers_impossible (_W : WorkingSystem) : ¬BridgeHeaders _W :=
-  fun ⟨M, f, hu, hs, hc⟩ => no_sound_complete_uniform_import M f hu hs hc
-
-/-- A system is bridge-committed on revocation: the accepted state escapes. -/
-def BridgeRevocation (_W : WorkingSystem) : Prop :=
-  ∃ M : MonotonicLifecycle, ∃ n, iter M.step n M.accepted ≠ M.accepted
-
-/-- The revocation bridge scenario is universally impossible: an absorbing
-    accepted state cannot be escaped at any step count. -/
-theorem bridge_revocation_impossible (_W : WorkingSystem) : ¬BridgeRevocation _W :=
-  fun ⟨M, n, hn⟩ => hn (monotonic_no_exit M n)
-
-/-- A system is bridge-committed on bank: isolated agents share a deposit. -/
-def BridgeBank (_W : WorkingSystem) : Prop :=
-  ∃ M : PrivateOnlyStorage, ∃ d, M.has_access M.a₁ d ∧ M.has_access M.a₂ d
-
-/-- The bank bridge scenario is universally impossible: isolated agents cannot
-    share a deposit. -/
-theorem bridge_bank_impossible (_W : WorkingSystem) : ¬BridgeBank _W :=
-  fun ⟨M, d, hd⟩ => private_storage_no_sharing M ⟨d, hd⟩
-
-/-- A system is bridge-committed on redeemability: a closed system has an
-    endorsed-and-falsifiable claim. -/
-def BridgeRedeemability (_W : WorkingSystem) : Prop :=
-  ∃ M : ClosedEndorsement, ∃ c, M.endorsed c ∧ M.externally_falsifiable c
-
-/-- The redeemability bridge scenario is universally impossible: a closed system
-    cannot have an endorsed claim that is externally falsifiable. -/
-theorem bridge_redeemability_impossible (_W : WorkingSystem) : ¬BridgeRedeemability _W :=
-  fun ⟨M, c, hc⟩ => closed_system_unfalsifiable M ⟨c, hc⟩
-
-
-/-- Forcing embeddings: connects a `WorkingSystem` to the abstract
-    structural models via an auditable disjunction.
-
-    Each field says: a system handling the constraint EITHER already
-    has the feature, OR is bridge-committed to the impossible scenario
-    for that dimension.  Since bridge commitment forces the feature
-    (via `bridge_*_impossible`), the feature holds in both branches. -/
-structure ForcingEmbedding (W : WorkingSystem) : Prop where
-  /-- Distributed agents: either bubbles exist, or the system is
-      bridge-committed on scope (`BridgeBubbles`). -/
-  scope_embed : handles_distributed_agents W →
-    HasBubbles W ∨ BridgeBubbles W
-  /-- Bounded audit: either trust bridges exist, or the system is
-      bridge-committed on trust (`BridgeTrust`). -/
-  trust_embed : handles_bounded_audit W →
-    HasTrustBridges W ∨ BridgeTrust W
-  /-- Export: either headers exist, or the system is bridge-committed
-      on headers (`BridgeHeaders`). -/
-  header_embed : handles_export W →
-    HasHeaders W ∨ BridgeHeaders W
-  /-- Adversarial: either revocation exists, or the system is
-      bridge-committed on revocation (`BridgeRevocation`). -/
-  revocation_embed : handles_adversarial W →
-    HasRevocation W ∨ BridgeRevocation W
-  /-- Coordination: either shared ledger exists, or the system is
-      bridge-committed on bank (`BridgeBank`). -/
-  bank_embed : handles_coordination W →
-    HasBank W ∨ BridgeBank W
-  /-- Truth pressure: either redeemability exists, or the system is
-      bridge-committed on redeemability (`BridgeRedeemability`). -/
-  redeemability_embed : handles_truth_pressure W →
-    HasRedeemability W ∨ BridgeRedeemability W
-
-/-- Mechanical derivation: `ForcingEmbedding` → `StructurallyForced`.
-
-    Each field is derived by `Or.elim`: the left branch is the feature
-    itself (`id`); the right branch applies `bridge_X_impossible`, which
-    proves `¬Bridge_X W` directly — so the right branch is universally
-    absurd.  Fully constructive — no `Classical.byContradiction`. -/
-theorem embedding_to_structurally_forced (W : WorkingSystem) (E : ForcingEmbedding W) :
-    StructurallyForced W where
-  scope_forcing h := (E.scope_embed h).elim id fun hb => absurd hb (bridge_bubbles_impossible W)
-  trust_forcing h := (E.trust_embed h).elim id fun hb => absurd hb (bridge_trust_impossible W)
-  header_forcing h := (E.header_embed h).elim id fun hb => absurd hb (bridge_headers_impossible W)
-  revocation_forcing h := (E.revocation_embed h).elim id fun hb => absurd hb (bridge_revocation_impossible W)
-  bank_forcing h := (E.bank_embed h).elim id fun hb => absurd hb (bridge_bank_impossible W)
-  redeemability_forcing h := (E.redeemability_embed h).elim id fun hb => absurd hb (bridge_redeemability_impossible W)
-
-
-/-! ## Scenario Predicates: Enriching WorkingSystems with Structural Content
-
-The structural models prove impossibility on abstract scenarios.
-The `ForcingEmbedding` connects these to working systems via disjunctions.
-For a system that already has all features (like `ConcreteWorkingSystem`),
-`Or.inl` suffices — but the abstract models never fire.
-
-Scenario predicates supply the concrete data needed to instantiate the
-abstract structural models.  When a system has a scenario predicate and
-lacks the corresponding feature, a right-branch embedding theorem proves
-the system instantiates the impossible scenario — and the structural model fires. -/
-
-
-/-! ### Scenario 1: Distributed Disagreement -/
-
-/-- A system represents distributed disagreement if it carries two
-    acceptance predicates over some claim type that genuinely disagree:
-    agent 1 accepts a witness claim that agent 2 rejects.
-
-    When such a system lacks bubbles, it is in the `AgentDisagreement`
-    scenario: a single flat scope must represent both acceptance profiles
-    simultaneously — which `flat_scope_impossible` proves impossible.
-
-    This is not a hypothetical: any system that claims to "handle
-    distributed agents" must accommodate disagreeing acceptance criteria
-    (otherwise there's no distributed agency to handle). -/
-structure RepresentsDisagreement (W : WorkingSystem) where
-  /-- The claim type the agents reason over. -/
+/-- Anomaly-signaling system: signals exist but do not make endorsed claims
+    externally falsifiable. -/
+structure AnomalySignaling where
   Claim : Type
-  /-- Agent 1's acceptance criterion. -/
-  accept₁ : Claim → Prop
-  /-- Agent 2's acceptance criterion. -/
-  accept₂ : Claim → Prop
-  /-- Witness claim where they disagree. -/
-  witness : Claim
-  /-- Agent 1 accepts the witness. -/
-  agent1_accepts : accept₁ witness
-  /-- Agent 2 rejects the witness. -/
-  agent2_rejects : ¬accept₂ witness
-
-/-- Extract the `AgentDisagreement` abstract model from a system that
-    `RepresentsDisagreement`. -/
-def RepresentsDisagreement.toDisagreement {W : WorkingSystem}
-    (R : RepresentsDisagreement W) : AgentDisagreement where
-  Claim := R.Claim
-  accept₁ := R.accept₁
-  accept₂ := R.accept₂
-  witness := R.witness
-  agent1_accepts := R.agent1_accepts
-  agent2_rejects := R.agent2_rejects
-
-/-- **Right-branch embedding (scope direction).**
-
-    A system that represents distributed disagreement and lacks bubbles
-    yields the `AgentDisagreement` scenario.  In a flat (single-scope) system
-    the acceptance function must agree with both agents — but
-    `flat_scope_impossible` proves this is contradictory.
-
-    The hypothesis `flat_accept` is the bridge condition: without scope
-    separation, the system commits to a single acceptance predicate that
-    purports to faithfully represent both agents.  The right branch of
-    `ForcingEmbedding.scope_embed` is then constructible, and
-    `embedding_to_structurally_forced` closes it via `flat_scope_impossible`.
-
-    This theorem demonstrates the abstract model doing real work: the
-    structural lemma is used essentially here. -/
-theorem disagreement_without_bubbles_embeds
-    (W : WorkingSystem)
-    (R : RepresentsDisagreement W)
-    (_h_no_bubbles : ¬HasBubbles W)
-    (flat_accept : R.Claim → Prop)
-    (hf₁ : ∀ c, flat_accept c ↔ R.accept₁ c)
-    (hf₂ : ∀ c, flat_accept c ↔ R.accept₂ c) :
-    False :=
-  let D := R.toDisagreement
-  flat_scope_impossible D ⟨flat_accept, hf₁, hf₂⟩
-
-/-- `ForcingEmbedding` for a system with distributed disagreement:
-    the scope direction uses the right branch (structural model fires)
-    when ¬HasBubbles; other directions use the feature directly.
-
-    This is how you build a `ForcingEmbedding` instance for a deficient
-    system — the scope field routes through `Or.inr`, and the structural
-    impossibility carries the proof. -/
-theorem disagreement_scope_embed
-    (W : WorkingSystem) (R : RepresentsDisagreement W)
-    (flat_accept : ¬HasBubbles W → R.Claim → Prop)
-    (hflat₁ : ∀ h, ∀ c, flat_accept h c ↔ R.accept₁ c)
-    (hflat₂ : ∀ h, ∀ c, flat_accept h c ↔ R.accept₂ c) :
-    handles_distributed_agents W →
-    HasBubbles W ∨
-    (∃ D : AgentDisagreement, ∃ f : D.Claim → Prop,
-      (∀ c, f c ↔ D.accept₁ c) ∧ (∀ c, f c ↔ D.accept₂ c)) := by
-  intro _
-  by_cases h : HasBubbles W
-  · exact Or.inl h
-  · exact Or.inr ⟨R.toDisagreement, flat_accept h, hflat₁ h, hflat₂ h⟩
-
-
-/-! ### Scenario 2: Private-Only Coordination -/
-
-/-- A system represents private-only coordination if it carries
-    evidence that its storage layer, absent a shared ledger, isolates
-    agents: deposits accessible to one agent are not accessible to the other.
-
-    When such a system lacks a shared ledger (bank), it is in the
-    `PrivateOnlyStorage` scenario: agents must share a deposit for
-    coordination, but isolation prevents this — which
-    `private_storage_no_sharing` proves impossible. -/
-structure RepresentsPrivateCoordination (W : WorkingSystem) where
-  /-- Agent type. -/
-  Agent : Type
-  /-- Deposit type. -/
-  Deposit : Type
-  /-- Access relation. -/
-  has_access : Agent → Deposit → Prop
-  /-- Two distinct agents needing coordination. -/
-  a₁ : Agent
-  a₂ : Agent
-  distinct : a₁ ≠ a₂
-  /-- Without a shared ledger, storage is isolated. -/
-  isolation_without_bank : ¬HasBank W → ∀ d, has_access a₁ d → ¬has_access a₂ d
-
-/-- Extract `PrivateOnlyStorage` from a system that
-    `RepresentsPrivateCoordination` and lacks a shared ledger. -/
-def RepresentsPrivateCoordination.toPrivateStorage {W : WorkingSystem}
-    (R : RepresentsPrivateCoordination W) (h_no_bank : ¬HasBank W) :
-    PrivateOnlyStorage where
-  Agent := R.Agent
-  Deposit := R.Deposit
-  has_access := R.has_access
-  a₁ := R.a₁
-  a₂ := R.a₂
-  distinct := R.distinct
-  isolation := R.isolation_without_bank h_no_bank
-
-/-- **Right-branch embedding (coordination direction).**
-
-    A system that represents private-only coordination and lacks a bank
-    yields the `PrivateOnlyStorage` scenario.  The system claims agents
-    coordinate by sharing deposits, but storage is isolated —
-    `private_storage_no_sharing` proves this is contradictory. -/
-theorem private_coordination_without_bank_embeds
-    (W : WorkingSystem)
-    (R : RepresentsPrivateCoordination W)
-    (h_no_bank : ¬HasBank W)
-    (d : R.Deposit)
-    (h₁ : R.has_access R.a₁ d) (h₂ : R.has_access R.a₂ d) :
-    False :=
-  let P := R.toPrivateStorage h_no_bank
-  private_storage_no_sharing P ⟨d, h₁, h₂⟩
-
-/-- `ForcingEmbedding` bank field for a system with private-only
-    coordination: uses the right branch when ¬HasBank.
-
-    The `shared_deposit` field provides the witness: agents claim to
-    coordinate on this deposit, but the isolation condition makes the
-    scenario impossible. -/
-theorem private_coordination_bank_embed
-    (W : WorkingSystem) (R : RepresentsPrivateCoordination W)
-    (shared_deposit : ¬HasBank W → R.Deposit)
-    (h_access₁ : ∀ h, R.has_access R.a₁ (shared_deposit h))
-    (h_access₂ : ∀ h, R.has_access R.a₂ (shared_deposit h)) :
-    handles_coordination W →
-    HasBank W ∨
-    (∃ M : PrivateOnlyStorage, ∃ d, M.has_access M.a₁ d ∧ M.has_access M.a₂ d) := by
-  intro _
-  by_cases h : HasBank W
-  · exact Or.inl h
-  · exact Or.inr ⟨R.toPrivateStorage h, shared_deposit h,
-      h_access₁ h, h_access₂ h⟩
-
-
-/-! ### Scenario 3: Monotonic Lifecycle (Adversarial → Revocation)
-
-A system facing adversarial pressure has a deposit lifecycle.  If revocation
-is absent, the "accepted" state is absorbing — once a deposit passes
-acceptance, no transition can remove it.  `monotonic_no_exit` proves
-(by induction) that an accepted deposit stays accepted through any
-number of steps.
-
-`RepresentsMonotonicLifecycle` enriches a `WorkingSystem` with a
-concrete lifecycle (states, transition function, absorbing accepted state)
-and an adversarial witness: a bad deposit that reaches the accepted state.
-When `¬HasRevocation`, the system is in the `MonotonicLifecycle` scenario. -/
-
-/-- A system represents a monotonic lifecycle if, absent revocation,
-    its deposit lifecycle has an absorbing "accepted" state: once a
-    deposit is accepted, no transition can remove it.
-
-    The `bad_deposit_accepted` field is the adversarial witness:
-    a deposit that should not be accepted but reaches the accepted
-    state.  Without revocation, it stays there permanently. -/
-structure RepresentsMonotonicLifecycle (W : WorkingSystem) where
-  /-- The lifecycle state type. -/
-  State : Type
-  /-- The accepted state. -/
-  accepted : State
-  /-- The lifecycle transition function. -/
-  step : State → State
-  /-- Without revocation, accepted is absorbing. -/
-  absorbing_without_revocation : ¬HasRevocation W → step accepted = accepted
-
-/-- Extract `MonotonicLifecycle` from a system that
-    `RepresentsMonotonicLifecycle` and lacks revocation. -/
-def RepresentsMonotonicLifecycle.toLifecycle {W : WorkingSystem}
-    (R : RepresentsMonotonicLifecycle W) (h_no_rev : ¬HasRevocation W) :
-    MonotonicLifecycle where
-  State := R.State
-  accepted := R.accepted
-  step := R.step
-  absorbing := R.absorbing_without_revocation h_no_rev
-
-/-- **Right-branch embedding (adversarial direction).**
-
-    A system with a monotonic lifecycle and no revocation:
-    `monotonic_no_exit` fires by induction, proving that the accepted
-    state cannot be escaped at any step count `n`.  This is the
-    strongest proof in the repo — genuine induction, not just
-    hypothesis contradiction. -/
-theorem monotonic_lifecycle_without_revocation_embeds
-    (W : WorkingSystem)
-    (R : RepresentsMonotonicLifecycle W)
-    (h_no_rev : ¬HasRevocation W)
-    (n : Nat) :
-    iter R.step n R.accepted = R.accepted :=
-  monotonic_no_exit (R.toLifecycle h_no_rev) n
-
-
-/-! ### Scenario 4: Discriminating Import (Export → Headers)
-
-When deposits cross scope boundaries, the receiver must decide which
-to accept.  Without metadata (headers), every deposit looks identical
-— the import function is uniform.  But sound-and-complete import
-requires accepting good claims and rejecting bad ones.  A uniform
-function cannot discriminate.
-
-`RepresentsDiscriminatingImport` enriches a `WorkingSystem` with
-two concrete claims (good and bad) that the import function must
-distinguish.  When `¬HasHeaders`, the system is in the
-`DiscriminatingImport` scenario. -/
-
-/-- A system represents a discriminating import scenario if it faces
-    two claims that must be distinguished on import: one should be
-    accepted, one rejected.
-
-    The structural point: without metadata (headers), claims are
-    indistinguishable, so any import function is uniform.
-    `no_sound_complete_uniform_import` proves that a uniform function
-    cannot be both sound and complete — any proposed function either
-    accepts the bad claim or rejects the good one.
-
-    Whether a system's import function is ACTUALLY uniform (the bridge
-    hypothesis) depends on the system and is carried as a separate hypothesis
-    in the right-branch embedding theorems. -/
-structure RepresentsDiscriminatingImport (W : WorkingSystem) where
-  /-- The claim type crossing scope boundaries. -/
-  Claim : Type
-  /-- A claim the receiver should accept. -/
-  good : Claim
-  /-- A claim the receiver should reject. -/
-  bad : Claim
-  /-- The claims are distinct. -/
-  good_ne_bad : good ≠ bad
-
-/-- Extract `DiscriminatingImport` from a system that
-    `RepresentsDiscriminatingImport`. -/
-def RepresentsDiscriminatingImport.toImport {W : WorkingSystem}
-    (R : RepresentsDiscriminatingImport W) : DiscriminatingImport where
-  Claim := R.Claim
-  good := R.good
-  bad := R.bad
-  good_ne_bad := R.good_ne_bad
-
-/-- **Right-branch embedding (export direction).**
-
-    A system with discriminating import needs and no headers:
-    any import function `f` must satisfy `f good = true` and
-    `f bad = false` for sound-and-complete import.  The bridge hypothesis
-    (`h_uniform`) says that without headers,
-    the import function is uniform: `f x = f y` for all `x y`.
-    `no_sound_complete_uniform_import` fires via `Bool.noConfusion`
-    to derive False. -/
-theorem discriminating_import_without_headers_embeds
-    (W : WorkingSystem)
-    (R : RepresentsDiscriminatingImport W)
-    (_h_no_headers : ¬HasHeaders W)
-    (f : R.Claim → Bool)
-    (h_uniform : ∀ x y, f x = f y)
-    (h_sound : f R.bad = false)
-    (h_complete : f R.good = true) :
-    False :=
-  no_sound_complete_uniform_import R.toImport f h_uniform h_sound h_complete
-
-
-/-! ### Scenario 5: Bounded Verification (Bounded Audit → Trust Bridges)
-
-When full verification is costly, some claims exceed any fixed budget.
-A verification-only import policy cannot handle those claims.
-
-`RepresentsBoundedVerification` enriches a `WorkingSystem` with a
-concrete claim universe where at least one claim exceeds the verification
-budget.  When `¬HasTrustBridges`, the system is in the
-`BoundedVerification` scenario. -/
-
-/-- A system represents bounded verification if, absent trust bridges,
-    it faces claims whose verification cost exceeds the budget.
-
-    The `hard_claim_without_trust` field is the bridge condition: without
-    trust-based import, the system must reverify every claim, but at
-    least one claim exceeds the budget. -/
-structure RepresentsBoundedVerification (W : WorkingSystem) where
-  /-- The claim type. -/
-  Claim : Type
-  /-- Cost to fully verify a claim. -/
-  verify_cost : Claim → Nat
-  /-- Maximum verification budget per import. -/
-  budget : Nat
-  /-- A claim that exceeds the budget. -/
-  hard_claim : Claim
-  /-- The hard claim genuinely exceeds the budget. -/
-  exceeds_budget : verify_cost hard_claim > budget
-
-/-- Extract `BoundedVerification` from a system that
-    `RepresentsBoundedVerification`. -/
-def RepresentsBoundedVerification.toVerification {W : WorkingSystem}
-    (R : RepresentsBoundedVerification W) : BoundedVerification where
-  Claim := R.Claim
-  verify_cost := R.verify_cost
-  budget := R.budget
-  hard_claim := R.hard_claim
-  exceeds_budget := R.exceeds_budget
-
-/-- **Right-branch embedding (trust direction).**
-
-    A system with bounded verification and no trust bridges:
-    `verification_only_import_incomplete` fires via Nat arithmetic
-    to prove that at least one claim cannot be reverified within
-    budget. -/
-theorem bounded_verification_without_trust_embeds
-    (W : WorkingSystem)
-    (R : RepresentsBoundedVerification W)
-    (_h_no_trust : ¬HasTrustBridges W)
-    (h_all_within : ∀ c, R.verify_cost c ≤ R.budget) :
-    False :=
-  verification_only_import_incomplete R.toVerification h_all_within
-
-
-/-! ### Scenario 6: Closed Endorsement (Truth Pressure → Redeemability)
-
-In a closed endorsement system (no external constraint surface), the
-only notion of truth is internal consensus.  Every endorsed claim is
-true by definition — there is nothing external it could fail against.
-
-`RepresentsClosedEndorsement` enriches a `WorkingSystem` with a
-concrete claim, its endorsement, and evidence that the system is
-closed absent redeemability.  When `¬HasRedeemability`, the system
-is in the `ClosedEndorsement` scenario. -/
-
-/-- A system represents a closed endorsement scenario if, absent
-    redeemability, endorsed claims cannot be externally falsified.
-
-    The `closed_without_redeemability` field is the bridge condition:
-    without external constraint-surface contact, no endorsed claim
-    is falsifiable. -/
-structure RepresentsClosedEndorsement (W : WorkingSystem) where
-  /-- The claim type. -/
-  Claim : Type
-  /-- Internal endorsement (consensus). -/
   endorsed : Claim → Prop
-  /-- External falsifiability. -/
   externally_falsifiable : Claim → Prop
-  /-- Without redeemability, the system is closed. -/
-  closed_without_redeemability :
-    ¬HasRedeemability W → ∀ c, endorsed c → ¬externally_falsifiable c
+  emits_anomaly : Claim → Prop
+  /-- Signals do not induce external falsifiability for endorsed claims. -/
+  signal_does_not_open : ∀ c, endorsed c → emits_anomaly c → ¬externally_falsifiable c
 
-/-- Extract `ClosedEndorsement` from a system that
-    `RepresentsClosedEndorsement` and lacks redeemability. -/
-def RepresentsClosedEndorsement.toClosed {W : WorkingSystem}
-    (R : RepresentsClosedEndorsement W) (h_no_redeem : ¬HasRedeemability W) :
-    ClosedEndorsement where
-  Claim := R.Claim
-  endorsed := R.endorsed
-  externally_falsifiable := R.externally_falsifiable
-  closed := R.closed_without_redeemability h_no_redeem
+/-- An anomaly-signaling system that does not connect signals to external
+    falsifiability is effectively closed: endorsed claims remain unfalsifiable
+    even when anomalies are emitted. -/
+theorem anomaly_signal_insufficient (M : AnomalySignaling) :
+    ¬∃ c, M.endorsed c ∧ M.emits_anomaly c ∧ M.externally_falsifiable c :=
+  fun ⟨c, h_end, h_sig, h_fals⟩ => M.signal_does_not_open c h_end h_sig h_fals
 
-/-- **Right-branch embedding (truth pressure direction).**
+/-- When all endorsed claims trigger anomaly signals, `AnomalySignaling` embeds
+    into `ClosedEndorsement`: the closure condition is derived from
+    `signal_does_not_open`. -/
+def anomaly_to_closed (M : AnomalySignaling)
+    (h_all : ∀ c, M.endorsed c → M.emits_anomaly c) : ClosedEndorsement where
+  Claim                  := M.Claim
+  endorsed               := M.endorsed
+  externally_falsifiable := M.externally_falsifiable
+  closed                 := fun c h_end h_fals =>
+    M.signal_does_not_open c h_end (h_all c h_end) h_fals
 
-    A system with closed endorsement and no redeemability:
-    `closed_system_unfalsifiable` fires to prove no endorsed claim
-    can be simultaneously falsifiable — contradicting truth pressure. -/
-theorem closed_endorsement_without_redeemability_embeds
-    (W : WorkingSystem)
-    (R : RepresentsClosedEndorsement W)
-    (h_no_redeem : ¬HasRedeemability W)
-    (c : R.Claim)
-    (h_end : R.endorsed c)
-    (h_fals : R.externally_falsifiable c) :
-    False :=
-  let M := R.toClosed h_no_redeem
-  closed_system_unfalsifiable M ⟨c, h_end, h_fals⟩
+/-- Under maximal anomaly coverage (all endorsed claims signal), the full
+    `closed_system_unfalsifiable` impossibility fires via the embedding.
+    No endorsed claim is externally falsifiable — signals accomplish nothing
+    without a genuine constraint-surface contact mechanism. -/
+theorem anomaly_closed_when_universal (M : AnomalySignaling)
+    (h_all : ∀ c, M.endorsed c → M.emits_anomaly c) :
+    ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c :=
+  closed_system_unfalsifiable (anomaly_to_closed M h_all)
+
+/-- Partial contestation: only unendorsed claims are contestable. -/
+structure PartialContestation where
+  Claim : Type
+  endorsed : Claim → Prop
+  contestable : Claim → Prop
+  externally_falsifiable : Claim → Prop
+  /-- Endorsed claims are not contestable. -/
+  endorsed_not_contestable : ∀ c, endorsed c → ¬contestable c
+  /-- Only contestable claims are externally falsifiable. -/
+  contestable_only : ∀ c, externally_falsifiable c → contestable c
+
+/-- `PartialContestation` embeds into `ClosedEndorsement` without an extra parameter:
+    closure over endorsed claims is derived from the two structural conditions. -/
+def partial_to_closed (M : PartialContestation) : ClosedEndorsement where
+  Claim                  := M.Claim
+  endorsed               := M.endorsed
+  externally_falsifiable := M.externally_falsifiable
+  closed                 := fun c h_end h_fals =>
+    M.endorsed_not_contestable c h_end (M.contestable_only c h_fals)
+
+/-- Partial contestation that excludes endorsed claims embeds into `ClosedEndorsement`:
+    `closed_system_unfalsifiable` fires via the parameter-free embedding.
+    No endorsed claim is externally falsifiable. -/
+theorem partial_contestation_closed_on_endorsed (M : PartialContestation) :
+    ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c :=
+  closed_system_unfalsifiable (partial_to_closed M)
+
+/-- Soft falsifiability: claims can be flagged, but flagging ≠ external falsifiability. -/
+structure SoftFalsifiability where
+  Claim : Type
+  endorsed : Claim → Prop
+  flagged : Claim → Prop
+  externally_falsifiable : Claim → Prop
+  /-- Flagging an endorsed claim does not make it externally falsifiable. -/
+  flag_not_falsifiable : ∀ c, endorsed c → flagged c → ¬externally_falsifiable c
+
+/-- Soft falsifiability that does not map to external falsifiability preserves
+    closure: endorsed claims remain non-falsifiable even when flagged. -/
+theorem soft_falsifiability_closed (M : SoftFalsifiability) :
+    ¬∃ c, M.endorsed c ∧ M.flagged c ∧ M.externally_falsifiable c :=
+  fun ⟨c, h_end, h_flag, h_fals⟩ => M.flag_not_falsifiable c h_end h_flag h_fals
+
+/-- When all endorsed claims are flagged, `SoftFalsifiability` embeds into
+    `ClosedEndorsement`: the closure condition is derived from `flag_not_falsifiable`. -/
+def soft_to_closed (M : SoftFalsifiability)
+    (h_all : ∀ c, M.endorsed c → M.flagged c) : ClosedEndorsement where
+  Claim                  := M.Claim
+  endorsed               := M.endorsed
+  externally_falsifiable := M.externally_falsifiable
+  closed                 := fun c h_end h_fals =>
+    M.flag_not_falsifiable c h_end (h_all c h_end) h_fals
+
+/-- Under maximal flag coverage, `closed_system_unfalsifiable` fires via the embedding.
+    No endorsed claim is externally falsifiable. -/
+theorem soft_closed_when_universal (M : SoftFalsifiability)
+    (h_all : ∀ c, M.endorsed c → M.flagged c) :
+    ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c :=
+  closed_system_unfalsifiable (soft_to_closed M h_all)
 
 
-/-! ## Convergence and Impossibility (Structural Versions) -/
+/-! ### §6c. Forcing Stratification: Hard vs Soft Forcing for Truth Pressure
 
-/-- Convergence theorem (structural version): under structural forcing,
-    any system satisfying all properties contains Bank primitives.
+The six forcing dimensions do not all have the same tightness.
 
-    This is the preferred convergence statement.  Unlike the WellFormed-
-    extraction path (via `wellformed_implies_structurally_forced`), this
-    theorem does **not** depend on assumed biconditionals — only on the
-    forward-direction implications justified by the structural models. -/
-theorem convergence_structural (W : WorkingSystem) (h_sf : StructurallyForced W) :
-    SatisfiesAllProperties W → containsBankPrimitives W := by
-  intro ⟨h1, h2, h3, h4, h5, h6⟩
-  exact ⟨h_sf.scope_forcing h1, h_sf.trust_forcing h2, h_sf.header_forcing h3,
-         h_sf.revocation_forcing h4, h_sf.bank_forcing h5, h_sf.redeemability_forcing h6⟩
+Hard forcing: impossibility follows from the structure alone, without additional
+behavioral coverage assumptions.  Scope, revocation, bank, and partial contestation
+belong to this tier.
 
-/-- Structural impossibility: missing any feature blocks all-property satisfaction. -/
-theorem structural_impossibility (W : WorkingSystem) (h_sf : StructurallyForced W) :
-    (¬HasBubbles W ∨ ¬HasTrustBridges W ∨ ¬HasHeaders W ∨
-     ¬HasRevocation W ∨ ¬HasBank W ∨ ¬HasRedeemability W) →
-    ¬SatisfiesAllProperties W := by
-  intro h_missing h_sat
-  have h_bp := convergence_structural W h_sf h_sat
-  unfold containsBankPrimitives at h_bp
-  cases h_missing with
-  | inl h => exact h h_bp.1
-  | inr h => cases h with
-    | inl h => exact h h_bp.2.1
-    | inr h => cases h with
-      | inl h => exact h h_bp.2.2.1
-      | inr h => cases h with
-        | inl h => exact h h_bp.2.2.2.1
-        | inr h => cases h with
-          | inl h => exact h h_bp.2.2.2.2.1
-          | inr h => exact h h_bp.2.2.2.2.2
+Soft forcing: impossibility requires an additional coverage assumption
+(`∀ c, endorsed c → emits_anomaly c` / `flagged c`), which cannot be
+discharged from the structure fields alone.
+
+`anomaly_not_hard_forced` and `soft_falsifiability_not_hard_forced` exhibit consistent
+`AnomalySignaling` / `SoftFalsifiability` instances with an endorsed, externally-falsifiable
+claim.  `partial_contestation_hard_forced` shows partial contestation does not require
+a coverage assumption. -/
+
+/-- Redeemability is hard-forced: `ClosedEndorsement` is self-refuting from its
+    structural fields alone.  The impossibility fires unconditionally — no coverage
+    assumption is needed. -/
+theorem redeemability_hard_forced (M : ClosedEndorsement) :
+    ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c :=
+  closed_system_unfalsifiable M
+
+/-- Under the coverage assumption that all endorsed claims emit anomaly signals,
+    no endorsed claim is externally falsifiable. -/
+theorem anomaly_requires_coverage_for_closure (M : AnomalySignaling)
+    (h_all : ∀ c, M.endorsed c → M.emits_anomaly c) :
+    ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c :=
+  anomaly_closed_when_universal M h_all
+
+/-- There exists an `AnomalySignaling` instance with an endorsed, externally-falsifiable
+    claim: everything is endorsed and externally falsifiable, but nothing signals.
+    `signal_does_not_open` is vacuously satisfied, so `AnomalySignaling` alone does
+    not imply closure over endorsed claims. -/
+theorem anomaly_not_hard_forced :
+    ¬∀ M : AnomalySignaling, ¬∃ c : M.Claim, M.endorsed c ∧ M.externally_falsifiable c := by
+  intro h
+  let M : AnomalySignaling := {
+    Claim := Unit
+    endorsed := fun _ => True
+    externally_falsifiable := fun _ => True
+    emits_anomaly := fun _ => False
+    signal_does_not_open := fun _ _ h_sig => h_sig.elim
+  }
+  exact h M ⟨(), trivial, trivial⟩
+
+/-- There exists a `SoftFalsifiability` instance with an endorsed, externally-falsifiable
+    claim: everything is endorsed and externally falsifiable, but nothing is flagged.
+    `flag_not_falsifiable` is vacuously satisfied, so `SoftFalsifiability` alone does
+    not imply closure over endorsed claims. -/
+theorem soft_falsifiability_not_hard_forced :
+    ¬∀ M : SoftFalsifiability, ¬∃ c : M.Claim, M.endorsed c ∧ M.externally_falsifiable c := by
+  intro h
+  let M : SoftFalsifiability := {
+    Claim := Unit
+    endorsed := fun _ => True
+    flagged := fun _ => False
+    externally_falsifiable := fun _ => True
+    flag_not_falsifiable := fun _ _ h_flag => h_flag.elim
+  }
+  exact h M ⟨(), trivial, trivial⟩
+
+/-- `PartialContestation` embeds into `ClosedEndorsement` without a coverage assumption:
+    `closed_system_unfalsifiable` fires via `partial_to_closed` directly. -/
+theorem partial_contestation_hard_forced (M : PartialContestation) :
+    ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c :=
+  partial_contestation_closed_on_endorsed M
+
 
 end EpArch

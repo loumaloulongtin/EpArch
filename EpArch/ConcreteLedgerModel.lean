@@ -1,6 +1,7 @@
 import EpArch.Commitments
 import EpArch.SystemSpec
 import EpArch.Minimality
+import EpArch.Convergence
 import EpArch.StepSemantics
 import EpArch.Theorems
 

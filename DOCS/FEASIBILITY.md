@@ -96,7 +96,7 @@ For new citations, prefer `existence_under_constraints`.
 
 ---
 
-## Structural Convergence Theorems (Branch: structural-forcing)
+## Structural Convergence Theorems
 
 These three theorems expose the structural forcing path directly, without routing through
 `WellFormed`. They were added to give paper readers a cleaner chain of evidence.
@@ -113,7 +113,7 @@ theorem structural_goals_force_bank_primitives :
 ```
 
 Structural variant of `goals_force_bank_primitives`. Routes directly through
-`convergence_structural` (in `Minimality.lean`) without depending on the
+`convergence_structural` (in `Convergence.lean`) without depending on the
 `WellFormed` biconditionals. This is the preferred citation when the structural
 path needs to be made explicit.
 

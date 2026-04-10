@@ -1,6 +1,6 @@
 # Theorem Inventory
 
-This document catalogs **539** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
+This document catalogs **640** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
 
 **What the architecture claims:** Decentralized epistemic authorization requires specific structural mechanisms — a lifecycle with type-separated stages, header-preserving export, a revision loop, temporal validity, and a Bank substrate. These aren't design preferences; they are forced by the combination of agent constraints and system health goals.
 
@@ -322,11 +322,11 @@ Applications of the safety/sensitivity framework to specific epistemological cas
 
 ---
 
-## Bucket 9b: Abstract Structural Forcing Layer (Minimality.lean)
+## Bucket 9b: Abstract Structural Forcing Layer (Minimality.lean + Convergence.lean)
 
-**Paper Role:** Provide structurally-grounded, WellFormed-independent proofs that each constraint forces its feature. The six lifting theorems (`distributed_agents_require_bubbles`, etc.) derive from `WellFormed`; these theorems justify the implications independently.
+**Paper Role:** Provide structurally-grounded, WellFormed-independent proofs that each constraint forces its feature. The six lifting theorems (`distributed_agents_require_bubbles`, etc.) derive from `WellFormed`; these theorems justify the implications independently. The §1b–§6b alternative-dismissal theorems cover the completeness side: each evaluated alternative either reproduces the same impossibility or satisfies the forced-primitive definition.
 
-### Structural Impossibility Models
+### Structural Impossibility Models (Minimality.lean)
 
 Six abstract scenario structures, each proving that a degenerate configuration is impossible.
 
@@ -339,7 +339,41 @@ Six abstract scenario structures, each proving that a degenerate configuration i
 | `private_storage_no_sharing` | `PrivateOnlyStorage` | Isolated agent storage makes shared deposit access impossible |
 | `closed_system_unfalsifiable` | `ClosedEndorsement` | A closed endorsement system has no externally falsifiable endorsed claim |
 
-### Forcing Package
+### Alternative Architecture Dismissals (Minimality.lean §1b–§6b)
+
+For each of the six forcing dimensions, alternative mechanisms are instantiated and shown to either reduce to the original impossibility or satisfy the forced-primitive definition. None escape the forcing argument.
+
+| §  | Alternatives covered | Key theorems |
+|----|----------------------|---------------|
+| §1b | Capability-token systems, federated namespaces, parameterized gates | `capability_flat_impossible`, `federated_flat_impossible`, `parameterized_gate_flat_impossible` — each gives an `AgentDisagreement`; `flat_scope_impossible` fires unchanged |
+| §2b | Staged verification, delegated verification markets | `staged_verification_incomplete` (cumulative-cost `BoundedVerification`); `delegated_is_trust_bridge` + `trust_required_iff_not_locally_verifiable` + `delegation_necessary_iff_locally_inadequate` — delegation satisfies the trust-bridge definition |
+| §3b | Content-addressed routing, global contextual routing state | `content_addressed_has_header` — sound+complete content-addressed import satisfies `IsHeader` directly; `global_routing_cannot_discriminate` — global state is effectively uniform |
+| §4b | Quarantine, hold/shadow, rollback | `quarantine_violates_absorbing`, `hold_violates_absorbing`, `rollback_violates_absorbing` — each is a non-absorbing exit from accepted, i.e., revocation under another name |
+| §5b | Replicated logs, attestation networks, CRDT-based shared state | `replicated_log_is_shared`, `attestation_network_is_shared`, `crdt_is_shared` — each satisfies the sharing condition; isolation does not hold; each qualifies as a shared ledger under the definition |
+| §6b | Anomaly signaling, partial contestation, soft falsifiability | `anomaly_signal_insufficient`; `partial_contestation_closed_on_endorsed`; `soft_falsifiability_closed`; `*_closed_when_universal` under coverage assumption |
+
+### `IsHeader` Definition (Minimality.lean)
+
+`IsHeader M f` — a routing function `f : M.Claim → Bool` is a header for `DiscriminatingImport` scenario `M` iff it discriminates good from bad claims (`f M.good ≠ f M.bad`).
+
+| Theorem | Statement | Role |
+|---------|-----------|------|
+| `sound_complete_import_is_header` | Sound+complete import → `IsHeader` | Any sound+complete import satisfies the header definition |
+| `routing_requires_header` | ∃ sound+complete f → ∃ header | Any working routing function carries a header |
+| `content_addressed_has_header` | Sound+complete content-addressed policy → `IsHeader` | Sound+complete content-addressed routing satisfies `IsHeader` |
+
+### Forcing Stratification (Minimality.lean §6c)
+
+The six forcing dimensions differ in strength; §6c establishes this with explicit counterexamples.
+
+| Tier | Dimensions | Key theorem | What it says |
+|------|------------|-------------|---------------|
+| Hard | Scope, revocation, bank, partial contestation | `redeemability_hard_forced`, `partial_contestation_hard_forced` | Impossibility fires from structural fields alone, no coverage assumption |
+| Soft | Anomaly signaling, soft falsifiability | `anomaly_not_hard_forced`, `soft_falsifiability_not_hard_forced` | Consistent instances exist with endorsed+falsifiable claims; coverage assumption (`∀ c, endorsed c → signals c`) cannot be discharged from structure alone |
+
+`anomaly_not_hard_forced` and `soft_falsifiability_not_hard_forced` exhibit explicit counterexamples (vacuous `emits_anomaly`/`flagged`) confirming soft closure is genuinely weaker than hard forcing.
+
+### Forcing Package (Convergence.lean)
 
 | Structure/Theorem | Description |
 |-------------------|-------------|
@@ -348,7 +382,7 @@ Six abstract scenario structures, each proving that a degenerate configuration i
 | `ForcingEmbedding W` | For each dimension: `handles_X W → HasFeature_X W ∨ Bridge_X W`; connects concrete system data to the abstract scenario witnesses |
 | `embedding_to_structurally_forced` | `ForcingEmbedding W → StructurallyForced W` (mechanical, constructive, no Classical reasoning) |
 
-### Bridge Predicates and Impossibility
+### Bridge Predicates and Impossibility (Convergence.lean)
 
 | Predicate | `bridge_*_impossible` | What is ruled out |
 |-----------|-----------------------|--------------------|
@@ -359,16 +393,39 @@ Six abstract scenario structures, each proving that a degenerate configuration i
 | `BridgeBank W` | `bridge_bank_impossible` | Isolated agents sharing a deposit |
 | `BridgeRedeemability W` | `bridge_redeemability_impossible` | Endorsed claim externally falsifiable in closed system |
 
-### Convergence and Impossibility (Structural Versions)
+### Convergence and Impossibility (Convergence.lean)
 
 | Theorem | Statement | Role |
 |---------|-----------|------|
 | `convergence_structural` | `StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W` | Preferred convergence path; no `WellFormed` dependency |
 | `structural_impossibility` | `StructurallyForced W → missing any feature → ¬SatisfiesAllProperties W` | Contrapositive: missing a feature blocks all-property satisfaction |
 
-### Scenario Predicates (ConcreteLedgerModel.lean)
+### Scenario Predicates (Convergence.lean)
 
-`Represents*` structures supply concrete claim/agent/lifecycle data so the abstract impossibility models fire on real systems, not hypothetical ones. Six scenario types match the six forcing dimensions. Deficient working systems (one feature absent) use scenario predicates to show the corresponding bridge impossibility theorem fires.
+`Represents*` structures supply concrete claim/agent/lifecycle data so the abstract impossibility models fire on real systems, not hypothetical ones. Six scenario types match the six forcing dimensions. Each carries a right-branch embedding theorem: a system with the scenario predicate and lacking the corresponding feature is in the impossible abstract scenario.
+
+---
+
+## Bucket 9c: Observation-Boundary Equivalence (BehavioralEquivalence.lean)
+
+**Paper Role:** Establishes that the six Bank primitive flags fully determine a WorkingSystem's observable behavior: any two systems with identical flags produce identical observations on all inputs. Bridges the abstract forcing argument to a behavioral claim.
+
+### Definitions
+
+- `Input` — abstract input events (withdraw, export, challenge, time-advance)
+- `Observation` — observable outcomes
+- `Behavior W i` — observation produced by system `W` on input `i`; depends only on primitive flags
+- `BehaviorallyEquivalent W1 W2` — identical observations on all inputs
+
+### Theorems
+
+| Theorem | Statement | Role |
+|---------|-----------|------|
+| `behavioral_equiv_refl/symm/trans` | Equivalence relation properties | Structural foundation |
+| `same_flags_same_behavior` | Identical flags → identical behavior | Core lemma; `Behavior` is flag-determined |
+| `satisfies_all_fixes_flags` | `SatisfiesAllProperties W` → all four flags are `true` | Bridges property satisfaction to flag values |
+| `working_systems_equivalent` | Both satisfy all properties → behaviorally equivalent | Main theorem; cited when closing the behavioral claim |
+| `bank_primitives_determine_behavior` | `WellFormed` + `containsBankPrimitives` on both → equivalent | Strongest form; requires `WellFormed` backward direction |
 
 ---
 
@@ -1307,7 +1364,7 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 | `cluster_lattice_sub_safety` | Meta/Config.lean | `Compatible E S.model → PaperFacing S.model → PaperFacing (forget E)` | Witness for `.lattice_sub_safety` |
 | `cluster_lattice_pack` | Meta/Config.lean | Full bidirectional lattice-stability conjunction (graceful + sub-safety + full revision safety) | Witness for `.lattice_pack` |
 
-### Grand Total (through Phase F): **539** theorems
+### Grand Total (through Phase F + scope-alternatives): **640** theorems
 
 **Original Bucket 28 additions (+23):**
 - 1 soundness theorem (`clusterEnabled_sound`)
@@ -1320,6 +1377,10 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 - 2 completeness theorems (`mem_enabledMetaModularWitnesses_of_enabled`, `mem_enabledLatticeWitnesses_of_enabled`)
 - 2 constraint-modularity witnesses (`cluster_meta_modular`, `cluster_meta_modular_wellformed`)
 - 3 lattice-stability witnesses (`cluster_lattice_graceful`, `cluster_lattice_sub_safety`, `cluster_lattice_pack`)
+
+**scope-alternatives additions (+101):**
+- `Convergence.lean`: `StructurallyForced` forcing bridge, §1b–§6b alternative-dismissal theorems, scenario predicates, and supporting lemmas
+- `BehavioralEquivalence.lean`: bank-primitive behavioral-equivalence theorems and their symmetric/transitive closure
 
 **New definitions (original +14, Phase F +8 = +22):**
 - Original: 4 sub-family inductives, 4 `*.toClusterTag`, `ConstraintProof` + `constraintProof`, `CertifiedProjection` (updated) + `certify`
