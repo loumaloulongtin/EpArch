@@ -876,13 +876,6 @@ theorem concrete_contains_bank_primitives :
 
 The concrete model also satisfies the handles_* predicates. -/
 
-/-- Concrete model satisfies all target properties. -/
-theorem concrete_satisfies_properties :
-    SatisfiesProperties ConcreteWorkingSystem := by
-  unfold SatisfiesProperties achieves_coordination achieves_bounded_audit'
-         achieves_adversarial_resilience ConcreteWorkingSystem
-  simp
-
 /-- Concrete model satisfies ALL six operational properties. -/
 theorem concrete_satisfies_all_properties :
     SatisfiesAllProperties ConcreteWorkingSystem := by

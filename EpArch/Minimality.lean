@@ -129,46 +129,6 @@ structure WorkingSystem where
   /-- System resists adversarial injection (counterfeit detection). -/
   resists_adversaries : Bool
 
-/-- System achieves coordination: agents can reliably act together.
-    Requires shared records + ability to rely on them.
-    Note: See handles_coordination for the six-property formulation. -/
-def achieves_coordination (W : WorkingSystem) : Prop :=
-  W.has_shared_records ∧ W.enables_reliance
-
-/-- System achieves bounded-audit operation: works without full verification.
-    Note: See handles_bounded_audit for the six-property formulation. -/
-def achieves_bounded_audit' (W : WorkingSystem) : Prop :=
-  W.has_shared_records ∧ W.enables_reliance  -- can rely without re-verifying
-
-/-- System achieves adversarial resilience: survives attacks.
-    Note: See handles_adversarial for the six-property formulation. -/
-def achieves_adversarial_resilience (W : WorkingSystem) : Prop :=
-  W.supports_correction ∧ W.resists_adversaries
-
-/-- System satisfies target properties: coordination + bounded-audit + adversarial resilience.
-    Note: This checks only three aggregate properties; see SatisfiesAllProperties for the full six-property version. -/
-def SatisfiesProperties (W : WorkingSystem) : Prop :=
-  achieves_coordination W ∧ achieves_bounded_audit' W ∧ achieves_adversarial_resilience W
-
-
-/-! ## Bank Primitives Predicate -/
-
-/-- The primitives that constitute "Bank-like" architecture:
-    deposits, headers, acceptance, withdrawal, export, repair. -/
-structure BankPrimitives where
-  /-- Has deposit/record storage -/
-  has_deposits : Bool
-  /-- Has structured headers (S/E/V/τ/ACL/Redeem) -/
-  has_headers : Bool
-  /-- Has acceptance protocol (governance gate) -/
-  has_acceptance : Bool
-  /-- Has withdrawal mechanism (reliance) -/
-  has_withdrawal : Bool
-  /-- Has export/import across boundaries -/
-  has_export : Bool
-  /-- Has repair loop (challenge → quarantine → repair/revoke) -/
-  has_repair_loop : Bool
-
 /-! ## Forced Feature Predicates
 
 These are definitional predicates that inspect the WorkingSystem's

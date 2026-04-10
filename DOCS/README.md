@@ -58,6 +58,8 @@ For the full paper-section-to-Lean-artifact mapping (with math notation, A.# lab
 | 7 | Invariant Preservation — Truth and gate invariants under trace induction |
 | 8 | Modal Properties — Safety/Sensitivity ↔ S/E/V header preservation |
 | 9 | Grounded Minimality — Each feature necessary for specific capabilities |
+| 9b | Abstract Structural Forcing — Six `*_forces_*` theorems (no `WellFormed`, no `handles_X W`); `SystemOperationalBundle`, `WorldBridgeBundle`; headline `bundled_structure_forces_bank_primitives` |
+| 9c | Observation-Boundary Equivalence — Bank primitive flags fully determine observable behavior |
 | 9b | Abstract Structural Forcing — six impossibility models + alternative dismissals; `StructurallyForced` / `convergence_structural` (`Minimality.lean` + `Convergence.lean`) |
 | 9c | Observation-Boundary Equivalence — Bank primitive flags fully determine observable behavior (`BehavioralEquivalence.lean`) |
 | 10 | Adversarial Model — Attack structures, DDoS vectors, obligation theorems |

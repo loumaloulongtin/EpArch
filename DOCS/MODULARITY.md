@@ -20,7 +20,7 @@ unconditionally and require no configuration.
 
 | Family | Count | What it covers |
 |---|---|---|
-| **Forcing clusters** (Tier 2) | 6 | Each constraint forces a structural feature (`distributed_agents → HasBubbles`, etc.) |
+| **Forcing clusters** (Tier 2) | 6 | Each constraint forces a structural feature. Two paths: (1) `PartialWellFormed`/`handles_X W` biconditional path via `StructurallyForced`; (2) structural `Represents*`/`*_forces_*` path — no `handles_X W`, no biconditionals, strictly stronger. Per-dimension `*_forces_*` theorems are orthogonal: each fires independently (`disagreement_forces_bubbles`, `private_coordination_forces_bank`, `monotonic_lifecycle_forces_revocation`, `discriminating_import_forces_headers`, `bounded_verification_forces_trust_bridges`, `closed_endorsement_forces_redeemability`). |
 | **Goal transport** (Tier 3) | 6 | Each health goal is preserved under compatible model extension |
 | **Tier 4 library clusters** | 5 | Commitments pack, structural theorems, LTS-universal gates, bank-goal transport |
 | **World obligations** (Tier 1) | 8 | Each `W_*` bundle enables a slice of adversarial/world theorems |
@@ -30,6 +30,8 @@ unconditionally and require no configuration.
 The 30 `ClusterTag` values in `ClusterRegistry.lean` are the canonical names for all of these.
 
 **Why this matters architecturally:** Modularity is not only a proof-engineering convenience — it is a kernel design constraint. EpArch must remain applicable across agents that do not share the same internal epistemology or constraint bundle, including minimal agents (e.g., an odometer-like system tracking position) that face only a sub-bundle of the full set. The cluster architecture ensures the kernel scales down gracefully: a system that does not face `FallibilityConstraint` simply does not receive the clusters that depend on it, and the remaining claims stay sound. This is why the kernel boundary stops at coordination-relevant architectural requirements rather than agent-internal dynamics models.
+
+**Structural forcing path (stronger than biconditionals):** Beyond the `PartialWellFormed`/`handles_X W` biconditional path, each Tier 2 cluster has a direct `Represents*`/`*_forces_*` proof that requires no `WellFormed`, no `handles_X W`, and no biconditionals. Any system that concretely instantiates one EpArch operational pressure (by supplying a `Represents*` witness) is forced to have the matching primitive. These six theorems are strictly orthogonal — each fires independently. Bundled together, `SystemOperationalBundle W` (scope + headers + bank) and `WorldBridgeBundle W` (revocation + trust + redeemability) feed the headline `bundled_structure_forces_bank_primitives` theorem in Feasibility.lean: four arguments, any world, no `WorldCtx`.
 
 ---
 
@@ -65,7 +67,8 @@ does what prevents confusion about where to look and where to edit.
 
 ### Theorem modules — source of actual proof content
 - `Minimality.lean` — Tier 2 six individual lifting theorems.
-- `Convergence.lean` — `StructurallyForced`, `convergence_structural`, impossibility models, §1b–§6b alternative dismissals.
+- `Convergence.lean` — `StructurallyForced`, `convergence_structural`, impossibility models, §1b–§6b alternative dismissals; six per-dimension `*_forces_*` theorems; `SystemOperationalBundle W` and `WorldBridgeBundle W` record structures.
+- `Feasibility.lean` — `grounded_world_and_structure_force_bank_primitives` (explicit `Represents*` witnesses, no `WorldCtx`); `bundled_structure_forces_bank_primitives` (headline 4-argument form).
 - `BehavioralEquivalence.lean` — bank-primitive behavioral-equivalence results.
 - `Health.lean`, `Meta/TheoremTransport.lean` — Tier 3 goal predicates and transport.
 - `Commitments.lean`, `Theorems.lean`, `Diagnosability.lean`, `Agent/*.lean`,

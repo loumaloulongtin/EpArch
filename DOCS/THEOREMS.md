@@ -326,6 +326,8 @@ Applications of the safety/sensitivity framework to specific epistemological cas
 
 **Paper Role:** Provide structurally-grounded, WellFormed-independent proofs that each constraint forces its feature. The six lifting theorems (`distributed_agents_require_bubbles`, etc.) derive from `WellFormed`; these theorems justify the implications independently. The §1b–§6b alternative-dismissal theorems cover the completeness side: each evaluated alternative either reproduces the same impossibility or satisfies the forced-primitive definition.
 
+**Strongest result:** Six per-dimension `*_forces_*` theorems (Convergence.lean) each take a single `Represents*` witness and directly force the `Has*` feature — no `handles_X W`, no biconditionals, no `WellFormed`. These are orthogonal: each fires independently of the other five. Bundled into `SystemOperationalBundle` / `WorldBridgeBundle`, they feed the headline `bundled_structure_forces_bank_primitives` theorem in Feasibility.lean.
+
 ### Structural Impossibility Models (Minimality.lean)
 
 Six abstract scenario structures, each proving that a degenerate configuration is impossible.
@@ -382,6 +384,39 @@ The six forcing dimensions differ in strength; §6c establishes this with explic
 | `ForcingEmbedding W` | For each dimension: `handles_X W → HasFeature_X W ∨ Bridge_X W`; connects concrete system data to the abstract scenario witnesses |
 | `embedding_to_structurally_forced` | `ForcingEmbedding W → StructurallyForced W` (mechanical, constructive, no Classical reasoning) |
 
+### Per-Dimension Structural Forcing Theorems (Convergence.lean)
+
+Six independent theorems — one per EpArch dimension — each taking a single `Represents*` witness and a structural hypothesis, and directly forcing the corresponding `Has*` feature. **No `handles_X W` required. No biconditionals. Orthogonal: zero cross-dependencies.** This is the strongest form of the per-dimension claim: any system that concretely faces exactly one EpArch operational pressure is mathematically forced to have the corresponding Bank primitive.
+
+| Theorem | Witness required | Feature forced |
+|---------|-----------------|----------------|
+| `disagreement_forces_bubbles` | `RepresentsDisagreement W` + flat-acceptance witnesses | `HasBubbles W` |
+| `private_coordination_forces_bank` | `RepresentsPrivateCoordination W` + shared-deposit witnesses | `HasBank W` |
+| `monotonic_lifecycle_forces_revocation` | `RepresentsMonotonicLifecycle W` + escape witnesses | `HasRevocation W` |
+| `discriminating_import_forces_headers` | `RepresentsDiscriminatingImport W` + sound/complete import witnesses | `HasHeaders W` |
+| `bounded_verification_forces_trust_bridges` | `RepresentsBoundedVerification W` + verification witnesses | `HasTrustBridges W` |
+| `closed_endorsement_forces_redeemability` | `RepresentsClosedEndorsement W` + endorsement witnesses | `HasRedeemability W` |
+
+Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_without_feature ... h ...).elim` — classical case split with the abstract impossibility model closing the negative branch.
+
+### Witness Bundle Structures (Convergence.lean)
+
+Two named record types group the per-dimension witnesses symmetrically. Split rationale: `SystemOperationalBundle` is purely architectural (no world-semantic content, no `WorldCtx`); `WorldBridgeBundle` covers world-adjacent dimensions that are W-specific.
+
+| Structure | Dimensions bundled | Content |
+|-----------|-------------------|---------|
+| `SystemOperationalBundle W` | Scope, headers, bank | `Rd : RepresentsDisagreement W` + flat-acceptance fields; `Ri : RepresentsDiscriminatingImport W` + import fields; `Rp : RepresentsPrivateCoordination W` + shared-deposit fields |
+| `WorldBridgeBundle W` | Revocation, trust bridges, redeemability | `Rm : RepresentsMonotonicLifecycle W` + escape fields; `Rb : RepresentsBoundedVerification W` + trust fields; `Re : RepresentsClosedEndorsement W` + endorsement + falsifiability fields |
+
+### Headline Convergence Theorems (Feasibility.lean)
+
+| Theorem | Signature | Role |
+|---------|-----------|------|
+| `grounded_world_and_structure_force_bank_primitives` | `(W : WorkingSystem) → (Rd Rb Ri Rm Rp Re : Represents* W) → bridge hypotheses → SatisfiesAllProperties W → containsBankPrimitives W` | All-six forcing with fully explicit `Represents*` witnesses; no `WorldCtx`, no W_* bundles; holds for any world |
+| `bundled_structure_forces_bank_primitives` | `(W : WorkingSystem) → SystemOperationalBundle W → WorldBridgeBundle W → SatisfiesAllProperties W → containsBankPrimitives W` | Headline 4-argument form; unpacks both bundles into `grounded_world_and_structure_force_bank_primitives` |
+
+**Key architectural boundary:** `W_*` bundles (`WorldCtx.lean`) are `Prop`-valued; `Represents*` structures carry `Type`-valued fields (`State : Type`, `Claim : Type`). No `Type` can be extracted from a `Prop` — the universe boundary is genuine. The `W_*` bundles are natural *motivation* for the witnesses but are not formal preconditions; callers supply `Represents*` witnesses directly.
+
 ### Bridge Predicates and Impossibility (Convergence.lean)
 
 | Predicate | `bridge_*_impossible` | What is ruled out |
@@ -403,6 +438,8 @@ The six forcing dimensions differ in strength; §6c establishes this with explic
 ### Scenario Predicates (Convergence.lean)
 
 `Represents*` structures supply concrete claim/agent/lifecycle data so the abstract impossibility models fire on real systems, not hypothetical ones. Six scenario types match the six forcing dimensions. Each carries a right-branch embedding theorem: a system with the scenario predicate and lacking the corresponding feature is in the impossible abstract scenario.
+
+The six per-dimension `*_forces_*` theorems are built directly on these predicates and are the canonical "use these" entry points for the forcing argument. They supersede the earlier `handles_X W` / biconditional path as the primary forcing mechanism: no `PartialWellFormed`, no `handles_X W`, no biconditionals needed.
 
 ---
 
