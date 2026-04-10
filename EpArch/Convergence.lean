@@ -9,8 +9,7 @@ operational properties necessarily contains Bank primitives.
 
 1. `StructurallyForced` — forward-only forcing implications (capability → feature),
    each field independently justified by a structural model in Minimality.lean.
-2. `wellformed_implies_structurally_forced` — forward-direction extraction from WellFormed.
-3. `ForcingEmbedding` — auditable disjunction connecting WorkingSystems to the abstract
+2. `ForcingEmbedding` — auditable disjunction connecting WorkingSystems to the abstract
    structural models; `embedding_to_structurally_forced` derives StructurallyForced
    constructively (no Classical reasoning).
 4. Bridge predicates (`BridgeBubbles` … `BridgeRedeemability`) and
@@ -33,7 +32,7 @@ operational properties necessarily contains Bank primitives.
 
 ## Dependencies
 
-- **Minimality.lean:** WorkingSystem, WellFormed, SatisfiesAllProperties,
+- **Minimality.lean:** WorkingSystem, SatisfiesAllProperties,
   containsBankPrimitives, Has*, handles_*, all six structural models and their
   impossibility theorems (AgentDisagreement, BoundedVerification,
   DiscriminatingImport, MonotonicLifecycle, PrivateOnlyStorage, ClosedEndorsement,
@@ -46,21 +45,12 @@ import EpArch.Minimality
 
 namespace EpArch
 
-/-! ## StructurallyForced: Forward-Direction Forcing Without WellFormed
+/-! ## StructurallyForced: Forward-Direction Forcing
 
-`StructurallyForced` captures the same forward implications as `WellFormed`
-but without the backward direction and without assuming biconditionals.
-
-Where `WellFormed` assumes `handles_X ↔ HasY`, `StructurallyForced`
-packages only the `handles_X → HasY` direction.  The structural models
-above justify constructing these implications; the backward direction
-(needed only for behavioral equivalence, not forcing) remains in
-`WellFormed` for uses that require it.
-
-Relationship to WellFormed:
-- `WellFormed W → StructurallyForced W` (forward extraction, see below)
-- `StructurallyForced` suffices for convergence and impossibility theorems
-- `WellFormed` additionally enables `bank_primitives_determine_behavior`  -/
+`StructurallyForced` packages the six `handles_X → HasY` forcing implications,
+each independently justified by a structural impossibility model in
+`Minimality.lean`.  It is constructive (no Classical reasoning) and requires
+no biconditionals — just the forward direction is needed for convergence. -/
 
 /-- A system is structurally forced if each operational capability implies
     the corresponding architectural feature.  Each field is independently
@@ -85,20 +75,6 @@ structure StructurallyForced (W : WorkingSystem) : Prop where
   /-- Handling truth pressure requires redeemability.
       Justified by: `closed_system_unfalsifiable` -/
   redeemability_forcing : handles_truth_pressure W → HasRedeemability W
-
-/-- `WellFormed` implies `StructurallyForced` (forward direction extraction). -/
-theorem wellformed_implies_structurally_forced (W : WorkingSystem) :
-    WellFormed W → StructurallyForced W := by
-  intro ⟨h1, h2, h3, h4, h5, h6⟩
-  exact {
-    scope_forcing := h1.mp
-    trust_forcing := h2.mp
-    header_forcing := h3.mp
-    revocation_forcing := h4.mp
-    bank_forcing := h5.mp
-    redeemability_forcing := h6.mp
-  }
-
 
 /-! ## Forcing Embeddings: Translation Layer
 
@@ -827,9 +803,7 @@ structure WorldBridgeBundle (W : WorkingSystem) where
 /-- Convergence theorem (structural version): under structural forcing,
     any system satisfying all properties contains Bank primitives.
 
-    This is the preferred convergence statement.  Unlike the WellFormed-
-    extraction path (via `wellformed_implies_structurally_forced`), this
-    theorem does **not** depend on assumed biconditionals — only on the
+    The proof does **not** depend on assumed biconditionals — only on the
     forward-direction implications justified by the structural models. -/
 theorem convergence_structural (W : WorkingSystem) (h_sf : StructurallyForced W) :
     SatisfiesAllProperties W → containsBankPrimitives W := by

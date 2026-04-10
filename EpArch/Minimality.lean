@@ -24,7 +24,7 @@ these structural elements, but implementations can differ.
 
 - `Constraints` — typeclass capturing the minimal system predicates
 - `WorkingSystem` — a system satisfying all operational properties
-- `WellFormed` — no trivially-degenerate configurations
+- `StructurallyForced` — forward-direction forcing implications (in Convergence.lean)
 - `PrimitiveNecessity` — minimal constraints table as data
 
 ## Related Files
@@ -214,74 +214,6 @@ def SatisfiesAllProperties (W : WorkingSystem) : Prop :=
   handles_truth_pressure W
 
 
-/-! ## Well-Formed Systems: Behavioral/Architectural Coherence
-
-A system is "well-formed" if its behavioral capabilities are backed by
-the corresponding architectural features. This is the key invariant that
-grounds the linking theorems operationally.
-
-In a real system, you can't "handle distributed agents" without bubbles,
-you can't "handle export" without headers, etc. The well-formedness predicate
-captures this necessary coherence. -/
-
-/-- A system is well-formed if behavioral capabilities ↔ architectural features.
-
-    The design invariant: systems claiming to handle a property
-    must actually have the architectural feature that enables it, AND
-    systems with the architectural feature must have the capability enabled.
-
-    Note: This is not a circular definition. The behavioral predicates
-    (handles_*) inspect boolean flags. The architectural predicates
-    (Has*) inspect SystemSpec. Well-formedness connects these two layers
-    bidirectionally, enabling proofs in both directions. -/
-def WellFormed (W : WorkingSystem) : Prop :=
-  -- Distributed agents handling ↔ bubbles
-  (W.has_shared_records = true ↔ W.spec.has_bubble_separation = true) ∧
-  -- Bounded audit handling ↔ trust bridges
-  (W.enables_reliance = true ↔ W.spec.has_trust_bridges = true) ∧
-  -- Export handling ↔ headers
-  (W.has_shared_records = true ∧ W.enables_reliance = true ↔ W.spec.preserves_headers = true) ∧
-  -- Adversarial handling ↔ revocation
-  (W.supports_correction = true ∧ W.resists_adversaries = true ↔ W.spec.has_revocation = true) ∧
-  -- Coordination handling ↔ bank
-  (W.has_shared_records = true ∧ W.enables_reliance = true ↔ W.spec.has_shared_ledger = true) ∧
-  -- Truth pressure handling ↔ redeemability
-  (W.supports_correction = true ↔ W.spec.has_redeemability = true)
-
-
-/-! ## WellFormed Lifting Theorems
-
-Each theorem lifts the forward direction of one biconditional from the
-`WellFormed` coherence package.  These are logical consequences of
-`WellFormed`, not independently derived forcing results.  The independent
-structural grounding for each implication is in the Structural Forcing
-Models section below. -/
-
-/-- Distributed agents → Bubbles. -/
-theorem distributed_agents_require_bubbles (W : WorkingSystem) (h_wf : WellFormed W) :
-    handles_distributed_agents W → HasBubbles W := h_wf.1.mp
-
-/-- Bounded audit → Trust bridges. -/
-theorem bounded_audit_requires_trust_bridges (W : WorkingSystem) (h_wf : WellFormed W) :
-    handles_bounded_audit W → HasTrustBridges W := h_wf.2.1.mp
-
-/-- Export across boundaries → Headers + gates. -/
-theorem export_requires_headers (W : WorkingSystem) (h_wf : WellFormed W) :
-    handles_export W → HasHeaders W := h_wf.2.2.1.mp
-
-/-- Adversarial pressure → Revocation. -/
-theorem adversarial_requires_revocation (W : WorkingSystem) (h_wf : WellFormed W) :
-    handles_adversarial W → HasRevocation W := h_wf.2.2.2.1.mp
-
-/-- Coordination need → Bank. -/
-theorem coordination_requires_bank (W : WorkingSystem) (h_wf : WellFormed W) :
-    handles_coordination W → HasBank W := h_wf.2.2.2.2.1.mp
-
-/-- Truth pressure → Redeemability. -/
-theorem truth_pressure_requires_redeemability (W : WorkingSystem) (h_wf : WellFormed W) :
-    handles_truth_pressure W → HasRedeemability W := h_wf.2.2.2.2.2.mp
-
-
 /-! ## Global Impossibility and Convergence -/
 
 /-- All six forced features together constitute Bank-like architecture.
@@ -319,16 +251,10 @@ def minimalConstraintsTable : List PrimitiveNecessity := [
     Structural Forcing Models
     ========================================================================
 
-The lifting theorems above (`distributed_agents_require_bubbles`, etc.)
-derive features from the `WellFormed` coherence package, which explicitly
-states biconditionals like `has_shared_records ↔ has_bubble_separation`.
-Those proofs reflect the biconditional structure of `WellFormed` rather
-than the constraint geometry directly.
-
 This section provides **independent, structurally-grounded proofs** for
 each forcing direction.  Each model captures the essential structure of
 one constraint scenario and proves an impossibility or invariance result
-from that structure alone — no `WellFormed`, no biconditionals.
+from that structure alone — no biconditionals needed.
 
 ### Summary
 

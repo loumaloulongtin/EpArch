@@ -1,7 +1,7 @@
 /-
 EpArch/Meta/ClusterRegistry.lean — Cluster Tag Registry and Routing
 
-Defines the EpArchConfig language, the 30 ClusterTag values and their
+Defines the EpArchConfig language, the 29 ClusterTag values and their
 per-family enumerations, the authoritative allXxxClusters lists, and the
 routing/display functions.
 
@@ -93,7 +93,6 @@ inductive ClusterTag where
   | world_ddos                  -- W_ddos: DDoS causes verification collapse
   -- Meta-modularity clusters (from EpArch.Meta.Modular — constraint-subset independence)
   | meta_modular              -- modular: ∀ S W, PartialWellFormed W S → projection_valid S W
-  | meta_modular_wellformed   -- wellformed_is_modular: WellFormed → modular on every subset
   -- Lattice-stability clusters (from EpArch.Modularity — floor not a cage)
   | lattice_graceful          -- graceful_degradation: NoSelfCorrection → PaperFacing
   | lattice_sub_safety        -- sub_revision_safety: Compatible sub-bundle extension is safe
@@ -132,9 +131,9 @@ inductive EnabledWorldCluster where
   | world_lies_scale | world_rolex_ddos | world_ddos
   deriving DecidableEq, BEq, Repr
 
-/-- The two constraint-modularity meta-theorem clusters (from `EpArch.Meta.Modular`). -/
+/-- The meta-modularity cluster (from `EpArch.Meta.Modular`). -/
 inductive EnabledMetaModularCluster where
-  | meta_modular | meta_modular_wellformed
+  | meta_modular
   deriving DecidableEq, BEq, Repr
 
 /-- The three lattice-stability clusters (from `EpArch.Modularity`). -/
@@ -230,7 +229,6 @@ def EnabledWorldCluster.toClusterTag : EnabledWorldCluster → ClusterTag
 /-- Embed a meta-modularity cluster into the global tag space. -/
 def EnabledMetaModularCluster.toClusterTag : EnabledMetaModularCluster → ClusterTag
   | .meta_modular            => .meta_modular
-  | .meta_modular_wellformed => .meta_modular_wellformed
 
 /-- Embed a lattice-stability cluster into the global tag space. -/
 def EnabledLatticeCluster.toClusterTag : EnabledLatticeCluster → ClusterTag
@@ -272,15 +270,15 @@ def allWorldClusters : List EnabledWorldCluster :=
    .world_partial_observability, .world_spoofed_v,
    .world_lies_scale, .world_rolex_ddos, .world_ddos]
 
-/-- The two constraint-modularity meta-theorem clusters, in canonical order. -/
+/-- The meta-modularity cluster, in canonical order. -/
 def allMetaModularClusters : List EnabledMetaModularCluster :=
-  [.meta_modular, .meta_modular_wellformed]
+  [.meta_modular]
 
 /-- The three lattice-stability clusters, in canonical order. -/
 def allLatticeClusters : List EnabledLatticeCluster :=
   [.lattice_graceful, .lattice_sub_safety, .lattice_pack]
 
-/-- All 30 cluster tags, in canonical order.  Derived from the per-family lists
+/-- All 29 cluster tags, in canonical order.  Derived from the per-family lists
     so ordering stays consistent with those lists automatically.
     Used by `explainConfig`. -/
 def allClusters : List ClusterTag :=
@@ -340,7 +338,6 @@ def clusterEnabled (cfg : EpArchConfig) : ClusterTag → Bool
   | .world_ddos                  => cfg.worlds.contains .ddos
   -- Meta-modularity and lattice-stability clusters: always enabled
   | .meta_modular            => true
-  | .meta_modular_wellformed => true
   | .lattice_graceful        => true
   | .lattice_sub_safety      => true
   | .lattice_pack            => true
@@ -399,8 +396,6 @@ def clusterDescription : ClusterTag → String
       "[World] W_ddos: DDoS causes verification collapse  (AdversarialObligations.ddos_causes_verification_collapse_of_W)"
   | .meta_modular =>
       "[Meta] Constraint-subset modularity: ∀ S W, PartialWellFormed W S → projection_valid S W  (Meta.Modular.modular)"
-  | .meta_modular_wellformed =>
-      "[Meta] WellFormed systems are modular on every constraint subset  (Meta.Modular.wellformed_is_modular)"
   | .lattice_graceful =>
       "[Lattice] Graceful degradation: NoSelfCorrection M → PaperFacing M  (Modularity.graceful_degradation)"
   | .lattice_sub_safety =>

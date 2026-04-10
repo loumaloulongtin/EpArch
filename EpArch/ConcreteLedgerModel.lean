@@ -32,7 +32,7 @@ This is a consistency proof, not a uniqueness claim.
 ## Role in Architecture
 
 - **Realizer.lean** packages this witness into a `ConcreteRealizer` type.
-- **Feasibility.lean** uses it to prove `existence_under_constraints`.
+- **Feasibility.lean** uses it to prove `existence_under_constraints_structural`.
 - **PaperFacing.lean** re-exports it as a paper-facing result.
 -/
 
@@ -883,49 +883,6 @@ theorem concrete_satisfies_all_properties :
          handles_export handles_adversarial handles_coordination
          handles_truth_pressure ConcreteWorkingSystem
   simp
-
-
-/-! ## WellFormed Instance
-
-The concrete working system is WellFormed — its behavioral flags
-are bidirectionally linked to the spec features.
-
-Since ConcreteWorkingSystem has all features and all flags set to true,
-the bidirectional implications are trivially satisfied. -/
-
-/-- The concrete working system is WellFormed (bidirectional). -/
-theorem concrete_wellformed : WellFormed ConcreteWorkingSystem := by
-  unfold WellFormed ConcreteWorkingSystem concreteSystemSpec
-  -- All spec features are true and all flags are true, so all ↔ hold
-  simp [handles_distributed_agents, handles_bounded_audit, handles_export,
-        handles_adversarial, handles_coordination, handles_truth_pressure]
-
-
-/-! ## Concrete System Achieves Convergence
-
-This is the main consistency result: if we instantiate the abstract
-framework with the concrete model, all the convergence theorems apply. -/
-
-/-- The concrete model can apply the convergence theorem.
-
-    Given that ConcreteWorkingSystem is WellFormed and handles all
-    operational properties, it necessarily contains all Bank primitives.
-
-    This demonstrates the spec isn't vacuously true — there exists
-    at least one model that satisfies all constraints. -/
-theorem concrete_convergence_applies :
-    WellFormed ConcreteWorkingSystem →
-    handles_distributed_agents ConcreteWorkingSystem →
-    handles_bounded_audit ConcreteWorkingSystem →
-    handles_export ConcreteWorkingSystem →
-    handles_adversarial ConcreteWorkingSystem →
-    handles_coordination ConcreteWorkingSystem →
-    handles_truth_pressure ConcreteWorkingSystem →
-    containsBankPrimitives ConcreteWorkingSystem := by
-  intro h_wf h_dist h_audit h_export h_adv h_coord h_truth
-  exact convergence_structural ConcreteWorkingSystem
-    (wellformed_implies_structurally_forced ConcreteWorkingSystem h_wf)
-    ⟨h_dist, h_audit, h_export, h_adv, h_coord, h_truth⟩
 
 
 /-! ## ForcingEmbedding Instance

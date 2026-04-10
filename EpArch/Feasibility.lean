@@ -14,12 +14,13 @@ Natural objections to an epistemic systems framework:
 This module answers: Yes. The constraint bundles are satisfiable,
 working systems exist, and success forces Bank primitives.
 
-## Headline Theorem
+## Headline Theorems
 
-`existence_under_constraints`: There exists a WorkingSystem that is
-WellFormed, satisfies all operational properties, AND contains Bank primitives.
+- `structural_goals_force_bank_primitives`: StructurallyForced ∧ SatisfiesAllProperties → containsBankPrimitives
+- `existence_under_constraints_structural`: ∃ W, StructurallyForced W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W
+- `bundled_structure_forces_bank_primitives`: uses SystemOperationalBundle + WorldBridgeBundle
 
-This packages non-vacuity + forced primitives into one citable result.
+These package non-vacuity + forced primitives into citable results.
 
 ## Claim Budget
 
@@ -102,52 +103,7 @@ theorem objectives_feasible : ∃ _ : EpArch.Realizer, True := by
 
 /-! ## System-Level Feasibility -/
 
-/-- There exists at least one successful working system.
-
-    This witnesses that the success bundle (WellFormed + SatisfiesAllProperties)
-    is non-empty—there's at least one system that achieves it. -/
-theorem success_feasible :
-    ∃ W : WorkingSystem, WellFormed W ∧ SatisfiesAllProperties W := by
-  refine ⟨EpArch.ConcreteInstance.ConcreteWorkingSystem, ?_, ?_⟩
-  · exact EpArch.ConcreteInstance.concrete_wellformed
-  · exact EpArch.ConcreteInstance.concrete_satisfies_all_properties
-
-
-/-! ## Minimality Alias -/
-
-/-- Paper-facing name: success forces Bank primitives.
-
-    Any working system that is WellFormed and satisfies all operational
-    properties contains Bank primitives.  The proof routes through
-    `convergence_structural` via `wellformed_implies_structurally_forced`. -/
-theorem goals_force_bank_primitives :
-    ∀ W : WorkingSystem, WellFormed W → SatisfiesAllProperties W → containsBankPrimitives W :=
-  fun W h_wf h_sat =>
-    convergence_structural W (wellformed_implies_structurally_forced W h_wf) h_sat
-
-
-/-! ## Headline Theorem: Existence Under Constraints -/
-
-/-- Headline theorem: existence-under-constraints (non-vacuity + forced primitives).
-
-    This headline theorem combines three results:
-    - There EXISTS a working system (non-vacuity)
-    - That system is WellFormed and satisfies all properties (success)
-    - That system contains Bank primitives (forced by minimality)
-
-    Together: the success bundle is non-empty, and success forces Bank primitives. -/
-theorem existence_under_constraints :
-    ∃ W : WorkingSystem,
-      WellFormed W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W := by
-  refine ⟨EpArch.ConcreteInstance.ConcreteWorkingSystem, ?_⟩
-  refine ⟨EpArch.ConcreteInstance.concrete_wellformed,
-          EpArch.ConcreteInstance.concrete_satisfies_all_properties, ?_⟩
-  exact goals_force_bank_primitives EpArch.ConcreteInstance.ConcreteWorkingSystem
-    EpArch.ConcreteInstance.concrete_wellformed
-    EpArch.ConcreteInstance.concrete_satisfies_all_properties
-
-
-/-! ## Joint Feasibility (Legacy) -/
+/-! ## Joint Feasibility -/
 
 /-- Joint feasibility: world constraints and objectives are both nonempty.
 

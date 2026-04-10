@@ -22,13 +22,12 @@ This file provides two pieces:
         ∀ (S : ConstraintSubset) (W : WorkingSystem),
           PartialWellFormed W S → projection_valid S W
 
-## Equivalence with WellFormed
+## Relationship to PartialWellFormed
 
-  `WellFormed W  ↔  PartialWellFormed W allConstraints`
-
-  Proved in both directions:
-  - `wellformed_implies_partial`  : WellFormed W → ∀ S, PartialWellFormed W S
-  - `partial_all_is_wellformed`   : PartialWellFormed W allConstraints → WellFormed W
+  `PartialWellFormed W allConstraints` — all six biconditionals required,
+  the strongest subset — is the natural replacement for the former `WellFormed`
+  predicate (which has been removed).  Every existing `WellFormed`-gated proof
+  can be re-stated as `PartialWellFormed W allConstraints`.
 
 ## What This Proves
 
@@ -65,7 +64,8 @@ structure ConstraintSubset where
   coordination   : Bool
   truth_pressure : Bool
 
-/-- The full set of all six constraints. `PartialWellFormed W allConstraints ↔ WellFormed W`. -/
+/-- The full set of all six constraints. `PartialWellFormed W allConstraints` requires
+    all six biconditionals — the strongest subset. -/
 def allConstraints : ConstraintSubset := ⟨true, true, true, true, true, true⟩
 
 /-- The empty subset. `PartialWellFormed W noConstraints` holds trivially. -/
@@ -81,9 +81,7 @@ def noConstraints : ConstraintSubset := ⟨false, false, false, false, false, fa
     - If `S.X = true`,  the biconditional `handles_X W ↔ HasFeature_X W` is required.
     - If `S.X = false`, nothing is required for X.
 
-    This is strictly weaker than `WellFormed W`:
-    - `WellFormed W → PartialWellFormed W S` for every S (proved below).
-    - `PartialWellFormed W allConstraints → WellFormed W` (proved below).
+    Requiring all six (S = allConstraints) is the strongest form.
 
     To "drop" constraint X from a product deployment: set S.X := false.
     The type system then stops requiring the X biconditional. -/
@@ -112,35 +110,6 @@ theorem partial_no_constraints (W : WorkingSystem) : PartialWellFormed W noConst
     wf_adversarial    := fun h => absurd h (by decide)
     wf_coordination   := fun h => absurd h (by decide)
     wf_truth_pressure := fun h => absurd h (by decide) }
-
-
-/-! ## Equivalence with WellFormed -/
-
-/-- Full `WellFormed W` implies `PartialWellFormed W S` for **every** constraint subset S.
-
-    Since WellFormed provides all six biconditionals unconditionally, we can
-    supply each one conditionally — ignoring the bool flag. -/
-theorem wellformed_implies_partial (W : WorkingSystem) (h_wf : WellFormed W)
-    (S : ConstraintSubset) : PartialWellFormed W S :=
-  { wf_distributed    := fun _ => h_wf.1
-    wf_bounded_audit  := fun _ => h_wf.2.1
-    wf_export         := fun _ => h_wf.2.2.1
-    wf_adversarial    := fun _ => h_wf.2.2.2.1
-    wf_coordination   := fun _ => h_wf.2.2.2.2.1
-    wf_truth_pressure := fun _ => h_wf.2.2.2.2.2 }
-
-/-- `PartialWellFormed W allConstraints` implies full `WellFormed W`.
-
-    Since allConstraints has every flag = true, each field's guard is satisfied
-    by `rfl`, extracting the required biconditional. -/
-theorem partial_all_is_wellformed (W : WorkingSystem)
-    (pwf : PartialWellFormed W allConstraints) : WellFormed W :=
-  ⟨pwf.wf_distributed    rfl,
-   pwf.wf_bounded_audit   rfl,
-   pwf.wf_export          rfl,
-   pwf.wf_adversarial     rfl,
-   pwf.wf_coordination    rfl,
-   pwf.wf_truth_pressure  rfl⟩
 
 
 /-! ## The Modularity Target Predicate -/
@@ -184,16 +153,5 @@ theorem modular (S : ConstraintSubset) (W : WorkingSystem)
    fun hc h => (pwf.wf_coordination    hc).mp h,
    fun ht h => (pwf.wf_truth_pressure  ht).mp h⟩
 
-
-/-! ## Corollary: WellFormed systems are modular on every subset -/
-
-/-- Every fully well-formed system satisfies `projection_valid` for every constraint subset.
-
-    This is the corollary that directly answers "is EpArch modular on its constraints?":
-    any system with WellFormed W has machine-certified forcing theorems
-    for every possible subset of the six constraints. -/
-theorem wellformed_is_modular (S : ConstraintSubset) (W : WorkingSystem)
-    (h_wf : WellFormed W) : projection_valid S W :=
-  modular S W (wellformed_implies_partial W h_wf S)
 
 end EpArch.Meta.Modular

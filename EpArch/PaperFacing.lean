@@ -332,10 +332,10 @@ export EpArch.RevisionSafety (
 These theorems establish that the constraint+objective package is consistent
 AND that success forces Bank primitives.
 
-**Headline Theorem:** `existence_under_constraints`
-- There EXISTS a working system (non-vacuity)
-- That system is WellFormed and satisfies all properties (success)
-- That system contains Bank primitives (forced by minimality)
+**Headline Theorems:**
+- `structural_goals_force_bank_primitives`: StructurallyForced ∧ SatisfiesAllProperties → containsBankPrimitives
+- `existence_under_constraints_structural`: ∃ W, StructurallyForced W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W
+- `bundled_structure_forces_bank_primitives`: uses SystemOperationalBundle + WorldBridgeBundle
 
 **Buys:**
 - "The core commitments are jointly satisfiable"
@@ -357,12 +357,11 @@ export EpArch.Feasibility (
   -- Commitment-level feasibility
   commitments_feasible
   objectives_feasible
-  -- System-level feasibility
-  success_feasible
-  -- Minimality alias
-  goals_force_bank_primitives
-  -- Headline theorem
-  existence_under_constraints
+  -- Headline structural theorems
+  structural_goals_force_bank_primitives
+  existence_under_constraints_structural
+  existence_under_constraints_embedding
+  bundled_structure_forces_bank_primitives
   -- Legacy
   joint_feasible
 )

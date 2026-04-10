@@ -15,7 +15,7 @@ at least one concrete model satisfying all core commitments.
 - Thin interface: only fields we can populate from existing code
 - Commitments as Prop field, not definitional equalities
 - ConcreteRealizer witnesses via ConcreteLedgerModel
-- SuccessfulSystem bundles WorkingSystem + WellFormed + SatisfiesAllProperties
+- SuccessfulSystem bundles WorkingSystem + StructurallyForced + SatisfiesAllProperties
 
 -/
 
@@ -67,30 +67,30 @@ def ConcreteRealizer : Realizer :=
 
 /-! ## SuccessfulSystem Interface (Working System Bundle) -/
 
-/-- A "successful working system": a WorkingSystem that is coherent and
-    satisfies the full success bundle used by Minimality.
+/-- A "successful working system": a WorkingSystem that is structurally forced
+    and satisfies the full success bundle used by Minimality.
 
     This bundles:
     - A WorkingSystem
-    - Proof it's WellFormed (behavioral ↔ architectural coherence)
+    - Proof it's StructurallyForced (capability → architectural feature)
     - Proof it satisfies all six operational properties
 
     The existence of such a system is the "non-vacuity of success" claim. -/
 structure SuccessfulSystem where
   /-- The underlying working system -/
   W : WorkingSystem
-  /-- System is well-formed (behavioral flags ↔ spec features) -/
-  wf : WellFormed W
+  /-- System is structurally forced (capability flags → spec features) -/
+  sf : StructurallyForced W
   /-- System satisfies all six operational properties -/
   sat : SatisfiesAllProperties W
 
 /-- Canonical witness: the concrete working system from ConcreteLedgerModel.
 
-    This bundles ConcreteWorkingSystem with its wellformedness and
+    This bundles ConcreteWorkingSystem with its structural forcing and
     satisfaction proofs into a single object. -/
 def ConcreteSuccessfulSystem : SuccessfulSystem where
   W := EpArch.ConcreteInstance.ConcreteWorkingSystem
-  wf := EpArch.ConcreteInstance.concrete_wellformed
+  sf := EpArch.ConcreteInstance.concrete_structurally_forced
   sat := EpArch.ConcreteInstance.concrete_satisfies_all_properties
 
 end EpArch

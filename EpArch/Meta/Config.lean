@@ -60,6 +60,7 @@ are active, this module computes and certifies:
 
 import EpArch.Meta.ClusterRegistry
 import EpArch.Minimality
+import EpArch.Convergence
 import EpArch.Health
 import EpArch.Meta.TheoremTransport
 import EpArch.Meta.Tier4Transport
@@ -125,23 +126,23 @@ def constraintSpec (c : EnabledConstraintCluster) : ConstraintClusterSpec :=
     witness :=
       match c with
       | .forcing_distributed_agents => {
-          statement := ∀ W : WorkingSystem, WellFormed W → handles_distributed_agents W → HasBubbles W
-          proof     := distributed_agents_require_bubbles }
+          statement := ∀ W : WorkingSystem, StructurallyForced W → handles_distributed_agents W → HasBubbles W
+          proof     := fun W sf => sf.scope_forcing }
       | .forcing_bounded_audit => {
-          statement := ∀ W : WorkingSystem, WellFormed W → handles_bounded_audit W → HasTrustBridges W
-          proof     := bounded_audit_requires_trust_bridges }
+          statement := ∀ W : WorkingSystem, StructurallyForced W → handles_bounded_audit W → HasTrustBridges W
+          proof     := fun W sf => sf.trust_forcing }
       | .forcing_export => {
-          statement := ∀ W : WorkingSystem, WellFormed W → handles_export W → HasHeaders W
-          proof     := export_requires_headers }
+          statement := ∀ W : WorkingSystem, StructurallyForced W → handles_export W → HasHeaders W
+          proof     := fun W sf => sf.header_forcing }
       | .forcing_adversarial => {
-          statement := ∀ W : WorkingSystem, WellFormed W → handles_adversarial W → HasRevocation W
-          proof     := adversarial_requires_revocation }
+          statement := ∀ W : WorkingSystem, StructurallyForced W → handles_adversarial W → HasRevocation W
+          proof     := fun W sf => sf.revocation_forcing }
       | .forcing_coordination => {
-          statement := ∀ W : WorkingSystem, WellFormed W → handles_coordination W → HasBank W
-          proof     := coordination_requires_bank }
+          statement := ∀ W : WorkingSystem, StructurallyForced W → handles_coordination W → HasBank W
+          proof     := fun W sf => sf.bank_forcing }
       | .forcing_truth => {
-          statement := ∀ W : WorkingSystem, WellFormed W → handles_truth_pressure W → HasRedeemability W
-          proof     := truth_pressure_requires_redeemability } }
+          statement := ∀ W : WorkingSystem, StructurallyForced W → handles_truth_pressure W → HasRedeemability W
+          proof     := fun W sf => sf.redeemability_forcing } }
 
 /-- Extract the proof carrier for constraint cluster `c` from `constraintSpec`. -/
 def constraintProof (c : EnabledConstraintCluster) : ConstraintProof := (constraintSpec c).witness
@@ -358,15 +359,10 @@ inductive MetaModularWitness : EnabledMetaModularCluster → Type 1 where
       (forall (S : ConstraintSubset) (W : WorkingSystem),
         PartialWellFormed W S → projection_valid S W) →
       MetaModularWitness .meta_modular
-  | wellformed :
-      (forall (S : ConstraintSubset) (W : WorkingSystem),
-        WellFormed W → projection_valid S W) →
-      MetaModularWitness .meta_modular_wellformed
 
 /-- For every meta-modularity cluster, deliver its `MetaModularWitness`. -/
 def metaModularWitness : (c : EnabledMetaModularCluster) → MetaModularWitness c
   | .meta_modular            => .modular    modular
-  | .meta_modular_wellformed => .wellformed wellformed_is_modular
 
 
 /-! ## §4e←  Lattice-Stability Witness Carrier
@@ -460,7 +456,6 @@ private theorem enabledMetaModularCluster_mem_all (c : EnabledMetaModularCluster
     c ∈ allMetaModularClusters := by
   unfold allMetaModularClusters; cases c
   · exact .head _
-  · exact .tail _ (.head _)
 
 private theorem enabledLatticeCluster_mem_all (c : EnabledLatticeCluster) :
     c ∈ allLatticeClusters := by
@@ -630,7 +625,7 @@ Lean infers the universe parameters implicitly (they are standard universe-
 polymorphic theorems, not match arms of a monomorphic `Prop`-valued def).
 
 Usage:  `#check cluster_forcing_distributed_agents`
-         → `∀ (W : WorkingSystem), WellFormed W → handles_distributed_agents W → HasBubbles W`
+         → `∀ (W : WorkingSystem), StructurallyForced W → handles_distributed_agents W → HasBubbles W`
          `#check cluster_meta_modular`
          → `∀ (S : ConstraintSubset) (W : WorkingSystem), PartialWellFormed W S → projection_valid S W`
          `#check cluster_lattice_graceful`
@@ -640,33 +635,33 @@ Usage:  `#check cluster_forcing_distributed_agents`
 
 /-- Cluster `.forcing_distributed_agents`: distributed agents force HasBubbles. -/
 theorem cluster_forcing_distributed_agents :
-    ∀ W : WorkingSystem, WellFormed W → handles_distributed_agents W → HasBubbles W :=
-  distributed_agents_require_bubbles
+    ∀ W : WorkingSystem, StructurallyForced W → handles_distributed_agents W → HasBubbles W :=
+  fun W sf => sf.scope_forcing
 
 /-- Cluster `.forcing_bounded_audit`: bounded audit forces HasTrustBridges. -/
 theorem cluster_forcing_bounded_audit :
-    ∀ W : WorkingSystem, WellFormed W → handles_bounded_audit W → HasTrustBridges W :=
-  bounded_audit_requires_trust_bridges
+    ∀ W : WorkingSystem, StructurallyForced W → handles_bounded_audit W → HasTrustBridges W :=
+  fun W sf => sf.trust_forcing
 
 /-- Cluster `.forcing_export`: export-across-boundaries forces HasHeaders. -/
 theorem cluster_forcing_export :
-    ∀ W : WorkingSystem, WellFormed W → handles_export W → HasHeaders W :=
-  export_requires_headers
+    ∀ W : WorkingSystem, StructurallyForced W → handles_export W → HasHeaders W :=
+  fun W sf => sf.header_forcing
 
 /-- Cluster `.forcing_adversarial`: adversarial pressure forces HasRevocation. -/
 theorem cluster_forcing_adversarial :
-    ∀ W : WorkingSystem, WellFormed W → handles_adversarial W → HasRevocation W :=
-  adversarial_requires_revocation
+    ∀ W : WorkingSystem, StructurallyForced W → handles_adversarial W → HasRevocation W :=
+  fun W sf => sf.revocation_forcing
 
 /-- Cluster `.forcing_coordination`: coordination need forces HasBank. -/
 theorem cluster_forcing_coordination :
-    ∀ W : WorkingSystem, WellFormed W → handles_coordination W → HasBank W :=
-  coordination_requires_bank
+    ∀ W : WorkingSystem, StructurallyForced W → handles_coordination W → HasBank W :=
+  fun W sf => sf.bank_forcing
 
 /-- Cluster `.forcing_truth`: truth pressure forces HasRedeemability. -/
 theorem cluster_forcing_truth :
-    ∀ W : WorkingSystem, WellFormed W → handles_truth_pressure W → HasRedeemability W :=
-  truth_pressure_requires_redeemability
+    ∀ W : WorkingSystem, StructurallyForced W → handles_truth_pressure W → HasRedeemability W :=
+  fun W sf => sf.redeemability_forcing
 
 -- ── Tier 3 goal transport ────────────────────────────────────────────────
 
@@ -807,12 +802,6 @@ theorem cluster_world_ddos
 theorem cluster_meta_modular (S : ConstraintSubset) (W : WorkingSystem)
     (pwf : PartialWellFormed W S) : projection_valid S W :=
   modular S W pwf
-
-/-- Cluster `.meta_modular_wellformed`: any fully well-formed system is modular
-    on every possible constraint subset. -/
-theorem cluster_meta_modular_wellformed (S : ConstraintSubset) (W : WorkingSystem)
-    (h : WellFormed W) : projection_valid S W :=
-  wellformed_is_modular S W h
 
 
 -- ── Lattice-stability theorems ─────────────────────────────────────────────────

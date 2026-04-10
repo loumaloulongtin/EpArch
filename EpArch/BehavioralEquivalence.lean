@@ -14,12 +14,11 @@ identical observations on all inputs.
 
 ## Theorems
 
-- `working_systems_equivalent`         — SatisfiesAllProperties on both → behaviorally equivalent
-- `bank_primitives_determine_behavior` — WellFormed + containsBankPrimitives → equivalent
+- `working_systems_equivalent` — SatisfiesAllProperties on both → behaviorally equivalent
 
 ## Dependencies
 
-- **Minimality.lean:** WorkingSystem, WellFormed, SatisfiesAllProperties,
+- **Minimality.lean:** WorkingSystem, SatisfiesAllProperties,
   containsBankPrimitives, Has*, handles_*
 -/
 
@@ -154,43 +153,6 @@ theorem working_systems_equivalent (W1 W2 : WorkingSystem) :
   intro h_sat1 h_sat2
   have ⟨h1_rec, h1_rel, h1_cor, h1_adv⟩ := satisfies_all_fixes_flags W1 h_sat1
   have ⟨h2_rec, h2_rel, h2_cor, h2_adv⟩ := satisfies_all_fixes_flags W2 h_sat2
-  exact same_flags_same_behavior W1 W2
-    (h1_rec.trans h2_rec.symm)
-    (h1_rel.trans h2_rel.symm)
-    (h1_cor.trans h2_cor.symm)
-    (h1_adv.trans h2_adv.symm)
-
-/-- WellFormed systems containing Bank primitives are behaviorally equivalent.
-
-    `containsBankPrimitives` implies all spec features; `WellFormed` (backward direction)
-    maps spec features to behavioral flags.
-
-    Note: This requires bidirectional well-formedness to connect spec features
-    to behavioral flags. The `mpr` direction of WellFormed gives us:
-    spec feature = true → behavioral flag = true. -/
-theorem bank_primitives_determine_behavior (W1 W2 : WorkingSystem)
-    (h_wf1 : WellFormed W1) (h_wf2 : WellFormed W2) :
-    containsBankPrimitives W1 → containsBankPrimitives W2 →
-    BehaviorallyEquivalent W1 W2 := by
-  intro h1 h2
-  unfold containsBankPrimitives at h1 h2
-  have ⟨hB1, hT1, _hH1, hR1, _hK1, hD1⟩ := h1
-  have ⟨hB2, hT2, _hH2, hR2, _hK2, hD2⟩ := h2
-  unfold HasBubbles HasTrustBridges HasHeaders HasRevocation HasBank HasRedeemability at *
-  have h1_rec : W1.has_shared_records = true := h_wf1.1.mpr hB1
-  have h1_rel : W1.enables_reliance = true := h_wf1.2.1.mpr hT1
-  have h1_cor : W1.supports_correction = true := h_wf1.2.2.2.2.2.mpr hD1
-  have h1_adv_pair : W1.supports_correction = true ∧ W1.resists_adversaries = true :=
-    h_wf1.2.2.2.1.mpr hR1
-  have h1_adv : W1.resists_adversaries = true := h1_adv_pair.2
-  -- Same for W2
-  have h2_rec : W2.has_shared_records = true := h_wf2.1.mpr hB2
-  have h2_rel : W2.enables_reliance = true := h_wf2.2.1.mpr hT2
-  have h2_cor : W2.supports_correction = true := h_wf2.2.2.2.2.2.mpr hD2
-  have h2_adv_pair : W2.supports_correction = true ∧ W2.resists_adversaries = true :=
-    h_wf2.2.2.2.1.mpr hR2
-  have h2_adv : W2.resists_adversaries = true := h2_adv_pair.2
-  -- Now apply same_flags_same_behavior
   exact same_flags_same_behavior W1 W2
     (h1_rec.trans h2_rec.symm)
     (h1_rel.trans h2_rel.symm)
