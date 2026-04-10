@@ -47,34 +47,20 @@ namespace EpArch
 
 /-! ## StructurallyForced: Forward-Direction Forcing
 
-`StructurallyForced` packages the six `handles_X → HasY` forcing implications,
-each independently justified by a structural impossibility model in
-`Minimality.lean`.  It is constructive (no Classical reasoning) and requires
-no biconditionals — just the forward direction is needed for convergence. -/
+`StructurallyForced` packages the six `handles_X → HasY` forcing implications
+as a single universally-quantified field indexed by `Pressure`.  Pattern-matching
+on `Pressure` is machine-exhaustive: if a new dimension is added, every `cases P`
+proof requires a new case.
 
-/-- A system is structurally forced if each operational capability implies
-    the corresponding architectural feature.  Each field is independently
-    justified by a structural forcing model. -/
+Each `handles_pressure W P → forced_feature W P` instance is independently
+justified by a structural impossibility model in `Minimality.lean`. -/
+
+/-- A system is structurally forced: for every pressure dimension, handling
+    the capability implies the forced architectural feature. -/
 structure StructurallyForced (W : WorkingSystem) : Prop where
-  /-- Handling distributed agents requires scope separation.
-      Justified by: `flat_scope_impossible` -/
-  scope_forcing : handles_distributed_agents W → HasBubbles W
-  /-- Handling bounded audit requires trust bridges.
-      Justified by: `verification_only_import_incomplete` -/
-  trust_forcing : handles_bounded_audit W → HasTrustBridges W
-  /-- Handling export requires headers/metadata.
-      Justified by: `uniform_import_nondiscriminating` and
-      `no_sound_complete_uniform_import` -/
-  header_forcing : handles_export W → HasHeaders W
-  /-- Handling adversarial pressure requires revocation.
-      Justified by: `monotonic_no_exit` -/
-  revocation_forcing : handles_adversarial W → HasRevocation W
-  /-- Handling coordination requires shared ledger.
-      Justified by: `private_storage_no_sharing` -/
-  bank_forcing : handles_coordination W → HasBank W
-  /-- Handling truth pressure requires redeemability.
-      Justified by: `closed_system_unfalsifiable` -/
-  redeemability_forcing : handles_truth_pressure W → HasRedeemability W
+  /-- For every pressure dimension P, handling capability P forces feature P.
+      Justified per-dimension by the structural models in Minimality.lean. -/
+  forcing : ∀ P : Pressure, handles_pressure W P → forced_feature W P
 
 /-! ## Forcing Embeddings: Translation Layer
 
@@ -186,53 +172,51 @@ theorem bridge_redeemability_impossible (_W : WorkingSystem) : ¬BridgeRedeemabi
   fun ⟨M, c, hc⟩ => closed_system_unfalsifiable M ⟨c, hc⟩
 
 
-/-- Forcing embeddings: connects a `WorkingSystem` to the abstract
-    structural models via an auditable disjunction.
+/-- Maps each `Pressure` dimension to its bridge-scenario predicate.
+    Used as the right disjunct in `ForcingEmbedding.embed`. -/
+def bridge_scenario (W : WorkingSystem) : Pressure → Prop
+  | .scope         => BridgeBubbles W
+  | .trust         => BridgeTrust W
+  | .headers       => BridgeHeaders W
+  | .revocation    => BridgeRevocation W
+  | .bank          => BridgeBank W
+  | .redeemability => BridgeRedeemability W
 
-    Each field says: a system handling the constraint EITHER already
-    has the feature, OR is bridge-committed to the impossible scenario
-    for that dimension.  Since bridge commitment forces the feature
-    (via `bridge_*_impossible`), the feature holds in both branches. -/
+/-- Every bridge scenario is universally impossible: committing to the
+    impossible scenario for any dimension yields `False`.
+    Proof by exhaustive pattern match — Lean verifies all six cases. -/
+theorem all_bridges_impossible (W : WorkingSystem) (P : Pressure) : ¬bridge_scenario W P := by
+  cases P
+  · exact bridge_bubbles_impossible W
+  · exact bridge_trust_impossible W
+  · exact bridge_headers_impossible W
+  · exact bridge_revocation_impossible W
+  · exact bridge_bank_impossible W
+  · exact bridge_redeemability_impossible W
+
+/-- Forcing embeddings: connects a `WorkingSystem` to the abstract
+    structural models via an auditable disjunction, indexed by `Pressure`.
+
+    The single field says: for every pressure dimension P, a system handling
+    capability P either already has the forced feature, OR is bridge-committed
+    to the impossible scenario for that dimension.  Since bridge commitment
+    forces the feature (via `all_bridges_impossible`), the feature holds
+    in both branches. -/
 structure ForcingEmbedding (W : WorkingSystem) : Prop where
-  /-- Distributed agents: either bubbles exist, or the system is
-      bridge-committed on scope (`BridgeBubbles`). -/
-  scope_embed : handles_distributed_agents W →
-    HasBubbles W ∨ BridgeBubbles W
-  /-- Bounded audit: either trust bridges exist, or the system is
-      bridge-committed on trust (`BridgeTrust`). -/
-  trust_embed : handles_bounded_audit W →
-    HasTrustBridges W ∨ BridgeTrust W
-  /-- Export: either headers exist, or the system is bridge-committed
-      on headers (`BridgeHeaders`). -/
-  header_embed : handles_export W →
-    HasHeaders W ∨ BridgeHeaders W
-  /-- Adversarial: either revocation exists, or the system is
-      bridge-committed on revocation (`BridgeRevocation`). -/
-  revocation_embed : handles_adversarial W →
-    HasRevocation W ∨ BridgeRevocation W
-  /-- Coordination: either shared ledger exists, or the system is
-      bridge-committed on bank (`BridgeBank`). -/
-  bank_embed : handles_coordination W →
-    HasBank W ∨ BridgeBank W
-  /-- Truth pressure: either redeemability exists, or the system is
-      bridge-committed on redeemability (`BridgeRedeemability`). -/
-  redeemability_embed : handles_truth_pressure W →
-    HasRedeemability W ∨ BridgeRedeemability W
+  /-- For every pressure dimension P, handling capability P either yields
+      the forced feature or commits to the universally impossible scenario. -/
+  embed : ∀ P : Pressure, handles_pressure W P →
+    forced_feature W P ∨ bridge_scenario W P
 
 /-- Mechanical derivation: `ForcingEmbedding` → `StructurallyForced`.
 
-    Each field is derived by `Or.elim`: the left branch is the feature
-    itself (`id`); the right branch applies `bridge_X_impossible`, which
-    proves `¬Bridge_X W` directly — so the right branch is universally
+    The single field is derived by `Or.elim`: the left branch is the feature
+    itself (`id`); the right branch applies `all_bridges_impossible P`, which
+    proves `¬bridge_scenario W P` directly — so the right branch is universally
     absurd.  Fully constructive — no `Classical.byContradiction`. -/
 theorem embedding_to_structurally_forced (W : WorkingSystem) (E : ForcingEmbedding W) :
     StructurallyForced W where
-  scope_forcing h := (E.scope_embed h).elim id fun hb => absurd hb (bridge_bubbles_impossible W)
-  trust_forcing h := (E.trust_embed h).elim id fun hb => absurd hb (bridge_trust_impossible W)
-  header_forcing h := (E.header_embed h).elim id fun hb => absurd hb (bridge_headers_impossible W)
-  revocation_forcing h := (E.revocation_embed h).elim id fun hb => absurd hb (bridge_revocation_impossible W)
-  bank_forcing h := (E.bank_embed h).elim id fun hb => absurd hb (bridge_bank_impossible W)
-  redeemability_forcing h := (E.redeemability_embed h).elim id fun hb => absurd hb (bridge_redeemability_impossible W)
+  forcing P h := (E.embed P h).elim id (fun hb => absurd hb (all_bridges_impossible W P))
 
 
 /-! ## Scenario Predicates: Enriching WorkingSystems with Structural Content
@@ -806,29 +790,12 @@ structure WorldBridgeBundle (W : WorkingSystem) where
     The proof does **not** depend on assumed biconditionals — only on the
     forward-direction implications justified by the structural models. -/
 theorem convergence_structural (W : WorkingSystem) (h_sf : StructurallyForced W) :
-    SatisfiesAllProperties W → containsBankPrimitives W := by
-  intro ⟨h1, h2, h3, h4, h5, h6⟩
-  exact ⟨h_sf.scope_forcing h1, h_sf.trust_forcing h2, h_sf.header_forcing h3,
-         h_sf.revocation_forcing h4, h_sf.bank_forcing h5, h_sf.redeemability_forcing h6⟩
+    SatisfiesAllProperties W → containsBankPrimitives W :=
+  fun h_sat P => h_sf.forcing P (h_sat P)
 
 /-- Structural impossibility: missing any feature blocks all-property satisfaction. -/
 theorem structural_impossibility (W : WorkingSystem) (h_sf : StructurallyForced W) :
-    (¬HasBubbles W ∨ ¬HasTrustBridges W ∨ ¬HasHeaders W ∨
-     ¬HasRevocation W ∨ ¬HasBank W ∨ ¬HasRedeemability W) →
-    ¬SatisfiesAllProperties W := by
-  intro h_missing h_sat
-  have h_bp := convergence_structural W h_sf h_sat
-  unfold containsBankPrimitives at h_bp
-  cases h_missing with
-  | inl h => exact h h_bp.1
-  | inr h => cases h with
-    | inl h => exact h h_bp.2.1
-    | inr h => cases h with
-      | inl h => exact h h_bp.2.2.1
-      | inr h => cases h with
-        | inl h => exact h h_bp.2.2.2.1
-        | inr h => cases h with
-          | inl h => exact h h_bp.2.2.2.2.1
-          | inr h => exact h h_bp.2.2.2.2.2
+    (∃ P : Pressure, ¬forced_feature W P) → ¬SatisfiesAllProperties W :=
+  fun ⟨P, h_miss⟩ h_sat => absurd (h_sf.forcing P (h_sat P)) h_miss
 
 end EpArch

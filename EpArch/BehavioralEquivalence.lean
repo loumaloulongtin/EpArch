@@ -141,10 +141,9 @@ theorem satisfies_all_fixes_flags (W : WorkingSystem) (h : SatisfiesAllPropertie
     W.enables_reliance = true ∧
     W.supports_correction = true ∧
     W.resists_adversaries = true := by
-  have ⟨h1, h2, _h3, h4, _h5, _h6⟩ := h
-  unfold handles_distributed_agents at h1
-  unfold handles_bounded_audit at h2
-  unfold handles_adversarial at h4
+  have h1 : W.has_shared_records = true := h .scope
+  have h2 : W.enables_reliance = true := h .trust
+  have h4 : W.supports_correction = true ∧ W.resists_adversaries = true := h .revocation
   exact ⟨h1, h2, h4.1, h4.2⟩
 
 /-- Any two systems satisfying all properties are behaviorally equivalent. -/

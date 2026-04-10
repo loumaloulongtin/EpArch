@@ -279,12 +279,13 @@ theorem world_assumptions_force_bank_primitives (C : @EpArch.WorldCtx.{0})
     (h_sat : SatisfiesAllProperties W) :
     containsBankPrimitives W := by
   apply convergence_structural W _ h_sat
-  exact { scope_forcing        := h_wa.2.2.2.1
-          trust_forcing        := h_wa.1 Wv
-          header_forcing       := h_wa.2.2.2.2.1
-          revocation_forcing   := h_wa.2.1 Wl
-          bank_forcing         := h_wa.2.2.2.2.2
-          redeemability_forcing := h_wa.2.2.1 Wo }
+  exact { forcing := fun P h => match P with
+          | .scope         => h_wa.2.2.2.1 h
+          | .trust         => h_wa.1 Wv h
+          | .headers       => h_wa.2.2.2.2.1 h
+          | .revocation    => h_wa.2.1 Wl h
+          | .bank          => h_wa.2.2.2.2.2 h
+          | .redeemability => h_wa.2.2.1 Wo h }
 
 /-- Any StructurallyForced system satisfies WorldAwareSystem for any WorldCtx.
 
@@ -295,12 +296,12 @@ theorem world_assumptions_force_bank_primitives (C : @EpArch.WorldCtx.{0})
     strict weakening of StructurallyForced. -/
 theorem structurally_forced_is_world_aware (C : @EpArch.WorldCtx.{0}) (W : WorkingSystem)
     (h_sf : StructurallyForced W) : WorldAwareSystem C W :=
-  ⟨fun _ => h_sf.trust_forcing,
-   fun _ => h_sf.revocation_forcing,
-   fun _ => h_sf.redeemability_forcing,
-   h_sf.scope_forcing,
-   h_sf.header_forcing,
-   h_sf.bank_forcing⟩
+  ⟨fun _ => h_sf.forcing .trust,
+   fun _ => h_sf.forcing .revocation,
+   fun _ => h_sf.forcing .redeemability,
+   h_sf.forcing .scope,
+   h_sf.forcing .headers,
+   h_sf.forcing .bank⟩
 
 /-- Zero-hypothesis corollary: the concrete working system contains Bank primitives
     with no free assumptions.
@@ -385,31 +386,29 @@ theorem grounded_world_and_structure_force_bank_primitives
     containsBankPrimitives W := by
   apply convergence_structural W _ h_sat
   apply embedding_to_structurally_forced
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
-  · -- scope_embed: disagreement_scope_embed has the exact required type
-    exact disagreement_scope_embed W Rd flat_accept hflat₁ hflat₂
-  · -- trust_embed: absent trust bridges, BridgeTrust is constructible from h_trust_all
-    intro _
-    by_cases h : HasTrustBridges W
-    · exact Or.inl h
-    · exact Or.inr ⟨Rb.toVerification, h_trust_all h⟩
-  · -- header_embed: absent headers, BridgeHeaders is constructible from f_import
-    intro _
-    by_cases h : HasHeaders W
-    · exact Or.inl h
-    · exact Or.inr ⟨Ri.toImport, f_import h, h_unif h, h_sound h, h_complete h⟩
-  · -- revocation_embed: absent revocation, BridgeRevocation uses Rm.toLifecycle + h_rev_escape
-    intro _
-    by_cases h : HasRevocation W
-    · exact Or.inl h
-    · exact Or.inr ⟨Rm.toLifecycle h, n_rev, h_rev_escape h⟩
-  · -- bank_embed: private_coordination_bank_embed has the exact required type
-    exact private_coordination_bank_embed W Rp shared_deposit h_access₁ h_access₂
-  · -- redeemability_embed: absent redeemability, BridgeRedeemability uses Re.toClosed
-    intro _
-    by_cases h : HasRedeemability W
-    · exact Or.inl h
-    · exact Or.inr ⟨Re.toClosed h, c_re, h_endorsed, h_fals h⟩
+  constructor
+  intro P h
+  cases P
+  · -- scope: disagreement_scope_embed has the exact required type
+    exact disagreement_scope_embed W Rd flat_accept hflat₁ hflat₂ h
+  · -- trust: absent trust bridges, BridgeTrust is constructible from h_trust_all
+    by_cases ht : HasTrustBridges W
+    · exact Or.inl ht
+    · exact Or.inr ⟨Rb.toVerification, h_trust_all ht⟩
+  · -- headers: absent headers, BridgeHeaders is constructible from f_import
+    by_cases hh : HasHeaders W
+    · exact Or.inl hh
+    · exact Or.inr ⟨Ri.toImport, f_import hh, h_unif hh, h_sound hh, h_complete hh⟩
+  · -- revocation: absent revocation, BridgeRevocation uses Rm.toLifecycle + h_rev_escape
+    by_cases hr : HasRevocation W
+    · exact Or.inl hr
+    · exact Or.inr ⟨Rm.toLifecycle hr, n_rev, h_rev_escape hr⟩
+  · -- bank: private_coordination_bank_embed has the exact required type
+    exact private_coordination_bank_embed W Rp shared_deposit h_access₁ h_access₂ h
+  · -- redeemability: absent redeemability, BridgeRedeemability uses Re.toClosed
+    by_cases hre : HasRedeemability W
+    · exact Or.inl hre
+    · exact Or.inr ⟨Re.toClosed hre, c_re, h_endorsed, h_fals hre⟩
 
 /-- **Headline convergence theorem — bundled form.**
 

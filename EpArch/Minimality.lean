@@ -159,15 +159,6 @@ def HasBank (W : WorkingSystem) : Prop := W.spec.has_shared_ledger = true
     Forced by: Truth pressure -/
 def HasRedeemability (W : WorkingSystem) : Prop := W.spec.has_redeemability = true
 
-/-- A system contains Bank primitives iff it has all six forced features.
-    This is what the convergence theorem claims systems must have.
-
-    Note: Defined as a conjunction of Has* predicates,
-    so `all_features_constitute_bank` follows definitionally. -/
-def containsBankPrimitives (W : WorkingSystem) : Prop :=
-  HasBubbles W ∧ HasTrustBridges W ∧ HasHeaders W ∧
-  HasRevocation W ∧ HasBank W ∧ HasRedeemability W
-
 
 /-! ## Six Operational Properties
 
@@ -204,14 +195,59 @@ def handles_coordination (W : WorkingSystem) : Prop :=
 def handles_truth_pressure (W : WorkingSystem) : Prop :=
   W.supports_correction = true  -- correction implies deposits can fail
 
-/-- A working system satisfies ALL six operational properties. -/
+
+/-! ## Pressure: The Canonical Dimension Index
+
+`Pressure` is the machine-exhaustive index of EpArch's six architectural
+forcing dimensions.  Using it as the canonical index for `handles_pressure`,
+`forced_feature`, `SatisfiesAllProperties`, and `containsBankPrimitives`
+means the coverage of the framework — exactly these six and no others —
+is a typed fact, not a counting convention.
+
+A proof that pattern-matches on `Pressure` is checked by Lean for
+exhaustiveness: adding a seventh dimension requires adding a seventh
+constructor here, which would break every existing `cases P` proof
+until the new forcing chain is supplied. -/
+
+/-- The six architectural pressure dimensions of EpArch. -/
+inductive Pressure where
+  | scope         -- Distributed agents → Bubbles
+  | trust         -- Bounded audit → TrustBridges
+  | headers       -- Export → Headers
+  | revocation    -- Adversarial → Revocation
+  | bank          -- Coordination → Bank
+  | redeemability -- Truth pressure → Redeemability
+  deriving DecidableEq, Repr
+
+/-- Maps each `Pressure` dimension to its capability predicate. -/
+def handles_pressure (W : WorkingSystem) : Pressure → Prop
+  | .scope         => handles_distributed_agents W
+  | .trust         => handles_bounded_audit W
+  | .headers       => handles_export W
+  | .revocation    => handles_adversarial W
+  | .bank          => handles_coordination W
+  | .redeemability => handles_truth_pressure W
+
+/-- Maps each `Pressure` dimension to its forced architectural feature. -/
+def forced_feature (W : WorkingSystem) : Pressure → Prop
+  | .scope         => HasBubbles W
+  | .trust         => HasTrustBridges W
+  | .headers       => HasHeaders W
+  | .revocation    => HasRevocation W
+  | .bank          => HasBank W
+  | .redeemability => HasRedeemability W
+
+/-- A working system satisfies ALL six operational properties — indexed by `Pressure`.
+    The six-ness is machine-checked: `cases P` in any proof is
+    exhaustiveness-verified by Lean. -/
 def SatisfiesAllProperties (W : WorkingSystem) : Prop :=
-  handles_distributed_agents W ∧
-  handles_bounded_audit W ∧
-  handles_export W ∧
-  handles_adversarial W ∧
-  handles_coordination W ∧
-  handles_truth_pressure W
+  ∀ P : Pressure, handles_pressure W P
+
+/-- A system contains Bank primitives iff it satisfies every pressure
+    dimension's forced-feature predicate.  Replacing the old conjunction
+    form to match the indexed structure. -/
+def containsBankPrimitives (W : WorkingSystem) : Prop :=
+  ∀ P : Pressure, forced_feature W P
 
 
 /-! ## Global Impossibility and Convergence -/
@@ -224,8 +260,8 @@ theorem all_features_constitute_bank (W : WorkingSystem) :
   HasBubbles W → HasTrustBridges W → HasHeaders W →
   HasRevocation W → HasBank W → HasRedeemability W →
   containsBankPrimitives W := by
-  intro h1 h2 h3 h4 h5 h6
-  exact ⟨h1, h2, h3, h4, h5, h6⟩
+  intro h1 h2 h3 h4 h5 h6 P
+  cases P <;> assumption
 
 
 /-! ## Primitive Necessity Summary -/

@@ -867,9 +867,14 @@ theorem concrete_has_redeemability : HasRedeemability ConcreteWorkingSystem := b
     This is the consistency proof: the spec is satisfiable. -/
 theorem concrete_contains_bank_primitives :
     containsBankPrimitives ConcreteWorkingSystem := by
-  unfold containsBankPrimitives
-  exact ⟨concrete_has_bubbles, concrete_has_trust_bridges, concrete_has_headers,
-         concrete_has_revocation, concrete_has_bank, concrete_has_redeemability⟩
+  intro P
+  cases P
+  · exact concrete_has_bubbles
+  · exact concrete_has_trust_bridges
+  · exact concrete_has_headers
+  · exact concrete_has_revocation
+  · exact concrete_has_bank
+  · exact concrete_has_redeemability
 
 
 /-! ## Operational Properties Hold
@@ -879,10 +884,10 @@ The concrete model also satisfies the handles_* predicates. -/
 /-- Concrete model satisfies ALL six operational properties. -/
 theorem concrete_satisfies_all_properties :
     SatisfiesAllProperties ConcreteWorkingSystem := by
-  unfold SatisfiesAllProperties handles_distributed_agents handles_bounded_audit
-         handles_export handles_adversarial handles_coordination
-         handles_truth_pressure ConcreteWorkingSystem
-  simp
+  intro P; cases P <;>
+  simp [handles_pressure, handles_distributed_agents, handles_bounded_audit,
+        handles_export, handles_adversarial, handles_coordination,
+        handles_truth_pressure, ConcreteWorkingSystem]
 
 
 /-! ## ForcingEmbedding Instance
@@ -898,12 +903,13 @@ The derivation chain for the concrete model is now:
 /-- The concrete model's forcing embedding.  Every field is `Or.inl`
     because all features are present. -/
 def concrete_forcing_embedding : ForcingEmbedding ConcreteWorkingSystem where
-  scope_embed _ := Or.inl concrete_has_bubbles
-  trust_embed _ := Or.inl concrete_has_trust_bridges
-  header_embed _ := Or.inl concrete_has_headers
-  revocation_embed _ := Or.inl concrete_has_revocation
-  bank_embed _ := Or.inl concrete_has_bank
-  redeemability_embed _ := Or.inl concrete_has_redeemability
+  embed P _ := match P with
+    | .scope         => Or.inl concrete_has_bubbles
+    | .trust         => Or.inl concrete_has_trust_bridges
+    | .headers       => Or.inl concrete_has_headers
+    | .revocation    => Or.inl concrete_has_revocation
+    | .bank          => Or.inl concrete_has_bank
+    | .redeemability => Or.inl concrete_has_redeemability
 
 /-- The concrete model is structurally forced — derived mechanically
     from the forcing embedding via the generic translation layer. -/
