@@ -371,4 +371,88 @@ theorem kernel_world_forces_bank_primitives :
       EpArch.ConcreteInstance.concrete_structurally_forced)
     EpArch.ConcreteInstance.concrete_satisfies_all_properties
 
+
+/-- Any working system that carries explicit structural-scenario witnesses for all
+    six EpArch dimensions and satisfies all operational properties necessarily
+    contains Bank primitives.
+
+    This theorem replaces `world_assumptions_force_bank_primitives` + `WorldAwareSystem`
+    as the headline convergence result.  `WorldAwareSystem` bundles the six
+    capability→feature implications as opaque Prop conjuncts; here each implication
+    is unpacked into a named `Represents*` structure (structural data) plus an
+    auditable bridge hypothesis (per-dimension forcing evidence):
+
+    | Dimension     | Structure                        | Bridge hypothesis                                    |
+    |---------------|----------------------------------|------------------------------------------------------|
+    | Scope         | `RepresentsDisagreement`         | flat acceptance function matches both agents         |
+    | Trust         | `RepresentsBoundedVerification`  | absent trust, all claims fit within budget           |
+    | Headers       | `RepresentsDiscriminatingImport` | absent headers, import is uniform, sound, complete   |
+    | Revocation    | `RepresentsMonotonicLifecycle`   | absent revocation, accepted state escapes at n_rev   |
+    | Bank          | `RepresentsPrivateCoordination`  | absent ledger, both agents access the same deposit   |
+    | Redeemability | `RepresentsClosedEndorsement`    | absent redeemability, endorsed claim is falsifiable  |
+
+    All six `ForcingEmbedding` fields are constructed inline from the witnesses —
+    none are stated as opaque system-design axioms.  `embedding_to_structurally_forced`
+    and `convergence_structural` then close the proof mechanically. -/
+theorem grounded_world_and_structure_force_bank_primitives
+    (W : WorkingSystem)
+    -- Structural scenario witnesses (one per dimension)
+    (Rd : RepresentsDisagreement W)
+    (Rb : RepresentsBoundedVerification W)
+    (Ri : RepresentsDiscriminatingImport W)
+    (Rm : RepresentsMonotonicLifecycle W)
+    (Rp : RepresentsPrivateCoordination W)
+    (Re : RepresentsClosedEndorsement W)
+    -- Scope: absent bubbles, a flat acceptance function must cover both agents
+    (flat_accept : ¬HasBubbles W → Rd.Claim → Prop)
+    (hflat₁ : ∀ h c, flat_accept h c ↔ Rd.accept₁ c)
+    (hflat₂ : ∀ h c, flat_accept h c ↔ Rd.accept₂ c)
+    -- Trust: absent trust bridges, all claims fit within the verification budget
+    (h_trust_all : ¬HasTrustBridges W → ∀ c, Rb.verify_cost c ≤ Rb.budget)
+    -- Headers: absent headers, the import function is uniform, sound, and complete
+    (f_import : ¬HasHeaders W → Ri.Claim → Bool)
+    (h_unif : ∀ h x y, f_import h x = f_import h y)
+    (h_sound : ∀ h, f_import h Ri.bad = false)
+    (h_complete : ∀ h, f_import h Ri.good = true)
+    -- Revocation: absent revocation, the accepted state escapes at step n_rev
+    (n_rev : Nat)
+    (h_rev_escape : ¬HasRevocation W → iter Rm.step n_rev Rm.accepted ≠ Rm.accepted)
+    -- Bank: absent a shared ledger, both agents access the same deposit
+    (shared_deposit : ¬HasBank W → Rp.Deposit)
+    (h_access₁ : ∀ h, Rp.has_access Rp.a₁ (shared_deposit h))
+    (h_access₂ : ∀ h, Rp.has_access Rp.a₂ (shared_deposit h))
+    -- Redeemability: absent redeemability, an endorsed claim is externally falsifiable
+    (c_re : Re.Claim)
+    (h_endorsed : Re.endorsed c_re)
+    (h_fals : ¬HasRedeemability W → Re.externally_falsifiable c_re)
+    (h_sat : SatisfiesAllProperties W) :
+    containsBankPrimitives W := by
+  apply convergence_structural W _ h_sat
+  apply embedding_to_structurally_forced
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+  · -- scope_embed: disagreement_scope_embed has the exact required type
+    exact disagreement_scope_embed W Rd flat_accept hflat₁ hflat₂
+  · -- trust_embed: absent trust bridges, BridgeTrust is constructible from h_trust_all
+    intro _
+    by_cases h : HasTrustBridges W
+    · exact Or.inl h
+    · exact Or.inr ⟨Rb.toVerification, h_trust_all h⟩
+  · -- header_embed: absent headers, BridgeHeaders is constructible from f_import
+    intro _
+    by_cases h : HasHeaders W
+    · exact Or.inl h
+    · exact Or.inr ⟨Ri.toImport, f_import h, h_unif h, h_sound h, h_complete h⟩
+  · -- revocation_embed: absent revocation, BridgeRevocation uses Rm.toLifecycle + h_rev_escape
+    intro _
+    by_cases h : HasRevocation W
+    · exact Or.inl h
+    · exact Or.inr ⟨Rm.toLifecycle h, n_rev, h_rev_escape h⟩
+  · -- bank_embed: private_coordination_bank_embed has the exact required type
+    exact private_coordination_bank_embed W Rp shared_deposit h_access₁ h_access₂
+  · -- redeemability_embed: absent redeemability, BridgeRedeemability uses Re.toClosed
+    intro _
+    by_cases h : HasRedeemability W
+    · exact Or.inl h
+    · exact Or.inr ⟨Re.toClosed h, c_re, h_endorsed, h_fals h⟩
+
 end EpArch.Feasibility
