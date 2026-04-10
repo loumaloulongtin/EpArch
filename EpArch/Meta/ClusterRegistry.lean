@@ -59,7 +59,7 @@ structure EpArchConfig where
 
 /-! ## §2  Cluster Tags -/
 
-/-- The 30 theorem clusters certified in EpArch Tiers 2–4 plus world-bundle obligations,
+/-- The 29 theorem clusters certified in EpArch Tiers 2–4 plus world-bundle obligations,
     constraint-modularity meta-theorems, and lattice-stability results. -/
 inductive ClusterTag where
   -- Tier 2: constraint-forcing theorems (6 clusters)

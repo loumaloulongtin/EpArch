@@ -74,7 +74,7 @@ def noConstraints : ConstraintSubset := ⟨false, false, false, false, false, fa
 
 /-! ## Partial Well-Formedness -/
 
-/-- `PartialWellFormed W S` is the fragment of `WellFormed W` required for
+/-- `PartialWellFormed W S` captures the forcing biconditionals for
     the constraint subset S.
 
     For each constraint X:

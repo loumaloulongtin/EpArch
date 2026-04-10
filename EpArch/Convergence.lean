@@ -12,17 +12,17 @@ operational properties necessarily contains Bank primitives.
 2. `ForcingEmbedding` — auditable disjunction connecting WorkingSystems to the abstract
    structural models; `embedding_to_structurally_forced` derives StructurallyForced
    constructively (no Classical reasoning).
-4. Bridge predicates (`BridgeBubbles` … `BridgeRedeemability`) and
+3. Bridge predicates (`BridgeBubbles` … `BridgeRedeemability`) and
    `bridge_*_impossible` theorems — system-independent impossibility: committing to
    the impossible scenario for any dimension is universally False.
-5. Six Scenario predicates (RepresentsDisagreement, RepresentsPrivateCoordination,
+4. Six Scenario predicates (RepresentsDisagreement, RepresentsPrivateCoordination,
    RepresentsMonotonicLifecycle, RepresentsDiscriminatingImport,
    RepresentsBoundedVerification, RepresentsClosedEndorsement) — enriched
    WorkingSystem instantiations that let the abstract structural models fire
    on concrete systems.
-6. `convergence_structural` — the central theorem:
+5. `convergence_structural` — the central theorem:
    StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W.
-7. `structural_impossibility` — missing any feature blocks all-property satisfaction.
+6. `structural_impossibility` — missing any feature blocks all-property satisfaction.
 
 ## Proof Chain
 

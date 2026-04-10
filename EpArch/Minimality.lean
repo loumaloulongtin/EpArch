@@ -244,8 +244,7 @@ def SatisfiesAllProperties (W : WorkingSystem) : Prop :=
   ∀ P : Pressure, handles_pressure W P
 
 /-- A system contains Bank primitives iff it satisfies every pressure
-    dimension's forced-feature predicate.  Replacing the old conjunction
-    form to match the indexed structure. -/
+    dimension's forced-feature predicate. -/
 def containsBankPrimitives (W : WorkingSystem) : Prop :=
   ∀ P : Pressure, forced_feature W P
 
