@@ -286,6 +286,12 @@ def LeanGroundedBubbles : GroundedBubbles where
   scope₁_accepts := trivial
   scope₂_rejects := id
 
+/-- `LeanGroundedBubbles` with impossibility consequence: no flat resolver can represent
+    both the Nat-namespace and Int-namespace scopes simultaneously.
+    Derives `no_flat_resolver` by invoking `flat_scope_impossible`. -/
+def LeanGroundedBubblesStrict : GroundedBubblesStrict :=
+  GroundedBubblesStrict.mk' LeanGroundedBubbles
+
 
 /-! ### Trust Bridges: Lean's `import` Mechanism -/
 
@@ -317,6 +323,11 @@ def LeanGroundedTrustBridges : GroundedTrustBridges where
   upstream_holds        := trivial
   downstream_via_bridge := trivial
 
+/-- `LeanGroundedTrustBridges` with bridge-forcing consequence: any downstream-sound
+    policy must accept Init declarations — a re-verify-only policy cannot exclude them. -/
+def LeanGroundedTrustBridgesStrict : GroundedTrustBridgesStrict :=
+  GroundedTrustBridgesStrict.mk' LeanGroundedTrustBridges
+
 
 /-! ### Headers: Type Signatures Preserved Across Elaboration -/
 
@@ -339,6 +350,11 @@ def LeanGroundedHeaders : GroundedHeaders where
   export_datum     := leanExportStep
   witness          := { name := "Nat.succ", typeSig := "Nat → Nat" }
   header_preserved := rfl
+
+/-- `LeanGroundedHeaders` with routing invariance: a type-signature router agrees on
+    `Nat.succ` before and after the identity export step. -/
+def LeanGroundedHeadersStrict : GroundedHeadersStrict :=
+  GroundedHeadersStrict.mk' LeanGroundedHeaders
 
 
 /-! ### Revocation: sorry-Tainted Terms Can Be Quarantined -/
@@ -367,6 +383,11 @@ def LeanGroundedRevocation : GroundedRevocation where
   witness_is_invalid := id
   can_revoke         := trivial
 
+/-- `LeanGroundedRevocation` with invalid-revocable existential: `.sorryTainted` is
+    demonstrably invalid and revocable, refuting any no-revocation policy. -/
+def LeanGroundedRevocationStrict : GroundedRevocationStrict :=
+  GroundedRevocationStrict.mk' LeanGroundedRevocation
+
 
 /-! ### Shared Ledger: Cross-Module Reliance via the Environment -/
 
@@ -394,6 +415,11 @@ def LeanGroundedBank : GroundedBank where
   produced        := trivial
   consumed        := trivial
 
+/-- `LeanGroundedBank` with shared-entry existential: `.initDef` is produced by Init
+    and consumed by the user module, refuting any isolation assumption. -/
+def LeanGroundedBankStrict : GroundedBankStrict :=
+  GroundedBankStrict.mk' LeanGroundedBank
+
 
 /-! ### Redeemability: `#print axioms` as the Audit Path -/
 
@@ -420,6 +446,12 @@ def LeanGroundedRedeemability : GroundedRedeemability where
   witness        := .underReview
   is_constrained := trivial
   has_path       := trivial
+
+/-- `LeanGroundedRedeemability` with constrained-and-redeemable existential:
+    `.underReview` is constrained and has the `#print axioms` audit path,
+    refuting any closure assumption. -/
+def LeanGroundedRedeemabilityStrict : GroundedRedeemabilityStrict :=
+  GroundedRedeemabilityStrict.mk' LeanGroundedRedeemability
 
 
 /-! ### Full Grounded Spec -/

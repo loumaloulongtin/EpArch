@@ -361,7 +361,13 @@ theorem grounded_behavior_satisfies_all (B : GroundedBehavior) (W : WorkingSyste
     The six biconditionals in `PartialWellFormed` pair behavioral flags with spec flags.
     `withGroundedBehavior` sets all four behavioral flags to evidence-backed `true`;
     `GroundedSystemSpec.toSystemSpec` sets all six spec flags to evidence-backed `true`.
-    Every biconditional therefore reduces to `(True ↔ True)` after unfolding. -/
+    Every biconditional therefore reduces to `(True ↔ True)` after unfolding.
+
+    **Migration note.**  This proof closes by `simp` because `WorkingSystem` currently
+    carries `Bool` flags — both sides are manifestly `true` after unfolding.
+    When `WorkingSystem` migrates to proof-carrying fields (see `GroundedXStrict`, §7),
+    the biconditionals will have non-trivial content and the §7 bridge theorems will
+    drive the proofs in place of `simp`. -/
 theorem grounded_partial_wellformed (B : GroundedBehavior) (G : GroundedSystemSpec) :
     PartialWellFormed (WorkingSystem.withGroundedBehavior B
       { spec               := G.toSystemSpec
@@ -1414,6 +1420,164 @@ theorem soft_falsifiability_not_hard_forced :
 theorem partial_contestation_hard_forced (M : PartialContestation) :
     ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c :=
   partial_contestation_closed_on_endorsed M
+
+
+/-! ## §7. GroundedX ↔ Impossibility Bridges
+
+Each `GroundedX` structure is isomorphic to the *input* of the corresponding
+impossibility theorem (§1–§6).  These bridge theorems make the connection
+explicit: given any `GroundedX` witness, the matching impossibility result fires.
+
+`GroundedXStrict` packages the base evidence with its impossibility consequence —
+the non-trivial `Prop` that falls out of the bridge.  `mk'` derives that
+consequence automatically from the base evidence alone.
+
+**Migration note.**  Currently `WorkingSystem` carries four `Bool` flags, so
+`grounded_partial_wellformed` reduces every biconditional to `True ↔ True` and
+closes by `simp`.  When `WorkingSystem` migrates to proof-carrying fields
+(e.g. `shared_records : Option GroundedBankStrict`), the biconditionals will
+have non-trivial content and these bridge theorems will drive those proofs.
+Until then the `GroundedXStrict` wrappers serve as typed accumulation points for
+the evidence that the eventual migration will consume. -/
+
+
+/-! ### §7.1  Bubbles ↔ AgentDisagreement -/
+
+/-- Convert `GroundedBubbles` to `AgentDisagreement`: the two scope resolvers
+    play the role of the two disagreeing agents. -/
+def groundedBubbles_to_disagreement (G : GroundedBubbles) : AgentDisagreement where
+  Claim          := G.Claim
+  accept₁        := G.scope₁
+  accept₂        := G.scope₂
+  witness        := G.witness
+  agent1_accepts := G.scope₁_accepts
+  agent2_rejects := G.scope₂_rejects
+
+/-- No flat resolver can faithfully represent both scopes.
+    Invokes `flat_scope_impossible` via the bridge conversion. -/
+theorem groundedBubbles_flat_impossible (G : GroundedBubbles) :
+    ¬∃ (f : G.Claim → Prop), (∀ c, f c ↔ G.scope₁ c) ∧ (∀ c, f c ↔ G.scope₂ c) :=
+  flat_scope_impossible (groundedBubbles_to_disagreement G)
+
+/-- `GroundedBubbles` augmented with its impossibility consequence.
+    `no_flat_resolver` is the machine-checked statement that scope separation is
+    structurally forced for this evidence pair. -/
+structure GroundedBubblesStrict where
+  base             : GroundedBubbles
+  no_flat_resolver : ¬∃ (f : base.Claim → Prop),
+      (∀ c, f c ↔ base.scope₁ c) ∧ (∀ c, f c ↔ base.scope₂ c)
+
+/-- Canonical constructor: derives `no_flat_resolver` from `flat_scope_impossible`. -/
+def GroundedBubblesStrict.mk' (G : GroundedBubbles) : GroundedBubblesStrict :=
+  { base := G, no_flat_resolver := groundedBubbles_flat_impossible G }
+
+
+/-! ### §7.2  TrustBridges: re-verify-only policy cannot exclude the bridge witness -/
+
+/-- A re-verify-only policy (downstream accepts only what it locally verified) is
+    inconsistent with a trust bridge: the bridge delivers the witness downstream
+    without local re-verification. -/
+theorem groundedTrustBridges_bridge_necessary (G : GroundedTrustBridges)
+    (locally_verified : G.Declaration → Prop)
+    (only_local      : ∀ d, G.downstream_accepts d → locally_verified d)
+    (not_local       : ¬locally_verified G.witness) : False :=
+  not_local (only_local G.witness G.downstream_via_bridge)
+
+/-- `GroundedTrustBridges` augmented with the bridge-forcing consequence.
+    `bridge_forces_acceptance` witnesses that any downstream-sound policy must accept
+    the witness — re-verify-only import cannot exclude it. -/
+structure GroundedTrustBridgesStrict where
+  base                     : GroundedTrustBridges
+  bridge_forces_acceptance : ∀ (policy : base.Declaration → Prop),
+      (∀ d, base.downstream_accepts d → policy d) → policy base.witness
+
+/-- Canonical constructor: `bridge_forces_acceptance` follows from `downstream_via_bridge`
+    by direct application of the policy to the witness. -/
+def GroundedTrustBridgesStrict.mk' (G : GroundedTrustBridges) : GroundedTrustBridgesStrict :=
+  { base := G,
+    bridge_forces_acceptance := fun policy h => h G.witness G.downstream_via_bridge }
+
+
+/-! ### §7.3  Headers: header preservation implies routing invariance -/
+
+/-- A header-based router cannot distinguish the witness from its exported form.
+    Any routing decision on the original is preserved after export. -/
+theorem groundedHeaders_router_consistent (G : GroundedHeaders) (router : G.Header → Bool) :
+    router (G.extract G.witness) = router (G.extract (G.export_datum G.witness)) :=
+  congrArg router G.header_preserved.symm
+
+/-- `GroundedHeaders` augmented with routing invariance: header-preserving export
+    means no header-aware router changes its decision at the boundary. -/
+structure GroundedHeadersStrict where
+  base              : GroundedHeaders
+  routing_invariant : ∀ (router : base.Header → Bool),
+      router (base.extract base.witness) = router (base.extract (base.export_datum base.witness))
+
+/-- Canonical constructor: derives `routing_invariant` from `header_preserved`
+    via `congr_arg`. -/
+def GroundedHeadersStrict.mk' (G : GroundedHeaders) : GroundedHeadersStrict :=
+  { base := G,
+    routing_invariant := fun router => congrArg router G.header_preserved.symm }
+
+
+/-! ### §7.4  Revocation: no-revocation policy fails at the invalid-but-revocable witness -/
+
+/-- A no-revocation policy (every revocable claim is valid) is refuted:
+    the witness is revocable (`can_revoke`) but demonstrably invalid (`witness_is_invalid`). -/
+theorem groundedRevocation_no_revocation_incorrect (G : GroundedRevocation)
+    (no_revoc : ∀ c, G.revocable c → G.valid c) : False :=
+  G.witness_is_invalid (no_revoc G.witness G.can_revoke)
+
+/-- `GroundedRevocation` augmented with the explicit existential: an invalid-but-revocable
+    claim is known.  This existential is the evidence a proof-carrying
+    `supports_correction` field will eventually require. -/
+structure GroundedRevocationStrict where
+  base                          : GroundedRevocation
+  has_invalid_revocable_witness : ∃ c : base.Claim, base.revocable c ∧ ¬base.valid c
+
+/-- Canonical constructor: the base witness is both revocable and invalid. -/
+def GroundedRevocationStrict.mk' (G : GroundedRevocation) : GroundedRevocationStrict :=
+  { base := G,
+    has_invalid_revocable_witness := ⟨G.witness, G.can_revoke, G.witness_is_invalid⟩ }
+
+
+/-! ### §7.5  Bank: isolation assumption is contradicted by the shared entry -/
+
+/-- An isolation assumption (no entry simultaneously accessible to both agents) is
+    contradicted by the shared bank witness. -/
+theorem groundedBank_refutes_isolation (G : GroundedBank)
+    (iso : ∀ e : G.Entry, G.agent₁_produces e → ¬G.agent₂_consumes e) : False :=
+  iso G.witness G.produced G.consumed
+
+/-- `GroundedBank` augmented with the shared-entry existential.
+    Positive counterpart to `private_storage_no_sharing`: collective reliance is
+    non-vacuous. -/
+structure GroundedBankStrict where
+  base             : GroundedBank
+  has_shared_entry : ∃ e : base.Entry, base.agent₁_produces e ∧ base.agent₂_consumes e
+
+/-- Canonical constructor: `produced` and `consumed` directly witness `has_shared_entry`. -/
+def GroundedBankStrict.mk' (G : GroundedBank) : GroundedBankStrict :=
+  { base := G, has_shared_entry := ⟨G.witness, G.produced, G.consumed⟩ }
+
+
+/-! ### §7.6  Redeemability: closure assumption contradicted by constrained-and-redeemable witness -/
+
+/-- A closure assumption (no constrained claim has an external redeemability path) is
+    contradicted by the grounded witness. -/
+theorem groundedRedeemability_refutes_closure (G : GroundedRedeemability)
+    (closed : ∀ c : G.Claim, G.constrained c → ¬G.redeemable c) : False :=
+  closed G.witness G.is_constrained G.has_path
+
+/-- `GroundedRedeemability` augmented with the constrained-and-redeemable existential. -/
+structure GroundedRedeemabilityStrict where
+  base                                : GroundedRedeemability
+  has_constrained_redeemable_witness  : ∃ c : base.Claim, base.constrained c ∧ base.redeemable c
+
+/-- Canonical constructor: the base witness is constrained and has a redeemability path. -/
+def GroundedRedeemabilityStrict.mk' (G : GroundedRedeemability) : GroundedRedeemabilityStrict :=
+  { base := G,
+    has_constrained_redeemable_witness := ⟨G.witness, G.is_constrained, G.has_path⟩ }
 
 
 end EpArch
