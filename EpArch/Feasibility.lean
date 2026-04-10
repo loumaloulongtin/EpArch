@@ -199,29 +199,35 @@ theorem existence_under_constraints_embedding :
 
 /-! ## World-to-Structural Bridges
 
-These theorems close the formal gap between the W_* world assumption bundles
-(WorldCtx.lean) and the structural impossibility models (Minimality.lean).
-Previously the two sides were proved independently — the structural models
-had hand-supplied witnesses, and the world assumptions had witnesses of their
-own.  These bridges show that any world satisfying a W_* bundle directly
-instantiates the matching structural model, so the forcing results apply
-without a separate construction step. -/
+These theorems connect the W_* world assumption bundles (WorldCtx.lean) to the
+structural impossibility models (Minimality.lean).  Previously the two sides were
+proved independently — the structural models had hand-supplied witnesses, and the
+world assumptions had witnesses of their own.  These bridges show that any world
+satisfying a W_* bundle supplies enough data to construct a matching structural
+scenario instance, so the forcing results apply without a separate construction step.
 
-/-- Any world satisfying W_bounded_verification directly instantiates
-    BoundedVerification over C.Claim, preserving the specific hard claim P
-    and wiring k through C.RequiresSteps.
+The constructed instances are the minimal form sufficient to trigger the relevant
+impossibility theorem — they package the W bundle's witness values, not a full
+semantic import of the world's relational structure. -/
+
+/-- Any world satisfying W_bounded_verification constructs a `BoundedVerification`
+    instance sufficient to trigger `verification_only_import_incomplete`.
+
+    The W bundle supplies a hard claim P and step count k > 0.  The constructed M
+    packages these into the minimal abstract form: `verify_cost := fun _ => k`
+    (a constant, not C.RequiresSteps itself) and `budget := 0`.  The world's
+    RequiresSteps field is preserved in the existential witness but is not carried
+    into M's cost function.
 
     The constructed M has:
     - M.Claim = C.Claim  (claim type is the world's claim type, not Unit)
     - M.hard_claim = P   (the actual hard claim from the world assumption)
-    - M.verify_cost P = k (the actual required step count)
-    - ∀ w, C.RequiresSteps w M.hard_claim (M.verify_cost M.hard_claim)
-      (the world's RequiresSteps IS the cost function — no substitution)
+    - M.verify_cost P = k (the extracted step count, as a constant function)
+    - ∀ w, C.RequiresSteps w P k  (world witness, returned alongside M)
 
-    verification_only_import_incomplete then fires on M directly.
-    Consequence: trust bridges are forced in any world satisfying
-    W_bounded_verification, and the incompleteness is specifically about
-    the claim the world says is hard — not a synthetic Unit witness. -/
+    verification_only_import_incomplete then fires on M.
+    Consequence: the incompleteness is specifically about the claim P the world
+    says is hard — not a synthetic Unit witness. -/
 theorem w_bounded_forces_incompleteness (C : @EpArch.WorldCtx.{0})
     (W : C.W_bounded_verification) :
     ∃ (P : C.Claim) (k : Nat) (M : BoundedVerification),
