@@ -324,7 +324,7 @@ Applications of the safety/sensitivity framework to specific epistemological cas
 
 ## Bucket 9b: Abstract Structural Forcing Layer (Minimality.lean + Convergence.lean)
 
-**Paper Role:** Provide structurally-grounded, WellFormed-independent proofs that each constraint forces its feature. The six lifting theorems (`distributed_agents_require_bubbles`, etc.) derive from `WellFormed`; these theorems justify the implications independently. The §1b–§6b alternative-dismissal theorems close the completeness argument: every plausible alternative architecture either instantiates the same impossibility or collapses into the forced primitive.
+**Paper Role:** Provide structurally-grounded, WellFormed-independent proofs that each constraint forces its feature. The six lifting theorems (`distributed_agents_require_bubbles`, etc.) derive from `WellFormed`; these theorems justify the implications independently. The §1b–§6b alternative-dismissal theorems cover the completeness side: each evaluated alternative either reproduces the same impossibility or satisfies the forced-primitive definition.
 
 ### Structural Impossibility Models (Minimality.lean)
 
@@ -346,7 +346,7 @@ For each of the six forcing dimensions, alternative mechanisms are instantiated 
 | §  | Alternatives covered | Key theorems |
 |----|----------------------|---------------|
 | §1b | Capability-token systems, federated namespaces, parameterized gates | `capability_flat_impossible`, `federated_flat_impossible`, `parameterized_gate_flat_impossible` — each gives an `AgentDisagreement`; `flat_scope_impossible` fires unchanged |
-| §2b | Staged verification, delegated verification markets | `staged_verification_incomplete` (cumulative-cost `BoundedVerification`); `delegated_is_trust_bridge` + `trust_required_iff_not_locally_verifiable` + `delegation_necessary_iff_locally_inadequate` — delegation satisfies the trust-bridge definition by biconditional |
+| §2b | Staged verification, delegated verification markets | `staged_verification_incomplete` (cumulative-cost `BoundedVerification`); `delegated_is_trust_bridge` + `trust_required_iff_not_locally_verifiable` + `delegation_necessary_iff_locally_inadequate` — delegation satisfies the trust-bridge definition |
 | §3b | Content-addressed routing, global contextual routing state | `content_addressed_has_header` — sound+complete content-addressed import satisfies `IsHeader` directly; `global_routing_cannot_discriminate` — global state is effectively uniform |
 | §4b | Quarantine, hold/shadow, rollback | `quarantine_violates_absorbing`, `hold_violates_absorbing`, `rollback_violates_absorbing` — each is a non-absorbing exit from accepted, i.e., revocation under another name |
 | §5b | Replicated logs, attestation networks, CRDT-based shared state | `replicated_log_is_shared`, `attestation_network_is_shared`, `crdt_is_shared` — each satisfies the sharing condition; isolation does not hold; each qualifies as a shared ledger under the definition |
@@ -354,17 +354,17 @@ For each of the six forcing dimensions, alternative mechanisms are instantiated 
 
 ### `IsHeader` Definition (Minimality.lean)
 
-`IsHeader M f` — a routing function `f : M.Claim → Bool` is a header for `DiscriminatingImport` scenario `M` iff it discriminates good from bad claims (`f M.good ≠ f M.bad`). This is the minimal structure needed to route correctly.
+`IsHeader M f` — a routing function `f : M.Claim → Bool` is a header for `DiscriminatingImport` scenario `M` iff it discriminates good from bad claims (`f M.good ≠ f M.bad`).
 
 | Theorem | Statement | Role |
 |---------|-----------|------|
 | `sound_complete_import_is_header` | Sound+complete import → `IsHeader` | Any sound+complete import satisfies the header definition |
 | `routing_requires_header` | ∃ sound+complete f → ∃ header | Any working routing function carries a header |
-| `content_addressed_has_header` | Sound+complete content-addressed policy → `IsHeader` | Content-addressed routing satisfies the header definition via the embedding |
+| `content_addressed_has_header` | Sound+complete content-addressed policy → `IsHeader` | Sound+complete content-addressed routing satisfies `IsHeader` |
 
 ### Forcing Stratification (Minimality.lean §6c)
 
-Not all six forcing dimensions have the same strength. §6c proves this stratification constructively.
+The six forcing dimensions differ in strength; §6c establishes this with explicit counterexamples.
 
 | Tier | Dimensions | Key theorem | What it says |
 |------|------------|-------------|---------------|
