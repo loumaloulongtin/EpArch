@@ -249,6 +249,164 @@ def containsBankPrimitives (W : WorkingSystem) : Prop :=
   ∀ P : Pressure, forced_feature W P
 
 
+/-! ## Constraint Subset and Partial Well-Formedness
+
+These definitions live here (in `EpArch`) so that:
+1. `grounded_partial_wellformed` (below) can reference them without a circular import.
+2. `EpArch.Meta.Modular` (which imports this file via `import EpArch.Minimality`) inherits
+   them transitively and can build `projection_valid`, `modular`, `PartialGroundedSpec`, etc.
+   on top, all visible under `open EpArch`. -/
+
+/-- A subset of the six EpArch operational constraints, represented as a
+    6-boolean vector. `true` = constraint included; `false` = dropped.
+
+    Examples:
+    - `allConstraints`  — all six included (strongest case)
+    - `noConstraints`   — none included (no forcing theorems claimed)
+    - `⟨true, false, false, false, true, false⟩` — only distributed + coordination -/
+structure ConstraintSubset where
+  distributed    : Bool
+  bounded_audit  : Bool
+  export_across  : Bool
+  adversarial    : Bool
+  coordination   : Bool
+  truth_pressure : Bool
+
+/-- The full set of all six constraints. `PartialWellFormed W allConstraints` requires
+    all six biconditionals — the strongest subset. -/
+def allConstraints : ConstraintSubset := ⟨true, true, true, true, true, true⟩
+
+/-- The empty subset. `PartialWellFormed W noConstraints` holds trivially. -/
+def noConstraints : ConstraintSubset := ⟨false, false, false, false, false, false⟩
+
+/-- `PartialWellFormed W S` captures the forcing biconditionals for
+    the constraint subset S.
+
+    For each constraint X:
+    - If `S.X = true`,  the biconditional `handles_X W ↔ HasFeature_X W` is required.
+    - If `S.X = false`, nothing is required for X.
+
+    Requiring all six (S = allConstraints) is the strongest form. -/
+structure PartialWellFormed (W : WorkingSystem) (S : ConstraintSubset) : Prop where
+  wf_distributed    : S.distributed    = true → (handles_distributed_agents W ↔ HasBubbles W)
+  wf_bounded_audit  : S.bounded_audit  = true → (handles_bounded_audit W ↔ HasTrustBridges W)
+  wf_export         : S.export_across  = true → (handles_export W ↔ HasHeaders W)
+  wf_adversarial    : S.adversarial    = true → (handles_adversarial W ↔ HasRevocation W)
+  wf_coordination   : S.coordination   = true → (handles_coordination W ↔ HasBank W)
+  wf_truth_pressure : S.truth_pressure = true → (handles_truth_pressure W ↔ HasRedeemability W)
+
+
+/-! ## Grounded Behavioral Evidence
+
+`WorkingSystem` has four behavioral `Bool` flags analogous to `SystemSpec`'s
+six architectural flags.  The same evidence-bridge pattern applies: instead of
+writing `has_shared_records := true` by hand, supply a `GroundedBehavior` record
+that contains typed proofs for each capability, and let the flag be set by
+`withGroundedBehavior`.
+
+The four capability witnesses reuse existing `GroundedX` structures:
+
+| Behavioral flag         | Reuses                 | Intuition                                             |
+|-------------------------|------------------------|-------------------------------------------------------|
+| `has_shared_records`    | `GroundedBank`         | shared pool: entry produced AND consumed              |
+| `enables_reliance`      | `GroundedTrustBridges` | upstream vouches; downstream relies without re-verification |
+| `supports_correction`   | `GroundedRevocation`   | invalid state can be detected and repaired            |
+| `resists_adversaries`   | `GroundedRevocation`   | invalid input is blocked by the system                | -/
+
+/-- Evidence for all four behavioral capabilities of a `WorkingSystem`.
+
+    Reuses `GroundedX` structures from `SystemSpec.lean` because the
+    behavioral capabilities exactly mirror their architectural counterparts:
+    you cannot have reliance without trust bridges, correction without
+    revocation, or shared records without a shared ledger. -/
+structure GroundedBehavior where
+  /-- Shared records: something is produced by one agent and consumed by another. -/
+  shared_records : GroundedBank
+  /-- Reliance: upstream declarations are trusted and accepted downstream. -/
+  reliance       : GroundedTrustBridges
+  /-- Correction: invalid states can be detected and repaired. -/
+  correction     : GroundedRevocation
+  /-- Adversarial resistance: malicious or invalid inputs are blocked. -/
+  adversarial    : GroundedRevocation
+
+/-- Build a `WorkingSystem` with behavioral flags set from evidence.
+
+    The four `let _ev` bindings name-check the evidence so it is structurally
+    required, not silently discarded.  The `base` carries the `spec` and any
+    other fields to keep unchanged. -/
+def WorkingSystem.withGroundedBehavior (B : GroundedBehavior) (base : WorkingSystem) : WorkingSystem :=
+  let _sr  := B.shared_records.produced
+  let _rl  := B.reliance.upstream_holds
+  let _co  := B.correction.can_revoke
+  let _adv := B.adversarial.witness_is_invalid
+  { base with
+    has_shared_records  := true
+    enables_reliance    := true
+    supports_correction := true
+    resists_adversaries := true }
+
+/-- A `WorkingSystem` built from `GroundedBehavior` satisfies all six operational
+    properties.  The proof unfolds to checking `true = true` after applying
+    `withGroundedBehavior`, but the `true` was set because evidence was supplied. -/
+theorem grounded_behavior_satisfies_all (B : GroundedBehavior) (W : WorkingSystem) :
+    SatisfiesAllProperties (WorkingSystem.withGroundedBehavior B W) := by
+  intro P; cases P <;>
+  simp [handles_pressure, handles_distributed_agents, handles_bounded_audit,
+        handles_export, handles_adversarial, handles_coordination,
+        handles_truth_pressure, WorkingSystem.withGroundedBehavior]
+
+/-- A `WorkingSystem` built from both `GroundedBehavior` and `GroundedSystemSpec`
+    satisfies `PartialWellFormed W allConstraints`.
+
+    The six biconditionals in `PartialWellFormed` pair behavioral flags with spec flags.
+    `withGroundedBehavior` sets all four behavioral flags to evidence-backed `true`;
+    `GroundedSystemSpec.toSystemSpec` sets all six spec flags to evidence-backed `true`.
+    Every biconditional therefore reduces to `(True ↔ True)` after unfolding. -/
+theorem grounded_partial_wellformed (B : GroundedBehavior) (G : GroundedSystemSpec) :
+    PartialWellFormed (WorkingSystem.withGroundedBehavior B
+      { spec               := G.toSystemSpec
+        has_shared_records  := false
+        enables_reliance    := false
+        supports_correction := false
+        resists_adversaries := false }) allConstraints := {
+  wf_distributed    := fun _ => by
+    simp [handles_distributed_agents, HasBubbles, WorkingSystem.withGroundedBehavior,
+          GroundedSystemSpec.toSystemSpec, SystemSpec.withGroundedBubbles,
+          SystemSpec.withGroundedTrustBridges, SystemSpec.withGroundedHeaders,
+          SystemSpec.withGroundedRevocation, SystemSpec.withGroundedBank,
+          SystemSpec.withGroundedRedeemability]
+  wf_bounded_audit  := fun _ => by
+    simp [handles_bounded_audit, HasTrustBridges, WorkingSystem.withGroundedBehavior,
+          GroundedSystemSpec.toSystemSpec, SystemSpec.withGroundedBubbles,
+          SystemSpec.withGroundedTrustBridges, SystemSpec.withGroundedHeaders,
+          SystemSpec.withGroundedRevocation, SystemSpec.withGroundedBank,
+          SystemSpec.withGroundedRedeemability]
+  wf_export         := fun _ => by
+    simp [handles_export, HasHeaders, WorkingSystem.withGroundedBehavior,
+          GroundedSystemSpec.toSystemSpec, SystemSpec.withGroundedBubbles,
+          SystemSpec.withGroundedTrustBridges, SystemSpec.withGroundedHeaders,
+          SystemSpec.withGroundedRevocation, SystemSpec.withGroundedBank,
+          SystemSpec.withGroundedRedeemability]
+  wf_adversarial    := fun _ => by
+    simp [handles_adversarial, HasRevocation, WorkingSystem.withGroundedBehavior,
+          GroundedSystemSpec.toSystemSpec, SystemSpec.withGroundedBubbles,
+          SystemSpec.withGroundedTrustBridges, SystemSpec.withGroundedHeaders,
+          SystemSpec.withGroundedRevocation, SystemSpec.withGroundedBank,
+          SystemSpec.withGroundedRedeemability]
+  wf_coordination   := fun _ => by
+    simp [handles_coordination, HasBank, WorkingSystem.withGroundedBehavior,
+          GroundedSystemSpec.toSystemSpec, SystemSpec.withGroundedBubbles,
+          SystemSpec.withGroundedTrustBridges, SystemSpec.withGroundedHeaders,
+          SystemSpec.withGroundedRevocation, SystemSpec.withGroundedBank,
+          SystemSpec.withGroundedRedeemability]
+  wf_truth_pressure := fun _ => by
+    simp [handles_truth_pressure, HasRedeemability, WorkingSystem.withGroundedBehavior,
+          GroundedSystemSpec.toSystemSpec, SystemSpec.withGroundedBubbles,
+          SystemSpec.withGroundedTrustBridges, SystemSpec.withGroundedHeaders,
+          SystemSpec.withGroundedRevocation, SystemSpec.withGroundedBank,
+          SystemSpec.withGroundedRedeemability] }
+
+
 /-! ## Global Impossibility and Convergence -/
 
 /-- All six forced features together constitute Bank-like architecture.

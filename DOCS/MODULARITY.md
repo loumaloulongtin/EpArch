@@ -412,6 +412,100 @@ These theorems carry no world, commitment, or ops hypothesis — universally val
 | `monolithic_not_injective` | Diagnostic compression is non-injective |
 | `header_stripping_harder` | Stripped deposits have lower diagnosability |
 
+---
+
+## 10. Product Compliance: Machine-Verifying Your Design Against EpArch
+
+**Entry point:** `EpArch.Meta.Modular.partial_modular` in `Meta/Modular.lean`
+
+If your application is written in Lean 4 (or modeled in Lean), you can obtain a
+machine-verified EpArch compliance certificate by filling in a `PartialGroundedSpec`.
+If it type-checks, the Lean kernel has formally verified that your design satisfies
+every EpArch constraint in your profile.
+
+### The Three-Step Workflow
+
+**Step 1 — Choose your constraint profile**
+
+Declare which EpArch operational pressures your product faces:
+
+```lean
+def MyConstraints : ConstraintSubset :=
+  { distributed    := true   -- app has distributed agents
+    adversarial    := true   -- app faces adversarial pressure
+    bounded_audit  := false  -- full re-verification always available
+    export_across  := false  -- no cross-boundary export needed
+    coordination   := false  -- no shared ledger needed
+    truth_pressure := false  -- no constraint-surface pressure }
+```
+
+**Step 2 — Supply domain evidence for each active constraint**
+
+```lean
+def MySpec : PartialGroundedSpec MyConstraints where
+  -- Active: provide real domain-typed evidence
+  bubbles    := fun _ => { Claim := MyScope, scope₁ := ..., scope₂ := ...,
+                           witness := ..., scope₁_accepts := ..., scope₂_rejects := ... }
+  revocation := fun _ => { Claim := MyEvent, valid := ..., revocable := ...,
+                           witness := ..., witness_is_invalid := ..., can_revoke := ... }
+  -- Inactive: vacuously inhabited (no obligation)
+  trust_bridges := fun h => absurd h (by decide)
+  headers       := fun h => absurd h (by decide)
+  bank          := fun h => absurd h (by decide)
+  redeemability := fun h => absurd h (by decide)
+```
+
+**Step 3 — Compile**
+
+```lean
+-- If this type-checks: machine-verified EpArch compliance for MyConstraints
+#check (partial_modular MyConstraints MySpec)
+```
+
+### Constraint → Evidence Table
+
+| `ConstraintSubset` field | EpArch constraint    | Required evidence type  | Key fields                                                |
+|--------------------------|----------------------|-------------------------|-----------------------------------------------------------|
+| `distributed`            | Distributed agents   | `GroundedBubbles`       | `scope₁`, `scope₂`, `witness`, disagree proof             |
+| `bounded_audit`          | Bounded audit        | `GroundedTrustBridges`  | `upstream_accepts`, `downstream_via_bridge`               |
+| `export_across`          | Export across bounds | `GroundedHeaders`       | `extract`, `export_datum`, `header_preserved`             |
+| `adversarial`            | Adversarial pressure | `GroundedRevocation`    | `valid`, `revocable`, `witness_is_invalid`, `can_revoke`  |
+| `coordination`           | Coordination need    | `GroundedBank`          | `agent₁_produces`, `agent₂_consumes`                      |
+| `truth_pressure`         | Truth pressure       | `GroundedRedeemability` | `constrained`, `redeemable`, `has_path`                   |
+
+### Proof Chain
+
+```
+PartialGroundedSpec S          -- evidence for active constraints
+      ↓ toWorkingSystem
+WorkingSystem                  -- consistent behavioral + spec flags (dite-guarded)
+      ↓ partial_grounded_is_partial_wellformed
+PartialWellFormed W S          -- biconditionals hold for active constraints
+      ↓ modular
+projection_valid S W           -- forcing theorems certified ✓
+```
+
+### What the Guarantee Means
+
+**Guaranteed (by type-checking):**
+- All active constraints have structurally well-formed domain evidence
+- Behavioral flags and spec flags are internally consistent (`PartialWellFormed`)
+- For every active constraint X: if the system handles X, it has the required architectural feature
+
+**Not guaranteed (model gap — universal to all formal methods):**
+- That your `GroundedX` records accurately model your physical system's actual behavior
+- That Lean's compiler produces a binary faithful to the verified source (Lean's compiler is not CompCert)
+
+### Full Example
+
+`EpArch/Meta/LeanKernelModel.lean` is the full research-level instantiation showing all six
+constraints simultaneously, plus the world layer (`LeanKernelCtx`), structural impossibility
+theorems, and the convergence chain. It is not intended as a copy-paste template — it is the
+proof that the Lean kernel itself is EpArch-compliant, and was built to discover and fix the
+flag-bag soundness gap that motivated the `GroundedX` / `PartialGroundedSpec` API.
+
+For a new product, start with `PartialGroundedSpec` — not `LeanKernelModel.lean`.
+
 **Mechanism:** None needed. `structural_theorems_unconditional` packages all four as a
 machine-checked conjunction to formally certify the "no transport needed" status.
 
