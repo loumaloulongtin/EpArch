@@ -20,7 +20,7 @@ lake build   # Lean 4.3.0, no Mathlib
 |---|---|
 | **Certify a system configuration** — proof-carrying record for the applicable theorem clusters | `EpArch.Meta.Config.certify myConfig` |
 | **Inspect which theorems apply** — human-readable routing report per constraint/goal/world | `#eval EpArch.Meta.Config.showConfig myConfig` |
-| **See why primitives are structurally forced** — constraint-to-feature necessity proofs | `EpArch/Minimality.lean`, `EpArch/Agent/Imposition.lean`, `EpArch/Feasibility.lean` (world-assumption forcing) |
+| **See why primitives are structurally forced** — constraint-to-feature necessity proofs | `EpArch/Minimality.lean`, `EpArch/Convergence.lean`, `EpArch/Agent/Imposition.lean`, `EpArch/Feasibility.lean` (world-assumption forcing) |
 | **Transport theorems through compatible extensions** — Tier 3–4 closure | `EpArch/Meta/TheoremTransport.lean`, `EpArch/Meta/Tier4Transport.lean` |
 | **Extend or adapt the framework** — 30-cluster registry + contributor recipes | [`DOCS/MODULARITY.md`](DOCS/MODULARITY.md) |
 | **Verify a constructive witness** — zero-axiom trace from initial state to revoked | `EpArch/ConcreteLedgerModel.lean` |
@@ -130,7 +130,9 @@ The framework has three layers:
 | `AdversarialObligations.lean` | Attack/defense obligation theorems under world bundles |
 | `Agent/Corroboration.lean` | k-of-n corroboration guarantees and independence conditions |
 | `Commitments.lean` | The paper's 8 structural commitments; all proved as standalone theorems; `commitments_pack` bundles the unconditional ones (C3/C4b/C7b/C8) |
-| `Minimality.lean` | Minimality and forcing results |
+| `Minimality.lean` | Structural impossibility models + alternative-architecture dismissals |
+| `Convergence.lean` | `StructurallyForced`, `ForcingEmbedding`, `convergence_structural`, bridge predicates |
+| `BehavioralEquivalence.lean` | Observation-boundary equivalence; Bank flags determine behavior |
 | `Feasibility.lean` | Feasibility witnesses; world-to-structural bridge theorems; `world_assumptions_force_bank_primitives` (W_* bundles → `containsBankPrimitives`); `kernel_world_forces_bank_primitives` (zero-assumption corollary) |
 | `Health.lean` | Health goal predicates and necessity theorems |
 | `Invariants.lean` | System invariants (grounded operational theorems, 0 axiom declarations) |
