@@ -1,6 +1,6 @@
 # Theorem Inventory
 
-This document catalogs **640** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
+This document catalogs **648** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
 
 **What the architecture claims:** Decentralized epistemic authorization requires specific structural mechanisms — a lifecycle with type-separated stages, header-preserving export, a revision loop, temporal validity, and a Bank substrate. These aren't design preferences; they are forced by the combination of agent constraints and system health goals.
 
@@ -1061,6 +1061,7 @@ File: `Agent/Imposition.lean`
 | `theory_floor_implies_not_fully_authorizable` | Meta/FalsifiableNotAuthorizable.lean | TheoryFloor C → ¬FullyAuthorizableByObs C | Clean P2 |
 | `witness_not_fully_authorizable` | Meta/FalsifiableNotAuthorizable.lean | ¬FullyAuthorizableByObs WitnessCtx | Instantiated P2 |
 | `credit_safe_under_extension` | Meta/FalsifiableNotAuthorizable.lean | Extensions preserve paper-facing | Non-collapse |
+| `trivial_has_no_lies` | Meta/FalsifiableNotAuthorizable.lean | `¬∃ w a P, TrivialCtx.Lie w a P` — if all propositions are true everywhere, no lie is constructible; uses `kernel_redundant_without_lies` | Contrapositive of `W_lies_possible`; EpArch mechanisms are non-trivial in any world that departs from TrivialCtx |
 
 ### Optional Stretch: Theory Core Claim (Witness-Specific)
 
@@ -1472,11 +1473,17 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 
 **VerificationDepth.lean (+8):** `depth_claim_provable`, `bounded_verify_sound`, `bounded_verify_incomplete`, `no_budget_is_sufficient`, `endorser_cannot_self_verify`, `DepthWorldCtx_requires_steps`, `depth_world_satisfies_bounded_verification`, `depth_world_exceeds_any_budget`
 
-**Convergence.lean structural forcing additions (+6 per-dimension theorems + 2 impossible helpers):** `disagreement_forces_bubbles`, `private_coordination_forces_bank`, `monotonic_lifecycle_forces_revocation`, `discriminating_import_forces_headers`, `bounded_verification_forces_trust_bridges`, `closed_endorsement_forces_redeemability`; `all_bridges_impossible`
+**Convergence.lean structural forcing additions (+7):** `disagreement_forces_bubbles`, `private_coordination_forces_bank`, `monotonic_lifecycle_forces_revocation`, `discriminating_import_forces_headers`, `bounded_verification_forces_trust_bridges`, `closed_endorsement_forces_redeemability`; `all_bridges_impossible`
 
 **Feasibility.lean world-to-structural additions (+8):** `w_lies_forces_revocation_need`, `w_bounded_forces_incompleteness`, `w_partial_obs_forces_redeemability`; `world_assumptions_force_bank_primitives`, `structurally_forced_is_world_aware`, `grounded_world_and_structure_force_bank_primitives`, `bundled_structure_forces_bank_primitives`, `kernel_world_forces_bank_primitives`
 
-**WellFormed removal (−):** `WellFormed`, `wellFormed_iff`, `wellformed_implies_structurally_forced`, `partial_all_is_wellformed`, `wellformed_implies_partial`, `wellformed_is_modular`, `goals_force_bank_primitives`, `existence_under_constraints`, `success_feasible`, `bank_primitives_determine_behavior`, `cluster_meta_modular_wellformed` and 1 `MetaModularWitness` constructor removed
+**WorldCtx.lean (+1):** `kernel_redundant_without_lies` — if all propositions are universally true, no lie is constructible; contrapositive grounding for `W_lies_possible`
+
+**Minimality.lean (+1):** `depth_verification_incomplete` — connects `DepthClaim` family to `BoundedVerification` §2c kernel witness
+
+**Meta/FalsifiableNotAuthorizable.lean (+1):** `trivial_has_no_lies` — applies `kernel_redundant_without_lies` to `TrivialCtx`; witnesses that EpArch mechanisms are non-trivial wherever `W_lies_possible` departs from the trivial case
+
+**WellFormed removal (−):** `wellformed_implies_structurally_forced`, `wellformed_implies_partial`, `wellformed_is_modular` (Meta/Modular.lean); `goals_force_bank_primitives`, `existence_under_constraints`, `success_feasible` (Feasibility.lean); `bank_primitives_determine_behavior` (BehavioralEquivalence.lean); `cluster_meta_modular_wellformed` (Meta/Config.lean); `distributed_agents_require_bubbles`, `bounded_audit_requires_trust_bridges`, `export_requires_headers`, `adversarial_requires_revocation`, `coordination_requires_bank`, `truth_pressure_requires_redeemability` (Minimality.lean); `concrete_wellformed`, `concrete_satisfies_properties`, `concrete_convergence_applies` (ConcreteLedgerModel.lean); `WellFormed` def and 1 `MetaModularWitness` constructor also removed
 
 **Pressure refactoring (±0 net theorems, architectural change):** `Pressure` inductive type + `handles_pressure`/`forced_feature`/`bridge_scenario` dispatch defs introduced; `SatisfiesAllProperties` and `containsBankPrimitives` redefined as `∀ P : Pressure`; `StructurallyForced` and `ForcingEmbedding` collapsed from 6-field to single `∀ P` field; all `cases P` proofs now machine-exhaustiveness-checked
 

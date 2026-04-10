@@ -321,22 +321,20 @@ The type system then mechanically excludes all and only the theorems that depend
 
 ## Tier 2 — Constraints / Forcing Results (already modular by conjunction separation)
 
-**Mechanism:** The six individual forcing theorems in `Minimality.lean` (`distributed_agents_require_bubbles`, etc.) are each proved from independent structural impossibility models — no biconditionals, no `WellFormed` dependency. Each takes `StructurallyForced W` plus the operational predicate for *that* dimension and returns the forced feature.
+**Mechanism:** Each forcing dimension has two proof paths. The **preferred path** uses `StructurallyForced.forcing P`  — a single `∀ P : Pressure, handles_pressure W P → forced_feature W P` field that packages all six `handles_X W → HasFeature_X W` implications. Each implication is independently justified by a structural impossibility model (`flat_scope_impossible`, `monotonic_no_exit`, etc.). The **strongest path** is the direct `Represents*`/`*_forces_*` route: six per-dimension theorems in `Convergence.lean`, each taking a concrete `Represents*` witness with no `handles_*` predicate required.
 
-The **preferred forcing path** is `StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W` (`convergence_structural`), where `StructurallyForced` packages the six `handles_X W → HasFeature_X W` forward implications, each independently justified by structural impossibility models (`flat_scope_impossible`, `monotonic_no_exit`, etc.). New forcing contributions should be added as implications inside `StructurallyForced.forcing`, now expressed as a single `∀ P : Pressure, handles_pressure W P → forced_feature W P` field — adding a seventh `Pressure` constructor forces the proof to supply the seventh forcing chain.
+The **preferred forcing path** is `StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W` (`convergence_structural`). New forcing contributions should be added as implications inside `StructurallyForced.forcing`; adding a seventh `Pressure` constructor forces the proof to supply the seventh forcing chain.
 
-The **strongest path** is the direct `Represents*`/`*_forces_*` route: six per-dimension theorems in `Convergence.lean` that require nothing but a concrete structural witness.
+**Files:** `Convergence.lean` (six per-dimension `*_forces_*` theorems, `StructurallyForced`, `convergence_structural`, impossibility models); `Minimality.lean` (abstract scenario structures, §1b–§6b alternative dismissals); `Meta/Modular.lean` (modularity closure)
 
-**Files:** `Minimality.lean` (six individual lifting theorems); `Convergence.lean` (`StructurallyForced`, `convergence_structural`, impossibility models, §1b–§6b alternative dismissals)
-
-| Constraint | Operational predicate | Forced feature | Theorem |
+| Constraint | `Pressure` value | Forced feature | Theorem (Convergence.lean) |
 |---|---|---|---|
-| `distributed_agents` | `handles_distributed_agents` | `HasBubbles` | `distributed_agents_require_bubbles` |
-| `bounded_audit` | `handles_bounded_audit` | `HasTrustBridges` | `bounded_audit_requires_trust_bridges` |
-| `export_across_boundaries` | `handles_export` | `HasHeaders` | `export_requires_headers` |
-| `adversarial_pressure` | `handles_adversarial` | `HasRevocation` | `adversarial_requires_revocation` |
-| `coordination_need` | `handles_coordination` | `HasBank` | `coordination_requires_bank` |
-| `truth_pressure` | `handles_truth_pressure` | `HasRedeemability` | `truth_pressure_requires_redeemability` |
+| `distributed_agents` | `.scope` | `HasBubbles` | `disagreement_forces_bubbles` |
+| `bounded_audit` | `.trust` | `HasTrustBridges` | `bounded_verification_forces_trust_bridges` |
+| `export_across_boundaries` | `.headers` | `HasHeaders` | `discriminating_import_forces_headers` |
+| `adversarial_pressure` | `.revocation` | `HasRevocation` | `monotonic_lifecycle_forces_revocation` |
+| `coordination_need` | `.bank` | `HasBank` | `private_coordination_forces_bank` |
+| `truth_pressure` | `.redeemability` | `HasRedeemability` | `closed_endorsement_forces_redeemability` |
 
 **Global theorem:** `convergence_structural` = all six implemented by `∀ P : Pressure, handles_pressure W P → forced_feature W P` (via `StructurallyForced`). If you only accept k constraints, the k individual forcing theorems not involving the dropped dimension still hold independently.
 

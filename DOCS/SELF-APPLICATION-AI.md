@@ -101,7 +101,7 @@ file.
 
 ## 3. What the Certification Surface Actually Returned
 
-All 30 of 30 clusters enabled. The `certify` call type-checks, producing
+All 29 of 29 clusters enabled. The `certify` call type-checks, producing
 `CertifiedProjection claudeOpus46Config`.
 
 ### Full `showConfig` output
@@ -133,7 +133,6 @@ All 30 of 30 clusters enabled. The `certify` call type-checks, producing
 [World] W_rolex_ddos: individual and population attacks structurally equivalent  (AdversarialObligations.rolex_ddos_structural_equivalence_of_W)
 [World] W_ddos: DDoS causes verification collapse  (AdversarialObligations.ddos_causes_verification_collapse_of_W)
 [Meta] Constraint-subset modularity: ∀ S W, PartialWellFormed W S → projection_valid S W  (Meta.Modular.modular)
-[Meta] WellFormed systems are modular on every constraint subset  (Meta.Modular.wellformed_is_modular)
 [Lattice] Graceful degradation: NoSelfCorrection M → PaperFacing M  (Modularity.graceful_degradation)
 [Lattice] Sub-level revision safety: Compatible extension of any sub-bundle with PaperFacing preserves PaperFacing  (Modularity.sub_revision_safety)
 [Lattice] EpArch is a floor, not a cage: full bidirectional lattice-stability  (Modularity.modularity_pack)
@@ -141,7 +140,7 @@ All 30 of 30 clusters enabled. The `certify` call type-checks, producing
 
 ### Full `explainConfig` output
 
-All 30 `ClusterTag` values returned, in canonical order:
+All 29 `ClusterTag` values returned, in canonical order:
 
 ```
 forcing_distributed_agents, forcing_bounded_audit, forcing_export,
@@ -153,7 +152,7 @@ tier4_bank_goals_compat, tier4_bank_goals_surj,
 world_lies_possible, world_bounded_audit, world_asymmetric_costs,
 world_partial_observability, world_spoofed_v, world_lies_scale,
 world_rolex_ddos, world_ddos,
-meta_modular, meta_modular_wellformed,
+meta_modular,
 lattice_graceful, lattice_sub_safety, lattice_pack
 ```
 
@@ -165,13 +164,13 @@ certify claudeOpus46Config : CertifiedProjection claudeOpus46Config
 
 Type-checks. The certified projection exists.
 
-**Important structural note:** Of the 30 clusters, 10 are always-on regardless
-of config (the 5 Tier 4 clusters, 2 meta-modularity clusters, and 3 lattice-stability
+**Important structural note:** Of the 29 clusters, 9 are always-on regardless
+of config (the 5 Tier 4 clusters, 1 meta-modularity cluster, and 3 lattice-stability
 clusters). The remaining 20 are config-driven: 6 forcing clusters gated on constraints,
 6 goal-transport clusters gated on goals (though `tier4_bank_goals_compat` and
 `tier4_bank_goals_surj` additionally require all 5 goals), and 8 world-obligation
 clusters gated on world bundles. Because I included all constraints, goals, and
-worlds, all 20 config-driven clusters activated along with the 10 always-on clusters.
+worlds, all 20 config-driven clusters activated along with the 9 always-on clusters.
 
 ---
 
