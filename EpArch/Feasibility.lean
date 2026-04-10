@@ -455,4 +455,46 @@ theorem grounded_world_and_structure_force_bank_primitives
     · exact Or.inl h
     · exact Or.inr ⟨Re.toClosed h, c_re, h_endorsed, h_fals h⟩
 
+/-- **Headline convergence theorem — bundled form.**
+
+    Any working system carrying an `SystemOperationalBundle` (architectural
+    witnesses for scope, headers, bank) and a `WorldBridgeBundle` (world-adjacent
+    witnesses for revocation, trust, redeemability), satisfying all operational
+    properties, necessarily contains Bank primitives.
+
+    This is the cleanest citable form of the main result.  All 20+ per-dimension
+    parameters from `grounded_world_and_structure_force_bank_primitives` are
+    absorbed into two named records, symmetrically split by the nature of the
+    evidence each carries:
+
+    | Bundle                   | Dimensions                           |
+    |--------------------------|--------------------------------------|
+    | `SystemOperationalBundle`| scope · headers · bank               |
+    | `WorldBridgeBundle`      | revocation · trust · redeemability   |
+
+    **"Any world" status:** No `WorldCtx` or W_* bundle appears in this
+    signature.  The theorem holds for *any* world whatsoever.  The W_*
+    bundles (W_lies_possible, W_bounded_verification, W_partial_observability)
+    that characterise the EpArch world semantics are the natural *sources*
+    for the `WorldBridgeBundle` data, but they are not formal preconditions
+    here — the structural and operational witnesses alone suffice.
+
+    Proof: one-liner unpack of both bundles into
+    `grounded_world_and_structure_force_bank_primitives`. -/
+theorem bundled_structure_forces_bank_primitives
+    (W : WorkingSystem)
+    (O : SystemOperationalBundle W)
+    (B : WorldBridgeBundle W)
+    (h_sat : SatisfiesAllProperties W) :
+    containsBankPrimitives W :=
+  grounded_world_and_structure_force_bank_primitives W
+    O.Rd B.Rb O.Ri B.Rm O.Rp B.Re
+    O.flat_accept O.hflat₁ O.hflat₂
+    B.h_trust_all
+    O.f_import O.h_unif O.h_sound O.h_complete
+    B.n_rev B.h_rev_escape
+    O.shared_deposit O.h_access₁ O.h_access₂
+    B.c_re B.h_endorsed B.h_fals
+    h_sat
+
 end EpArch.Feasibility

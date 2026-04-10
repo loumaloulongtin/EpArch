@@ -750,6 +750,78 @@ theorem closed_endorsement_forces_redeemability
   · exact (closed_endorsement_without_redeemability_embeds W R h c h_end (h_fals h)).elim
 
 
+/-! ## Bundled Witness Packages
+
+Two structures replace the 20+ loose parameters of the all-six forcing theorem
+with named records, separated by the nature of the evidence they carry.
+
+**`SystemOperationalBundle W`** — the three *architectural* dimensions:
+scope disagreement, discriminating import, private coordination.  These are
+purely operational/topological facts about the system.  They have no
+world-semantic counterpart in `WorldCtx`.
+
+**`WorldBridgeBundle W`** — the three *world-adjacent* dimensions:
+monotonic lifecycle (revocation), bounded verification (trust), closed
+endorsement (redeemability).  These correspond semantically to the W_* world
+bundles, but the `Represents*` instances and their bridge hypotheses are
+W-specific data that cannot be derived from W_* bundles alone.  A future
+bridge layer may close that gap; for now they are supplied explicitly. -/
+
+/-- Bundled witnesses for the three purely architectural dimensions:
+    scope (disagreement), headers (discriminating import), bank (coordination).
+
+    Each field group is: a `Represents*` structural witness followed by the
+    per-dimension bridge hypothesis that makes the impossible scenario
+    constructible when the corresponding feature is absent.
+
+    None of these fields carry world-semantic content — they describe
+    the system's operational topology independently of any `WorldCtx`. -/
+structure SystemOperationalBundle (W : WorkingSystem) where
+  /-- Scope dimension: a disagreement scenario witness. -/
+  Rd          : RepresentsDisagreement W
+  /-- Without bubbles, a flat acceptance function faithfully represents both agents. -/
+  flat_accept : ¬HasBubbles W → Rd.Claim → Prop
+  hflat₁      : ∀ h c, flat_accept h c ↔ Rd.accept₁ c
+  hflat₂      : ∀ h c, flat_accept h c ↔ Rd.accept₂ c
+  /-- Headers dimension: a discriminating import scenario witness. -/
+  Ri          : RepresentsDiscriminatingImport W
+  /-- Without headers, the import function is uniform. -/
+  f_import    : ¬HasHeaders W → Ri.Claim → Bool
+  h_unif      : ∀ h x y, f_import h x = f_import h y
+  h_sound     : ∀ h, f_import h Ri.bad = false
+  h_complete  : ∀ h, f_import h Ri.good = true
+  /-- Bank dimension: a private coordination scenario witness. -/
+  Rp             : RepresentsPrivateCoordination W
+  /-- Without a shared ledger, both agents still access this deposit. -/
+  shared_deposit : ¬HasBank W → Rp.Deposit
+  h_access₁      : ∀ h, Rp.has_access Rp.a₁ (shared_deposit h)
+  h_access₂      : ∀ h, Rp.has_access Rp.a₂ (shared_deposit h)
+
+/-- Bundled witnesses for the three world-adjacent dimensions:
+    revocation (adversarial/lies), trust (bounded verification),
+    redeemability (truth pressure).
+
+    These dimensions are semantically sourced by the EpArch W_* world bundles,
+    but the structural scenario witnesses and their bridge hypotheses are
+    W-specific: `RepresentsMonotonicLifecycle W`, `RepresentsBoundedVerification W`,
+    and `RepresentsClosedEndorsement W` carry data about the concrete system `W`,
+    not about the world context. -/
+structure WorldBridgeBundle (W : WorkingSystem) where
+  /-- Revocation dimension: a monotonic lifecycle scenario witness. -/
+  Rm           : RepresentsMonotonicLifecycle W
+  /-- The step count at which the accepted state escapes absent revocation. -/
+  n_rev        : Nat
+  h_rev_escape : ¬HasRevocation W → iter Rm.step n_rev Rm.accepted ≠ Rm.accepted
+  /-- Trust dimension: a bounded verification scenario witness. -/
+  Rb           : RepresentsBoundedVerification W
+  h_trust_all  : ¬HasTrustBridges W → ∀ c, Rb.verify_cost c ≤ Rb.budget
+  /-- Redeemability dimension: a closed endorsement scenario witness. -/
+  Re           : RepresentsClosedEndorsement W
+  c_re         : Re.Claim
+  h_endorsed   : Re.endorsed c_re
+  h_fals       : ¬HasRedeemability W → Re.externally_falsifiable c_re
+
+
 /-! ## Convergence and Impossibility (Structural Versions) -/
 
 /-- Convergence theorem (structural version): under structural forcing,
