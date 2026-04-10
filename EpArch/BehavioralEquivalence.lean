@@ -18,8 +18,7 @@ produce identical observations on all inputs.
 
 ## Dependencies
 
-- **Minimality.lean:** WorkingSystem, SatisfiesAllProperties,
-  containsBankPrimitives, Has*, handles_*
+- **Minimality.lean:** WorkingSystem, SatisfiesAllProperties, Behavior
 -/
 
 import EpArch.Minimality
