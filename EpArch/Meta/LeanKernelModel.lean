@@ -1,0 +1,812 @@
+/-
+EpArch/Meta/LeanKernelModel.lean — Lean Kernel as EpArch Instantiation
+
+Proves that Lean's own type-checking kernel is a valid EpArch WorldCtx
+instantiation satisfying all three core world-assumption bundles.
+
+## Model
+
+    LeanKernelCtx : WorldCtx where
+      World  := Bool   -- kernel environment: clean (true) / sorry-tainted (false)
+      Agent  := Unit   -- the elaborator (single kernel agent)
+      Claim  := Bool   -- proposition status: provable (true) / unprovable (false)
+      Obs    := Unit   -- proof irrelevance: proof-term identity is unobservable
+      Truth  := fun w P => w = P   -- clean env authenticates exactly clean claims
+      Utter  := fun _ _ => True    -- `sorry` = unrestricted utterance gate
+      obs    := fun _ => ()        -- all worlds look the same (proof irrelevance)
+      VerifyWithin := fun _ _ t => t ≥ 1  -- heartbeat-bounded elaboration
+
+## Bundle Witnesses
+
+- `holds_W_lies_possible`       : `sorry` is an unconditional utterance gate;
+                                   unprovable claims exist (e.g., `False`).
+- `holds_W_bounded_verification`: every term requires ≥ 1 heartbeat to elaborate;
+                                   the heartbeat budget is the VerifyWithin bound.
+- `holds_W_partial_observability`: proof irrelevance makes `obs` constant;
+                                   two environments can differ on truth while
+                                   looking identical to an external observer.
+
+## Self-Referential Note
+
+This file is type-checked by the same kernel it models.  The Lean kernel
+that verifies `holds_W_lies_possible` is the entity described by
+`LeanKernelCtx.World`.  The heartbeat consumed elaborating
+`holds_W_bounded_verification` is bounded by `LeanKernelCtx.VerifyWithin`.
+
+## Limitation
+
+`LeanKernelCtx` is a proxy model matching kernel behavior by construction.
+It is not a formal introspection of the Lean 4 kernel source code (which
+would require importing the kernel's own implementation as a Lean library).
+
+-/
+
+import EpArch.WorldCtx
+import EpArch.ConcreteLedgerModel
+import EpArch.Meta.FalsifiableNotAuthorizable
+
+namespace EpArch.LeanKernelModel
+
+open EpArch
+
+
+/-! ## Lean Kernel Context -/
+
+/-- LeanKernelCtx: Lean's type-checking kernel modeled as an EpArch WorldCtx.
+
+    Each field maps a kernel concept to an EpArch semantic primitive:
+
+    | EpArch field       | Lean kernel concept                                    |
+    |--------------------|--------------------------------------------------------|
+    | World := Bool      | Kernel environment: clean (true) / sorry-tainted (false) |
+    | Agent := Unit      | The elaborator (single kernel agent)                   |
+    | Claim := Bool      | Proposition: provable (true) / unprovable (false)      |
+    | Obs   := Unit      | Proof irrelevance: proof-term identity is not observable |
+    | Truth w P = (w=P)  | Clean env authenticates exactly clean claims           |
+    | Utter _ _ = True   | `sorry` makes every utterance syntactically available  |
+    | obs _ = ()         | All worlds look the same externally (proof irrelevance) |
+    | VerifyWithin t ≥ 1 | Elaboration costs ≥ 1 heartbeat; budget is finite      |
+
+    Proxy-model note: this matches kernel behavior by construction.
+    It is not a formal theorem obtained by introspecting kernel source code. -/
+def LeanKernelCtx : EpArch.WorldCtx where
+  World := Bool
+  Agent := Unit
+  Claim := Bool
+  Obs   := Unit
+
+  -- Truth: claim is true iff world matches claim value.
+  -- Kernel reading: in a clean (true) environment, only provable (true) claims hold.
+  Truth := fun w P => w = P
+
+  -- Utter: always True — `sorry` makes every syntactic utterance available
+  -- regardless of whether the claimed type is actually inhabited.
+  Utter := fun _ _ => True
+
+  -- obs: constant — proof irrelevance means proof-term identity is not observable.
+  -- Two kernel environments (clean vs sorry-tainted) look identical externally.
+  obs := fun _ => ()
+
+  -- VerifyWithin: requires at least 1 heartbeat.
+  -- Kernel reading: every elaboration step consumes heartbeats from the budget.
+  VerifyWithin := fun _ _ t => t ≥ 1
+
+  effectiveTime := fun _ => 10
+
+  world_inhabited := ⟨true⟩
+  agent_inhabited := ⟨()⟩
+  claim_inhabited := ⟨true⟩
+
+
+/-! ## W_lies_possible: `sorry` as Unrestricted Utterance -/
+
+/-- W_lies_possible holds in LeanKernelCtx.
+
+    In Lean, `sorry` is a kernel-level term that closes any open goal
+    regardless of whether the claimed type is actually inhabited.  This is
+    exactly the `unrestricted_utterance` field: the agent (elaborator) can
+    utter any claim independent of its truth value.
+
+    The false proposition is `False` in the empty environment — formalized
+    here as `Truth false true = (false = true) = False`. -/
+theorem holds_W_lies_possible : LeanKernelCtx.W_lies_possible where
+  some_false          := ⟨false, true, fun h => Bool.noConfusion h⟩
+  unrestricted_utterance := fun _ _ => trivial
+
+
+/-! ## W_bounded_verification: Heartbeat Limit -/
+
+/-- W_bounded_verification holds in LeanKernelCtx.
+
+    Lean's elaborator operates under a heartbeat budget (set via
+    `set_option maxHeartbeats`).  Every elaboration step consumes
+    heartbeats; elaboration terminates (with an error) when the budget
+    is exhausted.  This is formalized as `VerifyWithin w P t = (t ≥ 1)`:
+    any non-trivial claim requires at least 1 heartbeat to verify.
+
+    The witness claim is `true`, requiring step budget `k = 1`.  For any
+    `t < 1` (i.e., `t = 0`), verification cannot succeed: 0 heartbeats
+    are not enough to elaborate even the simplest non-trivial term. -/
+theorem holds_W_bounded_verification : LeanKernelCtx.W_bounded_verification where
+  verification_has_cost := ⟨true, 1, by decide, fun _ => by
+    simp only [EpArch.WorldCtx.RequiresSteps, LeanKernelCtx]
+    intro t h_lt h_ge
+    cases t with
+    | zero  => exact Nat.not_succ_le_zero 0 h_ge
+    | succ n => exact Nat.not_lt_zero n (Nat.lt_of_succ_lt_succ h_lt)⟩
+
+
+/-! ## W_partial_observability: Proof Irrelevance -/
+
+/-- W_partial_observability holds in LeanKernelCtx.
+
+    In Lean, proof irrelevance means two proofs of the same proposition are
+    definitionally equal.  More broadly, the external observer sees only
+    whether a term type-checks — not the kernel environment (clean vs
+    sorry-tainted) that produced it.
+
+    This is formalized as `obs w = ()` for all `w`: observationally
+    equivalent worlds (both mapping to `()`) can have different truth
+    values for the same claim.  Here worlds `true` and `false` are
+    obs-equivalent yet `Truth true true` and `Truth false true` differ. -/
+theorem holds_W_partial_observability : LeanKernelCtx.W_partial_observability where
+  obs_underdetermines := ⟨true, true, false, rfl, by
+    simp only [LeanKernelCtx]
+    constructor
+    · intro _; exact fun h => nomatch h
+    · intro _; trivial⟩
+
+
+/-! ## Bundle Satisfiability -/
+
+/-- All three core world-assumption bundles hold jointly in LeanKernelCtx. -/
+theorem lean_kernel_satisfies_bundles :
+    Nonempty LeanKernelCtx.W_lies_possible ∧
+    Nonempty LeanKernelCtx.W_bounded_verification ∧
+    Nonempty LeanKernelCtx.W_partial_observability :=
+  ⟨⟨holds_W_lies_possible⟩,
+   ⟨holds_W_bounded_verification⟩,
+   ⟨holds_W_partial_observability⟩⟩
+
+
+/-! ## Theory Floor -/
+
+/-- The Lean kernel satisfies the EpArch theory floor.
+
+    `EpArch.Meta.TheoryFloor C` (from `Meta.FalsifiableNotAuthorizable`) is the
+    named conjunction of the three W_* bundle inhabitations.  This theorem
+    places `LeanKernelCtx` alongside `WitnessCtx` from `WorldWitness.lean` as
+    a concrete witness, but with kernel-specific bundle interpretations:
+    sorry / heartbeat / proof-irrelevance. -/
+theorem lean_kernel_theory_floor : EpArch.Meta.TheoryFloor LeanKernelCtx :=
+  lean_kernel_satisfies_bundles
+
+
+/-! ## CAP Theorem on the Lean Kernel -/
+
+/-- No obs-based ledger over the Lean kernel supports both innovation and
+    coordination simultaneously.
+
+    Instantiation of `WorldCtx.no_ledger_tradeoff` at `LeanKernelCtx`:
+    the `obs` function is constant (`fun _ => ()`), so any obs-based Lean
+    ledger gives the same verdict for the clean and the sorry-tainted
+    environment.  It cannot simultaneously accept all locally valid claims
+    (innovation / availability) and reject all non-globally-valid claims
+    (coordination / consistency).
+
+    Kernel reading: Lean's proof environment faces the same inherent tension
+    between permissive elaboration (`sorry` closes any goal — innovation) and
+    strict global coherence (only consistent theorems count — coordination).
+    EpArch's Bank architecture is the structural response to this tension. -/
+theorem lean_kernel_no_tradeoff :
+    ∀ L : LeanKernelCtx.Ledger,
+      LeanKernelCtx.obs_based L →
+      ¬(LeanKernelCtx.supports_innovation L ∧ LeanKernelCtx.supports_coordination L) :=
+  fun L hObs => WorldCtx.no_ledger_tradeoff LeanKernelCtx L hObs holds_W_partial_observability
+
+
+/-! ## Self-Referential Meta-Theorem -/
+
+/-- The Lean kernel is a valid EpArch WorldCtx witnessing all three bundles.
+
+    Self-referential claim: `LeanKernelCtx` models the same kernel that
+    type-checks this theorem.  Unlike the generic `WitnessCtx` from
+    `WorldWitness.lean`, this existential witness carries kernel-specific
+    interpretations:
+
+    - `W_lies_possible`        ↔ `sorry` mechanism
+    - `W_bounded_verification` ↔ heartbeat budget
+    - `W_partial_observability`↔ proof irrelevance
+
+    The architecture-layer requirements follow from `LeanWorkingSystem`;
+    see `lean_structural_convergence` and `lean_kernel_existence`. -/
+theorem lean_is_eparch_world :
+    ∃ C : @EpArch.WorldCtx.{0},
+      Nonempty C.W_lies_possible ∧
+      Nonempty C.W_bounded_verification ∧
+      Nonempty C.W_partial_observability :=
+  ⟨LeanKernelCtx, lean_kernel_satisfies_bundles⟩
+
+
+/-! ## Architecture Layer: Lean as a Working System -/
+
+/-- `LeanKernelSystemSpec`: the Lean kernel's architectural features as `SystemSpec`.
+    | SystemSpec field          | Lean kernel feature                                        |
+    |---------------------------|-----------------------------------------------------------|
+    | `has_bubble_separation`   | Namespaces + module scoping = scoped trust zones          |
+    | `has_trust_bridges`       | `import` declarations = cross-module trust bridges        |
+    | `preserves_headers`       | Type signatures = headers preserved across elaboration    |
+    | `has_revocation`          | Kernel rejects ill-typed terms; sorry taints tracked      |
+    | `has_shared_ledger`       | Shared `Environment` accumulates all declarations         |
+    | `has_redeemability`       | `#print axioms` verifies zero-sorry (redeemability)       | -/
+def LeanKernelSystemSpec : SystemSpec where
+  has_bubble_separation := true   -- Lean namespaces / module system = scoped trust zones
+  has_trust_bridges     := true   -- `import` declarations = cross-module trust bridges
+  preserves_headers     := true   -- type signatures = headers preserved across elaboration
+  has_revocation        := true   -- kernel rejects ill-typed terms; sorry taints tracked
+  has_shared_ledger     := true   -- shared `Environment` = bank (shared ledger)
+  has_redeemability     := true   -- `#print axioms` = zero-sorry redeemability check
+
+
+/-! ## Architecture Evidence: Domain Types and Grounded Feature Witnesses
+
+All grounding material is defined here, before `LeanWorkingSystem`, so that
+`LeanGroundedSystemSpec.toSystemSpec` can serve as `LeanWorkingSystem.spec`.
+Structural impossibility theorems built on this data appear after `lean_partial_wellformed`. -/
+
+/-! ### Bubbles: Lean Namespaces Disagree on Name Resolution -/
+
+/-- A minimal model of Lean's namespace-qualified names.
+
+    `LeanName.natAdd` represents `Nat.add` (in the `Nat` namespace).
+    `LeanName.intAdd` represents `Int.add` (in the `Int` namespace).
+
+    These two names share the same short form `add` but live in different
+    namespaces — the essential property that forces scope separation. -/
+inductive LeanName where
+  | natAdd   -- Nat.add: `add` resolved under `open Nat`
+  | intAdd   -- Int.add: `add` resolved under `open Int`
+
+/-- Agent 1 (a compilation unit with `open Nat`) accepts `natAdd`. -/
+def openNatAccepts : LeanName → Prop
+  | .natAdd => True
+  | .intAdd => False
+
+/-- Agent 2 (a compilation unit with `open Int`) accepts `intAdd`. -/
+def openIntAccepts : LeanName → Prop
+  | .natAdd => False
+  | .intAdd => True
+
+/-- Bubble evidence: two Lean scopes disagree on `.natAdd`. -/
+def LeanGroundedBubbles : GroundedBubbles where
+  Claim          := LeanName
+  scope₁         := openNatAccepts
+  scope₂         := openIntAccepts
+  witness        := .natAdd
+  scope₁_accepts := True.intro
+  scope₂_rejects := fun h => nomatch h
+
+/-- `LeanGroundedBubbles` with impossibility consequence: no flat resolver can represent
+    both the Nat-namespace and Int-namespace scopes simultaneously.
+    Constructed via `GroundedBubbles.toStrict`; `no_flat_resolver` is derived
+    directly from `LeanGroundedBubbles`'s scope fields. -/
+def LeanGroundedBubblesStrict : GroundedBubblesStrict :=
+  GroundedBubblesStrict.mk' LeanGroundedBubbles
+
+
+/-! ### Trust Bridges: Lean's `import` Mechanism -/
+
+/-- Two-constructor model of Lean modules for the trust bridge evidence.
+
+    `init` = the Init standard library (trusted upstream).
+    `userFile` = a downstream compilation unit that `import Init`. -/
+inductive LeanLibrary where
+  | init      -- the Init standard library
+  | userFile  -- a downstream file that imports Init
+
+/-- Init provides its own declarations. -/
+def initDeclarations : LeanLibrary → Prop
+  | .init     => True
+  | .userFile => False
+
+/-- After `import Init`, the user file can access Init's declarations via the bridge. -/
+def userImportsInit : LeanLibrary → Prop
+  | .init     => True
+  | .userFile => True
+
+/-- Trust bridge evidence: Init's `.init` entry is vouched upstream and
+    accepted downstream via `import`. -/
+def LeanGroundedTrustBridges : GroundedTrustBridges where
+  Declaration           := LeanLibrary
+  upstream_accepts      := initDeclarations
+  downstream_accepts    := userImportsInit
+  witness               := .init
+  upstream_holds        := True.intro
+  downstream_via_bridge := True.intro
+
+/-- `LeanGroundedTrustBridges` with bridge-forcing consequence: any downstream-sound
+    policy must accept Init declarations — a re-verify-only policy cannot exclude them. -/
+def LeanGroundedTrustBridgesStrict : GroundedTrustBridgesStrict :=
+  GroundedTrustBridgesStrict.mk' LeanGroundedTrustBridges
+
+
+/-! ### Headers: Type Signatures Preserved Across Elaboration -/
+
+/-- A Lean declaration paired with its type signature (the S/E/V header). -/
+structure LeanDeclaration where
+  name    : String
+  typeSig : String
+
+/-- Extract the type signature (header). -/
+def leanExtractHeader : LeanDeclaration → String := fun d => d.typeSig
+
+/-- Export step: elaboration is modelled as `id` — type signature unchanged. -/
+def leanExportStep : LeanDeclaration → LeanDeclaration := id
+
+/-- Header evidence: `Nat.succ`'s type sig survives the identity export step. -/
+def LeanGroundedHeaders : GroundedHeaders where
+  Datum            := LeanDeclaration
+  Header           := String
+  extract          := leanExtractHeader
+  export_datum     := leanExportStep
+  witness          := { name := "Nat.succ", typeSig := "Nat → Nat" }
+  header_preserved := rfl
+
+/-- `LeanGroundedHeaders` with routing invariance: a type-signature router agrees on
+    `Nat.succ` before and after the identity export step. -/
+def LeanGroundedHeadersStrict : GroundedHeadersStrict :=
+  GroundedHeadersStrict.mk' LeanGroundedHeaders
+
+
+/-! ### Revocation: sorry-Tainted Terms Can Be Quarantined -/
+
+/-- A Lean term is either sorry-free (kernel-valid) or sorry-tainted. -/
+inductive LeanTermKind where
+  | sorryFree    -- elaborated without any `sorry`
+  | sorryTainted -- closes a goal via `sorry`
+
+/-- A term is valid iff it contains no sorry. -/
+def leanTermValid : LeanTermKind → Prop
+  | .sorryFree    => True
+  | .sorryTainted => False
+
+/-- A term is revocable iff it is sorry-tainted. -/
+def leanTermRevocable : LeanTermKind → Prop
+  | .sorryFree    => False
+  | .sorryTainted => True
+
+/-- Revocation evidence: `.sorryTainted` is invalid and revocable. -/
+def LeanGroundedRevocation : GroundedRevocation where
+  Claim              := LeanTermKind
+  valid              := leanTermValid
+  revocable          := leanTermRevocable
+  witness            := .sorryTainted
+  witness_is_invalid := fun h => nomatch h
+  can_revoke         := True.intro
+
+/-- `LeanGroundedRevocation` with invalid-revocable existential: `.sorryTainted` is
+    demonstrably invalid and revocable, refuting any no-revocation policy. -/
+def LeanGroundedRevocationStrict : GroundedRevocationStrict :=
+  GroundedRevocationStrict.mk' LeanGroundedRevocation
+
+
+/-! ### Shared Ledger: Cross-Module Reliance via the Environment -/
+
+/-- Two entries in Lean's shared `Environment`. -/
+inductive LeanEnvEntry where
+  | initDef  -- a definition contributed by Init
+  | userDef  -- a definition contributed by the user's module
+
+/-- The Init module produces its own definitions. -/
+def initProduces : LeanEnvEntry → Prop
+  | .initDef => True
+  | .userDef => False
+
+/-- The user module reads Init's definitions from the shared `Environment`. -/
+def userConsumes : LeanEnvEntry → Prop
+  | .initDef => True
+  | .userDef => True
+
+/-- Bank evidence: `.initDef` produced by Init, consumed by user via shared Env. -/
+def LeanGroundedBank : GroundedBank where
+  Entry           := LeanEnvEntry
+  agent₁_produces := initProduces
+  agent₂_consumes := userConsumes
+  witness         := .initDef
+  produced        := True.intro
+  consumed        := True.intro
+
+/-- `LeanGroundedBank` with shared-entry existential: `.initDef` is produced by Init
+    and consumed by the user module, refuting any isolation assumption. -/
+def LeanGroundedBankStrict : GroundedBankStrict :=
+  GroundedBankStrict.mk' LeanGroundedBank
+
+
+/-! ### Redeemability: `#print axioms` as the Audit Path -/
+
+/-- A Lean claim is either under constraint or verified axiom-free. -/
+inductive LeanClaimStatus where
+  | underReview  -- axiom dependencies not yet audited
+  | axiomFree    -- passed `#print axioms`
+
+/-- A claim is constrained iff it is under review. -/
+def leanIsConstrained : LeanClaimStatus → Prop
+  | .underReview => True
+  | .axiomFree   => False
+
+/-- `#print axioms` always terminates and reveals the full axiom footprint. -/
+def leanHasAuditPath : LeanClaimStatus → Prop
+  | .underReview => True
+  | .axiomFree   => True
+
+/-- Redeemability evidence: `.underReview` has the `#print axioms` audit path. -/
+def LeanGroundedRedeemability : GroundedRedeemability where
+  Claim          := LeanClaimStatus
+  constrained    := leanIsConstrained
+  redeemable     := leanHasAuditPath
+  witness        := .underReview
+  is_constrained := True.intro
+  has_path       := True.intro
+
+/-- `LeanGroundedRedeemability` with constrained-and-redeemable existential:
+    `.underReview` is constrained and has the `#print axioms` audit path,
+    refuting any closure assumption. -/
+def LeanGroundedRedeemabilityStrict : GroundedRedeemabilityStrict :=
+  GroundedRedeemabilityStrict.mk' LeanGroundedRedeemability
+
+
+/-! ### Full Grounded Spec -/
+
+/-- All-false base: every `true` in `toSystemSpec` comes from evidence. -/
+private def leanZeroSpec : SystemSpec where
+  has_bubble_separation := false
+  has_trust_bridges     := false
+  preserves_headers     := false
+  has_revocation        := false
+  has_shared_ledger     := false
+  has_redeemability     := false
+
+/-- The Lean kernel's `GroundedSystemSpec`: all six Bank features backed by evidence.
+    | Feature        | Evidence                                                     |
+    |----------------|--------------------------------------------------------------|
+    | `bubbles`      | Nat vs Int namespaces disagree on `add` (LeanName data)      |
+    | `trust_bridges`| Init declarations available downstream via `import`          |
+    | `headers`      | `Nat.succ` type sig preserved through identity export        |
+    | `revocation`   | sorry-tainted terms quarantined by the kernel TCB            |
+    | `bank`         | Shared `Environment`: Init produces, user consumes           |
+    | `redeemability`| `#print axioms` provides the audit path for any claim        | -/
+def LeanGroundedSystemSpec : GroundedSystemSpec where
+  bubbles       := LeanGroundedBubbles
+  trust_bridges := LeanGroundedTrustBridges
+  headers       := LeanGroundedHeaders
+  revocation    := LeanGroundedRevocation
+  bank          := LeanGroundedBank
+  redeemability := LeanGroundedRedeemability
+  base          := leanZeroSpec
+
+
+/-- `LeanGroundedBehavior`: evidence for all six behavioral capabilities,
+    one per architectural forcing dimension.
+
+    | WorkingSystem field  | Evidence                  | Kernel basis                              |
+    |----------------------|---------------------------|-------------------------------------------|
+    | `bubbles_ev`         | `LeanGroundedBubbles`     | Nat vs Int namespaces disagree on `add`   |
+    | `bridges_ev`         | `LeanGroundedTrustBridges`| Init declarations relied on via import    |
+    | `headers_ev`         | `LeanGroundedHeaders`     | Type sig preserved through identity export|
+    | `revocation_ev`      | `LeanGroundedRevocation`  | sorry-tainted terms can be quarantined    |
+    | `bank_ev`            | `LeanGroundedBank`        | InitDef accumulated in Env, consumed      |
+    | `redeemability_ev`   | `LeanGroundedRedeemability`| `#print axioms` provides the audit path  | -/
+def LeanGroundedBehavior : GroundedBehavior where
+  bubbles       := LeanGroundedBubbles
+  trust_bridges := LeanGroundedTrustBridges
+  headers       := LeanGroundedHeaders
+  revocation    := LeanGroundedRevocation
+  bank          := LeanGroundedBank
+  redeemability := LeanGroundedRedeemability
+
+/-- `LeanWorkingSystem`: the Lean kernel modeled as an EpArch `WorkingSystem`.
+
+    Built from `LeanGroundedBehavior` and `LeanGroundedSystemSpec.toSystemSpec` via
+    `WorkingSystem.withGroundedBehavior`.  The base arg passes `none` for all `_ev`
+    fields; `withGroundedBehavior` immediately replaces each with `some G.toStrict`.
+
+    | `WorkingSystem` evidence field | Stored value (set by `withGroundedBehavior`)            |
+    |--------------------------------|---------------------------------------------------------|
+    | `bubbles_ev`                   | `some (LeanGroundedBubbles.toStrict)`                   |
+    | `bridges_ev`                   | `some (LeanGroundedTrustBridges.toStrict)`              |
+    | `headers_ev`                   | `some (LeanGroundedHeaders.toStrict)`                   |
+    | `revocation_ev`                | `some (LeanGroundedRevocation.toStrict)`                |
+    | `bank_ev`                      | `some (LeanGroundedBank.toStrict)`                      |
+    | `redeemability_ev`             | `some (LeanGroundedRedeemability.toStrict)`             |
+
+    Because each `_ev` field is `some`, `Option.isSome = true` and all six
+    `handles_*` predicates hold (`SatisfiesAllProperties`).
+
+    All six `HasX` predicates are satisfied via `grounded_spec_contains_all
+    LeanGroundedSystemSpec`, which reads the corresponding `SystemSpec` fields
+    (`has_bubble_separation`, `has_trust_bridges`, `preserves_headers`,
+    `has_revocation`, `has_shared_ledger`, `has_redeemability`) set to `true`
+    by `LeanGroundedSystemSpec.toSystemSpec`. -/
+def LeanWorkingSystem : WorkingSystem :=
+  WorkingSystem.withGroundedBehavior LeanGroundedBehavior
+    { spec               := LeanGroundedSystemSpec.toSystemSpec
+      bubbles_ev         := none
+      bridges_ev         := none
+      headers_ev         := none
+      revocation_ev      := none
+      bank_ev            := none
+      redeemability_ev   := none }
+
+
+/-! ## Has* Predicates for LeanWorkingSystem -/
+
+-- `grounded_spec_contains_all LeanGroundedSystemSpec` proves all six features
+-- simultaneously.  After `unfold HasX LeanWorkingSystem`, the goal becomes
+-- `spec_has_X LeanGroundedSystemSpec.toSystemSpec`, which is the corresponding
+-- component of the conjunction — no manually-set flag is consulted.
+theorem lean_has_bubbles : HasBubbles LeanWorkingSystem := by
+  unfold HasBubbles LeanWorkingSystem
+  exact (grounded_spec_contains_all LeanGroundedSystemSpec).1
+
+theorem lean_has_trust_bridges : HasTrustBridges LeanWorkingSystem := by
+  unfold HasTrustBridges LeanWorkingSystem
+  exact (grounded_spec_contains_all LeanGroundedSystemSpec).2.1
+
+theorem lean_has_headers : HasHeaders LeanWorkingSystem := by
+  unfold HasHeaders LeanWorkingSystem
+  exact (grounded_spec_contains_all LeanGroundedSystemSpec).2.2.1
+
+theorem lean_has_revocation : HasRevocation LeanWorkingSystem := by
+  unfold HasRevocation LeanWorkingSystem
+  exact (grounded_spec_contains_all LeanGroundedSystemSpec).2.2.2.1
+
+theorem lean_has_bank : HasBank LeanWorkingSystem := by
+  unfold HasBank LeanWorkingSystem
+  exact (grounded_spec_contains_all LeanGroundedSystemSpec).2.2.2.2.1
+
+theorem lean_has_redeemability : HasRedeemability LeanWorkingSystem := by
+  unfold HasRedeemability LeanWorkingSystem
+  exact (grounded_spec_contains_all LeanGroundedSystemSpec).2.2.2.2.2
+
+
+/-! ## Direct Implementation: Bank Primitives by Construction -/
+
+/-- `LeanWorkingSystem` directly implements all six Bank primitives.
+
+    This is the *direct* route — independent of the convergence theorem.
+    It does not say "any system handling X must have Y, and this system
+    handles X"; it says "this system has Y, constructed from evidence."
+
+    Each `HasX` proof extracts the corresponding component from
+    `grounded_spec_contains_all LeanGroundedSystemSpec`; no Boolean flag
+    is inspected directly.  The `Bool = true` values in `LeanWorkingSystem`'s
+    spec are set by `GroundedSystemSpec.toSystemSpec`, which requires each
+    `GroundedX` witness to have been supplied.
+
+    | HasX primitive      | Evidence basis                                        |
+    |---------------------|-------------------------------------------------------|
+    | `HasBubbles`        | `LeanGroundedBubbles` (Nat vs Int namespace disagreement) |
+    | `HasTrustBridges`   | `LeanGroundedTrustBridges` (`import Init` trust bridge) |
+    | `HasHeaders`        | `LeanGroundedHeaders` (`Nat.succ` type sig preserved)  |
+    | `HasRevocation`     | `LeanGroundedRevocation` (sorry-tainted → quarantine)  |
+    | `HasBank`           | `LeanGroundedBank` (InitDef produced and consumed)     |
+    | `HasRedeemability`  | `LeanGroundedRedeemability` (`#print axioms` audit path)| -/
+theorem lean_implements_bank_primitives : containsBankPrimitives LeanWorkingSystem := by
+  intro P
+  cases P
+  · exact lean_has_bubbles
+  · exact lean_has_trust_bridges
+  · exact lean_has_headers
+  · exact lean_has_revocation
+  · exact lean_has_bank
+  · exact lean_has_redeemability
+
+/-- `LeanWorkingSystem` is partially well-formed at all constraints: stored
+    evidence fields ↔ architectural features.
+
+    Applies `grounded_partial_wellformed`: any system built via
+    `withGroundedBehavior`/`toSystemSpec` satisfies `PartialWellFormed W allConstraints`. -/
+theorem lean_partial_wellformed : PartialWellFormed LeanWorkingSystem allConstraints :=
+  grounded_partial_wellformed LeanGroundedBehavior LeanGroundedSystemSpec
+
+/-- The Lean kernel satisfies all six operational properties.
+
+    Follows directly from `grounded_behavior_satisfies_all`: any system
+    built via `WorkingSystem.withGroundedBehavior` satisfies all six
+    `handles_*` predicates, because each `Option *_ev.isSome = true`
+    witness is set from the evidence in `LeanGroundedBehavior`. -/
+theorem lean_satisfies_all_properties : SatisfiesAllProperties LeanWorkingSystem :=
+  grounded_behavior_satisfies_all LeanGroundedBehavior _
+
+
+/-! ## Structural Grounding for HasBubbles
+
+A concrete `AgentDisagreement` built from Lean's namespace model makes
+`flat_scope_impossible` fire, proving that scope separation is structurally
+required by the Lean kernel's own name-resolution structure.
+
+### Model
+
+In Lean, a name like `add` lives in a namespace.  `Nat.add` and `Int.add`
+are both "add", but resolved in different namespaces.  When two compilation
+units open different namespaces:
+
+    -- Module A: `open Nat`  → "add" means `Nat.add`
+    -- Module B: `open Int`  → "add" means `Int.add`
+
+Each module has a different acceptance criterion for the unqualified name
+"add".  No single flat resolver can simultaneously agree with both.
+
+### Claims
+
+We model Lean names as a two-constructor inductive reflecting a minimal
+namespace hierarchy: a qualified name belongs to one of two namespaces. -/
+
+/-- The namespace disagreement: two Lean compilation units disagree on
+    which `add` is canonical.  `natAdd` is the witness — accepted by the
+    `open Nat` module, rejected by the `open Int` module. -/
+def leanNamespaceDisagreement : AgentDisagreement where
+  Claim           := LeanName
+  accept₁         := openNatAccepts
+  accept₂         := openIntAccepts
+  witness         := .natAdd
+  agent1_accepts  := trivial         -- openNatAccepts .natAdd = True
+  agent2_rejects  := id              -- openIntAccepts .natAdd = False; ¬False = True
+
+/-- **`flat_scope_impossible` fires on Lean's namespace structure.**
+
+    No single name-resolution function can simultaneously:
+    - agree with `open Nat` (accepting `natAdd`, rejecting `intAdd`), AND
+    - agree with `open Int` (accepting `intAdd`, rejecting `natAdd`).
+
+    Derived from `flat_scope_impossible` applied to `leanNamespaceDisagreement`:
+    a flat (single-namespace) resolver is provably inadequate. -/
+theorem lean_namespace_requires_scope_separation :
+    ¬∃ (f : LeanName → Prop),
+      (∀ n, f n ↔ openNatAccepts n) ∧
+      (∀ n, f n ↔ openIntAccepts n) :=
+  flat_scope_impossible leanNamespaceDisagreement
+
+/-- `LeanWorkingSystem` carries the namespace disagreement data.
+
+    This instances `RepresentsDisagreement` for `LeanWorkingSystem`,
+    connecting the abstract structural model to the concrete kernel
+    evidence.  When combined with the bridge impossibility machinery,
+    it shows that a bubbleless `LeanWorkingSystem` would be self-contradictory. -/
+def lean_represents_disagreement : RepresentsDisagreement LeanWorkingSystem where
+  Claim          := LeanName
+  accept₁        := openNatAccepts
+  accept₂        := openIntAccepts
+  witness        := .natAdd
+  agent1_accepts := trivial
+  agent2_rejects := id
+
+/-- If `LeanWorkingSystem` lacked bubbles but committed to a flat resolver
+    faithful to both namespace agents, the contradiction is immediate.
+
+    This is the bridge impossibility applied to kernel data: `bridge_bubbles_impossible`
+    fires regardless of which system we consider — the flat-resolver commitment
+    is universally absurd, and `leanNamespaceDisagreement` supplies the
+    concrete witness that makes it absurd for the Lean kernel specifically. -/
+theorem lean_no_flat_namespace_resolver
+    (f : LeanName → Prop)
+    (h₁ : ∀ n, f n ↔ openNatAccepts n)
+    (h₂ : ∀ n, f n ↔ openIntAccepts n) :
+    False :=
+  lean_namespace_requires_scope_separation ⟨f, h₁, h₂⟩
+
+
+/-! ## Single-Feature Grounded Spec (Stepping Stone)
+
+`LeanGroundedBubbles` and the full `LeanGroundedSystemSpec` are defined above
+in the Architecture Evidence section.  `LeanKernelSystemSpecGrounded` below
+grounds only `has_bubble_separation` and is the intermediate artifact from
+before the full six-feature grounding was available. -/
+
+/-- A `SystemSpec` for the Lean kernel grounded in `LeanGroundedBubbles`.
+
+    This is `LeanKernelSystemSpec` with `has_bubble_separation` set
+    *because* `LeanGroundedBubbles` was provided — not asserted manually.
+    The other five fields are copied from `LeanKernelSystemSpec`. -/
+def LeanKernelSystemSpecGrounded : SystemSpec :=
+  SystemSpec.withGroundedBubbles LeanGroundedBubbles LeanKernelSystemSpec
+
+/-- `HasBubbles` holds for a `WorkingSystem` whose spec is
+    `LeanKernelSystemSpecGrounded`, derived from evidence.
+
+    Traces back to `LeanGroundedBubbles`, `openNatAccepts`, and
+    `leanNamespaceDisagreement`. -/
+theorem lean_has_bubbles_grounded :
+    spec_has_bubbles LeanKernelSystemSpecGrounded :=
+  grounded_bubbles_justified LeanGroundedBubbles LeanKernelSystemSpec
+
+
+/-! ## Structural Forcing -/
+
+/-- Forcing embedding for `LeanWorkingSystem`.
+
+    All six arms return `Or.inl` (the feature itself) because every
+    architectural feature is present in the Lean kernel.  The right
+    disjunct (the impossible bridge scenario) is never reached. -/
+def lean_forcing_embedding : ForcingEmbedding LeanWorkingSystem where
+  embed P _ := match P with
+    | .scope         => Or.inl lean_has_bubbles
+    | .trust         => Or.inl lean_has_trust_bridges
+    | .headers       => Or.inl lean_has_headers
+    | .revocation    => Or.inl lean_has_revocation
+    | .bank          => Or.inl lean_has_bank
+    | .redeemability => Or.inl lean_has_redeemability
+
+/-- `LeanWorkingSystem` is structurally forced — derived from the
+    forcing embedding via the generic translation layer. -/
+theorem lean_structurally_forced : StructurallyForced LeanWorkingSystem :=
+  embedding_to_structurally_forced LeanWorkingSystem lean_forcing_embedding
+
+/-- `LeanWorkingSystem` contains Bank primitives.
+
+    Full chain: ForcingEmbedding → StructurallyForced → convergence.
+    Self-referential: type-checked by the same kernel whose features populate
+    `LeanKernelSystemSpec`. -/
+theorem lean_structural_convergence : containsBankPrimitives LeanWorkingSystem :=
+  convergence_structural LeanWorkingSystem lean_structurally_forced lean_satisfies_all_properties
+
+/-- Each stored GroundedXStrict witness in LeanWorkingSystem satisfies its
+    dimension's structural consequence obligation. -/
+def lean_grounded_consequences :=
+  grounded_evidence_consequences LeanWorkingSystem
+    lean_structurally_forced lean_satisfies_all_properties
+
+
+/-! ## Combined Two-Layer Summary -/
+
+/-- The Lean kernel, as `LeanWorkingSystem`, contains Bank primitives.
+
+    Citability anchor.  Two independent proofs are available in this file:
+
+    - **Direct** (`lean_implements_bank_primitives`): via
+      `grounded_spec_contains_all LeanGroundedSystemSpec` — each `HasX`
+      proof extracts the matching component of the conjunction; no Boolean
+      flag is inspected directly.  Does not depend on the convergence theorem.
+
+    - **Structural** (`lean_structural_convergence`): by necessity — any
+      system handling these six operational pressures must have the features.
+      Routes through `ForcingEmbedding → StructurallyForced →
+      convergence_structural`.
+
+    This alias uses the direct route (`lean_implements_bank_primitives`). -/
+theorem lean_kernel_forces_bank_primitives : containsBankPrimitives LeanWorkingSystem :=
+  lean_implements_bank_primitives
+
+/-- The Lean kernel satisfies all EpArch requirements — both layers.
+
+    **World layer** (`LeanKernelCtx`):
+    - `W_lies_possible`        ↔ `sorry` mechanism
+    - `W_bounded_verification` ↔ heartbeat budget
+    - `W_partial_observability`↔ proof irrelevance
+    - No obs-based ledger serves both innovation and coordination
+      (`lean_kernel_no_tradeoff`)
+
+    **Architecture layer** (`LeanWorkingSystem`):
+    - `PartialWellFormed W allConstraints` — all six behavioral ↔ architectural biconditionals hold
+    - `containsBankPrimitives` — directly: all six `HasX` fields hold by construction;
+                                  separately: forced by `lean_structural_convergence`
+    - `StructurallyForced`     — six embedding arms all return `Or.inl`
+    - `SatisfiesAllProperties` — all six `handles_*` predicates hold via `Option *_ev.isSome = true`
+
+    The proof is discharged by the kernel it models. -/
+theorem lean_kernel_existence :
+    (∃ C : @EpArch.WorldCtx.{0},
+      Nonempty C.W_lies_possible ∧
+      Nonempty C.W_bounded_verification ∧
+      Nonempty C.W_partial_observability) ∧
+    (∃ W : WorkingSystem,
+      PartialWellFormed W allConstraints ∧ StructurallyForced W ∧ SatisfiesAllProperties W ∧
+      containsBankPrimitives W) :=
+  ⟨lean_is_eparch_world,
+   ⟨LeanWorkingSystem,
+    lean_partial_wellformed,
+    lean_structurally_forced,
+    lean_satisfies_all_properties,
+    lean_implements_bank_primitives⟩⟩
+
+end EpArch.LeanKernelModel

@@ -46,59 +46,9 @@ namespace EpArch.Meta.Modular
 
 open EpArch
 
-
-/-! ## Constraint Subset -/
-
-/-- A subset of the six EpArch operational constraints, represented as a
-    6-boolean vector. `true` = constraint included; `false` = dropped.
-
-    Examples:
-    - `allConstraints`  — all six included (strongest case; equivalent to the former `WellFormed`)
-    - `noConstraints`   — none included (no forcing theorems claimed)
-    - `⟨true, false, false, false, true, false⟩` — only distributed + coordination -/
-structure ConstraintSubset where
-  distributed    : Bool
-  bounded_audit  : Bool
-  export_across  : Bool
-  adversarial    : Bool
-  coordination   : Bool
-  truth_pressure : Bool
-
-/-- The full set of all six constraints. `PartialWellFormed W allConstraints` requires
-    all six biconditionals — the strongest subset. -/
-def allConstraints : ConstraintSubset := ⟨true, true, true, true, true, true⟩
-
-/-- The empty subset. `PartialWellFormed W noConstraints` holds trivially. -/
-def noConstraints : ConstraintSubset := ⟨false, false, false, false, false, false⟩
-
-
-/-! ## Partial Well-Formedness -/
-
-/-- `PartialWellFormed W S` captures the forcing biconditionals for
-    the constraint subset S.
-
-    For each constraint X:
-    - If `S.X = true`,  the biconditional `handles_X W ↔ HasFeature_X W` is required.
-    - If `S.X = false`, nothing is required for X.
-
-    Requiring all six (S = allConstraints) is the strongest form.
-
-    To "drop" constraint X from a product deployment: set S.X := false.
-    The type system then stops requiring the X biconditional. -/
-structure PartialWellFormed (W : WorkingSystem) (S : ConstraintSubset) : Prop where
-  /-- Distributed agents ↔ HasBubbles (only required when S.distributed = true) -/
-  wf_distributed    : S.distributed    = true → (handles_distributed_agents W ↔ HasBubbles W)
-  /-- Bounded audit ↔ HasTrustBridges (only required when S.bounded_audit = true) -/
-  wf_bounded_audit  : S.bounded_audit  = true → (handles_bounded_audit W ↔ HasTrustBridges W)
-  /-- Export ↔ HasHeaders (only required when S.export_across = true) -/
-  wf_export         : S.export_across  = true → (handles_export W ↔ HasHeaders W)
-  /-- Adversarial ↔ HasRevocation (only required when S.adversarial = true) -/
-  wf_adversarial    : S.adversarial    = true → (handles_adversarial W ↔ HasRevocation W)
-  /-- Coordination ↔ HasBank (only required when S.coordination = true) -/
-  wf_coordination   : S.coordination   = true → (handles_coordination W ↔ HasBank W)
-  /-- Truth pressure ↔ HasRedeemability (only required when S.truth_pressure = true) -/
-  wf_truth_pressure : S.truth_pressure = true → (handles_truth_pressure W ↔ HasRedeemability W)
-
+-- `ConstraintSubset`, `allConstraints`, `noConstraints`, and `PartialWellFormed`
+-- are defined in `EpArch.Minimality` (visible here via `open EpArch`).
+-- `partial_no_constraints` is stated here as the first result that builds on them.
 
 /-! ## Trivial instance: empty subset -/
 
@@ -153,5 +103,131 @@ theorem modular (S : ConstraintSubset) (W : WorkingSystem)
    fun hc h => (pwf.wf_coordination    hc).mp h,
    fun ht h => (pwf.wf_truth_pressure  ht).mp h⟩
 
+
+/-! ## PartialGroundedSpec — Minimal User-Facing Compliance API
+
+A product developer filling in a `PartialGroundedSpec S` is writing their
+EpArch compliance certificate.  The workflow:
+
+  1. Choose `S : ConstraintSubset` — the EpArch pressures your product faces.
+  2. Fill in the active `GroundedX` fields with domain-typed evidence.
+  3. `lake build` — if it compiles, `partial_modular S pgs` certifies that
+     every constraint in S is structurally satisfied.  No flag-bags, no sorry.
+
+Inactive constraints (S.X = false) require only `fun h => absurd h (by decide)`.
+
+### Mapping
+
+| S field          | Constraint              | Required evidence          |
+|------------------|-------------------------|----------------------------|
+| `distributed`    | Distributed agents      | `GroundedBubbles`          |
+| `bounded_audit`  | Bounded audit           | `GroundedTrustBridges`     |
+| `export_across`  | Export across bounds    | `GroundedHeaders`          |
+| `adversarial`    | Adversarial pressure    | `GroundedRevocation`       |
+| `coordination`   | Coordination need       | `GroundedBank`             |
+| `truth_pressure` | Truth pressure          | `GroundedRedeemability`    | -/
+
+/-- The compliance form: evidence for each EpArch constraint in S.
+
+    For `S.X = true`  → the field type is `true = true → GroundedX`;
+                         the user must supply a real `GroundedX` value.
+    For `S.X = false` → the field type is `false = true → GroundedX = False → GroundedX`;
+                         vacuously inhabited; no obligation.
+
+    Example fill-in (app with distributed agents and adversarial pressure only):
+    ```lean
+    def MyConstraints : ConstraintSubset :=
+      { distributed := true, adversarial := true,
+        bounded_audit := false, export_across := false,
+        coordination := false, truth_pressure := false }
+
+    def MySpec : PartialGroundedSpec MyConstraints where
+      bubbles       := fun _ => MyGroundedBubbles    -- real domain evidence
+      revocation    := fun _ => MyGroundedRevocation -- real domain evidence
+      trust_bridges := fun h => absurd h (by decide)
+      headers       := fun h => absurd h (by decide)
+      bank          := fun h => absurd h (by decide)
+      redeemability := fun h => absurd h (by decide)
+
+    -- If this compiles, your design is EpArch-compliant for MyConstraints:
+    #check (partial_modular MyConstraints MySpec)
+    ``` -/
+structure PartialGroundedSpec (S : ConstraintSubset) where
+  /-- Scope separation evidence (required iff S.distributed = true) -/
+  bubbles       : S.distributed    = true → GroundedBubbles
+  /-- Trust bridge evidence (required iff S.bounded_audit = true) -/
+  trust_bridges : S.bounded_audit  = true → GroundedTrustBridges
+  /-- Header preservation evidence (required iff S.export_across = true) -/
+  headers       : S.export_across  = true → GroundedHeaders
+  /-- Revocation evidence (required iff S.adversarial = true) -/
+  revocation    : S.adversarial    = true → GroundedRevocation
+  /-- Shared ledger evidence (required iff S.coordination = true) -/
+  bank          : S.coordination   = true → GroundedBank
+  /-- Redeemability evidence (required iff S.truth_pressure = true) -/
+  redeemability : S.truth_pressure = true → GroundedRedeemability
+
+
+/-- Build a `WorkingSystem` from partial evidence.
+
+    Active constraints (S.X = true) set the corresponding spec flag and
+    evidence field from the supplied `GroundedX` value.
+    Inactive constraints leave both `false`/`none`. -/
+def PartialGroundedSpec.toWorkingSystem (S : ConstraintSubset)
+    (pgs : PartialGroundedSpec S) : WorkingSystem where
+  spec := {
+    has_bubble_separation :=
+      if h : S.distributed    = true then let _ev := pgs.bubbles h;       true else false
+    has_trust_bridges     :=
+      if h : S.bounded_audit  = true then let _ev := pgs.trust_bridges h; true else false
+    preserves_headers     :=
+      if h : S.export_across  = true then let _ev := pgs.headers h;       true else false
+    has_revocation        :=
+      if h : S.adversarial    = true then let _ev := pgs.revocation h;    true else false
+    has_shared_ledger     :=
+      if h : S.coordination   = true then let _ev := pgs.bank h;          true else false
+    has_redeemability     :=
+      if h : S.truth_pressure = true then let _ev := pgs.redeemability h; true else false
+  }
+  bubbles_ev       := if h : S.distributed    = true then some (pgs.bubbles h).toStrict       else none
+  bridges_ev       := if h : S.bounded_audit  = true then some (pgs.trust_bridges h).toStrict else none
+  headers_ev       := if h : S.export_across  = true then some (pgs.headers h).toStrict       else none
+  revocation_ev    := if h : S.adversarial    = true then some (pgs.revocation h).toStrict    else none
+  bank_ev          := if h : S.coordination   = true then some (pgs.bank h).toStrict          else none
+  redeemability_ev := if h : S.truth_pressure = true then some (pgs.redeemability h).toStrict else none
+
+
+/-- A `WorkingSystem` built by `toWorkingSystem` satisfies `PartialWellFormed W S`.
+
+    Active constraints supply grounded evidence for the live biconditionals;
+    inactive constraints pass vacuously. -/
+theorem partial_grounded_is_partial_wellformed (S : ConstraintSubset)
+    (pgs : PartialGroundedSpec S) :
+    PartialWellFormed (PartialGroundedSpec.toWorkingSystem S pgs) S := {
+  wf_distributed    := fun h => by
+    simp [handles_distributed_agents, HasBubbles, PartialGroundedSpec.toWorkingSystem, h,
+          Option.isSome]
+  wf_bounded_audit  := fun h => by
+    simp [handles_bounded_audit, HasTrustBridges, PartialGroundedSpec.toWorkingSystem, h,
+          Option.isSome]
+  wf_export         := fun h => by
+    simp [handles_export, HasHeaders, PartialGroundedSpec.toWorkingSystem, h, Option.isSome]
+  wf_adversarial    := fun h => by
+    simp [handles_adversarial, HasRevocation, PartialGroundedSpec.toWorkingSystem, h,
+          Option.isSome]
+  wf_coordination   := fun h => by
+    simp [handles_coordination, HasBank, PartialGroundedSpec.toWorkingSystem, h, Option.isSome]
+  wf_truth_pressure := fun h => by
+    simp [handles_truth_pressure, HasRedeemability, PartialGroundedSpec.toWorkingSystem, h,
+          Option.isSome] }
+
+
+/-- EpArch compliance for a partial constraint profile.
+
+    Given `pgs : PartialGroundedSpec S`, certifies that the system built from `pgs`
+    satisfies `projection_valid S W`: the forcing implication holds for every
+    constraint in S. -/
+theorem partial_modular (S : ConstraintSubset) (pgs : PartialGroundedSpec S) :
+    projection_valid S (PartialGroundedSpec.toWorkingSystem S pgs) :=
+  modular S _ (partial_grounded_is_partial_wellformed S pgs)
 
 end EpArch.Meta.Modular

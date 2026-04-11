@@ -158,6 +158,7 @@ import EpArch.Meta.Tier4Transport    -- Main theorem library transport (Tier 4 c
 import EpArch.Modularity  -- Lattice-stability: graceful scale-down + sub-level RevisionSafety
 import EpArch.Meta.Modular     -- Modularity meta-theorem: ∀ S ⊆ constraints, projection_valid S
 import EpArch.Meta.Config      -- Configurable certification engine: EpArchConfig → ClusterTag → certified proof
+import EpArch.Meta.LeanKernelModel  -- Self-referential: Lean kernel as EpArch instantiation
 
 def main : IO Unit :=
   IO.println s!"EpArch: Epistemic Architecture Formalization"

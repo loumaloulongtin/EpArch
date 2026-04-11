@@ -707,9 +707,9 @@ This closes the argument: given realistic agents and desired properties, you **c
 
 | Artifact | Type | File | Tier |
 |----------|------|------|------|
-| `ConstraintSubset` | `structure` | Meta/Modular.lean | A |
-| `PartialWellFormed W S` | `def` | Meta/Modular.lean | A |
-| `allConstraints` / `noConstraints` | `def` | Meta/Modular.lean | A |
+| `ConstraintSubset` | `structure` | Minimality.lean | A |
+| `PartialWellFormed W S` | `def` | Minimality.lean | A |
+| `allConstraints` / `noConstraints` | `def` | Minimality.lean | A |
 | `modular` | `theorem` | Meta/Modular.lean | A |
 
 **Key result:** `modular : ∀ S W, PartialWellFormed W S → projection_valid S W` — dropping constraint X = setting `S.X := false`; the X-conjunct becomes vacuously true.
@@ -739,6 +739,25 @@ This closes the argument: given realistic agents and desired properties, you **c
 | `mem_enabledMetaModularWitnesses_of_enabled` | `theorem` | Completeness: enabled cluster → witness in filtered list |
 | `mem_enabledLatticeWitnesses_of_enabled` | `theorem` | Completeness: enabled cluster → witness in filtered list |
 | `cluster_meta_modular` … `cluster_lattice_pack` | `theorem` (×4) | Named proof witnesses for all 4 new clusters (Phase F) |
+
+---
+
+### Bucket 29 — Lean Kernel Instantiation (`Meta/LeanKernelModel.lean`)
+
+Self-referential: Lean's own type-checking kernel instantiated as both a `WorldCtx` (sorry / heartbeat / proof irrelevance) and a `WorkingSystem` (all six Bank primitives grounded in kernel features). Not tied to a specific paper section; serves as a proof-of-concept instantiation and meta-theorem companion.
+
+| Artifact | Type | File | Tier |
+|----------|------|------|------|
+| `LeanKernelCtx` | `def` | Meta/LeanKernelModel.lean | A |
+| `LeanWorkingSystem` | `def` | Meta/LeanKernelModel.lean | A |
+| `holds_W_lies_possible` / `holds_W_bounded_verification` / `holds_W_partial_observability` | `theorem` (×3) | Meta/LeanKernelModel.lean | A |
+| `lean_kernel_satisfies_bundles` / `lean_kernel_theory_floor` / `lean_kernel_no_tradeoff` / `lean_is_eparch_world` | `theorem` (×4) | Meta/LeanKernelModel.lean | A |
+| `lean_has_bubbles` … `lean_has_redeemability` | `theorem` (×6) | Meta/LeanKernelModel.lean | A |
+| `lean_implements_bank_primitives` / `lean_partial_wellformed` / `lean_satisfies_all_properties` / `lean_structurally_forced` / `lean_structural_convergence` | `theorem` (×5) | Meta/LeanKernelModel.lean | A |
+| `lean_namespace_requires_scope_separation` / `lean_no_flat_namespace_resolver` / `lean_has_bubbles_grounded` | `theorem` (×3) | Meta/LeanKernelModel.lean | A |
+| `lean_kernel_forces_bank_primitives` / `lean_kernel_existence` | `theorem` (×2) | Meta/LeanKernelModel.lean | A |
+
+**Key result:** `lean_kernel_existence` — joint two-layer existential: `(∃ C : WorldCtx, …) ∧ (∃ W : WorkingSystem, PartialWellFormed W allConstraints ∧ StructurallyForced W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W)`. Self-referential: type-checked by the kernel it models.
 
 ---
 

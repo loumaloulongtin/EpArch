@@ -825,13 +825,83 @@ def concreteSystemSpec : SystemSpec where
   has_shared_ledger := true       -- CGlobalLedger
   has_redeemability := true       -- CConstraintSurface
 
-/-- The concrete working system: all operational properties enabled. -/
+/-! ## Concrete GroundedX Witnesses
+
+Each `GroundedX` instance below uses a fresh private inductive type as the
+domain so that the witness is self-contained within this namespace and does
+not depend on `EpArch.ConcreteModel` details. -/
+
+private inductive ConcScopeLabel where | s1 | s2 deriving DecidableEq
+private inductive ConcDeclKind  where | trusted | untrusted deriving DecidableEq
+private inductive ConcStatus    where | live | revoked deriving DecidableEq
+private inductive ConcEntry     where | entry deriving DecidableEq
+private inductive ConcClaim     where | constrained | free deriving DecidableEq
+
+/-- Concrete bubble evidence: two scopes disagree on `.s1`. -/
+private def concBubbles : GroundedBubbles where
+  Claim          := ConcScopeLabel
+  scope₁         := fun c => c = .s1
+  scope₂         := fun c => c = .s2
+  witness        := .s1
+  scope₁_accepts := rfl
+  scope₂_rejects := by decide
+
+/-- Concrete trust-bridge evidence: a trusted declaration is accepted upstream
+    and downstream. -/
+private def concTrustBridges : GroundedTrustBridges where
+  Declaration           := ConcDeclKind
+  upstream_accepts      := fun d => d = .trusted
+  downstream_accepts    := fun d => d = .trusted
+  witness               := .trusted
+  upstream_holds        := rfl
+  downstream_via_bridge := rfl
+
+/-- Concrete header-preservation evidence: identity export preserves the datum. -/
+private def concHeaders : GroundedHeaders where
+  Datum            := ConcEntry
+  Header           := ConcEntry
+  extract          := id
+  export_datum     := id
+  witness          := .entry
+  header_preserved := rfl
+
+/-- Concrete revocation evidence: `.revoked` is invalid and revocable. -/
+private def concRevocation : GroundedRevocation where
+  Claim              := ConcStatus
+  valid              := fun s => s = .live
+  revocable          := fun s => s = .revoked
+  witness            := .revoked
+  witness_is_invalid := by decide
+  can_revoke         := rfl
+
+/-- Concrete bank evidence: a single entry produced AND consumed. -/
+private def concBank : GroundedBank where
+  Entry           := ConcEntry
+  agent₁_produces := fun _ => True
+  agent₂_consumes := fun _ => True
+  witness         := .entry
+  produced        := True.intro
+  consumed        := True.intro
+
+/-- Concrete redeemability evidence: constrained claims always have an audit path. -/
+private def concRedeemability : GroundedRedeemability where
+  Claim          := ConcClaim
+  constrained    := fun c => c = .constrained
+  redeemable     := fun _ => True
+  witness        := .constrained
+  is_constrained := rfl
+  has_path       := True.intro
+
+/-- The concrete working system: all six proof-carrying option fields set
+    from concrete domain evidence. -/
 def ConcreteWorkingSystem : WorkingSystem where
-  spec := concreteSystemSpec
-  has_shared_records := true      -- CGlobalLedger.all_deposits
-  enables_reliance := true        -- process_withdraw succeeds
-  supports_correction := true     -- CRepairResponse (Revised/Revoked)
-  resists_adversaries := true     -- ACL + lifecycle gating
+  spec             := concreteSystemSpec
+  bubbles_ev       := some concBubbles.toStrict
+  bridges_ev       := some concTrustBridges.toStrict
+  headers_ev       := some concHeaders.toStrict
+  revocation_ev    := some concRevocation.toStrict
+  bank_ev          := some concBank.toStrict
+  redeemability_ev := some concRedeemability.toStrict
 
 
 /-! ## Has* Predicates Hold for Concrete Model
@@ -886,7 +956,7 @@ theorem concrete_satisfies_all_properties :
   intro P; cases P <;>
   simp [handles_pressure, handles_distributed_agents, handles_bounded_audit,
         handles_export, handles_adversarial, handles_coordination,
-        handles_truth_pressure, ConcreteWorkingSystem]
+        handles_truth_pressure, ConcreteWorkingSystem, Option.isSome]
 
 
 /-! ## ForcingEmbedding Instance
@@ -910,10 +980,44 @@ def concrete_forcing_embedding : ForcingEmbedding ConcreteWorkingSystem where
     | .bank          => Or.inl concrete_has_bank
     | .redeemability => Or.inl concrete_has_redeemability
 
-/-- The concrete model is structurally forced — derived mechanically
-    from the forcing embedding via the generic translation layer. -/
-theorem concrete_structurally_forced : StructurallyForced ConcreteWorkingSystem :=
-  embedding_to_structurally_forced ConcreteWorkingSystem concrete_forcing_embedding
+/-- The concrete model is structurally forced.
+    Reads the stored `GroundedXStrict` witnesses from `ConcreteWorkingSystem`
+    directly.  Each `evidence` field uses `injection` to bind the
+    `some X = some G` hypothesis to the concrete witness, then applies that
+    witness’s impossibility field. -/
+theorem concrete_structurally_forced : StructurallyForced ConcreteWorkingSystem where
+  forcing P _ := match P with
+    | .scope         => concrete_has_bubbles
+    | .trust         => concrete_has_trust_bridges
+    | .headers       => concrete_has_headers
+    | .revocation    => concrete_has_revocation
+    | .bank          => concrete_has_bank
+    | .redeemability => concrete_has_redeemability
+  evidence := {
+    scope_consequence := fun G heq => by
+      have hrfl : ConcreteWorkingSystem.bubbles_ev = some concBubbles.toStrict := rfl
+      rw [hrfl] at heq; injection heq with hG; subst hG
+      exact concBubbles.toStrict.no_flat_resolver
+    trust_consequence := fun G heq => by
+      have hrfl : ConcreteWorkingSystem.bridges_ev = some concTrustBridges.toStrict := rfl
+      rw [hrfl] at heq; injection heq with hG; subst hG
+      exact concTrustBridges.toStrict.bridge_forces_acceptance
+    headers_consequence := fun G heq => by
+      have hrfl : ConcreteWorkingSystem.headers_ev = some concHeaders.toStrict := rfl
+      rw [hrfl] at heq; injection heq with hG; subst hG
+      exact concHeaders.toStrict.routing_invariant
+    revocation_consequence := fun G heq => by
+      have hrfl : ConcreteWorkingSystem.revocation_ev = some concRevocation.toStrict := rfl
+      rw [hrfl] at heq; injection heq with hG; subst hG
+      exact concRevocation.toStrict.has_invalid_revocable_witness
+    bank_consequence := fun G heq => by
+      have hrfl : ConcreteWorkingSystem.bank_ev = some concBank.toStrict := rfl
+      rw [hrfl] at heq; injection heq with hG; subst hG
+      exact concBank.toStrict.has_shared_entry
+    redeemability_consequence := fun G heq => by
+      have hrfl : ConcreteWorkingSystem.redeemability_ev = some concRedeemability.toStrict := rfl
+      rw [hrfl] at heq; injection heq with hG; subst hG
+      exact concRedeemability.toStrict.has_constrained_redeemable_witness }
 
 /-- Structural convergence applies to the concrete model.
     Full chain: ForcingEmbedding → StructurallyForced → convergence. -/
@@ -921,6 +1025,12 @@ theorem concrete_structural_convergence :
     containsBankPrimitives ConcreteWorkingSystem :=
   convergence_structural ConcreteWorkingSystem concrete_structurally_forced
     concrete_satisfies_all_properties
+
+/-- Each stored GroundedXStrict witness in ConcreteWorkingSystem satisfies its
+    dimension's structural consequence obligation. -/
+def concrete_grounded_consequences :=
+  grounded_evidence_consequences ConcreteWorkingSystem
+    concrete_structurally_forced concrete_satisfies_all_properties
 
 
 /-! ## Deficient Systems: Structural Models Fire on Real Data
@@ -960,13 +1070,17 @@ def noBubblesSpec : SystemSpec where
   has_shared_ledger := true
   has_redeemability := true
 
-/-- Working system that handles all constraints but lacks bubbles. -/
+/-- Working system whose spec lacks bubble separation (`has_bubble_separation = false`).
+    All evidence fields are `none`, so no `handles_*` predicate holds.
+    Used solely as a "no-bubbles spec" witness for `no_bubbles_lacks_bubbles`. -/
 def NoBubblesSystem : WorkingSystem where
-  spec := noBubblesSpec
-  has_shared_records := true
-  enables_reliance := true
-  supports_correction := true
-  resists_adversaries := true
+  spec             := noBubblesSpec
+  bubbles_ev       := none
+  bridges_ev       := none
+  headers_ev       := none
+  revocation_ev    := none
+  bank_ev          := none
+  redeemability_ev := none
 
 /-- The no-bubbles system genuinely lacks bubbles. -/
 theorem no_bubbles_lacks_bubbles : ¬HasBubbles NoBubblesSystem := by
@@ -989,8 +1103,8 @@ def noBubblesDisagreement : RepresentsDisagreement NoBubblesSystem where
   accept₁ := agent1_accept
   accept₂ := agent2_accept
   witness := .witness
-  agent1_accepts := trivial
-  agent2_rejects := id
+  agent1_accepts := True.intro
+  agent2_rejects := fun h => nomatch h
 
 /-- **Structural model fires: no flat scope exists for this system's data.**
 
@@ -1052,13 +1166,17 @@ def noBankSpec : SystemSpec where
   has_shared_ledger := false
   has_redeemability := true
 
-/-- Working system that handles all constraints but lacks a bank. -/
+/-- Working system whose spec lacks a shared ledger (`has_shared_ledger = false`).
+    All evidence fields are `none`, so no `handles_*` predicate holds.
+    Used solely as a "no-bank spec" witness for `no_bank_lacks_bank`. -/
 def NoBankSystem : WorkingSystem where
-  spec := noBankSpec
-  has_shared_records := true
-  enables_reliance := true
-  supports_correction := true
-  resists_adversaries := true
+  spec             := noBankSpec
+  bubbles_ev       := none
+  bridges_ev       := none
+  headers_ev       := none
+  revocation_ev    := none
+  bank_ev          := none
+  redeemability_ev := none
 
 /-- The no-bank system genuinely lacks a bank. -/
 theorem no_bank_lacks_bank : ¬HasBank NoBankSystem := by
@@ -1141,13 +1259,17 @@ def noRevocationSpec : SystemSpec where
   has_shared_ledger := true
   has_redeemability := true
 
-/-- Working system that handles all constraints but lacks revocation. -/
+/-- Working system whose spec lacks revocation (`has_revocation = false`).
+    All evidence fields are `none`, so no `handles_*` predicate holds.
+    Used solely as a "no-revocation spec" witness for `no_revocation_lacks_revocation`. -/
 def NoRevocationSystem : WorkingSystem where
-  spec := noRevocationSpec
-  has_shared_records := true
-  enables_reliance := true
-  supports_correction := true
-  resists_adversaries := true
+  spec             := noRevocationSpec
+  bubbles_ev       := none
+  bridges_ev       := none
+  headers_ev       := none
+  revocation_ev    := none
+  bank_ev          := none
+  redeemability_ev := none
 
 /-- The no-revocation system genuinely lacks revocation. -/
 theorem no_revocation_lacks_revocation : ¬HasRevocation NoRevocationSystem := by
@@ -1236,13 +1358,17 @@ def noHeadersSpec : SystemSpec where
   has_shared_ledger := true
   has_redeemability := true
 
-/-- Working system that handles all constraints but lacks headers. -/
+/-- Working system whose spec lacks header preservation (`preserves_headers = false`).
+    All evidence fields are `none`, so no `handles_*` predicate holds.
+    Used solely as a "no-headers spec" witness for `no_headers_lacks_headers`. -/
 def NoHeadersSystem : WorkingSystem where
-  spec := noHeadersSpec
-  has_shared_records := true
-  enables_reliance := true
-  supports_correction := true
-  resists_adversaries := true
+  spec             := noHeadersSpec
+  bubbles_ev       := none
+  bridges_ev       := none
+  headers_ev       := none
+  revocation_ev    := none
+  bank_ev          := none
+  redeemability_ev := none
 
 /-- The no-headers system genuinely lacks headers. -/
 theorem no_headers_lacks_headers : ¬HasHeaders NoHeadersSystem := by
@@ -1322,13 +1448,17 @@ def noTrustSpec : SystemSpec where
   has_shared_ledger := true
   has_redeemability := true
 
-/-- Working system that handles all constraints but lacks trust bridges. -/
+/-- Working system whose spec lacks trust bridges (`has_trust_bridges = false`).
+    All evidence fields are `none`, so no `handles_*` predicate holds.
+    Used solely as a "no-trust spec" witness for `no_trust_lacks_trust`. -/
 def NoTrustSystem : WorkingSystem where
-  spec := noTrustSpec
-  has_shared_records := true
-  enables_reliance := true
-  supports_correction := true
-  resists_adversaries := true
+  spec             := noTrustSpec
+  bubbles_ev       := none
+  bridges_ev       := none
+  headers_ev       := none
+  revocation_ev    := none
+  bank_ev          := none
+  redeemability_ev := none
 
 /-- The no-trust system genuinely lacks trust bridges. -/
 theorem no_trust_lacks_trust : ¬HasTrustBridges NoTrustSystem := by
@@ -1406,13 +1536,17 @@ def noRedeemabilitySpec : SystemSpec where
   has_shared_ledger := true
   has_redeemability := false
 
-/-- Working system that handles all constraints but lacks redeemability. -/
+/-- Working system whose spec lacks redeemability (`has_redeemability = false`).
+    All evidence fields are `none`, so no `handles_*` predicate holds.
+    Used solely as a "no-redeemability spec" witness for `no_redeemability_lacks_redeemability`. -/
 def NoRedeemabilitySystem : WorkingSystem where
-  spec := noRedeemabilitySpec
-  has_shared_records := true
-  enables_reliance := true
-  supports_correction := true
-  resists_adversaries := true
+  spec             := noRedeemabilitySpec
+  bubbles_ev       := none
+  bridges_ev       := none
+  headers_ev       := none
+  revocation_ev    := none
+  bank_ev          := none
+  redeemability_ev := none
 
 /-- The no-redeemability system genuinely lacks redeemability. -/
 theorem no_redeemability_lacks_redeemability : ¬HasRedeemability NoRedeemabilitySystem := by

@@ -141,9 +141,7 @@ theorem existence_under_constraints_structural :
     EpArch.ConcreteInstance.concrete_satisfies_all_properties
 
 /-- Headline theorem (embedding version): full chain from
-    `ForcingEmbedding` through `StructurallyForced` to convergence.
-    This is the strongest form — the design judgment is localised
-    in `concrete_forcing_embedding`, and the derivation is mechanical. -/
+    `ForcingEmbedding` through `StructurallyForced` to convergence. -/
 theorem existence_under_constraints_embedding :
     ∃ W : WorkingSystem,
       ForcingEmbedding W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W :=
@@ -156,34 +154,16 @@ theorem existence_under_constraints_embedding :
 /-! ## World-to-Structural Bridges
 
 These theorems connect the W_* world assumption bundles (WorldCtx.lean) to the
-structural impossibility models (Minimality.lean).  Previously the two sides were
-proved independently — the structural models had hand-supplied witnesses, and the
-world assumptions had witnesses of their own.  These bridges show that any world
+structural impossibility models (Minimality.lean).  Each bridge shows that any world
 satisfying a W_* bundle supplies enough data to construct a matching structural
-scenario instance, so the forcing results apply without a separate construction step.
-
-The constructed instances are the minimal form sufficient to trigger the relevant
-impossibility theorem — they package the W bundle's witness values, not a full
-semantic import of the world's relational structure. -/
+scenario instance, so the forcing results apply without a separate construction step. -/
 
 /-- Any world satisfying W_bounded_verification constructs a `BoundedVerification`
     instance sufficient to trigger `verification_only_import_incomplete`.
 
-    The W bundle supplies a hard claim P and step count k > 0.  The constructed M
-    packages these into the minimal abstract form: `verify_cost := fun _ => k`
-    (a constant, not C.RequiresSteps itself) and `budget := 0`.  The world's
-    RequiresSteps field is preserved in the existential witness but is not carried
-    into M's cost function.
-
-    The constructed M has:
-    - M.Claim = C.Claim  (claim type is the world's claim type, not Unit)
-    - M.hard_claim = P   (the actual hard claim from the world assumption)
-    - M.verify_cost P = k (the extracted step count, as a constant function)
-    - ∀ w, C.RequiresSteps w P k  (world witness, returned alongside M)
-
-    verification_only_import_incomplete then fires on M.
-    Consequence: the incompleteness is specifically about the claim P the world
-    says is hard — not a synthetic Unit witness. -/
+    Packages W's hard claim P and step count k into a minimal `BoundedVerification`
+    with constant cost function.  The existential witnesses M, P, and k are returned
+    alongside the world's own `RequiresSteps` evidence. -/
 theorem w_bounded_forces_incompleteness (C : @EpArch.WorldCtx.{0})
     (W : C.W_bounded_verification) :
     ∃ (P : C.Claim) (k : Nat) (M : BoundedVerification),
@@ -278,14 +258,23 @@ theorem world_assumptions_force_bank_primitives (C : @EpArch.WorldCtx.{0})
     (h_wa : WorldAwareSystem C W)
     (h_sat : SatisfiesAllProperties W) :
     containsBankPrimitives W := by
-  apply convergence_structural W _ h_sat
-  exact { forcing := fun P h => match P with
-          | .scope         => h_wa.2.2.2.1 h
-          | .trust         => h_wa.1 Wv h
-          | .headers       => h_wa.2.2.2.2.1 h
-          | .revocation    => h_wa.2.1 Wl h
-          | .bank          => h_wa.2.2.2.2.2 h
-          | .redeemability => h_wa.2.2.1 Wo h }
+  -- Construct h_sf from the WorldAwareSystem components.
+  have h_sf : StructurallyForced W :=
+    { forcing := fun P h => match P with
+        | .scope         => h_wa.2.2.2.1 h
+        | .trust         => h_wa.1 Wv h
+        | .headers       => h_wa.2.2.2.2.1 h
+        | .revocation    => h_wa.2.1 Wl h
+        | .bank          => h_wa.2.2.2.2.2 h
+        | .redeemability => h_wa.2.2.1 Wo h
+      evidence := {
+        scope_consequence         := fun G _h_ev => G.no_flat_resolver
+        trust_consequence         := fun G _h_ev => G.bridge_forces_acceptance
+        headers_consequence       := fun G _h_ev => G.routing_invariant
+        revocation_consequence    := fun G _h_ev => G.has_invalid_revocable_witness
+        bank_consequence          := fun G _h_ev => G.has_shared_entry
+        redeemability_consequence := fun G _h_ev => G.has_constrained_redeemable_witness } }
+  exact (grounded_evidence_consequences W h_sf h_sat).1
 
 /-- Any StructurallyForced system satisfies WorldAwareSystem for any WorldCtx.
 
@@ -384,31 +373,34 @@ theorem grounded_world_and_structure_force_bank_primitives
     (h_fals : ¬HasRedeemability W → Re.externally_falsifiable c_re)
     (h_sat : SatisfiesAllProperties W) :
     containsBankPrimitives W := by
-  apply convergence_structural W _ h_sat
-  apply embedding_to_structurally_forced
-  constructor
-  intro P h
-  cases P
-  · -- scope: disagreement_scope_embed has the exact required type
-    exact disagreement_scope_embed W Rd flat_accept hflat₁ hflat₂ h
-  · -- trust: absent trust bridges, BridgeTrust is constructible from h_trust_all
-    by_cases ht : HasTrustBridges W
-    · exact Or.inl ht
-    · exact Or.inr ⟨Rb.toVerification, h_trust_all ht⟩
-  · -- headers: absent headers, BridgeHeaders is constructible from f_import
-    by_cases hh : HasHeaders W
-    · exact Or.inl hh
-    · exact Or.inr ⟨Ri.toImport, f_import hh, h_unif hh, h_sound hh, h_complete hh⟩
-  · -- revocation: absent revocation, BridgeRevocation uses Rm.toLifecycle + h_rev_escape
-    by_cases hr : HasRevocation W
-    · exact Or.inl hr
-    · exact Or.inr ⟨Rm.toLifecycle hr, n_rev, h_rev_escape hr⟩
-  · -- bank: private_coordination_bank_embed has the exact required type
-    exact private_coordination_bank_embed W Rp shared_deposit h_access₁ h_access₂ h
-  · -- redeemability: absent redeemability, BridgeRedeemability uses Re.toClosed
-    by_cases hre : HasRedeemability W
-    · exact Or.inl hre
-    · exact Or.inr ⟨Re.toClosed hre, c_re, h_endorsed, h_fals hre⟩
+  -- Construct h_sf from the six Represents* scenario witnesses.
+  have h_sf : StructurallyForced W := by
+    apply embedding_to_structurally_forced
+    constructor
+    intro P h
+    cases P
+    · -- scope: disagreement_scope_embed has the exact required type
+      exact disagreement_scope_embed W Rd flat_accept hflat₁ hflat₂ h
+    · -- trust: absent trust bridges, BridgeTrust is constructible from h_trust_all
+      by_cases ht : HasTrustBridges W
+      · exact Or.inl ht
+      · exact Or.inr ⟨Rb.toVerification, h_trust_all ht⟩
+    · -- headers: absent headers, BridgeHeaders is constructible from f_import
+      by_cases hh : HasHeaders W
+      · exact Or.inl hh
+      · exact Or.inr ⟨Ri.toImport, f_import hh, h_unif hh, h_sound hh, h_complete hh⟩
+    · -- revocation: absent revocation, BridgeRevocation uses Rm.toLifecycle + h_rev_escape
+      by_cases hr : HasRevocation W
+      · exact Or.inl hr
+      · exact Or.inr ⟨Rm.toLifecycle hr, n_rev, h_rev_escape hr⟩
+    · -- bank: private_coordination_bank_embed has the exact required type
+      exact private_coordination_bank_embed W Rp shared_deposit h_access₁ h_access₂ h
+    · -- redeemability: absent redeemability, BridgeRedeemability uses Re.toClosed
+      by_cases hre : HasRedeemability W
+      · exact Or.inl hre
+      · exact Or.inr ⟨Re.toClosed hre, c_re, h_endorsed, h_fals hre⟩
+  -- .1 extracts containsBankPrimitives.
+  exact (grounded_evidence_consequences W h_sf h_sat).1
 
 /-- **Headline convergence theorem — bundled form.**
 

@@ -127,22 +127,22 @@ def constraintSpec (c : EnabledConstraintCluster) : ConstraintClusterSpec :=
       match c with
       | .forcing_distributed_agents => {
           statement := ∀ W : WorkingSystem, StructurallyForced W → handles_distributed_agents W → HasBubbles W
-          proof     := fun W sf => sf.forcing .scope }
+          proof     := fun _W sf => sf.forcing .scope }
       | .forcing_bounded_audit => {
           statement := ∀ W : WorkingSystem, StructurallyForced W → handles_bounded_audit W → HasTrustBridges W
-          proof     := fun W sf => sf.forcing .trust }
+          proof     := fun _W sf => sf.forcing .trust }
       | .forcing_export => {
           statement := ∀ W : WorkingSystem, StructurallyForced W → handles_export W → HasHeaders W
-          proof     := fun W sf => sf.forcing .headers }
+          proof     := fun _W sf => sf.forcing .headers }
       | .forcing_adversarial => {
           statement := ∀ W : WorkingSystem, StructurallyForced W → handles_adversarial W → HasRevocation W
-          proof     := fun W sf => sf.forcing .revocation }
+          proof     := fun _W sf => sf.forcing .revocation }
       | .forcing_coordination => {
           statement := ∀ W : WorkingSystem, StructurallyForced W → handles_coordination W → HasBank W
-          proof     := fun W sf => sf.forcing .bank }
+          proof     := fun _W sf => sf.forcing .bank }
       | .forcing_truth => {
           statement := ∀ W : WorkingSystem, StructurallyForced W → handles_truth_pressure W → HasRedeemability W
-          proof     := fun W sf => sf.forcing .redeemability } }
+          proof     := fun _W sf => sf.forcing .redeemability } }
 
 /-- Extract the proof carrier for constraint cluster `c` from `constraintSpec`. -/
 def constraintProof (c : EnabledConstraintCluster) : ConstraintProof := (constraintSpec c).witness
@@ -636,32 +636,32 @@ Usage:  `#check cluster_forcing_distributed_agents`
 /-- Cluster `.forcing_distributed_agents`: distributed agents force HasBubbles. -/
 theorem cluster_forcing_distributed_agents :
     ∀ W : WorkingSystem, StructurallyForced W → handles_distributed_agents W → HasBubbles W :=
-  fun W sf => sf.forcing .scope
+  fun _W sf => sf.forcing .scope
 
 /-- Cluster `.forcing_bounded_audit`: bounded audit forces HasTrustBridges. -/
 theorem cluster_forcing_bounded_audit :
     ∀ W : WorkingSystem, StructurallyForced W → handles_bounded_audit W → HasTrustBridges W :=
-  fun W sf => sf.forcing .trust
+  fun _W sf => sf.forcing .trust
 
 /-- Cluster `.forcing_export`: export-across-boundaries forces HasHeaders. -/
 theorem cluster_forcing_export :
     ∀ W : WorkingSystem, StructurallyForced W → handles_export W → HasHeaders W :=
-  fun W sf => sf.forcing .headers
+  fun _W sf => sf.forcing .headers
 
 /-- Cluster `.forcing_adversarial`: adversarial pressure forces HasRevocation. -/
 theorem cluster_forcing_adversarial :
     ∀ W : WorkingSystem, StructurallyForced W → handles_adversarial W → HasRevocation W :=
-  fun W sf => sf.forcing .revocation
+  fun _W sf => sf.forcing .revocation
 
 /-- Cluster `.forcing_coordination`: coordination need forces HasBank. -/
 theorem cluster_forcing_coordination :
     ∀ W : WorkingSystem, StructurallyForced W → handles_coordination W → HasBank W :=
-  fun W sf => sf.forcing .bank
+  fun _W sf => sf.forcing .bank
 
 /-- Cluster `.forcing_truth`: truth pressure forces HasRedeemability. -/
 theorem cluster_forcing_truth :
     ∀ W : WorkingSystem, StructurallyForced W → handles_truth_pressure W → HasRedeemability W :=
-  fun W sf => sf.forcing .redeemability
+  fun _W sf => sf.forcing .redeemability
 
 -- ── Tier 3 goal transport ────────────────────────────────────────────────
 

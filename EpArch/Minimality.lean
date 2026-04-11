@@ -119,15 +119,19 @@ class Constraints (B : Bank (PropLike := PropLike)
     Bank-like primitives. -/
 structure WorkingSystem where
   /-- The system's architectural specification. -/
-  spec : SystemSpec
-  /-- System has shared records that agents can deposit into. -/
-  has_shared_records : Bool
-  /-- System enables agents to rely on each other's deposits. -/
-  enables_reliance : Bool
-  /-- System can recover from discovered errors (repair loop). -/
-  supports_correction : Bool
-  /-- System resists adversarial injection (counterfeit detection). -/
-  resists_adversaries : Bool
+  spec             : SystemSpec
+  /-- Scope-separation evidence: two distinct acceptance scopes + structural forcing consequence. -/
+  bubbles_ev       : Option GroundedBubblesStrict
+  /-- Trust-bridge evidence: upstream declarations relied on downstream + bridge-forcing consequence. -/
+  bridges_ev       : Option GroundedTrustBridgesStrict
+  /-- Header-preservation evidence: export metadata survives boundary + routing invariant. -/
+  headers_ev       : Option GroundedHeadersStrict
+  /-- Revocation evidence: invalid-and-revocable witness + its existential consequence. -/
+  revocation_ev    : Option GroundedRevocationStrict
+  /-- Shared-ledger evidence: cross-agent entry witness + shared-entry existential. -/
+  bank_ev          : Option GroundedBankStrict
+  /-- Redeemability evidence: constrained claim with audit path + existential consequence. -/
+  redeemability_ev : Option GroundedRedeemabilityStrict
 
 /-! ## Forced Feature Predicates
 
@@ -165,35 +169,35 @@ def HasRedeemability (W : WorkingSystem) : Prop := W.spec.has_redeemability = tr
 These are the functional requirements that working systems must satisfy.
 Each maps to one constraint in the table. -/
 
-/-- System handles distributed agents: no single controller.
+/-- System handles distributed agents: has scope-separation evidence.
     Required when: Distributed agents constraint holds. -/
 def handles_distributed_agents (W : WorkingSystem) : Prop :=
-  W.has_shared_records = true  -- requires some form of shared records
+  W.bubbles_ev.isSome = true
 
-/-- System handles bounded audit: can operate without full verification.
+/-- System handles bounded audit: has trust-bridge evidence.
     Required when: Bounded audit constraint holds. -/
 def handles_bounded_audit (W : WorkingSystem) : Prop :=
-  W.enables_reliance = true  -- can rely without re-verifying
+  W.bridges_ev.isSome = true
 
-/-- System handles export: deposits can cross bubble boundaries.
+/-- System handles export: has header-preservation evidence.
     Required when: Export across boundaries constraint holds. -/
 def handles_export (W : WorkingSystem) : Prop :=
-  W.has_shared_records = true ∧ W.enables_reliance = true  -- records + reliance enables export
+  W.headers_ev.isSome = true
 
-/-- System handles adversarial pressure: survives attacks.
+/-- System handles adversarial pressure: has revocation evidence.
     Required when: Adversarial pressure constraint holds. -/
 def handles_adversarial (W : WorkingSystem) : Prop :=
-  W.supports_correction = true ∧ W.resists_adversaries = true
+  W.revocation_ev.isSome = true
 
-/-- System handles coordination need: enables collective reliance.
+/-- System handles coordination need: has shared-ledger evidence.
     Required when: Coordination need constraint holds. -/
 def handles_coordination (W : WorkingSystem) : Prop :=
-  W.has_shared_records = true ∧ W.enables_reliance = true
+  W.bank_ev.isSome = true
 
-/-- System handles truth pressure: deposits can fail constraint-surface contact.
+/-- System handles truth pressure: has redeemability evidence.
     Required when: Truth pressure constraint holds. -/
 def handles_truth_pressure (W : WorkingSystem) : Prop :=
-  W.supports_correction = true  -- correction implies deposits can fail
+  W.redeemability_ev.isSome = true
 
 
 /-! ## Pressure: The Canonical Dimension Index
@@ -247,6 +251,132 @@ def SatisfiesAllProperties (W : WorkingSystem) : Prop :=
     dimension's forced-feature predicate. -/
 def containsBankPrimitives (W : WorkingSystem) : Prop :=
   ∀ P : Pressure, forced_feature W P
+
+
+/-! ## Constraint Subset and Partial Well-Formedness -/
+
+/-- A subset of the six EpArch operational constraints, represented as a
+    6-boolean vector. `true` = constraint included; `false` = dropped.
+
+    Examples:
+    - `allConstraints`  — all six included (strongest case)
+    - `noConstraints`   — none included (no forcing theorems claimed)
+    - `⟨true, false, false, false, true, false⟩` — only distributed + coordination -/
+structure ConstraintSubset where
+  distributed    : Bool
+  bounded_audit  : Bool
+  export_across  : Bool
+  adversarial    : Bool
+  coordination   : Bool
+  truth_pressure : Bool
+
+/-- The full set of all six constraints. `PartialWellFormed W allConstraints` requires
+    all six biconditionals — the strongest subset. -/
+def allConstraints : ConstraintSubset := ⟨true, true, true, true, true, true⟩
+
+/-- The empty subset. `PartialWellFormed W noConstraints` holds trivially. -/
+def noConstraints : ConstraintSubset := ⟨false, false, false, false, false, false⟩
+
+/-- `PartialWellFormed W S` captures the forcing biconditionals for
+    the constraint subset S.
+
+    For each constraint X:
+    - If `S.X = true`,  the biconditional `handles_X W ↔ HasFeature_X W` is required.
+    - If `S.X = false`, nothing is required for X.
+
+    Requiring all six (S = allConstraints) is the strongest form. -/
+structure PartialWellFormed (W : WorkingSystem) (S : ConstraintSubset) : Prop where
+  wf_distributed    : S.distributed    = true → (handles_distributed_agents W ↔ HasBubbles W)
+  wf_bounded_audit  : S.bounded_audit  = true → (handles_bounded_audit W ↔ HasTrustBridges W)
+  wf_export         : S.export_across  = true → (handles_export W ↔ HasHeaders W)
+  wf_adversarial    : S.adversarial    = true → (handles_adversarial W ↔ HasRevocation W)
+  wf_coordination   : S.coordination   = true → (handles_coordination W ↔ HasBank W)
+  wf_truth_pressure : S.truth_pressure = true → (handles_truth_pressure W ↔ HasRedeemability W)
+
+
+/-! ## Grounded Behavioral Evidence
+
+The six capability witnesses correspond exactly to the six `GroundedX` structures:
+
+| WorkingSystem field  | GroundedXStrict type            | Forcing dimension                                     |
+|----------------------|---------------------------------|-------------------------------------------------------|
+| `bubbles_ev`         | `GroundedBubblesStrict`         | Distributed agents — scope separation                 |
+| `bridges_ev`         | `GroundedTrustBridgesStrict`    | Bounded audit — trust bridges                         |
+| `headers_ev`         | `GroundedHeadersStrict`         | Export across boundaries — header preservation        |
+| `revocation_ev`      | `GroundedRevocationStrict`      | Adversarial pressure — revocation                     |
+| `bank_ev`            | `GroundedBankStrict`            | Coordination need — shared ledger                     |
+| `redeemability_ev`   | `GroundedRedeemabilityStrict`   | Truth pressure — redeemability                        | -/
+
+/-- Evidence for all six behavioral capabilities of a `WorkingSystem`.
+
+    One `GroundedX` field per forcing dimension.  Supplying a `GroundedBehavior`
+    to `withGroundedBehavior` sets each `Option GroundedX` field in `WorkingSystem`
+    to `some`. -/
+structure GroundedBehavior where
+  /-- Scope separation: two acceptance scopes disagree on a witness claim. -/
+  bubbles       : GroundedBubbles
+  /-- Trust bridges: upstream declarations accepted downstream via import. -/
+  trust_bridges : GroundedTrustBridges
+  /-- Header preservation: export metadata survives crossing a boundary. -/
+  headers       : GroundedHeaders
+  /-- Revocation: an invalid-and-revocable witness demonstrably exists. -/
+  revocation    : GroundedRevocation
+  /-- Shared ledger: an entry produced by one agent is consumed by another. -/
+  bank          : GroundedBank
+  /-- Redeemability: a constrained claim has an audit path to truth contact. -/
+  redeemability : GroundedRedeemability
+
+/-- Build a `WorkingSystem` with all six proof-carrying option fields set from evidence. -/
+def WorkingSystem.withGroundedBehavior (B : GroundedBehavior) (base : WorkingSystem) : WorkingSystem :=
+  { base with
+    bubbles_ev       := some B.bubbles.toStrict
+    bridges_ev       := some B.trust_bridges.toStrict
+    headers_ev       := some B.headers.toStrict
+    revocation_ev    := some B.revocation.toStrict
+    bank_ev          := some B.bank.toStrict
+    redeemability_ev := some B.redeemability.toStrict }
+
+/-- A `WorkingSystem` built from `GroundedBehavior` satisfies all six operational
+    properties. -/
+theorem grounded_behavior_satisfies_all (B : GroundedBehavior) (W : WorkingSystem) :
+    SatisfiesAllProperties (WorkingSystem.withGroundedBehavior B W) := by
+  intro P; cases P <;>
+  simp [handles_pressure, handles_distributed_agents, handles_bounded_audit,
+        handles_export, handles_adversarial, handles_coordination,
+        handles_truth_pressure, WorkingSystem.withGroundedBehavior, Option.isSome]
+
+/-- A `WorkingSystem` built from both `GroundedBehavior` and `GroundedSystemSpec`
+    satisfies `PartialWellFormed W allConstraints`.
+
+    Each biconditional pairs `handles_X W` (behavioral, via `withGroundedBehavior`)
+    with `HasX W` (spec flag, via `grounded_spec_contains_all`). -/
+theorem grounded_partial_wellformed (B : GroundedBehavior) (G : GroundedSystemSpec) :
+    PartialWellFormed (WorkingSystem.withGroundedBehavior B
+      { spec             := G.toSystemSpec
+        bubbles_ev       := none
+        bridges_ev       := none
+        headers_ev       := none
+        revocation_ev    := none
+        bank_ev          := none
+        redeemability_ev := none }) allConstraints := {
+  wf_distributed    := fun _ =>
+    ⟨fun _ => (grounded_spec_contains_all G).1,
+     fun _ => rfl⟩
+  wf_bounded_audit  := fun _ =>
+    ⟨fun _ => (grounded_spec_contains_all G).2.1,
+     fun _ => rfl⟩
+  wf_export         := fun _ =>
+    ⟨fun _ => (grounded_spec_contains_all G).2.2.1,
+     fun _ => rfl⟩
+  wf_adversarial    := fun _ =>
+    ⟨fun _ => (grounded_spec_contains_all G).2.2.2.1,
+     fun _ => rfl⟩
+  wf_coordination   := fun _ =>
+    ⟨fun _ => (grounded_spec_contains_all G).2.2.2.2.1,
+     fun _ => rfl⟩
+  wf_truth_pressure := fun _ =>
+    ⟨fun _ => (grounded_spec_contains_all G).2.2.2.2.2,
+     fun _ => rfl⟩ }
 
 
 /-! ## Global Impossibility and Convergence -/
@@ -1256,6 +1386,125 @@ theorem soft_falsifiability_not_hard_forced :
 theorem partial_contestation_hard_forced (M : PartialContestation) :
     ¬∃ c, M.endorsed c ∧ M.externally_falsifiable c :=
   partial_contestation_closed_on_endorsed M
+
+
+/-! ## §7. GroundedX ↔ Impossibility Bridges
+
+Each `GroundedX` structure is isomorphic to the *input* of the corresponding
+impossibility theorem (§1–§6).  These bridge theorems make the connection
+explicit: given any `GroundedX` witness, the matching impossibility result fires.
+
+`GroundedXStrict` packages the base evidence with its impossibility consequence —
+the non-trivial `Prop` that falls out of the bridge.
+
+**Relation to WorkingSystem.**  `WorkingSystem` carries six `Option GroundedXStrict`
+fields.  The `GroundedXStrict` structures are defined in `SystemSpec.lean` (where
+they only depend on `GroundedX` fields).
+
+**Construction convention.**
+- `G.toStrict` — standard path; inline proof from base fields (in `SystemSpec.lean`,
+  no dependency on the named theorems here).  Used by `withGroundedBehavior`,
+  `ConcreteWorkingSystem`, and `PartialGroundedSpec.toWorkingSystem`.
+- `GroundedXStrict.mk' G` — thin alias: `mk' G := G.toStrict`.  Kept as the
+  canonical citation-facing constructor; call it when you want the named-proof
+  route to appear in a proof term without inlining the derivation.
+- Named bridge theorems (`groundedBubbles_flat_impossible`, etc.) — available for
+  direct citation when a proof must explicitly invoke the structural impossibility.
+  No longer called by `mk'`, but remain at module scope for that purpose. -/
+
+
+/-! ### §7.1  Bubbles ↔ AgentDisagreement -/
+
+/-- Convert `GroundedBubbles` to `AgentDisagreement`: the two scope resolvers
+    play the role of the two disagreeing agents. -/
+def groundedBubbles_to_disagreement (G : GroundedBubbles) : AgentDisagreement where
+  Claim          := G.Claim
+  accept₁        := G.scope₁
+  accept₂        := G.scope₂
+  witness        := G.witness
+  agent1_accepts := G.scope₁_accepts
+  agent2_rejects := G.scope₂_rejects
+
+/-- No flat resolver can faithfully represent both scopes.
+    Invokes `flat_scope_impossible` via the bridge conversion. -/
+theorem groundedBubbles_flat_impossible (G : GroundedBubbles) :
+    ¬∃ (f : G.Claim → Prop), (∀ c, f c ↔ G.scope₁ c) ∧ (∀ c, f c ↔ G.scope₂ c) :=
+  flat_scope_impossible (groundedBubbles_to_disagreement G)
+
+/-- Thin alias for `G.toStrict`.  Cite `groundedBubbles_flat_impossible` directly
+    when a proof must explicitly name the impossibility route. -/
+def GroundedBubblesStrict.mk' (G : GroundedBubbles) : GroundedBubblesStrict := G.toStrict
+
+
+/-! ### §7.2  TrustBridges: re-verify-only policy cannot exclude the bridge witness -/
+
+/-- A re-verify-only policy (downstream accepts only what it locally verified) is
+    inconsistent with a trust bridge: the bridge delivers the witness downstream
+    without local re-verification. -/
+theorem groundedTrustBridges_bridge_necessary (G : GroundedTrustBridges)
+    (locally_verified : G.Declaration → Prop)
+    (only_local      : ∀ d, G.downstream_accepts d → locally_verified d)
+    (not_local       : ¬locally_verified G.witness) : False :=
+  not_local (only_local G.witness G.downstream_via_bridge)
+
+/-- Thin alias for `G.toStrict`.  Cite `groundedTrustBridges_bridge_necessary` directly
+    when a proof must explicitly name the impossibility route. -/
+def GroundedTrustBridgesStrict.mk' (G : GroundedTrustBridges) : GroundedTrustBridgesStrict :=
+  G.toStrict
+
+
+/-! ### §7.3  Headers: header preservation implies routing invariance -/
+
+/-- A header-based router cannot distinguish the witness from its exported form.
+    Any routing decision on the original is preserved after export. -/
+theorem groundedHeaders_router_consistent (G : GroundedHeaders) (router : G.Header → Bool) :
+    router (G.extract G.witness) = router (G.extract (G.export_datum G.witness)) :=
+  congrArg router G.header_preserved.symm
+
+/-- Thin alias for `G.toStrict`.  Cite `groundedHeaders_router_consistent` directly
+    when a proof must explicitly name the routing-invariance route. -/
+def GroundedHeadersStrict.mk' (G : GroundedHeaders) : GroundedHeadersStrict := G.toStrict
+
+
+/-! ### §7.4  Revocation: no-revocation policy fails at the invalid-but-revocable witness -/
+
+/-- A no-revocation policy (every revocable claim is valid) is refuted:
+    the witness is revocable (`can_revoke`) but demonstrably invalid (`witness_is_invalid`). -/
+theorem groundedRevocation_no_revocation_incorrect (G : GroundedRevocation)
+    (no_revoc : ∀ c, G.revocable c → G.valid c) : False :=
+  G.witness_is_invalid (no_revoc G.witness G.can_revoke)
+
+/-- Thin alias for `G.toStrict`.  Cite `groundedRevocation_no_revocation_incorrect`
+    directly when a proof must explicitly name the impossibility route. -/
+def GroundedRevocationStrict.mk' (G : GroundedRevocation) : GroundedRevocationStrict :=
+  G.toStrict
+
+
+/-! ### §7.5  Bank: isolation assumption is contradicted by the shared entry -/
+
+/-- An isolation assumption (no entry simultaneously accessible to both agents) is
+    contradicted by the shared bank witness. -/
+theorem groundedBank_refutes_isolation (G : GroundedBank)
+    (iso : ∀ e : G.Entry, G.agent₁_produces e → ¬G.agent₂_consumes e) : False :=
+  iso G.witness G.produced G.consumed
+
+/-- Thin alias for `G.toStrict`.  Cite `groundedBank_refutes_isolation` directly
+    when a proof must explicitly name the isolation-refutation route. -/
+def GroundedBankStrict.mk' (G : GroundedBank) : GroundedBankStrict := G.toStrict
+
+
+/-! ### §7.6  Redeemability: closure assumption contradicted by constrained-and-redeemable witness -/
+
+/-- A closure assumption (no constrained claim has an external redeemability path) is
+    contradicted by the grounded witness. -/
+theorem groundedRedeemability_refutes_closure (G : GroundedRedeemability)
+    (closed : ∀ c : G.Claim, G.constrained c → ¬G.redeemable c) : False :=
+  closed G.witness G.is_constrained G.has_path
+
+/-- Thin alias for `G.toStrict`.  Cite `groundedRedeemability_refutes_closure` directly
+    when a proof must explicitly name the closure-refutation route. -/
+def GroundedRedeemabilityStrict.mk' (G : GroundedRedeemability) : GroundedRedeemabilityStrict :=
+  G.toStrict
 
 
 end EpArch
