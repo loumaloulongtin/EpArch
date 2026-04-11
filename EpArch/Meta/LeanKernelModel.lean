@@ -288,7 +288,8 @@ def LeanGroundedBubbles : GroundedBubbles where
 
 /-- `LeanGroundedBubbles` with impossibility consequence: no flat resolver can represent
     both the Nat-namespace and Int-namespace scopes simultaneously.
-    Derives `no_flat_resolver` by invoking `flat_scope_impossible`. -/
+    Constructed via `GroundedBubbles.toStrict`; `no_flat_resolver` is derived
+    directly from `LeanGroundedBubbles`'s scope fields. -/
 def LeanGroundedBubblesStrict : GroundedBubblesStrict :=
   GroundedBubblesStrict.mk' LeanGroundedBubbles
 
@@ -507,12 +508,14 @@ def LeanGroundedBehavior : GroundedBehavior where
 
     Built from `LeanGroundedBehavior` and `LeanGroundedSystemSpec.toSystemSpec` via
     `WorkingSystem.withGroundedBehavior`.
-    | WorkingSystem flag       | Evidence                                             |
-    |--------------------------|------------------------------------------------------|
-    | `has_shared_records`     | `LeanGroundedBank` (InitDef produced and consumed)   |
-    | `enables_reliance`       | `LeanGroundedTrustBridges` (import trust bridge)     |
-    | `supports_correction`    | `LeanGroundedRevocation` (sorry terms quarantinable) |
-    | `resists_adversaries`    | `LeanGroundedRevocation` (invalid inputs are blocked)| -/
+    | `SystemSpec` feature      | Evidence                                                |
+    |---------------------------|----------------------------------------------------------|
+    | `has_bubbles`             | `LeanGroundedBubbles` (Nat vs Int namespace split)       |
+    | `has_trust_bridges`       | `LeanGroundedTrustBridges` (`import Init` trust bridge)  |
+    | `has_headers`             | `LeanGroundedHeaders` (`Nat.succ` type sig preserved)    |
+    | `has_revocation`          | `LeanGroundedRevocation` (sorry terms quarantinable)     |
+    | `has_bank`                | `LeanGroundedBank` (InitDef produced and consumed)       |
+    | `has_redeemability`       | `LeanGroundedRedeemability` (`#print axioms` path)       | -/
 def LeanWorkingSystem : WorkingSystem :=
   WorkingSystem.withGroundedBehavior LeanGroundedBehavior
     { spec               := LeanGroundedSystemSpec.toSystemSpec
@@ -749,9 +752,10 @@ def lean_grounded_consequences :=
 
     Citability anchor.  Two independent proofs are available in this file:
 
-    - **Direct** (`lean_implements_bank_primitives`): by inspection — each
-      `HasX` field holds because `LeanKernelSystemSpec` sets every feature
-      to `true`.  Does not depend on the convergence theorem.
+    - **Direct** (`lean_implements_bank_primitives`): via
+      `grounded_spec_contains_all LeanGroundedSystemSpec` — each `HasX`
+      proof extracts the matching component of the conjunction; no Boolean
+      flag is inspected directly.  Does not depend on the convergence theorem.
 
     - **Structural** (`lean_structural_convergence`): by necessity — any
       system handling these six operational pressures must have the features.
