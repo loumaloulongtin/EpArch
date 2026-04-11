@@ -508,14 +508,20 @@ def LeanGroundedBehavior : GroundedBehavior where
 
     Built from `LeanGroundedBehavior` and `LeanGroundedSystemSpec.toSystemSpec` via
     `WorkingSystem.withGroundedBehavior`.
-    | `SystemSpec` feature      | Evidence                                                |
-    |---------------------------|----------------------------------------------------------|
-    | `has_bubbles`             | `LeanGroundedBubbles` (Nat vs Int namespace split)       |
-    | `has_trust_bridges`       | `LeanGroundedTrustBridges` (`import Init` trust bridge)  |
-    | `has_headers`             | `LeanGroundedHeaders` (`Nat.succ` type sig preserved)    |
-    | `has_revocation`          | `LeanGroundedRevocation` (sorry terms quarantinable)     |
-    | `has_bank`                | `LeanGroundedBank` (InitDef produced and consumed)       |
-    | `has_redeemability`       | `LeanGroundedRedeemability` (`#print axioms` path)       | -/
+    | `WorkingSystem` evidence field | Stored value                                            |
+    |--------------------------------|---------------------------------------------------------|
+    | `bubbles_ev`                   | `none` (spec flag set via `LeanGroundedSystemSpec`)     |
+    | `bridges_ev`                   | `none` (spec flag set via `LeanGroundedSystemSpec`)     |
+    | `headers_ev`                   | `none` (spec flag set via `LeanGroundedSystemSpec`)     |
+    | `revocation_ev`                | `none` (spec flag set via `LeanGroundedSystemSpec`)     |
+    | `bank_ev`                      | `none` (spec flag set via `LeanGroundedSystemSpec`)     |
+    | `redeemability_ev`             | `none` (spec flag set via `LeanGroundedSystemSpec`)     |
+
+    All six `HasX` predicates are satisfied via `grounded_spec_contains_all
+    LeanGroundedSystemSpec`, which reads the corresponding `SystemSpec` fields
+    (`has_bubble_separation`, `has_trust_bridges`, `preserves_headers`,
+    `has_revocation`, `has_shared_ledger`, `has_redeemability`) set to `true`
+    by `LeanGroundedSystemSpec.toSystemSpec`. -/
 def LeanWorkingSystem : WorkingSystem :=
   WorkingSystem.withGroundedBehavior LeanGroundedBehavior
     { spec               := LeanGroundedSystemSpec.toSystemSpec
@@ -590,8 +596,8 @@ theorem lean_implements_bank_primitives : containsBankPrimitives LeanWorkingSyst
   · exact lean_has_bank
   · exact lean_has_redeemability
 
-/-- `LeanWorkingSystem` is partially well-formed at all constraints: behavioral
-    flags ↔ architectural features.
+/-- `LeanWorkingSystem` is partially well-formed at all constraints: stored
+    evidence fields ↔ architectural features.
 
     Applies `grounded_partial_wellformed`: any system built via
     `withGroundedBehavior`/`toSystemSpec` satisfies `PartialWellFormed W allConstraints`. -/
@@ -602,8 +608,8 @@ theorem lean_partial_wellformed : PartialWellFormed LeanWorkingSystem allConstra
 
     Follows directly from `grounded_behavior_satisfies_all`: any system
     built via `WorkingSystem.withGroundedBehavior` satisfies all six
-    `handles_*` predicates, because the behavioral flags are set to `true`
-    from the evidence in `LeanGroundedBehavior`. -/
+    `handles_*` predicates, because each `Option *_ev.isSome = true`
+    witness is set from the evidence in `LeanGroundedBehavior`. -/
 theorem lean_satisfies_all_properties : SatisfiesAllProperties LeanWorkingSystem :=
   grounded_behavior_satisfies_all LeanGroundedBehavior _
 
