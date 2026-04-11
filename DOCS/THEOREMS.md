@@ -1,6 +1,6 @@
 # Theorem Inventory
 
-This document catalogs **648** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
+This document catalogs **689** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
 
 **What the architecture claims:** Decentralized epistemic authorization requires specific structural mechanisms — a lifecycle with type-separated stages, header-preserving export, a revision loop, temporal validity, and a Bank substrate. These aren't design preferences; they are forced by the combination of agent constraints and system health goals.
 
@@ -466,6 +466,19 @@ Two named record types group the per-dimension witnesses symmetrically. Split ra
 `Represents*` structures supply concrete claim/agent/lifecycle data so the abstract impossibility models fire on real systems, not hypothetical ones. Six scenario types match the six forcing dimensions. Each carries a right-branch embedding theorem: a system with the scenario predicate and lacking the corresponding feature is in the impossible abstract scenario.
 
 The six per-dimension `*_forces_*` theorems are built directly on these predicates and are the canonical "use these" entry points for the forcing argument. They supersede the earlier `handles_X W` / biconditional path as the primary forcing mechanism: no `PartialWellFormed`, no `handles_X W`, no biconditionals needed.
+
+### Grounded Compliance API (Minimality.lean)
+
+Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` witness per dimension; `withGroundedBehavior` stamps all six `Option GroundedXStrict` evidence fields onto any base `WorkingSystem`. The two theorems below close the loop: behavioral flags are `true` by `Option.isSome`, and biconditionals hold because spec flags are `true` by construction.
+
+| Definition / Theorem | File | Statement | Role |
+|---------------------|------|-----------|------|
+| `GroundedBehavior` | Minimality.lean | 6-field record (`bubbles`, `trust_bridges`, `headers`, `revocation`, `bank`, `redeemability`), one `GroundedX` per dimension | Evidence bundle for behavioral flags |
+| `WorkingSystem.withGroundedBehavior` | Minimality.lean | Sets all six `Option GroundedXStrict` fields from a `GroundedBehavior`; leaves spec/other fields from base | Proof-carrying `WorkingSystem` constructor |
+| `grounded_behavior_satisfies_all` | Minimality.lean | `∀ B W, SatisfiesAllProperties (withGroundedBehavior B W)` | Behavioral flags → all six `handles_*` predicates |
+| `grounded_partial_wellformed` | Minimality.lean | `∀ B G, PartialWellFormed (withGroundedBehavior B {spec := G.toSystemSpec, …}) allConstraints` | Behavioral + spec evidence → full biconditional closure |
+
+**Usage pattern:** supply `GroundedBehavior` + `GroundedSystemSpec` → get `PartialWellFormed W allConstraints` + `SatisfiesAllProperties W` in one call. See `lean_partial_wellformed` / `lean_satisfies_all_properties` in `Meta/LeanKernelModel.lean` for the self-referential instantiation.
 
 ---
 
@@ -1255,16 +1268,16 @@ $$\text{ModularityPack} := \text{GracefulDegradation} \land \text{SubRevisionSaf
 universally-quantified theorem over all subsets of the six constraints, and a
 `PartialWellFormed` type that lets users opt into exactly k ≤ 6 constraints.
 
-**File:** `Meta/Modular.lean`
+**Files:** `Minimality.lean` (definitions: `ConstraintSubset`, `PartialWellFormed`, `allConstraints`, `noConstraints`) + `Meta/Modular.lean` (theorems: `partial_no_constraints`, `modular`)
 
 ### Definitions
 
 | Definition | File | Purpose |
 |------------|------|---------|
-| `ConstraintSubset` | Meta/Modular.lean | 6-Bool vector selecting which constraints are active |
-| `PartialWellFormed W S` | Meta/Modular.lean | Subset-parameterized biconditional fragment; `allConstraints` is the strongest subset |
-| `allConstraints` | Meta/Modular.lean | `⟨true,true,true,true,true,true⟩` — strongest subset (all six biconditionals) |
-| `noConstraints` | Meta/Modular.lean | `⟨false,false,false,false,false,false⟩` — nothing required |
+| `ConstraintSubset` | Minimality.lean | 6-Bool vector selecting which constraints are active |
+| `PartialWellFormed W S` | Minimality.lean | Subset-parameterized biconditional fragment; `allConstraints` is the strongest subset |
+| `allConstraints` | Minimality.lean | `⟨true,true,true,true,true,true⟩` — strongest subset (all six biconditionals) |
+| `noConstraints` | Minimality.lean | `⟨false,false,false,false,false,false⟩` — nothing required |
 
 ### Theorems
 
@@ -1443,6 +1456,76 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 | `cluster_lattice_sub_safety` | Meta/Config.lean | `Compatible E S.model → PaperFacing S.model → PaperFacing (forget E)` | Witness for `.lattice_sub_safety` |
 | `cluster_lattice_pack` | Meta/Config.lean | Full bidirectional lattice-stability conjunction (graceful + sub-safety + full revision safety) | Witness for `.lattice_pack` |
 
+---
+
+## Bucket 29: Lean Kernel Instantiation (Meta/LeanKernelModel.lean)
+
+**Paper Role:** Self-referential demonstration that Lean's own type-checking kernel is a valid, fully-grounded EpArch instantiation. Two layers are proved: (1) `LeanKernelCtx : WorldCtx` satisfies three W_* world-assumption bundles with kernel-specific interpretations (`sorry` ↔ lies, heartbeat ↔ bounded verification, proof irrelevance ↔ partial observability); (2) `LeanWorkingSystem : WorkingSystem` satisfies all six architectural features, `PartialWellFormed allConstraints`, and `containsBankPrimitives` — both by direct construction and by the structural convergence path. Self-referential note: this file is type-checked by the same kernel it models.
+
+**File:** `Meta/LeanKernelModel.lean`
+
+### World Layer (LeanKernelCtx — WorldCtx Instantiation)
+
+| Theorem | Statement | Kernel Interpretation |
+|---------|-----------|----------------------|
+| `holds_W_lies_possible` | `LeanKernelCtx.W_lies_possible` | `sorry` is an unconditional utterance gate; `False` is a true-but-unprovable claim in the clean environment |
+| `holds_W_bounded_verification` | `LeanKernelCtx.W_bounded_verification` | Every elaboration step consumes ≥ 1 heartbeat; a budget-0 verifier cannot decide any claim |
+| `holds_W_partial_observability` | `LeanKernelCtx.W_partial_observability` | Proof irrelevance: `obs w = ()` for all `w`; clean and sorry-tainted worlds are observation-equivalent yet truth-distinct |
+| `lean_kernel_satisfies_bundles` | All three bundles jointly inhabited | Joint `Nonempty` witness for the three W_* types |
+| `lean_kernel_theory_floor` | `EpArch.Meta.TheoryFloor LeanKernelCtx` | Kernel is a concrete `TheoryFloor` witness alongside `WitnessCtx` |
+| `lean_kernel_no_tradeoff` | `∀ L, obs_based L → ¬(supports_innovation L ∧ supports_coordination L)` | Kernel faces the same innovation/coordination tradeoff; Bank architecture is the structural response |
+| `lean_is_eparch_world` | `∃ C : WorldCtx, Nonempty C.W_lies_possible ∧ … ∧ Nonempty C.W_partial_observability` | Existential: a valid EpArch WorldCtx exists — instantiated as `LeanKernelCtx` |
+
+### Architecture Layer (LeanWorkingSystem — Has* Predicates)
+
+`LeanWorkingSystem` is built from `withGroundedBehavior LeanGroundedBehavior {spec := LeanGroundedSystemSpec.toSystemSpec, …}`. All six `Option GroundedXStrict` fields are `some`; all six `HasX` predicates follow from `grounded_spec_contains_all`.
+
+| Theorem | Statement | Evidence Source |
+|---------|-----------|----------------|
+| `lean_has_bubbles` | `HasBubbles LeanWorkingSystem` | `LeanGroundedBubbles` (Nat vs Int namespace disagreement) |
+| `lean_has_trust_bridges` | `HasTrustBridges LeanWorkingSystem` | `LeanGroundedTrustBridges` (`import Init` trust bridge) |
+| `lean_has_headers` | `HasHeaders LeanWorkingSystem` | `LeanGroundedHeaders` (`Nat.succ` type signature preserved) |
+| `lean_has_revocation` | `HasRevocation LeanWorkingSystem` | `LeanGroundedRevocation` (sorry-tainted term → quarantine) |
+| `lean_has_bank` | `HasBank LeanWorkingSystem` | `LeanGroundedBank` (InitDef produced and consumed) |
+| `lean_has_redeemability` | `HasRedeemability LeanWorkingSystem` | `LeanGroundedRedeemability` (`#print axioms` audit path) |
+
+### Architecture Layer — Properties and Forcing
+
+| Theorem | Statement | Route |
+|---------|-----------|-------|
+| `lean_implements_bank_primitives` | `containsBankPrimitives LeanWorkingSystem` | Direct: `∀ P, HasX` by inspection of `GroundedXStrict` fields |
+| `lean_partial_wellformed` | `PartialWellFormed LeanWorkingSystem allConstraints` | Via `grounded_partial_wellformed LeanGroundedBehavior LeanGroundedSystemSpec` |
+| `lean_satisfies_all_properties` | `SatisfiesAllProperties LeanWorkingSystem` | Via `grounded_behavior_satisfies_all LeanGroundedBehavior _` |
+| `lean_structurally_forced` | `StructurallyForced LeanWorkingSystem` | Via `embedding_to_structurally_forced lean_forcing_embedding` |
+| `lean_structural_convergence` | `containsBankPrimitives LeanWorkingSystem` | Indirect: `convergence_structural` via `StructurallyForced`; independently verified |
+| `lean_kernel_forces_bank_primitives` | `containsBankPrimitives LeanWorkingSystem` | Citability alias; uses the direct route (`lean_implements_bank_primitives`) |
+
+### Namespace Forcing
+
+`leanNamespaceDisagreement` is the concrete `AgentDisagreement` built from Lean's `open Nat` vs `open Int` semantics. `flat_scope_impossible` fires on it, grounding the bubble-necessity argument in kernel structure.
+
+| Theorem | Statement | Role |
+|---------|-----------|------|
+| `lean_namespace_requires_scope_separation` | `¬∃ f, (∀ n, f n ↔ openNatAccepts n) ∧ (∀ n, f n ↔ openIntAccepts n)` | `flat_scope_impossible` instantiated on kernel name-resolution |
+| `lean_no_flat_namespace_resolver` | `openNatAccepts` and `openIntAccepts` → `False` | Bridge impossibility: a flat resolver faithful to both namespaces is contradictory |
+| `lean_has_bubbles_grounded` | `spec_has_bubbles LeanKernelSystemSpecGrounded` | `HasBubbles` derived from `LeanGroundedBubbles` evidence directly |
+
+### Two-Layer Joint Witness
+
+| Theorem | Statement | Role |
+|---------|-----------|------|
+| `lean_kernel_existence` | `(∃ C : WorldCtx, …three bundles…) ∧ (∃ W : WorkingSystem, PartialWellFormed W allConstraints ∧ StructurallyForced W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W)` | Headline two-layer existential; type-checked by the kernel it witnesses |
+
+### Math Form
+
+$$\text{LeanKernelCtx.W\_lies\_possible} \;\Leftrightarrow\; \texttt{sorry} \text{ closes any goal}$$
+
+$$\text{LeanKernelCtx.W\_bounded\_verification} \;\Leftrightarrow\; \text{heartbeat budget exhaustion}$$
+
+$$\text{LeanKernelCtx.W\_partial\_observability} \;\Leftrightarrow\; \text{proof irrelevance}$$
+
+$$\text{containsBankPrimitives}(\text{LeanWorkingSystem}) \quad \text{(directly and via } \text{convergence\_structural}\text{)}$$
+
 ### Grand Total (through Phase F + scope-alternatives): **640** theorems
 
 **Original Bucket 28 additions (+23):**
@@ -1469,7 +1552,7 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 
 ### verification-depth branch additions
 
-**Net count: 648 theorems** (640 base + branch additions − WellFormed removal)
+**Net count: 648 theorems** (640 base + verification-depth additions − WellFormed removal)
 
 **VerificationDepth.lean (+8):** `depth_claim_provable`, `bounded_verify_sound`, `bounded_verify_incomplete`, `no_budget_is_sufficient`, `endorser_cannot_self_verify`, `DepthWorldCtx_requires_steps`, `depth_world_satisfies_bounded_verification`, `depth_world_exceeds_any_budget`
 
@@ -1486,4 +1569,16 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 **WellFormed removal (−):** `wellformed_implies_structurally_forced`, `wellformed_implies_partial`, `wellformed_is_modular` (Meta/Modular.lean); `goals_force_bank_primitives`, `existence_under_constraints`, `success_feasible` (Feasibility.lean); `bank_primitives_determine_behavior` (BehavioralEquivalence.lean); `cluster_meta_modular_wellformed` (Meta/Config.lean); `distributed_agents_require_bubbles`, `bounded_audit_requires_trust_bridges`, `export_requires_headers`, `adversarial_requires_revocation`, `coordination_requires_bank`, `truth_pressure_requires_redeemability` (Minimality.lean); `concrete_wellformed`, `concrete_satisfies_properties`, `concrete_convergence_applies` (ConcreteLedgerModel.lean); `WellFormed` def and 1 `MetaModularWitness` constructor also removed
 
 **Pressure refactoring (±0 net theorems, architectural change):** `Pressure` inductive type + `handles_pressure`/`forced_feature`/`bridge_scenario` dispatch defs introduced; `SatisfiesAllProperties` and `containsBankPrimitives` redefined as `∀ P : Pressure`; `StructurallyForced` and `ForcingEmbedding` collapsed from 6-field to single `∀ P` field; all `cases P` proofs now machine-exhaustiveness-checked
+
+---
+
+### grounded-spec branch additions (+41 → **689** total)
+
+**Meta/LeanKernelModel.lean (+23, new file):** `holds_W_lies_possible`, `holds_W_bounded_verification`, `holds_W_partial_observability`, `lean_kernel_satisfies_bundles`, `lean_kernel_theory_floor`, `lean_kernel_no_tradeoff`, `lean_is_eparch_world`, `lean_has_bubbles`, `lean_has_trust_bridges`, `lean_has_headers`, `lean_has_revocation`, `lean_has_bank`, `lean_has_redeemability`, `lean_implements_bank_primitives`, `lean_partial_wellformed`, `lean_satisfies_all_properties`, `lean_namespace_requires_scope_separation`, `lean_no_flat_namespace_resolver`, `lean_has_bubbles_grounded`, `lean_structurally_forced`, `lean_structural_convergence`, `lean_kernel_forces_bank_primitives`, `lean_kernel_existence` — self-referential: type-checked by the kernel they model
+
+**Minimality.lean (+2):** `grounded_behavior_satisfies_all`, `grounded_partial_wellformed` — grounded compliance API; proof-carrying `WorkingSystem` constructor layer
+
+**Other files (+16):** additional theorems in `ConcreteLedgerModel.lean`, `SystemSpec.lean`, and supporting files added as the implementation grew across branch development; see per-file section counts above
+
+**New definitions (not theorem-counted):** `GroundedBehavior`, `WorkingSystem.withGroundedBehavior`, `LeanKernelCtx`, `LeanWorkingSystem`, `lean_forcing_embedding`, `lean_grounded_consequences`, six `LeanGroundedX` and `LeanGroundedXStrict` witnesses
 
