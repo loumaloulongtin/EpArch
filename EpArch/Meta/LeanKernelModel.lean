@@ -507,15 +507,20 @@ def LeanGroundedBehavior : GroundedBehavior where
 /-- `LeanWorkingSystem`: the Lean kernel modeled as an EpArch `WorkingSystem`.
 
     Built from `LeanGroundedBehavior` and `LeanGroundedSystemSpec.toSystemSpec` via
-    `WorkingSystem.withGroundedBehavior`.
-    | `WorkingSystem` evidence field | Stored value                                            |
+    `WorkingSystem.withGroundedBehavior`.  The base arg passes `none` for all `_ev`
+    fields; `withGroundedBehavior` immediately replaces each with `some G.toStrict`.
+
+    | `WorkingSystem` evidence field | Stored value (set by `withGroundedBehavior`)            |
     |--------------------------------|---------------------------------------------------------|
-    | `bubbles_ev`                   | `none` (spec flag set via `LeanGroundedSystemSpec`)     |
-    | `bridges_ev`                   | `none` (spec flag set via `LeanGroundedSystemSpec`)     |
-    | `headers_ev`                   | `none` (spec flag set via `LeanGroundedSystemSpec`)     |
-    | `revocation_ev`                | `none` (spec flag set via `LeanGroundedSystemSpec`)     |
-    | `bank_ev`                      | `none` (spec flag set via `LeanGroundedSystemSpec`)     |
-    | `redeemability_ev`             | `none` (spec flag set via `LeanGroundedSystemSpec`)     |
+    | `bubbles_ev`                   | `some (LeanGroundedBubbles.toStrict)`                   |
+    | `bridges_ev`                   | `some (LeanGroundedTrustBridges.toStrict)`              |
+    | `headers_ev`                   | `some (LeanGroundedHeaders.toStrict)`                   |
+    | `revocation_ev`                | `some (LeanGroundedRevocation.toStrict)`                |
+    | `bank_ev`                      | `some (LeanGroundedBank.toStrict)`                      |
+    | `redeemability_ev`             | `some (LeanGroundedRedeemability.toStrict)`             |
+
+    Because each `_ev` field is `some`, `Option.isSome = true` and all six
+    `handles_*` predicates hold (`SatisfiesAllProperties`).
 
     All six `HasX` predicates are satisfied via `grounded_spec_contains_all
     LeanGroundedSystemSpec`, which reads the corresponding `SystemSpec` fields
