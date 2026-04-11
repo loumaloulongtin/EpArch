@@ -981,12 +981,10 @@ def concrete_forcing_embedding : ForcingEmbedding ConcreteWorkingSystem where
     | .redeemability => Or.inl concrete_has_redeemability
 
 /-- The concrete model is structurally forced.
-    Unlike the generic `embedding_to_structurally_forced` route, this proof
-    reads the stored `GroundedXStrict` witnesses from `ConcreteWorkingSystem`
-    directly (Gap 2 fix).  Each `evidence` field uses `injection` to bind the
+    Reads the stored `GroundedXStrict` witnesses from `ConcreteWorkingSystem`
+    directly.  Each `evidence` field uses `injection` to bind the
     `some X = some G` hypothesis to the concrete witness, then applies that
-    witness’s impossibility field — making the stored `.toStrict` values
-    load-bearing rather than bypassed by `Or.inl`. -/
+    witness’s impossibility field. -/
 theorem concrete_structurally_forced : StructurallyForced ConcreteWorkingSystem where
   forcing P _ := match P with
     | .scope         => concrete_has_bubbles
@@ -1029,9 +1027,7 @@ theorem concrete_structural_convergence :
     concrete_satisfies_all_properties
 
 /-- Each stored GroundedXStrict witness in ConcreteWorkingSystem satisfies its
-    dimension's structural consequence obligation.  The witnesses are the
-    concX.toStrict values fixed by the injection/subst proof in
-    concrete_structurally_forced. -/
+    dimension's structural consequence obligation. -/
 def concrete_grounded_consequences :=
   grounded_evidence_consequences ConcreteWorkingSystem
     concrete_structurally_forced concrete_satisfies_all_properties
