@@ -391,31 +391,38 @@ theorem grounded_world_and_structure_force_bank_primitives
     (h_fals : ¬HasRedeemability W → Re.externally_falsifiable c_re)
     (h_sat : SatisfiesAllProperties W) :
     containsBankPrimitives W := by
-  apply convergence_structural W _ h_sat
-  apply embedding_to_structurally_forced
-  constructor
-  intro P h
-  cases P
-  · -- scope: disagreement_scope_embed has the exact required type
-    exact disagreement_scope_embed W Rd flat_accept hflat₁ hflat₂ h
-  · -- trust: absent trust bridges, BridgeTrust is constructible from h_trust_all
-    by_cases ht : HasTrustBridges W
-    · exact Or.inl ht
-    · exact Or.inr ⟨Rb.toVerification, h_trust_all ht⟩
-  · -- headers: absent headers, BridgeHeaders is constructible from f_import
-    by_cases hh : HasHeaders W
-    · exact Or.inl hh
-    · exact Or.inr ⟨Ri.toImport, f_import hh, h_unif hh, h_sound hh, h_complete hh⟩
-  · -- revocation: absent revocation, BridgeRevocation uses Rm.toLifecycle + h_rev_escape
-    by_cases hr : HasRevocation W
-    · exact Or.inl hr
-    · exact Or.inr ⟨Rm.toLifecycle hr, n_rev, h_rev_escape hr⟩
-  · -- bank: private_coordination_bank_embed has the exact required type
-    exact private_coordination_bank_embed W Rp shared_deposit h_access₁ h_access₂ h
-  · -- redeemability: absent redeemability, BridgeRedeemability uses Re.toClosed
-    by_cases hre : HasRedeemability W
-    · exact Or.inl hre
-    · exact Or.inr ⟨Re.toClosed hre, c_re, h_endorsed, h_fals hre⟩
+  -- Build StructurallyForced W as a named hypothesis so grounded_evidence_consequences
+  -- can be called explicitly — making EvidenceConsequences load-bearing even for
+  -- abstract W (Gap 2 fix: the generic embedding path now exercises the evidence bundle).
+  have h_sf : StructurallyForced W := by
+    apply embedding_to_structurally_forced
+    constructor
+    intro P h
+    cases P
+    · -- scope: disagreement_scope_embed has the exact required type
+      exact disagreement_scope_embed W Rd flat_accept hflat₁ hflat₂ h
+    · -- trust: absent trust bridges, BridgeTrust is constructible from h_trust_all
+      by_cases ht : HasTrustBridges W
+      · exact Or.inl ht
+      · exact Or.inr ⟨Rb.toVerification, h_trust_all ht⟩
+    · -- headers: absent headers, BridgeHeaders is constructible from f_import
+      by_cases hh : HasHeaders W
+      · exact Or.inl hh
+      · exact Or.inr ⟨Ri.toImport, f_import hh, h_unif hh, h_sound hh, h_complete hh⟩
+    · -- revocation: absent revocation, BridgeRevocation uses Rm.toLifecycle + h_rev_escape
+      by_cases hr : HasRevocation W
+      · exact Or.inl hr
+      · exact Or.inr ⟨Rm.toLifecycle hr, n_rev, h_rev_escape hr⟩
+    · -- bank: private_coordination_bank_embed has the exact required type
+      exact private_coordination_bank_embed W Rp shared_deposit h_access₁ h_access₂ h
+    · -- redeemability: absent redeemability, BridgeRedeemability uses Re.toClosed
+      by_cases hre : HasRedeemability W
+      · exact Or.inl hre
+      · exact Or.inr ⟨Re.toClosed hre, c_re, h_endorsed, h_fals hre⟩
+  -- grounded_evidence_consequences exercises the EvidenceConsequences bundle with
+  -- the actual stored *_ev witnesses extracted via SatisfiesAllProperties.
+  -- .1 extracts containsBankPrimitives (== convergence_structural W h_sf h_sat).
+  exact (grounded_evidence_consequences W h_sf h_sat).1
 
 /-- **Headline convergence theorem — bundled form.**
 

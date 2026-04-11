@@ -259,17 +259,22 @@ structure ForcingEmbedding (W : WorkingSystem) : Prop where
 
     The `evidence` bundle reads proof terms directly from the stored
     `GroundedXStrict` evidence: each consequence is already carried by the
-    value, so each field is trivially `fun G _ => G.consequence`. -/
+    value, so each field is `fun G _h_ev => G.consequence`.  `_h_ev` is named
+    (not `_`) to acknowledge the discarded equality `W.*_ev = some G`; it is
+    structurally redundant here because any `G : GroundedXStrict` self-certifies
+    the consequence by type.  For pinned-evidence proofs that use the stored
+    witness identity, see `concrete_structurally_forced` and
+    `grounded_evidence_consequences`. -/
 theorem embedding_to_structurally_forced (W : WorkingSystem) (E : ForcingEmbedding W) :
     StructurallyForced W where
   forcing P h := (E.embed P h).elim id (fun hb => absurd hb (all_bridges_impossible W P))
   evidence := {
-    scope_consequence         := fun G _ => G.no_flat_resolver
-    trust_consequence         := fun G _ => G.bridge_forces_acceptance
-    headers_consequence       := fun G _ => G.routing_invariant
-    revocation_consequence    := fun G _ => G.has_invalid_revocable_witness
-    bank_consequence          := fun G _ => G.has_shared_entry
-    redeemability_consequence := fun G _ => G.has_constrained_redeemable_witness }
+    scope_consequence         := fun G _h_ev => G.no_flat_resolver
+    trust_consequence         := fun G _h_ev => G.bridge_forces_acceptance
+    headers_consequence       := fun G _h_ev => G.routing_invariant
+    revocation_consequence    := fun G _h_ev => G.has_invalid_revocable_witness
+    bank_consequence          := fun G _h_ev => G.has_shared_entry
+    redeemability_consequence := fun G _h_ev => G.has_constrained_redeemable_witness }
 
 
 /-! ## Scenario Predicates: Enriching WorkingSystems with Structural Content
