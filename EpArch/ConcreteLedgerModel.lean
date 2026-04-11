@@ -1030,7 +1030,9 @@ def noBubblesSpec : SystemSpec where
   has_shared_ledger := true
   has_redeemability := true
 
-/-- Working system that handles all constraints but lacks bubbles. -/
+/-- Working system whose spec lacks bubble separation (`has_bubble_separation = false`).
+    All evidence fields are `none`, so no `handles_*` predicate holds.
+    Used solely as a "no-bubbles spec" witness for `no_bubbles_lacks_bubbles`. -/
 def NoBubblesSystem : WorkingSystem where
   spec             := noBubblesSpec
   bubbles_ev       := none
@@ -1124,7 +1126,9 @@ def noBankSpec : SystemSpec where
   has_shared_ledger := false
   has_redeemability := true
 
-/-- Working system that handles all constraints but lacks a bank. -/
+/-- Working system whose spec lacks a shared ledger (`has_shared_ledger = false`).
+    All evidence fields are `none`, so no `handles_*` predicate holds.
+    Used solely as a "no-bank spec" witness for `no_bank_lacks_bank`. -/
 def NoBankSystem : WorkingSystem where
   spec             := noBankSpec
   bubbles_ev       := none
@@ -1215,7 +1219,9 @@ def noRevocationSpec : SystemSpec where
   has_shared_ledger := true
   has_redeemability := true
 
-/-- Working system that handles all constraints but lacks revocation. -/
+/-- Working system whose spec lacks revocation (`has_revocation = false`).
+    All evidence fields are `none`, so no `handles_*` predicate holds.
+    Used solely as a "no-revocation spec" witness for `no_revocation_lacks_revocation`. -/
 def NoRevocationSystem : WorkingSystem where
   spec             := noRevocationSpec
   bubbles_ev       := none
@@ -1312,7 +1318,9 @@ def noHeadersSpec : SystemSpec where
   has_shared_ledger := true
   has_redeemability := true
 
-/-- Working system that handles all constraints but lacks headers. -/
+/-- Working system whose spec lacks header preservation (`preserves_headers = false`).
+    All evidence fields are `none`, so no `handles_*` predicate holds.
+    Used solely as a "no-headers spec" witness for `no_headers_lacks_headers`. -/
 def NoHeadersSystem : WorkingSystem where
   spec             := noHeadersSpec
   bubbles_ev       := none
@@ -1400,7 +1408,9 @@ def noTrustSpec : SystemSpec where
   has_shared_ledger := true
   has_redeemability := true
 
-/-- Working system that handles all constraints but lacks trust bridges. -/
+/-- Working system whose spec lacks trust bridges (`has_trust_bridges = false`).
+    All evidence fields are `none`, so no `handles_*` predicate holds.
+    Used solely as a "no-trust spec" witness for `no_trust_lacks_trust`. -/
 def NoTrustSystem : WorkingSystem where
   spec             := noTrustSpec
   bubbles_ev       := none
@@ -1486,7 +1496,9 @@ def noRedeemabilitySpec : SystemSpec where
   has_shared_ledger := true
   has_redeemability := false
 
-/-- Working system that handles all constraints but lacks redeemability. -/
+/-- Working system whose spec lacks redeemability (`has_redeemability = false`).
+    All evidence fields are `none`, so no `handles_*` predicate holds.
+    Used solely as a "no-redeemability spec" witness for `no_redeemability_lacks_redeemability`. -/
 def NoRedeemabilitySystem : WorkingSystem where
   spec             := noRedeemabilitySpec
   bubbles_ev       := none
