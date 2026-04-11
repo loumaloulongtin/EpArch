@@ -4,22 +4,27 @@ EpArch/BehavioralEquivalence.lean — Observation-Boundary Equivalence
 Defines the abstract input/observation interface for WorkingSystems and
 proves that any two grounded systems produce identical observations on all inputs.
 
-The observation model is unified with the `Step` relation through a concrete
-operational grounding chain:
+The observation model is tied to the `Step` relation through two distinct proof
+routes that apply to different input constructors:
 
-    GroundedBehavior B  →  ReadyState  →  Step fires  →  observe_step_action
-                                                           = Behavior B i
+  **Step-witness route** (withdraw, challenge, tick):
+    `withdraw_ready_state` / `challenge_ready_state` construct a concrete `CState`
+    from `B`'s evidence (bank, trust_bridges, revocation) and prove the matching
+    `Step` fires from it.  `working_systems_equivalent` then dispatches per input
+    constructor and calls these witnesses directly — so for those three cases the
+    main equivalence theorem *uses* actual `Step` firings, not mere unfolding.
 
-For `WithdrawRequest` and `ChallengeRequest`, `withdraw_ready_state` and
-`challenge_ready_state` construct a concrete `CState` from `B`'s evidence
-(bank, trust_bridges, revocation) and prove the matching `Step` fires from it.
-This makes `working_systems_equivalent` load-bearing through actual `Step`
-witnesses, not mere definitional unfolding.
+  **Definitional route** (export):
+    `ExportRequest` falls back to `behavior_step_consistent`, which is a pure
+    definitional equality.  Export has no full ready-state witness because
+    `header_preserved` is opaque — it operates over abstract types and cannot be
+    reflected into `depositHasHeader` for concrete `Deposit Unit Unit Unit Unit`.
 
-Export remains conditionally grounded (`grounded_export_step`) because
-`header_preserved` is opaque — `GroundedHeaders.header_preserved` operates over
-abstract types and cannot be reflected into `depositHasHeader` for concrete
-`Deposit Unit Unit Unit Unit`.
+`Behavior` is observationally constant over `GroundedBehavior`: outcome depends
+only on input shape, not witness content.  This is a design property of EpArch —
+at the kernel boundary all fully grounded realizers expose the same observable
+success behavior.  The step witnesses ground *why* that state can exist, not a
+richer computational dependence on witness fields.
 
 ## Definitions
 
@@ -42,8 +47,11 @@ abstract types and cannot be reflected into `depositHasHeader` for concrete
 - `challenge_step_fires_and_matches`    — challenge Step fires from ready state + equals Behavior
 - `tick_step_fires_and_matches`         — tick Step fires trivially + equals Behavior
 - `grounded_export_step`               — conditional: export Step fires given header + bridge
-- `working_systems_equivalent`         — all GroundedBehavior values are equivalent; via Step
-- `grounded_behaviors_equivalent`      — same result; direct definitional proof
+- `working_systems_equivalent`         — all GroundedBehavior values are equivalent;
+                                         withdraw/challenge/tick via Step witnesses;
+                                         export via behavior_step_consistent (definitional)
+- `grounded_behaviors_equivalent`      — same result by pure definitional unfolding;
+                                         reveals the depth ceiling of Behavior's constancy
 
 ## Dependencies
 
@@ -424,34 +432,57 @@ end StepBridge
 
 /-- **Any two grounded systems are behaviorally equivalent.**
 
-    Proved through the Step bridge in three steps:
-    1. `withdraw_step_fires_and_matches` / `challenge_step_fires_and_matches` establish
-       that for each grounded system, a concrete ready state exists from which the
-       relevant `Step` fires and whose observable output equals `Behavior B i`.
-    2. Both `B1` and `B2` share the same chain
-         `Behavior B i = observe_step_action (input_to_action i)`,
-       so `Behavior B1 i = Behavior B2 i` follows by transitivity through the
-       common Step-level observation.
-    3. The step-firing witnesses (`withdraw_ready_state`, `challenge_ready_state`) are the
-       load-bearing evidence: they use `B.bank`, `B.trust_bridges`, and `B.revocation`
-       as the structural reason a firing-capable state exists.
+    Dispatches per input constructor.  Three cases go through concrete Step witnesses;
+    one falls back to definitional equality:
 
-    This is genuinely non-trivial: the proof goes through actual `Step` witnesses
-    constructed from `GroundedBehavior` evidence, not through `Option.isSome` flag
-    inspection or bare definitional unfolding. -/
+    - **`WithdrawRequest`** — `withdraw_step_fires_and_matches` (called for both `B1` and `B2`)
+      witnesses a concrete `CState` constructed from `B.bank`/`B.trust_bridges` evidence
+      from which the withdraw `Step` fires.  The proof joins the two observations via
+      `Behavior B1 ... = observe_step_action ... = Behavior B2 ...`.
+
+    - **`ChallengeRequest`** — `challenge_step_fires_and_matches` (called for both) witnesses
+      a state constructed from `B.revocation` evidence.  Same join pattern.
+
+    - **`TimeAdvance`** — `tick_step_fires_and_matches` (called for both) witnesses that
+      tick fires from any state.  Same join pattern.
+
+    - **`ExportRequest`** — `behavior_step_consistent` (definitional).  No full Step witness
+      is available because `header_preserved` is opaque and `depositHasHeader` cannot be
+      derived from `GroundedHeaders` alone for concrete `Deposit Unit Unit Unit Unit`.
+
+    `Behavior` is observationally constant over `GroundedBehavior` (outcome is
+    input-determined once all six features are grounded), so the step witnesses ground
+    *existence* of a firing-capable state, not a differential output. -/
 theorem working_systems_equivalent (B1 B2 : GroundedBehavior) :
-    BehaviorallyEquivalent B1 B2 :=
-  fun i => (behavior_step_consistent B1 i).trans (behavior_step_consistent B2 i).symm
+    BehaviorallyEquivalent B1 B2 := by
+  intro i
+  cases i with
+  | WithdrawRequest a b d =>
+    exact (withdraw_step_fires_and_matches B1 a b d).2.symm.trans
+           (withdraw_step_fires_and_matches B2 a b d).2
+  | ExportRequest src tgt d =>
+    -- No ready-state witness available; header_preserved is opaque.
+    exact (behavior_step_consistent B1 (.ExportRequest src tgt d)).trans
+           (behavior_step_consistent B2 (.ExportRequest src tgt d)).symm
+  | ChallengeRequest c f =>
+    exact (challenge_step_fires_and_matches B1 c f).2.symm.trans
+           (challenge_step_fires_and_matches B2 c f).2
+  | TimeAdvance ticks =>
+    exact ((tick_step_fires_and_matches B1 ticks).2 ticks).symm.trans
+           ((tick_step_fires_and_matches B2 ticks).2 ticks)
 
 /-- **All grounded behaviors are equivalent; direct definitional proof.**
 
-    `Behavior` is constant over `GroundedBehavior` in its output: the observed
-    outcome depends on the input shape alone, not on the specific evidence content.
-    This is a consequence of the EpArch architecture — type-level certification
-    means all six features are present, so all outcomes succeed.
+    This proof does not use any Step witnesses — it reduces by `rfl` on each
+    `Input` constructor.  The fast proof is possible precisely *because* `Behavior`
+    is observationally constant over `GroundedBehavior`: the output is fully
+    determined by the input shape.
 
-    Independent confirmation that `working_systems_equivalent` is not circular:
-    the two proofs arrive at the same result from different directions. -/
+    Comparing with `working_systems_equivalent` reveals the architecture clearly:
+    - `working_systems_equivalent` uses Step witnesses to justify withdraw/challenge/tick;
+      the step-firing capability is the *reason* grounded systems agree, stated operationally.
+    - This theorem skips that justification and goes straight to `rfl`.
+    Both are correct; they make different claims about *why* the equality holds. -/
 theorem grounded_behaviors_equivalent (B1 B2 : GroundedBehavior) :
     BehaviorallyEquivalent B1 B2 :=
   fun i => by cases i <;> rfl
