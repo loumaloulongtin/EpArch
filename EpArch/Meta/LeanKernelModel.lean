@@ -283,8 +283,8 @@ def LeanGroundedBubbles : GroundedBubbles where
   scope₁         := openNatAccepts
   scope₂         := openIntAccepts
   witness        := .natAdd
-  scope₁_accepts := trivial
-  scope₂_rejects := id
+  scope₁_accepts := True.intro
+  scope₂_rejects := fun h => nomatch h
 
 /-- `LeanGroundedBubbles` with impossibility consequence: no flat resolver can represent
     both the Nat-namespace and Int-namespace scopes simultaneously.
@@ -320,8 +320,8 @@ def LeanGroundedTrustBridges : GroundedTrustBridges where
   upstream_accepts      := initDeclarations
   downstream_accepts    := userImportsInit
   witness               := .init
-  upstream_holds        := trivial
-  downstream_via_bridge := trivial
+  upstream_holds        := True.intro
+  downstream_via_bridge := True.intro
 
 /-- `LeanGroundedTrustBridges` with bridge-forcing consequence: any downstream-sound
     policy must accept Init declarations — a re-verify-only policy cannot exclude them. -/
@@ -380,8 +380,8 @@ def LeanGroundedRevocation : GroundedRevocation where
   valid              := leanTermValid
   revocable          := leanTermRevocable
   witness            := .sorryTainted
-  witness_is_invalid := id
-  can_revoke         := trivial
+  witness_is_invalid := fun h => nomatch h
+  can_revoke         := True.intro
 
 /-- `LeanGroundedRevocation` with invalid-revocable existential: `.sorryTainted` is
     demonstrably invalid and revocable, refuting any no-revocation policy. -/
@@ -412,8 +412,8 @@ def LeanGroundedBank : GroundedBank where
   agent₁_produces := initProduces
   agent₂_consumes := userConsumes
   witness         := .initDef
-  produced        := trivial
-  consumed        := trivial
+  produced        := True.intro
+  consumed        := True.intro
 
 /-- `LeanGroundedBank` with shared-entry existential: `.initDef` is produced by Init
     and consumed by the user module, refuting any isolation assumption. -/
@@ -444,8 +444,8 @@ def LeanGroundedRedeemability : GroundedRedeemability where
   constrained    := leanIsConstrained
   redeemable     := leanHasAuditPath
   witness        := .underReview
-  is_constrained := trivial
-  has_path       := trivial
+  is_constrained := True.intro
+  has_path       := True.intro
 
 /-- `LeanGroundedRedeemability` with constrained-and-redeemable existential:
     `.underReview` is constrained and has the `#print axioms` audit path,
@@ -484,20 +484,24 @@ def LeanGroundedSystemSpec : GroundedSystemSpec where
   base          := leanZeroSpec
 
 
-/-- `LeanGroundedBehavior`: evidence for all four behavioral capabilities.
+/-- `LeanGroundedBehavior`: evidence for all six behavioral capabilities,
+    one per architectural forcing dimension.
 
-    The four witnesses reuse evidence already available from the architecture layer:
-    | Behavioral flag        | Evidence reused         | Kernel basis                           |
-    |------------------------|-------------------------|----------------------------------------|
-    | `has_shared_records`   | `LeanGroundedBank`      | InitDef accumulated in Env, consumed   |
-    | `enables_reliance`     | `LeanGroundedTrustBridges` | Init declarations relied on via import |
-    | `supports_correction`  | `LeanGroundedRevocation`| sorry-tainted terms can be quarantined |
-    | `resists_adversaries`  | `LeanGroundedRevocation`| kernel TCB blocks demonstrably invalid | -/
+    | WorkingSystem field  | Evidence                  | Kernel basis                              |
+    |----------------------|---------------------------|-------------------------------------------|
+    | `bubbles_ev`         | `LeanGroundedBubbles`     | Nat vs Int namespaces disagree on `add`   |
+    | `bridges_ev`         | `LeanGroundedTrustBridges`| Init declarations relied on via import    |
+    | `headers_ev`         | `LeanGroundedHeaders`     | Type sig preserved through identity export|
+    | `revocation_ev`      | `LeanGroundedRevocation`  | sorry-tainted terms can be quarantined    |
+    | `bank_ev`            | `LeanGroundedBank`        | InitDef accumulated in Env, consumed      |
+    | `redeemability_ev`   | `LeanGroundedRedeemability`| `#print axioms` provides the audit path  | -/
 def LeanGroundedBehavior : GroundedBehavior where
-  shared_records := LeanGroundedBank
-  reliance       := LeanGroundedTrustBridges
-  correction     := LeanGroundedRevocation
-  adversarial    := LeanGroundedRevocation
+  bubbles       := LeanGroundedBubbles
+  trust_bridges := LeanGroundedTrustBridges
+  headers       := LeanGroundedHeaders
+  revocation    := LeanGroundedRevocation
+  bank          := LeanGroundedBank
+  redeemability := LeanGroundedRedeemability
 
 /-- `LeanWorkingSystem`: the Lean kernel modeled as an EpArch `WorkingSystem`.
 
@@ -514,10 +518,12 @@ def LeanGroundedBehavior : GroundedBehavior where
 def LeanWorkingSystem : WorkingSystem :=
   WorkingSystem.withGroundedBehavior LeanGroundedBehavior
     { spec               := LeanGroundedSystemSpec.toSystemSpec
-      has_shared_records  := false
-      enables_reliance    := false
-      supports_correction := false
-      resists_adversaries := false }
+      bubbles_ev         := none
+      bridges_ev         := none
+      headers_ev         := none
+      revocation_ev      := none
+      bank_ev            := none
+      redeemability_ev   := none }
 
 
 /-! ## Has* Predicates for LeanWorkingSystem -/

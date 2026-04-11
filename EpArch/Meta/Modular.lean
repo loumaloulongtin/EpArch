@@ -170,15 +170,10 @@ structure PartialGroundedSpec (S : ConstraintSubset) where
 /-- Build a `WorkingSystem` from partial evidence.
 
     For each active constraint (S.X = true), the corresponding `GroundedX`
-    evidence is consulted (via `dite`) before the spec flag is set to `true`.
-    For inactive constraints, both the spec flag and the contributing behavioral
-    flag are `false` — no obligation, no unsatisfied proof.
-
-    Behavioral flags are set from the union of constraints that contribute to each:
-    - `has_shared_records`  ← distributed ∨ export_across ∨ coordination
-    - `enables_reliance`    ← bounded_audit ∨ export_across ∨ coordination
-    - `supports_correction` ← adversarial ∨ truth_pressure
-    - `resists_adversaries` ← adversarial -/
+    evidence is consulted (via `dite`) before the spec flag is set to `true`,
+    and the matching `Option GroundedX` field is set to `some evidence`.
+    For inactive constraints, both the spec flag and the option field are
+    `false`/`none` — no obligation, no unsatisfied proof. -/
 def PartialGroundedSpec.toWorkingSystem (S : ConstraintSubset)
     (pgs : PartialGroundedSpec S) : WorkingSystem where
   spec := {
@@ -195,10 +190,12 @@ def PartialGroundedSpec.toWorkingSystem (S : ConstraintSubset)
     has_redeemability     :=
       if h : S.truth_pressure = true then let _ev := pgs.redeemability h; true else false
   }
-  has_shared_records  := S.distributed || S.export_across || S.coordination
-  enables_reliance    := S.bounded_audit || S.export_across || S.coordination
-  supports_correction := S.adversarial || S.truth_pressure
-  resists_adversaries := S.adversarial
+  bubbles_ev       := if h : S.distributed    = true then some (pgs.bubbles h)       else none
+  bridges_ev       := if h : S.bounded_audit  = true then some (pgs.trust_bridges h) else none
+  headers_ev       := if h : S.export_across  = true then some (pgs.headers h)       else none
+  revocation_ev    := if h : S.adversarial    = true then some (pgs.revocation h)    else none
+  bank_ev          := if h : S.coordination   = true then some (pgs.bank h)          else none
+  redeemability_ev := if h : S.truth_pressure = true then some (pgs.redeemability h) else none
 
 
 /-- A `WorkingSystem` built by `toWorkingSystem` satisfies `PartialWellFormed W S`.
@@ -213,17 +210,21 @@ theorem partial_grounded_is_partial_wellformed (S : ConstraintSubset)
     (pgs : PartialGroundedSpec S) :
     PartialWellFormed (PartialGroundedSpec.toWorkingSystem S pgs) S := {
   wf_distributed    := fun h => by
-    simp [handles_distributed_agents, HasBubbles, PartialGroundedSpec.toWorkingSystem, h]
+    simp [handles_distributed_agents, HasBubbles, PartialGroundedSpec.toWorkingSystem, h,
+          Option.isSome]
   wf_bounded_audit  := fun h => by
-    simp [handles_bounded_audit, HasTrustBridges, PartialGroundedSpec.toWorkingSystem, h]
+    simp [handles_bounded_audit, HasTrustBridges, PartialGroundedSpec.toWorkingSystem, h,
+          Option.isSome]
   wf_export         := fun h => by
-    simp [handles_export, HasHeaders, PartialGroundedSpec.toWorkingSystem, h]
+    simp [handles_export, HasHeaders, PartialGroundedSpec.toWorkingSystem, h, Option.isSome]
   wf_adversarial    := fun h => by
-    simp [handles_adversarial, HasRevocation, PartialGroundedSpec.toWorkingSystem, h]
+    simp [handles_adversarial, HasRevocation, PartialGroundedSpec.toWorkingSystem, h,
+          Option.isSome]
   wf_coordination   := fun h => by
-    simp [handles_coordination, HasBank, PartialGroundedSpec.toWorkingSystem, h]
+    simp [handles_coordination, HasBank, PartialGroundedSpec.toWorkingSystem, h, Option.isSome]
   wf_truth_pressure := fun h => by
-    simp [handles_truth_pressure, HasRedeemability, PartialGroundedSpec.toWorkingSystem, h] }
+    simp [handles_truth_pressure, HasRedeemability, PartialGroundedSpec.toWorkingSystem, h,
+          Option.isSome] }
 
 
 /-- **Machine-verified EpArch compliance for a partial constraint profile.**

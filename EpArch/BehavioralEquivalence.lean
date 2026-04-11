@@ -64,22 +64,23 @@ inductive Observation where
 /-! ### Behavior Function -/
 
 /-- The observation produced by a WorkingSystem on a given input.
-    Depends only on the primitive flags: `has_shared_records`, `enables_reliance`,
-    `supports_correction`. Two systems with identical flags produce identical output. -/
+    Depends only on the proof-carrying fields: `bank_ev`, `bridges_ev`,
+    `revocation_ev`.  Two systems with identical `isSome` values produce
+    identical output. -/
 def Behavior (W : WorkingSystem) (i : Input) : Observation :=
   match i with
   | .WithdrawRequest _ _ claim_id =>
-    if W.has_shared_records ∧ W.enables_reliance then
+    if W.bank_ev.isSome && W.bridges_ev.isSome then
       .WithdrawSuccess claim_id
     else
       .WithdrawDenied "missing primitives"
   | .ExportRequest _ target claim_id =>
-    if W.has_shared_records ∧ W.enables_reliance then
+    if W.bank_ev.isSome && W.bridges_ev.isSome then
       .ExportSuccess claim_id target
     else
       .ExportDenied "missing primitives"
   | .ChallengeRequest _ field =>
-    if W.supports_correction then
+    if W.revocation_ev.isSome then
       .ChallengeProcessed s!"challenged field {field}"
     else
       .ChallengeProcessed "no correction support"
@@ -113,48 +114,44 @@ theorem behavioral_equiv_trans (W1 W2 W3 : WorkingSystem) :
   intro h12 h23 i
   exact (h12 i).trans (h23 i)
 
-/-- Systems with identical primitive flags produce identical observations.
-    `Behavior` inspects `has_shared_records`, `enables_reliance`, and `supports_correction`;
-    `resists_adversaries` is carried for completeness but not used by `Behavior`. -/
+/-- Systems with identical proof-carrying field presence produce identical observations.
+    `Behavior` inspects `bank_ev.isSome`, `bridges_ev.isSome`, and `revocation_ev.isSome`. -/
 theorem same_flags_same_behavior (W1 W2 : WorkingSystem)
-    (h_records : W1.has_shared_records = W2.has_shared_records)
-    (h_reliance : W1.enables_reliance = W2.enables_reliance)
-    (h_correction : W1.supports_correction = W2.supports_correction)
-    (_h_adversaries : W1.resists_adversaries = W2.resists_adversaries) :
+    (h_bank    : W1.bank_ev.isSome    = W2.bank_ev.isSome)
+    (h_bridges : W1.bridges_ev.isSome = W2.bridges_ev.isSome)
+    (h_revoc   : W1.revocation_ev.isSome = W2.revocation_ev.isSome) :
     BehaviorallyEquivalent W1 W2 := by
   intro i
   simp [Behavior]
   cases i with
   | WithdrawRequest agent_id bubble_id claim_id =>
-    simp [h_records, h_reliance]
+    simp [h_bank, h_bridges]
   | ExportRequest source target claim_id =>
-    simp [h_records, h_reliance]
+    simp [h_bank, h_bridges]
   | ChallengeRequest claim_id field =>
-    simp [h_correction]
+    simp [h_revoc]
   | TimeAdvance ticks =>
     rfl
 
-/-- `SatisfiesAllProperties` determines the values of all behavioral flags. -/
+/-- `SatisfiesAllProperties` determines the presence of all six proof-carrying fields. -/
 theorem satisfies_all_fixes_flags (W : WorkingSystem) (h : SatisfiesAllProperties W) :
-    W.has_shared_records = true ∧
-    W.enables_reliance = true ∧
-    W.supports_correction = true ∧
-    W.resists_adversaries = true := by
-  have h1 : W.has_shared_records = true := h .scope
-  have h2 : W.enables_reliance = true := h .trust
-  have h4 : W.supports_correction = true ∧ W.resists_adversaries = true := h .revocation
-  exact ⟨h1, h2, h4.1, h4.2⟩
+    W.bubbles_ev.isSome       = true ∧
+    W.bridges_ev.isSome       = true ∧
+    W.headers_ev.isSome       = true ∧
+    W.revocation_ev.isSome    = true ∧
+    W.bank_ev.isSome          = true ∧
+    W.redeemability_ev.isSome = true :=
+  ⟨h .scope, h .trust, h .headers, h .revocation, h .bank, h .redeemability⟩
 
 /-- Any two systems satisfying all properties are behaviorally equivalent. -/
 theorem working_systems_equivalent (W1 W2 : WorkingSystem) :
     SatisfiesAllProperties W1 → SatisfiesAllProperties W2 → BehaviorallyEquivalent W1 W2 := by
   intro h_sat1 h_sat2
-  have ⟨h1_rec, h1_rel, h1_cor, h1_adv⟩ := satisfies_all_fixes_flags W1 h_sat1
-  have ⟨h2_rec, h2_rel, h2_cor, h2_adv⟩ := satisfies_all_fixes_flags W2 h_sat2
+  have ⟨_, h1_bridges, _, h1_revoc, h1_bank, _⟩ := satisfies_all_fixes_flags W1 h_sat1
+  have ⟨_, h2_bridges, _, h2_revoc, h2_bank, _⟩ := satisfies_all_fixes_flags W2 h_sat2
   exact same_flags_same_behavior W1 W2
-    (h1_rec.trans h2_rec.symm)
-    (h1_rel.trans h2_rel.symm)
-    (h1_cor.trans h2_cor.symm)
-    (h1_adv.trans h2_adv.symm)
+    (h1_bank.trans h2_bank.symm)
+    (h1_bridges.trans h2_bridges.symm)
+    (h1_revoc.trans h2_revoc.symm)
 
 end EpArch
