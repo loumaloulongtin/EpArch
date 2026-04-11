@@ -278,21 +278,26 @@ theorem world_assumptions_force_bank_primitives (C : @EpArch.WorldCtx.{0})
     (h_wa : WorldAwareSystem C W)
     (h_sat : SatisfiesAllProperties W) :
     containsBankPrimitives W := by
-  apply convergence_structural W _ h_sat
-  exact { forcing := fun P h => match P with
-          | .scope         => h_wa.2.2.2.1 h
-          | .trust         => h_wa.1 Wv h
-          | .headers       => h_wa.2.2.2.2.1 h
-          | .revocation    => h_wa.2.1 Wl h
-          | .bank          => h_wa.2.2.2.2.2 h
-          | .redeemability => h_wa.2.2.1 Wo h
-          evidence := {
-            scope_consequence         := fun G _ => G.no_flat_resolver
-            trust_consequence         := fun G _ => G.bridge_forces_acceptance
-            headers_consequence       := fun G _ => G.routing_invariant
-            revocation_consequence    := fun G _ => G.has_invalid_revocable_witness
-            bank_consequence          := fun G _ => G.has_shared_entry
-            redeemability_consequence := fun G _ => G.has_constrained_redeemable_witness } }
+  -- Build StructurallyForced W as a named hypothesis so grounded_evidence_consequences
+  -- can be called explicitly — making EvidenceConsequences load-bearing for the
+  -- WorldAwareSystem convergence path (mirrors the fix in
+  -- grounded_world_and_structure_force_bank_primitives).
+  have h_sf : StructurallyForced W :=
+    { forcing := fun P h => match P with
+        | .scope         => h_wa.2.2.2.1 h
+        | .trust         => h_wa.1 Wv h
+        | .headers       => h_wa.2.2.2.2.1 h
+        | .revocation    => h_wa.2.1 Wl h
+        | .bank          => h_wa.2.2.2.2.2 h
+        | .redeemability => h_wa.2.2.1 Wo h
+      evidence := {
+        scope_consequence         := fun G _h_ev => G.no_flat_resolver
+        trust_consequence         := fun G _h_ev => G.bridge_forces_acceptance
+        headers_consequence       := fun G _h_ev => G.routing_invariant
+        revocation_consequence    := fun G _h_ev => G.has_invalid_revocable_witness
+        bank_consequence          := fun G _h_ev => G.has_shared_entry
+        redeemability_consequence := fun G _h_ev => G.has_constrained_redeemable_witness } }
+  exact (grounded_evidence_consequences W h_sf h_sat).1
 
 /-- Any StructurallyForced system satisfies WorldAwareSystem for any WorldCtx.
 
