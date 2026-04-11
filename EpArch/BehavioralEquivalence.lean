@@ -113,17 +113,10 @@ inductive Observation where
     succeed — there is no "missing primitives" fallback path. -/
 def Behavior (_B : GroundedBehavior) (i : Input) : Observation :=
   match i with
-  | .WithdrawRequest _ _ claim_id  =>
-      -- _B.bank evidences the shared ledger; _B.trust_bridges evidences the import chain
-      .WithdrawSuccess claim_id
-  | .ExportRequest _ target claim_id =>
-      -- _B.bank + _B.trust_bridges also cover export
-      .ExportSuccess claim_id target
-  | .ChallengeRequest _ _ =>
-      -- _B.revocation evidences the challenge → quarantine path
-      .ChallengeProcessed "quarantined"
-  | .TimeAdvance _ =>
-      .TimeAdvanced
+  | .WithdrawRequest _ _ claim_id  => .WithdrawSuccess claim_id
+  | .ExportRequest _ target claim_id => .ExportSuccess claim_id target
+  | .ChallengeRequest _ _          => .ChallengeProcessed "quarantined"
+  | .TimeAdvance _                 => .TimeAdvanced
 
 /-! ### Behavioral Equivalence -/
 
@@ -303,8 +296,6 @@ def withdraw_ready_state (B : GroundedBehavior) (a_n b_n d_idx : Nat) :
     , clock        := 0
     , acl_table    := [{ agent := .mk a_n, bubble := .mk b_n, deposit_id := d_idx }]
     , trust_bridges := [] }
-  -- `B.bank` and `B.trust_bridges` ground existence of the ledger and import chain.
-  -- The evidence is what guarantees a state like `s` can coherently exist in the system.
   let _ := B.bank.produced        -- shared ledger entry exists
   let _ := B.trust_bridges.downstream_via_bridge  -- import chain is present
   have h_acl : hasACLPermission s (.mk a_n) (.mk b_n) d_idx :=
@@ -338,7 +329,6 @@ def challenge_ready_state (B : GroundedBehavior) (claim_id : Nat) (field : Strin
     , clock        := 0
     , acl_table    := []
     , trust_bridges := [] }
-  -- `B.revocation` grounds the challenge → quarantine pathway.
   let _ := B.revocation.can_revoke        -- revocation capability exists
   let _ := B.revocation.witness_is_invalid  -- the challenged claim is genuinely invalid
   have h_deposited : isDeposited s 0 :=
@@ -416,7 +406,7 @@ end StepBridge
     witness and pass it to `behavior_from_step`, which structurally consumes it:
 
     - **`WithdrawRequest`** — two witnesses from `(withdraw_ready_state B1/B2 ...).fires`
-      (built from `B.bank`/`B.trust_bridges` evidence).  Each `obtain ⟨_, h⟩` binds `h`;
+      (built from `B.bank`/`B.trust_bridges` evidence).  Each `let ⟨_, h⟩ :=` binds `h`;
       `behavior_from_step _ _ _ _ h` eliminates `h` by `cases h`.
       Chain: `Behavior B1 i = observe_step_action ... = Behavior B2 i` via `.symm.trans`.
 
@@ -430,7 +420,7 @@ end StepBridge
       `GroundedHeaders` for concrete `Deposit Unit Unit Unit Unit`.
 
     **Proof-theoretic status:** for the three grounded cases the step existence (`.fires`)
-    is consumed via `obtain`; the step term is then eliminated by `cases h` inside
+    is consumed via `let ⟨_, h⟩ :=`; the step term is then eliminated by `cases h` inside
     `behavior_from_step`.  The equality is derived *through* the step, not alongside it.
     The observation equality is still definitionally `rfl` independent of firing (ceiling
     of the current action-indexed types), but the step is structurally in the proof term. -/
