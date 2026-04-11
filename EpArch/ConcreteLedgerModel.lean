@@ -1029,10 +1029,9 @@ theorem concrete_structural_convergence :
     concrete_satisfies_all_properties
 
 /-- The concrete model's stored GroundedXStrict witnesses satisfy all six structural
-    consequence obligations — EvidenceConsequences is genuinely load-bearing here
-    (Gap 1 fix: first non-trivial call site for grounded_evidence_consequences).
-    Pinned to the concX.toStrict witnesses in concrete_structurally_forced via
-    injection/subst, so G is the SPECIFIC stored witness, not an arbitrary one. -/
+    consequence obligations.  Pinned to the concX.toStrict witnesses via
+    injection/subst in concrete_structurally_forced, so G is the specific stored
+    witness in each dimension. -/
 def concrete_grounded_consequences :=
   grounded_evidence_consequences ConcreteWorkingSystem
     concrete_structurally_forced concrete_satisfies_all_properties

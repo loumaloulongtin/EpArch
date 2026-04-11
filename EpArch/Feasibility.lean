@@ -278,10 +278,8 @@ theorem world_assumptions_force_bank_primitives (C : @EpArch.WorldCtx.{0})
     (h_wa : WorldAwareSystem C W)
     (h_sat : SatisfiesAllProperties W) :
     containsBankPrimitives W := by
-  -- Build StructurallyForced W as a named hypothesis so grounded_evidence_consequences
-  -- can be called explicitly — making EvidenceConsequences load-bearing for the
-  -- WorldAwareSystem convergence path (mirrors the fix in
-  -- grounded_world_and_structure_force_bank_primitives).
+  -- Name h_sf so grounded_evidence_consequences can be applied directly,
+  -- extracting the stored witnesses via SatisfiesAllProperties.
   have h_sf : StructurallyForced W :=
     { forcing := fun P h => match P with
         | .scope         => h_wa.2.2.2.1 h
@@ -396,9 +394,8 @@ theorem grounded_world_and_structure_force_bank_primitives
     (h_fals : ¬HasRedeemability W → Re.externally_falsifiable c_re)
     (h_sat : SatisfiesAllProperties W) :
     containsBankPrimitives W := by
-  -- Build StructurallyForced W as a named hypothesis so grounded_evidence_consequences
-  -- can be called explicitly — making EvidenceConsequences load-bearing even for
-  -- abstract W (Gap 2 fix: the generic embedding path now exercises the evidence bundle).
+  -- Name h_sf so grounded_evidence_consequences can be applied directly,
+  -- extracting the stored witnesses via SatisfiesAllProperties.
   have h_sf : StructurallyForced W := by
     apply embedding_to_structurally_forced
     constructor
@@ -424,9 +421,7 @@ theorem grounded_world_and_structure_force_bank_primitives
       by_cases hre : HasRedeemability W
       · exact Or.inl hre
       · exact Or.inr ⟨Re.toClosed hre, c_re, h_endorsed, h_fals hre⟩
-  -- grounded_evidence_consequences exercises the EvidenceConsequences bundle with
-  -- the actual stored *_ev witnesses extracted via SatisfiesAllProperties.
-  -- .1 extracts containsBankPrimitives (== convergence_structural W h_sf h_sat).
+  -- .1 extracts containsBankPrimitives.
   exact (grounded_evidence_consequences W h_sf h_sat).1
 
 /-- **Headline convergence theorem — bundled form.**
