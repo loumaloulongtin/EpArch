@@ -253,13 +253,7 @@ def containsBankPrimitives (W : WorkingSystem) : Prop :=
   ∀ P : Pressure, forced_feature W P
 
 
-/-! ## Constraint Subset and Partial Well-Formedness
-
-These definitions live here (in `EpArch`) so that:
-1. `grounded_partial_wellformed` (below) can reference them without a circular import.
-2. `EpArch.Meta.Modular` (which imports this file via `import EpArch.Minimality`) inherits
-   them transitively and can build `projection_valid`, `modular`, `PartialGroundedSpec`, etc.
-   on top, all visible under `open EpArch`. -/
+/-! ## Constraint Subset and Partial Well-Formedness -/
 
 /-- A subset of the six EpArch operational constraints, represented as a
     6-boolean vector. `true` = constraint included; `false` = dropped.
@@ -302,11 +296,6 @@ structure PartialWellFormed (W : WorkingSystem) (S : ConstraintSubset) : Prop wh
 
 /-! ## Grounded Behavioral Evidence
 
-`WorkingSystem` now carries six proof-carrying `Option GroundedX` fields, one per
-architectural forcing dimension.  The same evidence-bridge pattern applies: instead
-of writing `bubbles_ev := some G` by hand, supply a `GroundedBehavior` record and
-let `withGroundedBehavior` set each option to `some`.
-
 The six capability witnesses correspond exactly to the six `GroundedX` structures:
 
 | WorkingSystem field  | GroundedXStrict type            | Forcing dimension                                     |
@@ -322,7 +311,7 @@ The six capability witnesses correspond exactly to the six `GroundedX` structure
 
     One `GroundedX` field per forcing dimension.  Supplying a `GroundedBehavior`
     to `withGroundedBehavior` sets each `Option GroundedX` field in `WorkingSystem`
-    to `some`, replacing the legacy Bool flags with proof-carrying fields. -/
+    to `some`. -/
 structure GroundedBehavior where
   /-- Scope separation: two acceptance scopes disagree on a witness claim. -/
   bubbles       : GroundedBubbles
@@ -337,10 +326,7 @@ structure GroundedBehavior where
   /-- Redeemability: a constrained claim has an audit path to truth contact. -/
   redeemability : GroundedRedeemability
 
-/-- Build a `WorkingSystem` with all six proof-carrying option fields set from evidence.
-
-    Each Option field is set to `some B.field.toStrict`, storing the `GroundedXStrict`
-    record that carries both the base evidence and its structural consequence. -/
+/-- Build a `WorkingSystem` with all six proof-carrying option fields set from evidence. -/
 def WorkingSystem.withGroundedBehavior (B : GroundedBehavior) (base : WorkingSystem) : WorkingSystem :=
   { base with
     bubbles_ev       := some B.bubbles.toStrict
@@ -351,8 +337,7 @@ def WorkingSystem.withGroundedBehavior (B : GroundedBehavior) (base : WorkingSys
     redeemability_ev := some B.redeemability.toStrict }
 
 /-- A `WorkingSystem` built from `GroundedBehavior` satisfies all six operational
-    properties.  The proof unfolds to checking `true = true` after applying
-    `withGroundedBehavior`, but the `true` was set because evidence was supplied. -/
+    properties. -/
 theorem grounded_behavior_satisfies_all (B : GroundedBehavior) (W : WorkingSystem) :
     SatisfiesAllProperties (WorkingSystem.withGroundedBehavior B W) := by
   intro P; cases P <;>
@@ -363,16 +348,8 @@ theorem grounded_behavior_satisfies_all (B : GroundedBehavior) (W : WorkingSyste
 /-- A `WorkingSystem` built from both `GroundedBehavior` and `GroundedSystemSpec`
     satisfies `PartialWellFormed W allConstraints`.
 
-    The six biconditionals pair behavioral evidence (Option fields) with spec flags.
-    `withGroundedBehavior` sets each `Option GroundedX` to `some`, so
-    `W.x_ev.isSome = true` is definitionally true.
-    `GroundedSystemSpec.toSystemSpec` sets each spec Bool flag via the
-    `withGroundedX` chain, so each `HasX W = true` follows from
-    `grounded_spec_contains_all G`.
-
-    Each biconditional direction uses a named theorem rather than opaque `simp`:
-    - Forward (handles → HasX): `(grounded_spec_contains_all G).nth`
-    - Backward (HasX → handles): `rfl` on `(some _).isSome = true` -/
+    Each biconditional pairs `handles_X W` (behavioral, via `withGroundedBehavior`)
+    with `HasX W` (spec flag, via `grounded_spec_contains_all`). -/
 theorem grounded_partial_wellformed (B : GroundedBehavior) (G : GroundedSystemSpec) :
     PartialWellFormed (WorkingSystem.withGroundedBehavior B
       { spec             := G.toSystemSpec

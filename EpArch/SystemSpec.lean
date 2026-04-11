@@ -122,30 +122,15 @@ theorem fullBankSpec_contains_all : containsAllFeatures fullBankSpec := by
 
 /-! ## Grounded Feature Evidence
 
-`SystemSpec` fields are `Bool`.  `HasX` checks `field = true`.  This works
-for consistency witnesses (writing `true` and checking it) but does not
-connect architectural feature claims to domain-level evidence.
+Each `GroundedX` structure witnesses that a system has the corresponding
+architectural feature.  The bridge theorems (`grounded_X_justified`) prove
+that any `SystemSpec` built from a `GroundedX` witness has the matching flag
+set — necessity is derived rather than declared. -/
 
-`GroundedBubbles` is the evidence bridge for scope separation: it witnesses
-that two distinct scoped acceptance functions exist over some claim type,
-making the necessity of scope separation *derived* rather than *declared*.
+/-- Evidence that a system has scope separation.
 
-The bridge theorem `grounded_bubbles_justified` proves:
-  `GroundedBubbles → spec_has_bubbles (withGroundedBubbles G rest)`
-
-so a `SystemSpec` built from evidence is verifiably correct — not just a flag
-asserted true. -/
-
-/-- Evidence that a system genuinely has scope separation.
-
-    A system has bubble-separation if there exist two distinct scoped
-    acceptance functions over some claim type: each function faithfully
-    represents one agent's acceptance regime, and they disagree on at
-    least one claim (the witness).
-
-    This is stronger than `has_bubble_separation := true`: the two
-    resolvers `scope₁` and `scope₂` are explicit witnesses, and their
-    disagreement on `witness` is formally proved. -/
+    Two distinct acceptance functions (`scope₁`, `scope₂`) disagree on at
+    least one witness claim — scope separation is non-vacuously witnessed. -/
 structure GroundedBubbles where
   /-- The claim type the scoped resolvers operate over. -/
   Claim    : Type
@@ -179,10 +164,7 @@ theorem grounded_bubbles_justified (G : GroundedBubbles) (rest : SystemSpec) :
 
 /-- `GroundedBubbles` augmented with its impossibility consequence.
     `no_flat_resolver` states that no flat acceptance function can faithfully
-    represent both scopes simultaneously — scope separation is structurally forced.
-    Proof: a hypothetical flat resolver that agrees with both scopes must accept
-    the witness (via `scope₁`) and also reject it (via `scope₂`), which contradicts
-    `scope₂_rejects`. -/
+    represent both scopes simultaneously — scope separation is structurally forced. -/
 structure GroundedBubblesStrict where
   base             : GroundedBubbles
   no_flat_resolver : ¬∃ (f : base.Claim → Prop),

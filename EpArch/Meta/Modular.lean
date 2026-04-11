@@ -169,11 +169,9 @@ structure PartialGroundedSpec (S : ConstraintSubset) where
 
 /-- Build a `WorkingSystem` from partial evidence.
 
-    For each active constraint (S.X = true), the corresponding `GroundedX`
-    evidence is consulted (via `dite`) before the spec flag is set to `true`,
-    and the matching `Option GroundedX` field is set to `some evidence`.
-    For inactive constraints, both the spec flag and the option field are
-    `false`/`none` — no obligation, no unsatisfied proof. -/
+    Active constraints (S.X = true) set the corresponding spec flag and
+    evidence field from the supplied `GroundedX` value.
+    Inactive constraints leave both `false`/`none`. -/
 def PartialGroundedSpec.toWorkingSystem (S : ConstraintSubset)
     (pgs : PartialGroundedSpec S) : WorkingSystem where
   spec := {
@@ -200,12 +198,8 @@ def PartialGroundedSpec.toWorkingSystem (S : ConstraintSubset)
 
 /-- A `WorkingSystem` built by `toWorkingSystem` satisfies `PartialWellFormed W S`.
 
-    For each active constraint (S.X = true):
-    - Spec flag: the `dite` evaluates to `true` (evidence required in the `then`-branch).
-    - Behavioral flag: the Bool-OR sets it to `true` since `S.X` contributes to the OR.
-    - Both sides of the biconditional equal `true`, so the guarded `↔` holds.
-
-    For inactive constraints (S.X = false): the guard `S.X = true →` is vacuously true. -/
+    Active constraints supply grounded evidence for the live biconditionals;
+    inactive constraints pass vacuously. -/
 theorem partial_grounded_is_partial_wellformed (S : ConstraintSubset)
     (pgs : PartialGroundedSpec S) :
     PartialWellFormed (PartialGroundedSpec.toWorkingSystem S pgs) S := {
@@ -227,22 +221,11 @@ theorem partial_grounded_is_partial_wellformed (S : ConstraintSubset)
           Option.isSome] }
 
 
-/-- **Machine-verified EpArch compliance for a partial constraint profile.**
+/-- EpArch compliance for a partial constraint profile.
 
-    Given `pgs : PartialGroundedSpec S`, this theorem certifies that the system
-    built from the evidence in `pgs` satisfies `projection_valid S W`:
-    for every constraint in S, the architectural forcing implication holds.
-
-    **If this type-checks in your project, your design is EpArch-compliant for S.**
-
-    The proof chain:
-      `PartialGroundedSpec S`            → evidence for active constraints
-            → toWorkingSystem
-      `WorkingSystem`                    → consistent behavioral + spec flags
-            → partial_grounded_is_partial_wellformed
-      `PartialWellFormed W S`            → biconditionals hold for active constraints
-            → modular
-      `projection_valid S W`             → forcing theorems certified -/
+    Given `pgs : PartialGroundedSpec S`, certifies that the system built from `pgs`
+    satisfies `projection_valid S W`: the forcing implication holds for every
+    constraint in S. -/
 theorem partial_modular (S : ConstraintSubset) (pgs : PartialGroundedSpec S) :
     projection_valid S (PartialGroundedSpec.toWorkingSystem S pgs) :=
   modular S _ (partial_grounded_is_partial_wellformed S pgs)
