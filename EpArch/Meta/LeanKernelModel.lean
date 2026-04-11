@@ -760,10 +760,8 @@ theorem lean_structurally_forced : StructurallyForced LeanWorkingSystem :=
 theorem lean_structural_convergence : containsBankPrimitives LeanWorkingSystem :=
   convergence_structural LeanWorkingSystem lean_structurally_forced lean_satisfies_all_properties
 
-/-- The Lean kernel's stored GroundedXStrict witnesses satisfy all six structural
-    consequence obligations.  Each witness is extracted via
-    `cases h_ev : LeanWorkingSystem.*_ev` and constrained to
-    `LeanGroundedBehavior.X.toStrict` through `Option.some.injEq`. -/
+/-- Each stored GroundedXStrict witness in LeanWorkingSystem satisfies its
+    dimension's structural consequence obligation. -/
 def lean_grounded_consequences :=
   grounded_evidence_consequences LeanWorkingSystem
     lean_structurally_forced lean_satisfies_all_properties

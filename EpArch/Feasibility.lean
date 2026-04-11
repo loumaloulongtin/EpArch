@@ -278,8 +278,7 @@ theorem world_assumptions_force_bank_primitives (C : @EpArch.WorldCtx.{0})
     (h_wa : WorldAwareSystem C W)
     (h_sat : SatisfiesAllProperties W) :
     containsBankPrimitives W := by
-  -- Name h_sf so grounded_evidence_consequences can be applied directly,
-  -- extracting the stored witnesses via SatisfiesAllProperties.
+  -- Construct h_sf from the WorldAwareSystem components.
   have h_sf : StructurallyForced W :=
     { forcing := fun P h => match P with
         | .scope         => h_wa.2.2.2.1 h
@@ -394,8 +393,7 @@ theorem grounded_world_and_structure_force_bank_primitives
     (h_fals : ¬HasRedeemability W → Re.externally_falsifiable c_re)
     (h_sat : SatisfiesAllProperties W) :
     containsBankPrimitives W := by
-  -- Name h_sf so grounded_evidence_consequences can be applied directly,
-  -- extracting the stored witnesses via SatisfiesAllProperties.
+  -- Construct h_sf from the six Represents* scenario witnesses.
   have h_sf : StructurallyForced W := by
     apply embedding_to_structurally_forced
     constructor
