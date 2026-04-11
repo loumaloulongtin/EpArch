@@ -791,7 +791,7 @@ theorem lean_kernel_forces_bank_primitives : containsBankPrimitives LeanWorkingS
     - `containsBankPrimitives` — directly: all six `HasX` fields hold by construction;
                                   separately: forced by `lean_structural_convergence`
     - `StructurallyForced`     — six embedding arms all return `Or.inl`
-    - `SatisfiesAllProperties` — all six `handles_*` flags are `true`
+    - `SatisfiesAllProperties` — all six `handles_*` predicates hold via `Option *_ev.isSome = true`
 
     The proof is discharged by the kernel it models. -/
 theorem lean_kernel_existence :
