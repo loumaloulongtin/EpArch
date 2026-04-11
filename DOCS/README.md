@@ -80,6 +80,7 @@ For the full paper-section-to-Lean-artifact mapping (with math notation, A.# lab
 | 26 | Theorem Transport — Main Library Layer (Tier 4 closure: standalone commitments + structural + LTS + health goals) |
 | 27 | Modularity Meta-Theorem — ∀ S ⊆ Constraints, projection_valid S |
 | 28 | Certification Engine — `EpArchConfig → ClusterTag → certified proof` (29 clusters) |
+| 29 | Lean Kernel Instantiation — Lean's type-checking kernel modeled as EpArch-compliant (`LeanKernelCtx`, `LeanWorkingSystem`, 23 theorems) |
 
 ### Key Files
 
@@ -103,6 +104,7 @@ For the full paper-section-to-Lean-artifact mapping (with math notation, A.# lab
 | `Convergence.lean` | `StructurallyForced`, `ForcingEmbedding`, `convergence_structural`, bridge predicates | 0 |
 | `BehavioralEquivalence.lean` | Observation-boundary equivalence; Bank flags determine behavior | 0 |
 | `ConcreteLedgerModel.lean` | Non-vacuity witness (constructive) | 0 |
+| `Meta/LeanKernelModel.lean` | Lean kernel self-application: `LeanKernelCtx`, `LeanWorkingSystem`, world-layer witnesses, architecture-layer proofs, convergence chain | 0 |
 
 ## Build & Verification
 
