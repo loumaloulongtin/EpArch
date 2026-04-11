@@ -6,7 +6,7 @@ Standalone Lean 4 framework for reasoning about bounded epistemic systems under 
 
 [![CI](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml/badge.svg)](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml)
 
-**689 theorems. 0 axiom declarations. 0 sorries.**
+**693 theorems. 0 axiom declarations. 0 sorries.**
 
 ```bash
 lake build   # Lean 4.3.0, no Mathlib
@@ -133,7 +133,7 @@ The framework has three layers:
 | `Minimality.lean` | Structural impossibility models + alternative-architecture dismissals; `Pressure` inductive as canonical dimension index |
 | `Convergence.lean` | `StructurallyForced`, `ForcingEmbedding`, `convergence_structural`, bridge predicates; six per-dimension `*_forces_*` theorems; `SystemOperationalBundle`, `WorldBridgeBundle` |
 | `VerificationDepth.lean` | Kernel-grounded verification depth: `DepthClaim` constructive witness; `bounded_verify` budget decision procedure; `DepthWorldCtx` instantiates `W_bounded_verification` by construction |
-| `BehavioralEquivalence.lean` | Observation-boundary equivalence; `working_systems_equivalent` — any two `SatisfiesAllProperties` systems are behaviorally equivalent |
+| `BehavioralEquivalence.lean` | Observation-boundary equivalence; `working_systems_equivalent` — any two `GroundedBehavior` certificates are behaviorally equivalent (unconditional; no `SatisfiesAllProperties` premise); step-bridge section grounds withdraw/challenge/tick via `ReadyState` witnesses |
 | `Feasibility.lean` | Feasibility witnesses; structural and world-to-structural bridge theorems; `bundled_structure_forces_bank_primitives` (headline: `SystemOperationalBundle` + `WorldBridgeBundle` → `containsBankPrimitives`); `world_assumptions_force_bank_primitives` (W_* bundle path); `kernel_world_forces_bank_primitives` (zero-assumption corollary) |
 | `Health.lean` | Health goal predicates and necessity theorems |
 | `Invariants.lean` | System invariants (grounded operational theorems, 0 axiom declarations) |
