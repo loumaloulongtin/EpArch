@@ -42,16 +42,15 @@ richer computational dependence on witness fields.
 
 - `behavioral_equiv_{refl,symm,trans}`  — equivalence is an equivalence relation
 - `satisfies_all_fixes_flags`           — utility: SatisfiesAllProperties → all *_ev.isSome = true
-- `behavior_step_consistent`            — Behavior B i = observe_step_action (input_to_action i)
-- `withdraw_step_fires_and_matches`     — withdraw Step fires from ready state + equals Behavior
-- `challenge_step_fires_and_matches`    — challenge Step fires from ready state + equals Behavior
-- `tick_step_fires_and_matches`         — tick Step fires trivially + equals Behavior
-- `grounded_export_step`               — conditional: export Step fires given header + bridge
-- `working_systems_equivalent`         — all GroundedBehavior values are equivalent;
-                                         withdraw/challenge/tick via Step witnesses;
-                                         export via behavior_step_consistent (definitional)
-- `grounded_behaviors_equivalent`      — same result by pure definitional unfolding;
-                                         reveals the depth ceiling of Behavior's constancy
+- `behavior_step_consistent`   — Behavior B i = observe_step_action (input_to_action i) (definitional)
+- `behavior_from_step`         — same equality derived by eliminating the Step constructor;
+                                 the proof does `cases i \<;\> cases h`, so the step is structurally
+                                 consumed — removed from the context as the equality is derived
+- `grounded_export_step`       — conditional: export Step fires given header + bridge
+- `working_systems_equivalent` — grounded systems are equivalent; withdraw/challenge/tick cases
+                                 extract a Step from `.fires` and pass it to `behavior_from_step`
+                                 (step structurally consumed); export falls back to definitional
+- `grounded_behaviors_equivalent` — same result by `rfl`; reveals the depth ceiling
 
 ## Dependencies
 
@@ -348,69 +347,50 @@ def challenge_ready_state (B : GroundedBehavior) (claim_id : Nat) (field : Strin
   , fires := ⟨_, .challenge s { P := (), reason := (), evidence := (), suspected := .S }
                   0 h_deposited⟩ }
 
-/-! ### Central Bridge Theorem -/
+/-! ### Definitional Bridge -/
 
-/-- **`Behavior B i = observe_step_action (input_to_action i)` for all `B` and `i`.**
+/-- `Behavior B i = observe_step_action (input_to_action i)` for all `B` and `i`.
 
-    This is the single chain connecting the abstract observation function to the
-    operational `Step` relation.  `Behavior` is not independent of `Step` — it
-    computes exactly what a successful `Step` produces at the observable boundary.
-
-    The proof reduces definitionally on both sides for every constructor of `Input`. -/
+    Definitional equality: both sides reduce to the same constructor on each
+    `Input` arm.  `B` is not inspected — the equality holds for any grounded
+    certificate. -/
 theorem behavior_step_consistent (B : GroundedBehavior) (i : Input) :
     Behavior B i = observe_step_action (input_to_action i) := by
   cases i <;> simp [Behavior, input_to_action, observe_step_action, Bubble.toNat]
 
-/-! ### Step Fires at Ready State -/
+/-! ### Step-Consuming Bridge -/
 
-/-- The withdraw step fires from its ready state, and the resulting observable
-    equals `Behavior B i`.
+/-- If the Step corresponding to `input_to_action i` fires, the observation equals
+    `Behavior B i`.
 
-    This is the load-bearing claim for withdraw: `B.bank` + `B.trust_bridges`
-    ground the existence of a state from which the step genuinely fires, and the
-    step's observable output equals the abstract `Behavior` prediction.
+    **Proof structure:** `cases i` pins the action; `cases h` then *eliminates the
+    Step constructor* — `h` is removed from the context and the goal reduces to `rfl`
+    in each branch.  This is structurally stronger than `behavior_step_consistent`:
+    the equality is derived *by* consuming the step, not independently of it.
 
-    `withdraw_ready_state B a_n b_n d_idx` is the state constructed from `B`'s
-    bank and trust-bridge evidence. -/
-theorem withdraw_step_fires_and_matches (B : GroundedBehavior) (a_n b_n d_idx : Nat) :
-    let r := withdraw_ready_state B a_n b_n d_idx
-    (∃ s' : CState, Step (Reason := Unit) (Evidence := Unit)
-      r.state (input_to_action (.WithdrawRequest a_n b_n d_idx)) s') ∧
-    observe_step_action (input_to_action (.WithdrawRequest a_n b_n d_idx)) =
-    Behavior B (.WithdrawRequest a_n b_n d_idx) := by
-  constructor
-  · exact (withdraw_ready_state B a_n b_n d_idx).fires
-  · simp [observe_step_action, input_to_action, Behavior]
-
-/-- The challenge step fires from its ready state, and the resulting observable
-    equals `Behavior B i`.
-
-    This is the load-bearing claim for challenge: `B.revocation` grounds the
-    existence of a state with a challengeable deposit, and the step's observable
-    output equals the abstract `Behavior` prediction. -/
-theorem challenge_step_fires_and_matches (B : GroundedBehavior) (c : Nat) (f : String) :
-    let r := challenge_ready_state B c f
-    (∃ s' : CState, Step (Reason := Unit) (Evidence := Unit)
-      r.state (input_to_action (.ChallengeRequest c f)) s') ∧
-    observe_step_action (input_to_action (.ChallengeRequest c f)) =
-    Behavior B (.ChallengeRequest c f) := by
-  constructor
-  · exact (challenge_ready_state B c f).fires
-  · simp [observe_step_action, input_to_action, Behavior]
-
-/-- The tick step fires trivially, and the resulting observable
-    equals `Behavior B (.TimeAdvance ticks)`.
-
-    `Tick` has no preconditions — any `CState` is a ready state for tick. -/
-theorem tick_step_fires_and_matches (B : GroundedBehavior) (ticks : Nat) :
-    (∃ (s : CState) (s' : CState), Step (Reason := Unit) (Evidence := Unit)
-      s (input_to_action (.TimeAdvance ticks)) s') ∧
-    ∀ ticks' : Nat,
-      observe_step_action (input_to_action (.TimeAdvance ticks')) =
-      Behavior B (.TimeAdvance ticks') := by
-  refine ⟨⟨{ ledger := [], bubbles := [], clock := 0, acl_table := [], trust_bridges := [] },
-           _, .tick _ 1⟩, ?_⟩
-  intro _; simp [observe_step_action, input_to_action, Behavior]
+    **Ceiling note:** the equality `observe_step_action (input_to_action i) = Behavior B i`
+    is definitionally `rfl` regardless of whether a Step fires, because both sides are
+    indexed on the *action*, not on the step's output state.  Structural consumption via
+    `cases h` is the maximum achievable dependency given the current type definitions. -/
+theorem behavior_from_step (B : GroundedBehavior) (i : Input) (s s' : CState)
+    (h : Step (Reason := Unit) (Evidence := Unit) s (input_to_action i) s') :
+    observe_step_action (input_to_action i) = Behavior B i := by
+  cases i with
+  | WithdrawRequest a b d =>
+    simp only [input_to_action] at h ⊢
+    cases h
+    simp [observe_step_action, Behavior]
+  | ExportRequest src tgt d =>
+    simp only [input_to_action] at h ⊢
+    cases h <;> simp [observe_step_action, Behavior, Bubble.toNat]
+  | ChallengeRequest c f =>
+    simp only [input_to_action] at h ⊢
+    cases h
+    simp [observe_step_action, Behavior]
+  | TimeAdvance ticks =>
+    simp only [input_to_action] at h ⊢
+    cases h
+    simp [observe_step_action, Behavior]
 
 /-- Export step fires conditionally, given header evidence and a trust bridge.
     `depositHasHeader` is required explicitly because `header_preserved` is opaque
@@ -432,44 +412,50 @@ end StepBridge
 
 /-- **Any two grounded systems are behaviorally equivalent.**
 
-    Dispatches per input constructor.  Three cases go through concrete Step witnesses;
-    one falls back to definitional equality:
+    Dispatches per input constructor.  Three cases extract a concrete Step firing
+    witness and pass it to `behavior_from_step`, which structurally consumes it:
 
-    - **`WithdrawRequest`** — `withdraw_step_fires_and_matches` (called for both `B1` and `B2`)
-      witnesses a concrete `CState` constructed from `B.bank`/`B.trust_bridges` evidence
-      from which the withdraw `Step` fires.  The proof joins the two observations via
-      `Behavior B1 ... = observe_step_action ... = Behavior B2 ...`.
+    - **`WithdrawRequest`** — two witnesses from `(withdraw_ready_state B1/B2 ...).fires`
+      (built from `B.bank`/`B.trust_bridges` evidence).  Each `obtain ⟨_, h⟩` binds `h`;
+      `behavior_from_step _ _ _ _ h` eliminates `h` by `cases h`.
+      Chain: `Behavior B1 i = observe_step_action ... = Behavior B2 i` via `.symm.trans`.
 
-    - **`ChallengeRequest`** — `challenge_step_fires_and_matches` (called for both) witnesses
-      a state constructed from `B.revocation` evidence.  Same join pattern.
+    - **`ChallengeRequest`** — same pattern with `challenge_ready_state` / `B.revocation`.
 
-    - **`TimeAdvance`** — `tick_step_fires_and_matches` (called for both) witnesses that
-      tick fires from any state.  Same join pattern.
+    - **`TimeAdvance`** — tick has no preconditions; a single concrete step is constructed
+      inline and passed to `behavior_from_step` for both `B1` and `B2`.
 
-    - **`ExportRequest`** — `behavior_step_consistent` (definitional).  No full Step witness
-      is available because `header_preserved` is opaque and `depositHasHeader` cannot be
-      derived from `GroundedHeaders` alone for concrete `Deposit Unit Unit Unit Unit`.
+    - **`ExportRequest`** — falls back to `behavior_step_consistent` (definitional).
+      `header_preserved` is opaque so `depositHasHeader` cannot be derived from
+      `GroundedHeaders` for concrete `Deposit Unit Unit Unit Unit`.
 
-    `Behavior` is observationally constant over `GroundedBehavior` (outcome is
-    input-determined once all six features are grounded), so the step witnesses ground
-    *existence* of a firing-capable state, not a differential output. -/
+    **Proof-theoretic status:** for the three grounded cases the step existence (`.fires`)
+    is consumed via `obtain`; the step term is then eliminated by `cases h` inside
+    `behavior_from_step`.  The equality is derived *through* the step, not alongside it.
+    The observation equality is still definitionally `rfl` independent of firing (ceiling
+    of the current action-indexed types), but the step is structurally in the proof term. -/
 theorem working_systems_equivalent (B1 B2 : GroundedBehavior) :
     BehaviorallyEquivalent B1 B2 := by
   intro i
   cases i with
   | WithdrawRequest a b d =>
-    exact (withdraw_step_fires_and_matches B1 a b d).2.symm.trans
-           (withdraw_step_fires_and_matches B2 a b d).2
+    let ⟨_, h1⟩ := (withdraw_ready_state B1 a b d).fires
+    let ⟨_, h2⟩ := (withdraw_ready_state B2 a b d).fires
+    exact (behavior_from_step B1 _ _ _ h1).symm.trans (behavior_from_step B2 _ _ _ h2)
   | ExportRequest src tgt d =>
-    -- No ready-state witness available; header_preserved is opaque.
-    exact (behavior_step_consistent B1 (.ExportRequest src tgt d)).trans
-           (behavior_step_consistent B2 (.ExportRequest src tgt d)).symm
+    -- No ready-state witness; header_preserved is opaque.
+    exact (behavior_step_consistent B1 _).trans (behavior_step_consistent B2 _).symm
   | ChallengeRequest c f =>
-    exact (challenge_step_fires_and_matches B1 c f).2.symm.trans
-           (challenge_step_fires_and_matches B2 c f).2
+    let ⟨_, h1⟩ := (challenge_ready_state B1 c f).fires
+    let ⟨_, h2⟩ := (challenge_ready_state B2 c f).fires
+    exact (behavior_from_step B1 _ _ _ h1).symm.trans (behavior_from_step B2 _ _ _ h2)
   | TimeAdvance ticks =>
-    exact ((tick_step_fires_and_matches B1 ticks).2 ticks).symm.trans
-           ((tick_step_fires_and_matches B2 ticks).2 ticks)
+    -- Tick has no preconditions; construct a concrete step inline.
+    let s₀ : CState := { ledger := [], bubbles := [], clock := 0, acl_table := [], trust_bridges := [] }
+    have ht : EpArch.StepSemantics.Step (Reason := Unit) (Evidence := Unit)
+        s₀ (input_to_action (.TimeAdvance ticks)) { s₀ with clock := 1 } :=
+      EpArch.StepSemantics.Step.tick s₀ 1
+    exact (behavior_from_step B1 _ _ _ ht).symm.trans (behavior_from_step B2 _ _ _ ht)
 
 /-- **All grounded behaviors are equivalent; direct definitional proof.**
 
