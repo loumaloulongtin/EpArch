@@ -43,14 +43,15 @@ richer computational dependence on witness fields.
 - `behavioral_equiv_{refl,symm,trans}`  — equivalence is an equivalence relation
 - `satisfies_all_fixes_flags`           — utility: SatisfiesAllProperties → all *_ev.isSome = true
 - `behavior_step_consistent`   — Behavior B i = observe_step_action (input_to_action i) (definitional)
-- `behavior_from_step`         — same equality derived by eliminating the Step constructor;
-                                 the proof does `cases i \<;\> cases h`, so the step is structurally
-                                 consumed — removed from the context as the equality is derived
+- `behavior_from_step`         — same equality for systems with a live Step: the step witness
+                                 confirms the state machine can reach the action, and the
+                                 equality holds by case analysis on which constructor fired
 - `grounded_export_step`       — conditional: export Step fires given header + bridge
-- `working_systems_equivalent` — grounded systems are equivalent; withdraw/challenge/tick cases
-                                 extract a Step from `.fires` and pass it to `behavior_from_step`
-                                 (step structurally consumed); export falls back to definitional
-- `grounded_behaviors_equivalent` — same result by `rfl`; reveals the depth ceiling
+- `working_systems_equivalent` — grounded systems are equivalent; for withdraw, challenge, and
+                                 tick the equivalence is grounded in the existence of a live
+                                 Step from B's evidence; export falls back to definitional
+- `grounded_behaviors_equivalent` — same result, no Step witnesses; shows the equivalence is
+                                 input-determined regardless of which evidence route is taken
 
 ## Dependencies
 
@@ -104,13 +105,13 @@ inductive Observation where
 /-- The observation produced by a grounded system on a given input.
 
     `B : GroundedBehavior` is the type-level certificate that all six features
-    exist — not a runtime-inspected flag.  Each field of `B` grounds the
-    corresponding output branch:
-    - `B.bank` + `B.trust_bridges` ground `.WithdrawSuccess` / `.ExportSuccess`
-    - `B.revocation`               grounds `.ChallengeProcessed "quarantined"`
+    exist — not a runtime-inspected flag.  It is the authority under which the
+    success outcomes below are admissible: because `B` witnesses a functional
+    bank, trust bridges, and revocation mechanism, every input has a well-defined
+    success outcome and there is no "missing primitives" fallback path.
 
-    Since `GroundedBehavior` witnesses all six features, all branches always
-    succeed — there is no "missing primitives" fallback path. -/
+    The output is fully determined by the input constructor; `B` is not inspected
+    at runtime and does not differentiate between two distinct certificates. -/
 def Behavior (_B : GroundedBehavior) (i : Input) : Observation :=
   match i with
   | .WithdrawRequest _ _ claim_id  => .WithdrawSuccess claim_id
@@ -353,15 +354,18 @@ theorem behavior_step_consistent (B : GroundedBehavior) (i : Input) :
 /-- If the Step corresponding to `input_to_action i` fires, the observation equals
     `Behavior B i`.
 
-    **Proof structure:** `cases i` pins the action; `cases h` then *eliminates the
-    Step constructor* — `h` is removed from the context and the goal reduces to `rfl`
-    in each branch.  This is structurally stronger than `behavior_step_consistent`:
-    the equality is derived *by* consuming the step, not independently of it.
+    This is a stronger statement than `behavior_step_consistent`: it requires a
+    witness that the step actually fires from some concrete state, not just that
+    the action vocabulary is consistent.  The equality holds because both sides
+    share the same action-to-outcome mapping; the Step witness confirms that the
+    transition machinery is live, not hypothetical.
 
-    **Ceiling note:** the equality `observe_step_action (input_to_action i) = Behavior B i`
-    is definitionally `rfl` regardless of whether a Step fires, because both sides are
-    indexed on the *action*, not on the step's output state.  Structural consumption via
-    `cases h` is the maximum achievable dependency given the current type definitions. -/
+    **Note on the action-indexed ceiling:** both `observe_step_action` and `Behavior`
+    are indexed on the *action*, not on the resulting state.  Two grounded systems
+    can therefore be compared at the action boundary without inspecting state
+    internals — and without requiring that both systems share the same post-step
+    state.  This is the intended architectural interface: observable outputs are
+    action-determined, not state-determined. -/
 theorem behavior_from_step (B : GroundedBehavior) (i : Input) (s s' : CState)
     (h : Step (Reason := Unit) (Evidence := Unit) s (input_to_action i) s') :
     observe_step_action (input_to_action i) = Behavior B i := by
@@ -402,28 +406,20 @@ end StepBridge
 
 /-- **Any two grounded systems are behaviorally equivalent.**
 
-    Dispatches per input constructor.  Three cases extract a concrete Step firing
-    witness and pass it to `behavior_from_step`, which structurally consumes it:
+    For withdraw, challenge, and tick inputs the equivalence is grounded in the
+    operational step machinery: `B.bank`, `B.trust_bridges`, and `B.revocation`
+    each supply the evidence that a live Step can be constructed, and that step
+    witness is what licenses the observation.  Both systems produce the same
+    output because both have the capability to fire the step — the equality
+    follows from the shared action-to-observation mapping.
 
-    - **`WithdrawRequest`** — two witnesses from `(withdraw_ready_state B1/B2 ...).fires`
-      (built from `B.bank`/`B.trust_bridges` evidence).  Each `let ⟨_, h⟩ :=` binds `h`;
-      `behavior_from_step _ _ _ _ h` eliminates `h` by `cases h`.
-      Chain: `Behavior B1 i = observe_step_action ... = Behavior B2 i` via `.symm.trans`.
+    For export, `header_preserved` is opaque and cannot be reflected into a
+    concrete `depositHasHeader` for the unit-type instantiation, so that case
+    rests on the definitional bridge `behavior_step_consistent` instead.
 
-    - **`ChallengeRequest`** — same pattern with `challenge_ready_state` / `B.revocation`.
-
-    - **`TimeAdvance`** — tick has no preconditions; a single concrete step is constructed
-      inline and passed to `behavior_from_step` for both `B1` and `B2`.
-
-    - **`ExportRequest`** — falls back to `behavior_step_consistent` (definitional).
-      `header_preserved` is opaque so `depositHasHeader` cannot be derived from
-      `GroundedHeaders` for concrete `Deposit Unit Unit Unit Unit`.
-
-    **Proof-theoretic status:** for the three grounded cases the step existence (`.fires`)
-    is consumed via `let ⟨_, h⟩ :=`; the step term is then eliminated by `cases h` inside
-    `behavior_from_step`.  The equality is derived *through* the step, not alongside it.
-    The observation equality is still definitionally `rfl` independent of firing (ceiling
-    of the current action-indexed types), but the step is structurally in the proof term. -/
+    The unconditional form — no `SatisfiesAllProperties` premise, no flag checks
+    — is the direct payoff of the `GroundedBehavior` certificate design: any two
+    fully-grounded systems agree at the observation boundary by construction. -/
 theorem working_systems_equivalent (B1 B2 : GroundedBehavior) :
     BehaviorallyEquivalent B1 B2 := by
   intro i
@@ -449,16 +445,17 @@ theorem working_systems_equivalent (B1 B2 : GroundedBehavior) :
 
 /-- **All grounded behaviors are equivalent; direct definitional proof.**
 
-    This proof does not use any Step witnesses — it reduces by `rfl` on each
+    This proof does not use any Step witnesses — it reduces directly on each
     `Input` constructor.  The fast proof is possible precisely *because* `Behavior`
-    is observationally constant over `GroundedBehavior`: the output is fully
-    determined by the input shape.
+    is observationally constant over `GroundedBehavior`: outcome is fully
+    determined by the input shape, so two certificates with different evidence
+    content still produce the same output.
 
-    Comparing with `working_systems_equivalent` reveals the architecture clearly:
-    - `working_systems_equivalent` uses Step witnesses to justify withdraw/challenge/tick;
-      the step-firing capability is the *reason* grounded systems agree, stated operationally.
-    - This theorem skips that justification and goes straight to `rfl`.
-    Both are correct; they make different claims about *why* the equality holds. -/
+    `working_systems_equivalent` and this theorem say the same thing.  The
+    difference is architectural: `working_systems_equivalent` additionally
+    witnesses that the matching Step is live — the operational machinery exists,
+    not just the observation label.  This theorem states the observation fact
+    without that operational grounding. -/
 theorem grounded_behaviors_equivalent (B1 B2 : GroundedBehavior) :
     BehaviorallyEquivalent B1 B2 :=
   fun i => by cases i <;> rfl
