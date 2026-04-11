@@ -1483,7 +1483,7 @@ structure GroundedTrustBridgesStrict where
     by direct application of the policy to the witness. -/
 def GroundedTrustBridgesStrict.mk' (G : GroundedTrustBridges) : GroundedTrustBridgesStrict :=
   { base := G,
-    bridge_forces_acceptance := fun policy h => h G.witness G.downstream_via_bridge }
+    bridge_forces_acceptance := fun _policy h => h G.witness G.downstream_via_bridge }
 
 
 /-! ### §7.3  Headers: header preservation implies routing invariance -/
