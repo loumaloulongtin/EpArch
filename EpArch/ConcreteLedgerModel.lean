@@ -980,10 +980,46 @@ def concrete_forcing_embedding : ForcingEmbedding ConcreteWorkingSystem where
     | .bank          => Or.inl concrete_has_bank
     | .redeemability => Or.inl concrete_has_redeemability
 
-/-- The concrete model is structurally forced — derived mechanically
-    from the forcing embedding via the generic translation layer. -/
-theorem concrete_structurally_forced : StructurallyForced ConcreteWorkingSystem :=
-  embedding_to_structurally_forced ConcreteWorkingSystem concrete_forcing_embedding
+/-- The concrete model is structurally forced.
+    Unlike the generic `embedding_to_structurally_forced` route, this proof
+    reads the stored `GroundedXStrict` witnesses from `ConcreteWorkingSystem`
+    directly (Gap 2 fix).  Each `evidence` field uses `injection` to bind the
+    `some X = some G` hypothesis to the concrete witness, then applies that
+    witness’s impossibility field — making the stored `.toStrict` values
+    load-bearing rather than bypassed by `Or.inl`. -/
+theorem concrete_structurally_forced : StructurallyForced ConcreteWorkingSystem where
+  forcing P _ := match P with
+    | .scope         => concrete_has_bubbles
+    | .trust         => concrete_has_trust_bridges
+    | .headers       => concrete_has_headers
+    | .revocation    => concrete_has_revocation
+    | .bank          => concrete_has_bank
+    | .redeemability => concrete_has_redeemability
+  evidence := {
+    scope_consequence := fun G heq => by
+      have hrfl : ConcreteWorkingSystem.bubbles_ev = some concBubbles.toStrict := rfl
+      rw [hrfl] at heq; injection heq with hG; subst hG
+      exact concBubbles.toStrict.no_flat_resolver
+    trust_consequence := fun G heq => by
+      have hrfl : ConcreteWorkingSystem.bridges_ev = some concTrustBridges.toStrict := rfl
+      rw [hrfl] at heq; injection heq with hG; subst hG
+      exact concTrustBridges.toStrict.bridge_forces_acceptance
+    headers_consequence := fun G heq => by
+      have hrfl : ConcreteWorkingSystem.headers_ev = some concHeaders.toStrict := rfl
+      rw [hrfl] at heq; injection heq with hG; subst hG
+      exact concHeaders.toStrict.routing_invariant
+    revocation_consequence := fun G heq => by
+      have hrfl : ConcreteWorkingSystem.revocation_ev = some concRevocation.toStrict := rfl
+      rw [hrfl] at heq; injection heq with hG; subst hG
+      exact concRevocation.toStrict.has_invalid_revocable_witness
+    bank_consequence := fun G heq => by
+      have hrfl : ConcreteWorkingSystem.bank_ev = some concBank.toStrict := rfl
+      rw [hrfl] at heq; injection heq with hG; subst hG
+      exact concBank.toStrict.has_shared_entry
+    redeemability_consequence := fun G heq => by
+      have hrfl : ConcreteWorkingSystem.redeemability_ev = some concRedeemability.toStrict := rfl
+      rw [hrfl] at heq; injection heq with hG; subst hG
+      exact concRedeemability.toStrict.has_constrained_redeemable_witness }
 
 /-- Structural convergence applies to the concrete model.
     Full chain: ForcingEmbedding → StructurallyForced → convergence. -/

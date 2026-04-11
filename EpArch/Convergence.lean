@@ -851,4 +851,81 @@ theorem structural_impossibility (W : WorkingSystem) (h_sf : StructurallyForced 
     (∃ P : Pressure, ¬forced_feature W P) → ¬SatisfiesAllProperties W :=
   fun ⟨P, h_miss⟩ h_sat => absurd (h_sf.forcing P (h_sat P)) h_miss
 
+/-- Grounded evidence consequences: when a structurally forced system satisfies
+    all properties, the stored `GroundedXStrict` witnesses are non-vacuously
+    exercised.  This is the primary consumer of
+    `StructurallyForced.evidence`: each dimension extracts its stored witness
+    via the `SatisfiesAllProperties` `isSome` guarantee, then applies
+    `h_sf.evidence.X_consequence` to it — making the `EvidenceConsequences`
+    bundle genuinely load-bearing (Gap 1).
+
+    The `none`-vacuity gap (Gap 3) is closed: `SatisfiesAllProperties W`
+    forces each `*_ev` to be `some G`, so the universals in
+    `EvidenceConsequences` are applied to an actual stored witness.
+    The `none` branch is contradicted by `h_sat`. -/
+theorem grounded_evidence_consequences (W : WorkingSystem)
+    (h_sf : StructurallyForced W) (h_sat : SatisfiesAllProperties W) :
+    containsBankPrimitives W ∧
+    (∃ G : GroundedBubblesStrict, W.bubbles_ev = some G ∧
+        ¬∃ (f : G.base.Claim → Prop),
+            (∀ c, f c ↔ G.base.scope₁ c) ∧ (∀ c, f c ↔ G.base.scope₂ c)) ∧
+    (∃ G : GroundedTrustBridgesStrict, W.bridges_ev = some G ∧
+        ∀ (policy : G.base.Declaration → Prop),
+            (∀ d, G.base.downstream_accepts d → policy d) → policy G.base.witness) ∧
+    (∃ G : GroundedHeadersStrict, W.headers_ev = some G ∧
+        ∀ (router : G.base.Header → Bool),
+            router (G.base.extract G.base.witness) =
+            router (G.base.extract (G.base.export_datum G.base.witness))) ∧
+    (∃ G : GroundedRevocationStrict, W.revocation_ev = some G ∧
+        ∃ c : G.base.Claim, G.base.revocable c ∧ ¬G.base.valid c) ∧
+    (∃ G : GroundedBankStrict, W.bank_ev = some G ∧
+        ∃ e : G.base.Entry, G.base.agent₁_produces e ∧ G.base.agent₂_consumes e) ∧
+    (∃ G : GroundedRedeemabilityStrict, W.redeemability_ev = some G ∧
+        ∃ c : G.base.Claim, G.base.constrained c ∧ G.base.redeemable c) := by
+  refine ⟨convergence_structural W h_sf h_sat, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  -- `cases h_ev : W.*_ev` substitutes W.*_ev → constructor in the GOAL only;
+  -- local hypotheses (inc. h2) retain their original form.
+  -- `none` branch: `rw [h_ev] at h2` gives `h2 : Option.isSome none = true`;
+  --   `Option.isSome none` reduces definitionally to `false`, so
+  --   `Bool.noConfusion h2 : goal` closes (same pattern used in Minimality.lean).
+  -- `some G` branch: goal equality is `some G = some G` → `rfl`;
+  --   h_ev : W.*_ev = some G → pass to evidence.X_consequence.
+  · have h2 : W.bubbles_ev.isSome = true := by
+      have h := h_sat .scope
+      simp only [handles_pressure, handles_distributed_agents] at h; exact h
+    cases h_ev : W.bubbles_ev with
+    | none   => rw [h_ev] at h2; exact Bool.noConfusion h2
+    | some G => exact ⟨G, rfl, h_sf.evidence.scope_consequence G h_ev⟩
+  · have h2 : W.bridges_ev.isSome = true := by
+      have h := h_sat .trust
+      simp only [handles_pressure, handles_bounded_audit] at h; exact h
+    cases h_ev : W.bridges_ev with
+    | none   => rw [h_ev] at h2; exact Bool.noConfusion h2
+    | some G => exact ⟨G, rfl, h_sf.evidence.trust_consequence G h_ev⟩
+  · have h2 : W.headers_ev.isSome = true := by
+      have h := h_sat .headers
+      simp only [handles_pressure, handles_export] at h; exact h
+    cases h_ev : W.headers_ev with
+    | none   => rw [h_ev] at h2; exact Bool.noConfusion h2
+    | some G => exact ⟨G, rfl, h_sf.evidence.headers_consequence G h_ev⟩
+  · have h2 : W.revocation_ev.isSome = true := by
+      have h := h_sat .revocation
+      simp only [handles_pressure, handles_adversarial] at h; exact h
+    cases h_ev : W.revocation_ev with
+    | none   => rw [h_ev] at h2; exact Bool.noConfusion h2
+    | some G => exact ⟨G, rfl, h_sf.evidence.revocation_consequence G h_ev⟩
+  · have h2 : W.bank_ev.isSome = true := by
+      have h := h_sat .bank
+      simp only [handles_pressure, handles_coordination] at h; exact h
+    cases h_ev : W.bank_ev with
+    | none   => rw [h_ev] at h2; exact Bool.noConfusion h2
+    | some G => exact ⟨G, rfl, h_sf.evidence.bank_consequence G h_ev⟩
+  · have h2 : W.redeemability_ev.isSome = true := by
+      have h := h_sat .redeemability
+      simp only [handles_pressure, handles_truth_pressure] at h; exact h
+    cases h_ev : W.redeemability_ev with
+    | none   => rw [h_ev] at h2; exact Bool.noConfusion h2
+    | some G => exact ⟨G, rfl, h_sf.evidence.redeemability_consequence G h_ev⟩
+
+
 end EpArch
