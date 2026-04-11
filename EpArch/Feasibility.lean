@@ -286,12 +286,13 @@ theorem world_assumptions_force_bank_primitives (C : @EpArch.WorldCtx.{0})
           | .revocation    => h_wa.2.1 Wl h
           | .bank          => h_wa.2.2.2.2.2 h
           | .redeemability => h_wa.2.2.1 Wo h
-          scope_consequence         := fun G _ => G.no_flat_resolver
-          trust_consequence         := fun G _ => G.bridge_forces_acceptance
-          headers_consequence       := fun G _ => G.routing_invariant
-          revocation_consequence    := fun G _ => G.has_invalid_revocable_witness
-          bank_consequence          := fun G _ => G.has_shared_entry
-          redeemability_consequence := fun G _ => G.has_constrained_redeemable_witness }
+          evidence := {
+            scope_consequence         := fun G _ => G.no_flat_resolver
+            trust_consequence         := fun G _ => G.bridge_forces_acceptance
+            headers_consequence       := fun G _ => G.routing_invariant
+            revocation_consequence    := fun G _ => G.has_invalid_revocable_witness
+            bank_consequence          := fun G _ => G.has_shared_entry
+            redeemability_consequence := fun G _ => G.has_constrained_redeemable_witness } }
 
 /-- Any StructurallyForced system satisfies WorldAwareSystem for any WorldCtx.
 

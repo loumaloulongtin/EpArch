@@ -55,17 +55,14 @@ proof requires a new case.
 Each `handles_pressure W P → forced_feature W P` instance is independently
 justified by a structural impossibility model in `Minimality.lean`. -/
 
-/-- A system is structurally forced: for every pressure dimension, handling
-    the capability implies the forced architectural feature.
+/-- The six structural impossibility consequences readable from a `WorkingSystem`'s
+    stored `GroundedXStrict` evidence.
 
-    The six consequence fields read the structural impossibility proofs directly
-    from the `GroundedXStrict` evidence stored in the `WorkingSystem`.  When
-    a strict evidence value is present, its consequence field is immediately
-    available — the system’s own data carries the impossibility. -/
-structure StructurallyForced (W : WorkingSystem) : Prop where
-  /-- For every pressure dimension P, handling capability P forces feature P.
-      Justified per-dimension by the structural models in Minimality.lean. -/
-  forcing : ∀ P : Pressure, handles_pressure W P → forced_feature W P
+    Separated from `StructurallyForced` so that the forcing interface and the
+    evidence-readout bundle remain conceptually distinct.  When strict evidence
+    is present the consequence is already carried by the value — these six fields
+    simply expose it. -/
+structure EvidenceConsequences (W : WorkingSystem) : Prop where
   /-- Scope separation is structurally forced: no flat resolver can represent both scopes. -/
   scope_consequence : ∀ G : GroundedBubblesStrict, W.bubbles_ev = some G →
       ¬∃ (f : G.base.Claim → Prop),
@@ -88,6 +85,24 @@ structure StructurallyForced (W : WorkingSystem) : Prop where
   /-- Redeemability forcing: a constrained-and-redeemable witness is known. -/
   redeemability_consequence : ∀ G : GroundedRedeemabilityStrict, W.redeemability_ev = some G →
       ∃ c : G.base.Claim, G.base.constrained c ∧ G.base.redeemable c
+
+/-- A system is structurally forced: for every pressure dimension, handling
+    the capability implies the forced architectural feature.
+
+    `forcing` is the core convergence interface: the six unguarded
+    capability→feature implications, derived from the `ForcingEmbedding`.
+
+    `evidence` is the structural consequence bundle: impossibility proofs
+    read directly from the system’s stored `GroundedXStrict` fields.  The two
+    are logically independent — `forcing` is about implication chains;
+    `evidence` is about what the stored proof objects already carry. -/
+structure StructurallyForced (W : WorkingSystem) : Prop where
+  /-- For every pressure dimension P, handling capability P forces feature P.
+      Justified per-dimension by the structural models in Minimality.lean. -/
+  forcing : ∀ P : Pressure, handles_pressure W P → forced_feature W P
+  /-- Structural consequence bundle: the six impossibility results read from
+      the stored `GroundedXStrict` evidence. -/
+  evidence : EvidenceConsequences W
 
 /-! ## Forcing Embeddings: Translation Layer
 
@@ -242,18 +257,19 @@ structure ForcingEmbedding (W : WorkingSystem) : Prop where
     proves `¬bridge_scenario W P` directly — so the right branch is universally
     absurd.  Fully constructive — no `Classical.byContradiction`.
 
-    The six consequence fields read proof terms directly from the stored
-    `GroundedXStrict` evidence: the consequence is already carried by the
+    The `evidence` bundle reads proof terms directly from the stored
+    `GroundedXStrict` evidence: each consequence is already carried by the
     value, so each field is trivially `fun G _ => G.consequence`. -/
 theorem embedding_to_structurally_forced (W : WorkingSystem) (E : ForcingEmbedding W) :
     StructurallyForced W where
   forcing P h := (E.embed P h).elim id (fun hb => absurd hb (all_bridges_impossible W P))
-  scope_consequence         := fun G _ => G.no_flat_resolver
-  trust_consequence         := fun G _ => G.bridge_forces_acceptance
-  headers_consequence       := fun G _ => G.routing_invariant
-  revocation_consequence    := fun G _ => G.has_invalid_revocable_witness
-  bank_consequence          := fun G _ => G.has_shared_entry
-  redeemability_consequence := fun G _ => G.has_constrained_redeemable_witness
+  evidence := {
+    scope_consequence         := fun G _ => G.no_flat_resolver
+    trust_consequence         := fun G _ => G.bridge_forces_acceptance
+    headers_consequence       := fun G _ => G.routing_invariant
+    revocation_consequence    := fun G _ => G.has_invalid_revocable_witness
+    bank_consequence          := fun G _ => G.has_shared_entry
+    redeemability_consequence := fun G _ => G.has_constrained_redeemable_witness }
 
 
 /-! ## Scenario Predicates: Enriching WorkingSystems with Structural Content

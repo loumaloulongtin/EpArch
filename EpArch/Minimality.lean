@@ -1418,17 +1418,22 @@ impossibility theorem (§1–§6).  These bridge theorems make the connection
 explicit: given any `GroundedX` witness, the matching impossibility result fires.
 
 `GroundedXStrict` packages the base evidence with its impossibility consequence —
-the non-trivial `Prop` that falls out of the bridge.  `mk'` derives that
-consequence automatically from the base evidence alone.
+the non-trivial `Prop` that falls out of the bridge.
 
 **Relation to WorkingSystem.**  `WorkingSystem` carries six `Option GroundedXStrict`
 fields.  The `GroundedXStrict` structures are defined in `SystemSpec.lean` (where
-they only depend on `GroundedX` fields).  `GroundedX.toStrict` constructors in
-`SystemSpec.lean` prove the consequences inline from base fields.
+they only depend on `GroundedX` fields).
 
-The `mk'` constructors and bridge theorems here go further: they derive the same
-consequences via named impossibility theorems (`flat_scope_impossible`, etc.),
-providing an explicit named-proof API for downstream formal usage. -/
+**Construction convention.**
+- `G.toStrict` — standard path; inline proof from base fields (in `SystemSpec.lean`,
+  no dependency on the named theorems here).  Used by `withGroundedBehavior`,
+  `ConcreteWorkingSystem`, and `PartialGroundedSpec.toWorkingSystem`.
+- `GroundedXStrict.mk' G` — thin alias: `mk' G := G.toStrict`.  Kept as the
+  canonical citation-facing constructor; call it when you want the named-proof
+  route to appear in a proof term without inlining the derivation.
+- Named bridge theorems (`groundedBubbles_flat_impossible`, etc.) — available for
+  direct citation when a proof must explicitly invoke the structural impossibility.
+  No longer called by `mk'`, but remain at module scope for that purpose. -/
 
 
 /-! ### §7.1  Bubbles ↔ AgentDisagreement -/
@@ -1449,9 +1454,9 @@ theorem groundedBubbles_flat_impossible (G : GroundedBubbles) :
     ¬∃ (f : G.Claim → Prop), (∀ c, f c ↔ G.scope₁ c) ∧ (∀ c, f c ↔ G.scope₂ c) :=
   flat_scope_impossible (groundedBubbles_to_disagreement G)
 
-/-- Canonical constructor: derives `no_flat_resolver` from `flat_scope_impossible`. -/
-def GroundedBubblesStrict.mk' (G : GroundedBubbles) : GroundedBubblesStrict :=
-  { base := G, no_flat_resolver := groundedBubbles_flat_impossible G }
+/-- Thin alias for `G.toStrict`.  Cite `groundedBubbles_flat_impossible` directly
+    when a proof must explicitly name the impossibility route. -/
+def GroundedBubblesStrict.mk' (G : GroundedBubbles) : GroundedBubblesStrict := G.toStrict
 
 
 /-! ### §7.2  TrustBridges: re-verify-only policy cannot exclude the bridge witness -/
@@ -1465,12 +1470,10 @@ theorem groundedTrustBridges_bridge_necessary (G : GroundedTrustBridges)
     (not_local       : ¬locally_verified G.witness) : False :=
   not_local (only_local G.witness G.downstream_via_bridge)
 
-/-- `GroundedTrustBridges` augmented with the bridge-forcing consequence.
-    `bridge_forces_acceptance` witnesses that any downstream-sound policy must accept
-    the witness — re-verify-only import cannot exclude it. -/
+/-- Thin alias for `G.toStrict`.  Cite `groundedTrustBridges_bridge_necessary` directly
+    when a proof must explicitly name the impossibility route. -/
 def GroundedTrustBridgesStrict.mk' (G : GroundedTrustBridges) : GroundedTrustBridgesStrict :=
-  { base := G,
-    bridge_forces_acceptance := fun _policy h => h G.witness G.downstream_via_bridge }
+  G.toStrict
 
 
 /-! ### §7.3  Headers: header preservation implies routing invariance -/
@@ -1481,11 +1484,9 @@ theorem groundedHeaders_router_consistent (G : GroundedHeaders) (router : G.Head
     router (G.extract G.witness) = router (G.extract (G.export_datum G.witness)) :=
   congrArg router G.header_preserved.symm
 
-/-- `GroundedHeaders` augmented with routing invariance: header-preserving export
-    means no header-aware router changes its decision at the boundary. -/
-def GroundedHeadersStrict.mk' (G : GroundedHeaders) : GroundedHeadersStrict :=
-  { base := G,
-    routing_invariant := fun router => congrArg router G.header_preserved.symm }
+/-- Thin alias for `G.toStrict`.  Cite `groundedHeaders_router_consistent` directly
+    when a proof must explicitly name the routing-invariance route. -/
+def GroundedHeadersStrict.mk' (G : GroundedHeaders) : GroundedHeadersStrict := G.toStrict
 
 
 /-! ### §7.4  Revocation: no-revocation policy fails at the invalid-but-revocable witness -/
@@ -1496,12 +1497,10 @@ theorem groundedRevocation_no_revocation_incorrect (G : GroundedRevocation)
     (no_revoc : ∀ c, G.revocable c → G.valid c) : False :=
   G.witness_is_invalid (no_revoc G.witness G.can_revoke)
 
-/-- `GroundedRevocation` augmented with the explicit existential: an invalid-but-revocable
-    claim is known.  This existential is the evidence a proof-carrying
-    `supports_correction` field will eventually require. -/
+/-- Thin alias for `G.toStrict`.  Cite `groundedRevocation_no_revocation_incorrect`
+    directly when a proof must explicitly name the impossibility route. -/
 def GroundedRevocationStrict.mk' (G : GroundedRevocation) : GroundedRevocationStrict :=
-  { base := G,
-    has_invalid_revocable_witness := ⟨G.witness, G.can_revoke, G.witness_is_invalid⟩ }
+  G.toStrict
 
 
 /-! ### §7.5  Bank: isolation assumption is contradicted by the shared entry -/
@@ -1512,11 +1511,9 @@ theorem groundedBank_refutes_isolation (G : GroundedBank)
     (iso : ∀ e : G.Entry, G.agent₁_produces e → ¬G.agent₂_consumes e) : False :=
   iso G.witness G.produced G.consumed
 
-/-- `GroundedBank` augmented with the shared-entry existential.
-    Positive counterpart to `private_storage_no_sharing`: collective reliance is
-    non-vacuous. -/
-def GroundedBankStrict.mk' (G : GroundedBank) : GroundedBankStrict :=
-  { base := G, has_shared_entry := ⟨G.witness, G.produced, G.consumed⟩ }
+/-- Thin alias for `G.toStrict`.  Cite `groundedBank_refutes_isolation` directly
+    when a proof must explicitly name the isolation-refutation route. -/
+def GroundedBankStrict.mk' (G : GroundedBank) : GroundedBankStrict := G.toStrict
 
 
 /-! ### §7.6  Redeemability: closure assumption contradicted by constrained-and-redeemable witness -/
@@ -1527,10 +1524,10 @@ theorem groundedRedeemability_refutes_closure (G : GroundedRedeemability)
     (closed : ∀ c : G.Claim, G.constrained c → ¬G.redeemable c) : False :=
   closed G.witness G.is_constrained G.has_path
 
-/-- `GroundedRedeemability` augmented with the constrained-and-redeemable existential. -/
+/-- Thin alias for `G.toStrict`.  Cite `groundedRedeemability_refutes_closure` directly
+    when a proof must explicitly name the closure-refutation route. -/
 def GroundedRedeemabilityStrict.mk' (G : GroundedRedeemability) : GroundedRedeemabilityStrict :=
-  { base := G,
-    has_constrained_redeemable_witness := ⟨G.witness, G.is_constrained, G.has_path⟩ }
+  G.toStrict
 
 
 end EpArch
