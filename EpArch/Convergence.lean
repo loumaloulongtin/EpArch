@@ -56,11 +56,38 @@ Each `handles_pressure W P → forced_feature W P` instance is independently
 justified by a structural impossibility model in `Minimality.lean`. -/
 
 /-- A system is structurally forced: for every pressure dimension, handling
-    the capability implies the forced architectural feature. -/
+    the capability implies the forced architectural feature.
+
+    The six consequence fields read the structural impossibility proofs directly
+    from the `GroundedXStrict` evidence stored in the `WorkingSystem`.  When
+    a strict evidence value is present, its consequence field is immediately
+    available — the system’s own data carries the impossibility. -/
 structure StructurallyForced (W : WorkingSystem) : Prop where
   /-- For every pressure dimension P, handling capability P forces feature P.
       Justified per-dimension by the structural models in Minimality.lean. -/
   forcing : ∀ P : Pressure, handles_pressure W P → forced_feature W P
+  /-- Scope separation is structurally forced: no flat resolver can represent both scopes. -/
+  scope_consequence : ∀ G : GroundedBubblesStrict, W.bubbles_ev = some G →
+      ¬∃ (f : G.base.Claim → Prop),
+          (∀ c, f c ↔ G.base.scope₁ c) ∧ (∀ c, f c ↔ G.base.scope₂ c)
+  /-- Trust bridge forcing: any downstream-sound policy must accept the bridge witness. -/
+  trust_consequence : ∀ G : GroundedTrustBridgesStrict, W.bridges_ev = some G →
+      ∀ (policy : G.base.Declaration → Prop),
+          (∀ d, G.base.downstream_accepts d → policy d) → policy G.base.witness
+  /-- Header routing invariant: no router changes its decision at the export boundary. -/
+  headers_consequence : ∀ G : GroundedHeadersStrict, W.headers_ev = some G →
+      ∀ (router : G.base.Header → Bool),
+          router (G.base.extract G.base.witness) =
+          router (G.base.extract (G.base.export_datum G.base.witness))
+  /-- Revocation forcing: an invalid-but-revocable witness is known. -/
+  revocation_consequence : ∀ G : GroundedRevocationStrict, W.revocation_ev = some G →
+      ∃ c : G.base.Claim, G.base.revocable c ∧ ¬G.base.valid c
+  /-- Bank forcing: a cross-agent shared entry is known. -/
+  bank_consequence : ∀ G : GroundedBankStrict, W.bank_ev = some G →
+      ∃ e : G.base.Entry, G.base.agent₁_produces e ∧ G.base.agent₂_consumes e
+  /-- Redeemability forcing: a constrained-and-redeemable witness is known. -/
+  redeemability_consequence : ∀ G : GroundedRedeemabilityStrict, W.redeemability_ev = some G →
+      ∃ c : G.base.Claim, G.base.constrained c ∧ G.base.redeemable c
 
 /-! ## Forcing Embeddings: Translation Layer
 
@@ -210,13 +237,23 @@ structure ForcingEmbedding (W : WorkingSystem) : Prop where
 
 /-- Mechanical derivation: `ForcingEmbedding` → `StructurallyForced`.
 
-    The single field is derived by `Or.elim`: the left branch is the feature
+    The `forcing` field is derived by `Or.elim`: the left branch is the feature
     itself (`id`); the right branch applies `all_bridges_impossible P`, which
     proves `¬bridge_scenario W P` directly — so the right branch is universally
-    absurd.  Fully constructive — no `Classical.byContradiction`. -/
+    absurd.  Fully constructive — no `Classical.byContradiction`.
+
+    The six consequence fields read proof terms directly from the stored
+    `GroundedXStrict` evidence: the consequence is already carried by the
+    value, so each field is trivially `fun G _ => G.consequence`. -/
 theorem embedding_to_structurally_forced (W : WorkingSystem) (E : ForcingEmbedding W) :
     StructurallyForced W where
   forcing P h := (E.embed P h).elim id (fun hb => absurd hb (all_bridges_impossible W P))
+  scope_consequence         := fun G _ => G.no_flat_resolver
+  trust_consequence         := fun G _ => G.bridge_forces_acceptance
+  headers_consequence       := fun G _ => G.routing_invariant
+  revocation_consequence    := fun G _ => G.has_invalid_revocable_witness
+  bank_consequence          := fun G _ => G.has_shared_entry
+  redeemability_consequence := fun G _ => G.has_constrained_redeemable_witness
 
 
 /-! ## Scenario Predicates: Enriching WorkingSystems with Structural Content

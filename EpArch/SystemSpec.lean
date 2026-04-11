@@ -177,6 +177,24 @@ theorem grounded_bubbles_justified (G : GroundedBubbles) (rest : SystemSpec) :
   unfold spec_has_bubbles SystemSpec.withGroundedBubbles
   rfl
 
+/-- `GroundedBubbles` augmented with its impossibility consequence.
+    `no_flat_resolver` states that no flat acceptance function can faithfully
+    represent both scopes simultaneously — scope separation is structurally forced.
+    Proof: a hypothetical flat resolver that agrees with both scopes must accept
+    the witness (via `scope₁`) and also reject it (via `scope₂`), which contradicts
+    `scope₂_rejects`. -/
+structure GroundedBubblesStrict where
+  base             : GroundedBubbles
+  no_flat_resolver : ¬∃ (f : base.Claim → Prop),
+      (∀ c, f c ↔ base.scope₁ c) ∧ (∀ c, f c ↔ base.scope₂ c)
+
+/-- Derive `GroundedBubblesStrict` from base evidence.
+    Uses only `GroundedBubbles` fields — no `Minimality.lean` imports needed. -/
+def GroundedBubbles.toStrict (G : GroundedBubbles) : GroundedBubblesStrict where
+  base := G
+  no_flat_resolver := fun ⟨_f, hf₁, hf₂⟩ =>
+    G.scope₂_rejects ((hf₂ G.witness).mp ((hf₁ G.witness).mpr G.scope₁_accepts))
+
 
 /-! ## GroundedTrustBridges -/
 
@@ -209,6 +227,19 @@ theorem grounded_trust_bridges_justified (G : GroundedTrustBridges) (rest : Syst
   unfold spec_has_trust_bridges SystemSpec.withGroundedTrustBridges
   rfl
 
+/-- `GroundedTrustBridges` augmented with the bridge-forcing consequence.
+    `bridge_forces_acceptance` witnesses that any downstream-sound policy must
+    accept the bridge witness — re-verify-only import cannot exclude it. -/
+structure GroundedTrustBridgesStrict where
+  base                     : GroundedTrustBridges
+  bridge_forces_acceptance : ∀ (policy : base.Declaration → Prop),
+      (∀ d, base.downstream_accepts d → policy d) → policy base.witness
+
+/-- Derive `GroundedTrustBridgesStrict` from base evidence. -/
+def GroundedTrustBridges.toStrict (G : GroundedTrustBridges) : GroundedTrustBridgesStrict where
+  base := G
+  bridge_forces_acceptance := fun _policy h => h G.witness G.downstream_via_bridge
+
 
 /-! ## GroundedHeaders -/
 
@@ -235,6 +266,19 @@ theorem grounded_headers_justified (G : GroundedHeaders) (rest : SystemSpec) :
     spec_has_headers (SystemSpec.withGroundedHeaders G rest) := by
   unfold spec_has_headers SystemSpec.withGroundedHeaders
   rfl
+
+/-- `GroundedHeaders` augmented with routing invariance.
+    `routing_invariant` states that no header-based router changes its decision
+    at the export boundary — header preservation implies routing stability. -/
+structure GroundedHeadersStrict where
+  base              : GroundedHeaders
+  routing_invariant : ∀ (router : base.Header → Bool),
+      router (base.extract base.witness) = router (base.extract (base.export_datum base.witness))
+
+/-- Derive `GroundedHeadersStrict` from base evidence. -/
+def GroundedHeaders.toStrict (G : GroundedHeaders) : GroundedHeadersStrict where
+  base := G
+  routing_invariant := fun router => congrArg router G.header_preserved.symm
 
 
 /-! ## GroundedRevocation -/
@@ -264,6 +308,18 @@ theorem grounded_revocation_justified (G : GroundedRevocation) (rest : SystemSpe
   unfold spec_has_revocation SystemSpec.withGroundedRevocation
   rfl
 
+/-- `GroundedRevocation` augmented with the invalid-revocable existential.
+    `has_invalid_revocable_witness` packages the known invalid-but-revocable claim,
+    providing the explicit evidence that the challenge → revoke path is non-vacuous. -/
+structure GroundedRevocationStrict where
+  base                          : GroundedRevocation
+  has_invalid_revocable_witness : ∃ c : base.Claim, base.revocable c ∧ ¬base.valid c
+
+/-- Derive `GroundedRevocationStrict` from base evidence. -/
+def GroundedRevocation.toStrict (G : GroundedRevocation) : GroundedRevocationStrict where
+  base := G
+  has_invalid_revocable_witness := ⟨G.witness, G.can_revoke, G.witness_is_invalid⟩
+
 
 /-! ## GroundedBank -/
 
@@ -292,6 +348,18 @@ theorem grounded_bank_justified (G : GroundedBank) (rest : SystemSpec) :
   unfold spec_has_bank SystemSpec.withGroundedBank
   rfl
 
+/-- `GroundedBank` augmented with the shared-entry existential.
+    `has_shared_entry` packages the known cross-agent entry, making collective
+    reliance explicit and non-vacuous. -/
+structure GroundedBankStrict where
+  base             : GroundedBank
+  has_shared_entry : ∃ e : base.Entry, base.agent₁_produces e ∧ base.agent₂_consumes e
+
+/-- Derive `GroundedBankStrict` from base evidence. -/
+def GroundedBank.toStrict (G : GroundedBank) : GroundedBankStrict where
+  base := G
+  has_shared_entry := ⟨G.witness, G.produced, G.consumed⟩
+
 
 /-! ## GroundedRedeemability -/
 
@@ -317,6 +385,18 @@ theorem grounded_redeemability_justified (G : GroundedRedeemability) (rest : Sys
     spec_has_redeemability (SystemSpec.withGroundedRedeemability G rest) := by
   unfold spec_has_redeemability SystemSpec.withGroundedRedeemability
   rfl
+
+/-- `GroundedRedeemability` augmented with the constrained-and-redeemable existential.
+    `has_constrained_redeemable_witness` provides the explicit evidence that the
+    constraint surface is not a dead end — redeemability is non-vacuous. -/
+structure GroundedRedeemabilityStrict where
+  base                               : GroundedRedeemability
+  has_constrained_redeemable_witness : ∃ c : base.Claim, base.constrained c ∧ base.redeemable c
+
+/-- Derive `GroundedRedeemabilityStrict` from base evidence. -/
+def GroundedRedeemability.toStrict (G : GroundedRedeemability) : GroundedRedeemabilityStrict where
+  base := G
+  has_constrained_redeemable_witness := ⟨G.witness, G.is_constrained, G.has_path⟩
 
 
 /-! ## GroundedSystemSpec: All Six Features from Evidence -/

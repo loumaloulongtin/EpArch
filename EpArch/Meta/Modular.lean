@@ -190,12 +190,12 @@ def PartialGroundedSpec.toWorkingSystem (S : ConstraintSubset)
     has_redeemability     :=
       if h : S.truth_pressure = true then let _ev := pgs.redeemability h; true else false
   }
-  bubbles_ev       := if h : S.distributed    = true then some (pgs.bubbles h)       else none
-  bridges_ev       := if h : S.bounded_audit  = true then some (pgs.trust_bridges h) else none
-  headers_ev       := if h : S.export_across  = true then some (pgs.headers h)       else none
-  revocation_ev    := if h : S.adversarial    = true then some (pgs.revocation h)    else none
-  bank_ev          := if h : S.coordination   = true then some (pgs.bank h)          else none
-  redeemability_ev := if h : S.truth_pressure = true then some (pgs.redeemability h) else none
+  bubbles_ev       := if h : S.distributed    = true then some (pgs.bubbles h).toStrict       else none
+  bridges_ev       := if h : S.bounded_audit  = true then some (pgs.trust_bridges h).toStrict else none
+  headers_ev       := if h : S.export_across  = true then some (pgs.headers h).toStrict       else none
+  revocation_ev    := if h : S.adversarial    = true then some (pgs.revocation h).toStrict    else none
+  bank_ev          := if h : S.coordination   = true then some (pgs.bank h).toStrict          else none
+  redeemability_ev := if h : S.truth_pressure = true then some (pgs.redeemability h).toStrict else none
 
 
 /-- A `WorkingSystem` built by `toWorkingSystem` satisfies `PartialWellFormed W S`.

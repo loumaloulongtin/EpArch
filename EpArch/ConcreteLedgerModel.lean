@@ -896,12 +896,12 @@ private def concRedeemability : GroundedRedeemability where
     from concrete domain evidence. -/
 def ConcreteWorkingSystem : WorkingSystem where
   spec             := concreteSystemSpec
-  bubbles_ev       := some concBubbles
-  bridges_ev       := some concTrustBridges
-  headers_ev       := some concHeaders
-  revocation_ev    := some concRevocation
-  bank_ev          := some concBank
-  redeemability_ev := some concRedeemability
+  bubbles_ev       := some concBubbles.toStrict
+  bridges_ev       := some concTrustBridges.toStrict
+  headers_ev       := some concHeaders.toStrict
+  revocation_ev    := some concRevocation.toStrict
+  bank_ev          := some concBank.toStrict
+  redeemability_ev := some concRedeemability.toStrict
 
 
 /-! ## Has* Predicates Hold for Concrete Model

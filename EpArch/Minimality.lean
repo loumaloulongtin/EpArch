@@ -120,18 +120,18 @@ class Constraints (B : Bank (PropLike := PropLike)
 structure WorkingSystem where
   /-- The system's architectural specification. -/
   spec             : SystemSpec
-  /-- Scope-separation evidence: two acceptance scopes disagree on a witness claim. -/
-  bubbles_ev       : Option GroundedBubbles
-  /-- Trust-bridge evidence: upstream declarations relied on downstream without reverification. -/
-  bridges_ev       : Option GroundedTrustBridges
-  /-- Header-preservation evidence: export metadata survives crossing a boundary. -/
-  headers_ev       : Option GroundedHeaders
-  /-- Revocation evidence: an invalid-and-revocable witness exists. -/
-  revocation_ev    : Option GroundedRevocation
-  /-- Shared-ledger evidence: an entry produced by one agent is consumed by another. -/
-  bank_ev          : Option GroundedBank
-  /-- Redeemability evidence: a constrained claim has an audit path to truth. -/
-  redeemability_ev : Option GroundedRedeemability
+  /-- Scope-separation evidence: two distinct acceptance scopes + structural forcing consequence. -/
+  bubbles_ev       : Option GroundedBubblesStrict
+  /-- Trust-bridge evidence: upstream declarations relied on downstream + bridge-forcing consequence. -/
+  bridges_ev       : Option GroundedTrustBridgesStrict
+  /-- Header-preservation evidence: export metadata survives boundary + routing invariant. -/
+  headers_ev       : Option GroundedHeadersStrict
+  /-- Revocation evidence: invalid-and-revocable witness + its existential consequence. -/
+  revocation_ev    : Option GroundedRevocationStrict
+  /-- Shared-ledger evidence: cross-agent entry witness + shared-entry existential. -/
+  bank_ev          : Option GroundedBankStrict
+  /-- Redeemability evidence: constrained claim with audit path + existential consequence. -/
+  redeemability_ev : Option GroundedRedeemabilityStrict
 
 /-! ## Forced Feature Predicates
 
@@ -309,14 +309,14 @@ let `withGroundedBehavior` set each option to `some`.
 
 The six capability witnesses correspond exactly to the six `GroundedX` structures:
 
-| WorkingSystem field  | GroundedX type         | Forcing dimension                                     |
-|----------------------|------------------------|-------------------------------------------------------|
-| `bubbles_ev`         | `GroundedBubbles`      | Distributed agents — scope separation                 |
-| `bridges_ev`         | `GroundedTrustBridges` | Bounded audit — trust bridges                         |
-| `headers_ev`         | `GroundedHeaders`      | Export across boundaries — header preservation        |
-| `revocation_ev`      | `GroundedRevocation`   | Adversarial pressure — revocation                     |
-| `bank_ev`            | `GroundedBank`         | Coordination need — shared ledger                     |
-| `redeemability_ev`   | `GroundedRedeemability`| Truth pressure — redeemability                        | -/
+| WorkingSystem field  | GroundedXStrict type            | Forcing dimension                                     |
+|----------------------|---------------------------------|-------------------------------------------------------|
+| `bubbles_ev`         | `GroundedBubblesStrict`         | Distributed agents — scope separation                 |
+| `bridges_ev`         | `GroundedTrustBridgesStrict`    | Bounded audit — trust bridges                         |
+| `headers_ev`         | `GroundedHeadersStrict`         | Export across boundaries — header preservation        |
+| `revocation_ev`      | `GroundedRevocationStrict`      | Adversarial pressure — revocation                     |
+| `bank_ev`            | `GroundedBankStrict`            | Coordination need — shared ledger                     |
+| `redeemability_ev`   | `GroundedRedeemabilityStrict`   | Truth pressure — redeemability                        | -/
 
 /-- Evidence for all six behavioral capabilities of a `WorkingSystem`.
 
@@ -339,16 +339,16 @@ structure GroundedBehavior where
 
 /-- Build a `WorkingSystem` with all six proof-carrying option fields set from evidence.
 
-    Each Option field is set to `some B.field`, storing the actual `GroundedX`
-    proof object.  The `base` carries the `spec` and any other fields unchanged. -/
+    Each Option field is set to `some B.field.toStrict`, storing the `GroundedXStrict`
+    record that carries both the base evidence and its structural consequence. -/
 def WorkingSystem.withGroundedBehavior (B : GroundedBehavior) (base : WorkingSystem) : WorkingSystem :=
   { base with
-    bubbles_ev       := some B.bubbles
-    bridges_ev       := some B.trust_bridges
-    headers_ev       := some B.headers
-    revocation_ev    := some B.revocation
-    bank_ev          := some B.bank
-    redeemability_ev := some B.redeemability }
+    bubbles_ev       := some B.bubbles.toStrict
+    bridges_ev       := some B.trust_bridges.toStrict
+    headers_ev       := some B.headers.toStrict
+    revocation_ev    := some B.revocation.toStrict
+    bank_ev          := some B.bank.toStrict
+    redeemability_ev := some B.redeemability.toStrict }
 
 /-- A `WorkingSystem` built from `GroundedBehavior` satisfies all six operational
     properties.  The proof unfolds to checking `true = true` after applying
@@ -1421,12 +1421,14 @@ explicit: given any `GroundedX` witness, the matching impossibility result fires
 the non-trivial `Prop` that falls out of the bridge.  `mk'` derives that
 consequence automatically from the base evidence alone.
 
-**Relation to WorkingSystem.**  `WorkingSystem` now carries six `Option GroundedX`
-fields directly.  `grounded_partial_wellformed` proves the biconditionals using
-`grounded_spec_contains_all` (forward) and `rfl` (backward).  The `GroundedXStrict`
-wrappers here go further: they attach formal impossibility consequences to the
-base evidence, enabling richer downstream usage where the impossibility itself
-must appear in a type or proof. -/
+**Relation to WorkingSystem.**  `WorkingSystem` carries six `Option GroundedXStrict`
+fields.  The `GroundedXStrict` structures are defined in `SystemSpec.lean` (where
+they only depend on `GroundedX` fields).  `GroundedX.toStrict` constructors in
+`SystemSpec.lean` prove the consequences inline from base fields.
+
+The `mk'` constructors and bridge theorems here go further: they derive the same
+consequences via named impossibility theorems (`flat_scope_impossible`, etc.),
+providing an explicit named-proof API for downstream formal usage. -/
 
 
 /-! ### §7.1  Bubbles ↔ AgentDisagreement -/
@@ -1447,14 +1449,6 @@ theorem groundedBubbles_flat_impossible (G : GroundedBubbles) :
     ¬∃ (f : G.Claim → Prop), (∀ c, f c ↔ G.scope₁ c) ∧ (∀ c, f c ↔ G.scope₂ c) :=
   flat_scope_impossible (groundedBubbles_to_disagreement G)
 
-/-- `GroundedBubbles` augmented with its impossibility consequence.
-    `no_flat_resolver` is the machine-checked statement that scope separation is
-    structurally forced for this evidence pair. -/
-structure GroundedBubblesStrict where
-  base             : GroundedBubbles
-  no_flat_resolver : ¬∃ (f : base.Claim → Prop),
-      (∀ c, f c ↔ base.scope₁ c) ∧ (∀ c, f c ↔ base.scope₂ c)
-
 /-- Canonical constructor: derives `no_flat_resolver` from `flat_scope_impossible`. -/
 def GroundedBubblesStrict.mk' (G : GroundedBubbles) : GroundedBubblesStrict :=
   { base := G, no_flat_resolver := groundedBubbles_flat_impossible G }
@@ -1474,13 +1468,6 @@ theorem groundedTrustBridges_bridge_necessary (G : GroundedTrustBridges)
 /-- `GroundedTrustBridges` augmented with the bridge-forcing consequence.
     `bridge_forces_acceptance` witnesses that any downstream-sound policy must accept
     the witness — re-verify-only import cannot exclude it. -/
-structure GroundedTrustBridgesStrict where
-  base                     : GroundedTrustBridges
-  bridge_forces_acceptance : ∀ (policy : base.Declaration → Prop),
-      (∀ d, base.downstream_accepts d → policy d) → policy base.witness
-
-/-- Canonical constructor: `bridge_forces_acceptance` follows from `downstream_via_bridge`
-    by direct application of the policy to the witness. -/
 def GroundedTrustBridgesStrict.mk' (G : GroundedTrustBridges) : GroundedTrustBridgesStrict :=
   { base := G,
     bridge_forces_acceptance := fun _policy h => h G.witness G.downstream_via_bridge }
@@ -1496,13 +1483,6 @@ theorem groundedHeaders_router_consistent (G : GroundedHeaders) (router : G.Head
 
 /-- `GroundedHeaders` augmented with routing invariance: header-preserving export
     means no header-aware router changes its decision at the boundary. -/
-structure GroundedHeadersStrict where
-  base              : GroundedHeaders
-  routing_invariant : ∀ (router : base.Header → Bool),
-      router (base.extract base.witness) = router (base.extract (base.export_datum base.witness))
-
-/-- Canonical constructor: derives `routing_invariant` from `header_preserved`
-    via `congr_arg`. -/
 def GroundedHeadersStrict.mk' (G : GroundedHeaders) : GroundedHeadersStrict :=
   { base := G,
     routing_invariant := fun router => congrArg router G.header_preserved.symm }
@@ -1519,11 +1499,6 @@ theorem groundedRevocation_no_revocation_incorrect (G : GroundedRevocation)
 /-- `GroundedRevocation` augmented with the explicit existential: an invalid-but-revocable
     claim is known.  This existential is the evidence a proof-carrying
     `supports_correction` field will eventually require. -/
-structure GroundedRevocationStrict where
-  base                          : GroundedRevocation
-  has_invalid_revocable_witness : ∃ c : base.Claim, base.revocable c ∧ ¬base.valid c
-
-/-- Canonical constructor: the base witness is both revocable and invalid. -/
 def GroundedRevocationStrict.mk' (G : GroundedRevocation) : GroundedRevocationStrict :=
   { base := G,
     has_invalid_revocable_witness := ⟨G.witness, G.can_revoke, G.witness_is_invalid⟩ }
@@ -1540,11 +1515,6 @@ theorem groundedBank_refutes_isolation (G : GroundedBank)
 /-- `GroundedBank` augmented with the shared-entry existential.
     Positive counterpart to `private_storage_no_sharing`: collective reliance is
     non-vacuous. -/
-structure GroundedBankStrict where
-  base             : GroundedBank
-  has_shared_entry : ∃ e : base.Entry, base.agent₁_produces e ∧ base.agent₂_consumes e
-
-/-- Canonical constructor: `produced` and `consumed` directly witness `has_shared_entry`. -/
 def GroundedBankStrict.mk' (G : GroundedBank) : GroundedBankStrict :=
   { base := G, has_shared_entry := ⟨G.witness, G.produced, G.consumed⟩ }
 
@@ -1558,11 +1528,6 @@ theorem groundedRedeemability_refutes_closure (G : GroundedRedeemability)
   closed G.witness G.is_constrained G.has_path
 
 /-- `GroundedRedeemability` augmented with the constrained-and-redeemable existential. -/
-structure GroundedRedeemabilityStrict where
-  base                                : GroundedRedeemability
-  has_constrained_redeemable_witness  : ∃ c : base.Claim, base.constrained c ∧ base.redeemable c
-
-/-- Canonical constructor: the base witness is constrained and has a redeemability path. -/
 def GroundedRedeemabilityStrict.mk' (G : GroundedRedeemability) : GroundedRedeemabilityStrict :=
   { base := G,
     has_constrained_redeemable_witness := ⟨G.witness, G.is_constrained, G.has_path⟩ }
