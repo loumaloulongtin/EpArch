@@ -141,9 +141,7 @@ theorem existence_under_constraints_structural :
     EpArch.ConcreteInstance.concrete_satisfies_all_properties
 
 /-- Headline theorem (embedding version): full chain from
-    `ForcingEmbedding` through `StructurallyForced` to convergence.
-    This is the strongest form — the design judgment is localised
-    in `concrete_forcing_embedding`, and the derivation is mechanical. -/
+    `ForcingEmbedding` through `StructurallyForced` to convergence. -/
 theorem existence_under_constraints_embedding :
     ∃ W : WorkingSystem,
       ForcingEmbedding W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W :=
@@ -156,34 +154,16 @@ theorem existence_under_constraints_embedding :
 /-! ## World-to-Structural Bridges
 
 These theorems connect the W_* world assumption bundles (WorldCtx.lean) to the
-structural impossibility models (Minimality.lean).  Previously the two sides were
-proved independently — the structural models had hand-supplied witnesses, and the
-world assumptions had witnesses of their own.  These bridges show that any world
+structural impossibility models (Minimality.lean).  Each bridge shows that any world
 satisfying a W_* bundle supplies enough data to construct a matching structural
-scenario instance, so the forcing results apply without a separate construction step.
-
-The constructed instances are the minimal form sufficient to trigger the relevant
-impossibility theorem — they package the W bundle's witness values, not a full
-semantic import of the world's relational structure. -/
+scenario instance, so the forcing results apply without a separate construction step. -/
 
 /-- Any world satisfying W_bounded_verification constructs a `BoundedVerification`
     instance sufficient to trigger `verification_only_import_incomplete`.
 
-    The W bundle supplies a hard claim P and step count k > 0.  The constructed M
-    packages these into the minimal abstract form: `verify_cost := fun _ => k`
-    (a constant, not C.RequiresSteps itself) and `budget := 0`.  The world's
-    RequiresSteps field is preserved in the existential witness but is not carried
-    into M's cost function.
-
-    The constructed M has:
-    - M.Claim = C.Claim  (claim type is the world's claim type, not Unit)
-    - M.hard_claim = P   (the actual hard claim from the world assumption)
-    - M.verify_cost P = k (the extracted step count, as a constant function)
-    - ∀ w, C.RequiresSteps w P k  (world witness, returned alongside M)
-
-    verification_only_import_incomplete then fires on M.
-    Consequence: the incompleteness is specifically about the claim P the world
-    says is hard — not a synthetic Unit witness. -/
+    Packages W's hard claim P and step count k into a minimal `BoundedVerification`
+    with constant cost function.  The existential witnesses M, P, and k are returned
+    alongside the world's own `RequiresSteps` evidence. -/
 theorem w_bounded_forces_incompleteness (C : @EpArch.WorldCtx.{0})
     (W : C.W_bounded_verification) :
     ∃ (P : C.Claim) (k : Nat) (M : BoundedVerification),

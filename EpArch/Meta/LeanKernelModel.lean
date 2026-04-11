@@ -506,9 +506,7 @@ def LeanGroundedBehavior : GroundedBehavior where
 /-- `LeanWorkingSystem`: the Lean kernel modeled as an EpArch `WorkingSystem`.
 
     Built from `LeanGroundedBehavior` and `LeanGroundedSystemSpec.toSystemSpec` via
-    `WorkingSystem.withGroundedBehavior`.  Every `Bool` flag — both the four
-    behavioral ones and the six architectural ones in `spec` — is set because
-    the corresponding evidence record was supplied.  No flag is written `true` bare.
+    `WorkingSystem.withGroundedBehavior`.
     | WorkingSystem flag       | Evidence                                             |
     |--------------------------|------------------------------------------------------|
     | `has_shared_records`     | `LeanGroundedBank` (InitDef produced and consumed)   |
@@ -592,16 +590,8 @@ theorem lean_implements_bank_primitives : containsBankPrimitives LeanWorkingSyst
 /-- `LeanWorkingSystem` is partially well-formed at all constraints: behavioral
     flags ↔ architectural features.
 
-    Both sides of every biconditional are set from evidence:
-    - Behavioral flags via `WorkingSystem.withGroundedBehavior LeanGroundedBehavior`
-          (set because `LeanGroundedBank`, `LeanGroundedTrustBridges`,
-          `LeanGroundedRevocation` proofs were supplied).
-    - Spec flags via `LeanGroundedSystemSpec.toSystemSpec`
-          (set because all six `GroundedX` records were supplied).
-
-    The proof applies `grounded_partial_wellformed` directly — the general theorem
-    that any `withGroundedBehavior`/`toSystemSpec`-built system satisfies
-    `PartialWellFormed W allConstraints`. -/
+    Applies `grounded_partial_wellformed`: any system built via
+    `withGroundedBehavior`/`toSystemSpec` satisfies `PartialWellFormed W allConstraints`. -/
 theorem lean_partial_wellformed : PartialWellFormed LeanWorkingSystem allConstraints :=
   grounded_partial_wellformed LeanGroundedBehavior LeanGroundedSystemSpec
 
@@ -615,13 +605,11 @@ theorem lean_satisfies_all_properties : SatisfiesAllProperties LeanWorkingSystem
   grounded_behavior_satisfies_all LeanGroundedBehavior _
 
 
-/-! ## Structural Grounding for HasBubbles (Genuine Proof)
+/-! ## Structural Grounding for HasBubbles
 
-The `lean_has_bubbles` proof above reduces to `rfl` — it reads the Boolean
-flag we set.  This section provides the *structural* grounding: a concrete
-`AgentDisagreement` built from Lean's namespace model that makes
-`flat_scope_impossible` fire, proving that scope separation is not merely
-declared but *required* by the Lean kernel's own name-resolution structure.
+A concrete `AgentDisagreement` built from Lean's namespace model makes
+`flat_scope_impossible` fire, proving that scope separation is structurally
+required by the Lean kernel's own name-resolution structure.
 
 ### Model
 
@@ -657,9 +645,7 @@ def leanNamespaceDisagreement : AgentDisagreement where
     - agree with `open Nat` (accepting `natAdd`, rejecting `intAdd`), AND
     - agree with `open Int` (accepting `intAdd`, rejecting `natAdd`).
 
-    This is a genuine theorem derived from `flat_scope_impossible` applied
-    to `leanNamespaceDisagreement` — not a Boolean flag check.  It proves
-    that Lean's namespace system *structurally requires* scope separation:
+    Derived from `flat_scope_impossible` applied to `leanNamespaceDisagreement`:
     a flat (single-namespace) resolver is provably inadequate. -/
 theorem lean_namespace_requires_scope_separation :
     ¬∃ (f : LeanName → Prop),
@@ -714,9 +700,8 @@ def LeanKernelSystemSpecGrounded : SystemSpec :=
 /-- `HasBubbles` holds for a `WorkingSystem` whose spec is
     `LeanKernelSystemSpecGrounded`, derived from evidence.
 
-    This is the genuinely grounded proof: it traces back to
-    `LeanGroundedBubbles`, which traces back to `openNatAccepts` /
-    `openIntAccepts` / `leanNamespaceDisagreement`. -/
+    Traces back to `LeanGroundedBubbles`, `openNatAccepts`, and
+    `leanNamespaceDisagreement`. -/
 theorem lean_has_bubbles_grounded :
     spec_has_bubbles LeanKernelSystemSpecGrounded :=
   grounded_bubbles_justified LeanGroundedBubbles LeanKernelSystemSpec
@@ -745,18 +730,9 @@ theorem lean_structurally_forced : StructurallyForced LeanWorkingSystem :=
 
 /-- `LeanWorkingSystem` contains Bank primitives.
 
-    Full proof chain (mirroring `concrete_structural_convergence`):
-
-        LeanKernelSystemSpec (all six features present)
-              ↓ lean_forcing_embedding — Or.inl at every arm
-        ForcingEmbedding LeanWorkingSystem
-              ↓ embedding_to_structurally_forced
-        StructurallyForced LeanWorkingSystem
-              ↓ convergence_structural + lean_satisfies_all_properties
-        containsBankPrimitives LeanWorkingSystem
-
-    Self-referential: this theorem is type-checked by the same kernel
-    whose features populate `LeanKernelSystemSpec`. -/
+    Full chain: ForcingEmbedding → StructurallyForced → convergence.
+    Self-referential: type-checked by the same kernel whose features populate
+    `LeanKernelSystemSpec`. -/
 theorem lean_structural_convergence : containsBankPrimitives LeanWorkingSystem :=
   convergence_structural LeanWorkingSystem lean_structurally_forced lean_satisfies_all_properties
 
@@ -782,8 +758,7 @@ def lean_grounded_consequences :=
       Routes through `ForcingEmbedding → StructurallyForced →
       convergence_structural`.
 
-    This alias uses the direct route because it is the most transparent:
-    `LeanWorkingSystem` does not merely *require* Bank primitives; it *has* them. -/
+    This alias uses the direct route (`lean_implements_bank_primitives`). -/
 theorem lean_kernel_forces_bank_primitives : containsBankPrimitives LeanWorkingSystem :=
   lean_implements_bank_primitives
 

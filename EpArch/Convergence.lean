@@ -108,10 +108,7 @@ structure StructurallyForced (W : WorkingSystem) : Prop where
 
 The structural models above prove clean no-go lemmas on abstract scenarios.
 `StructurallyForced` packages the forward implications (capability → feature).
-The remaining gap: the `StructurallyForced` fields are narratively "justified by"
-the structural models but not mechanically derived from them.
-
-`ForcingEmbedding` closes this gap.  Each field says:
+`ForcingEmbedding` provides the mechanical derivation.  Each field says:
 
 > "A system handling capability X either already has feature Y, or it
 >  embeds the abstract scenario whose impossibility is already proven."
