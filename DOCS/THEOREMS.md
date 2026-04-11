@@ -1,6 +1,6 @@
 # Theorem Inventory
 
-This document catalogs **689** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
+This document catalogs **693** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
 
 **What the architecture claims:** Decentralized epistemic authorization requires specific structural mechanisms — a lifecycle with type-separated stages, header-preserving export, a revision loop, temporal validity, and a Bank substrate. These aren't design preferences; they are forced by the combination of agent constraints and system health goals.
 
@@ -484,23 +484,31 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 
 ## Bucket 9c: Observation-Boundary Equivalence (BehavioralEquivalence.lean)
 
-**Paper Role:** Establishes that the six Bank primitive flags fully determine a WorkingSystem's observable behavior: any two systems with identical flags produce identical observations on all inputs. Bridges the abstract forcing argument to a behavioral claim.
+**Paper Role:** Proves that any two `GroundedBehavior` certificates produce identical observations on all inputs. `Behavior B i` is determined solely by the input constructor — not by the structural content of `B`. The step-bridge section operationally grounds this: for withdraw, challenge, and tick inputs, a concrete `Step` is constructed from `B`'s evidence (`bank`, `trust_bridges`, `revocation`) and structurally consumed via `cases h`, so the equality is derived *through* an actual firing. Export falls back to definitional equality because `header_preserved` is opaque and cannot be reflected into a concrete `depositHasHeader` for the unit-type instantiation.
 
 ### Definitions
 
 - `Input` — abstract input events (withdraw, export, challenge, time-advance)
 - `Observation` — observable outcomes
-- `Behavior W i` — observation produced by system `W` on input `i`; depends only on primitive flags
-- `BehaviorallyEquivalent W1 W2` — identical observations on all inputs
+- `Behavior B i` — observation produced by `B : GroundedBehavior` on input `i`; determined by input shape, not by witness content; no fallback branch
+- `BehaviorallyEquivalent B1 B2` — identical observations on all inputs
+- `input_to_action` — maps `Input` to the matching concrete `StepSemantics.Action`
+- `observe_step_action` — extracts an `Observation` from a concrete action
+- `ReadyState i` — a `CState` + proof that `Step` fires for `input_to_action i`
+- `withdraw_ready_state B a b d` — constructs `ReadyState` from `B.bank`/`B.trust_bridges`
+- `challenge_ready_state B c f` — constructs `ReadyState` from `B.revocation`
 
 ### Theorems
 
 | Theorem | Statement | Role |
 |---------|-----------|------|
 | `behavioral_equiv_refl/symm/trans` | Equivalence relation properties | Structural foundation |
-| `same_flags_same_behavior` | Identical flags → identical behavior | Core lemma; `Behavior` is flag-determined |
-| `satisfies_all_fixes_flags` | `SatisfiesAllProperties W` → all four flags are `true` | Bridges property satisfaction to flag values |
-| `working_systems_equivalent` | Both satisfy all properties → behaviorally equivalent | Main theorem; cited when closing the behavioral claim |
+| `satisfies_all_fixes_flags` | `SatisfiesAllProperties W` → all six flags are `true` | Bridges property satisfaction to flag values |
+| `behavior_step_consistent` | `Behavior B i = observe_step_action (input_to_action i)` for all `B`, `i` | Definitional bridge; both sides action-indexed |
+| `behavior_from_step` | Given `Step s (input_to_action i) s'`, derive `observe_step_action ... = Behavior B i` by `cases i <;> cases h` | Step-consuming bridge; eliminates the Step constructor |
+| `grounded_export_step` | Export Step fires given `depositHasHeader` + `hasTrustBridge` | Conditional; `header_preserved` opaque prevents unconditional form |
+| `working_systems_equivalent` | Any two `GroundedBehavior` witnesses are behaviorally equivalent; unconditional — no `SatisfiesAllProperties` premise | Main theorem |
+| `grounded_behaviors_equivalent` | Same equivalence proved by `cases i <;> rfl`; no Step witnesses | Reveals depth ceiling: equality is input-indexed, not state-indexed |
 
 ---
 
@@ -1581,4 +1589,20 @@ $$\text{containsBankPrimitives}(\text{LeanWorkingSystem}) \quad \text{(directly 
 **Other files (+16):** additional theorems in `ConcreteLedgerModel.lean`, `SystemSpec.lean`, and supporting files added as the implementation grew across branch development; see per-file section counts above
 
 **New definitions (not theorem-counted):** `GroundedBehavior`, `WorkingSystem.withGroundedBehavior`, `LeanKernelCtx`, `LeanWorkingSystem`, `lean_forcing_embedding`, `lean_grounded_consequences`, six `LeanGroundedX` and `LeanGroundedXStrict` witnesses
+
+---
+
+### behavioral-equivalence-step branch additions (+4 → **693** total)
+
+**BehavioralEquivalence.lean (refactored):** Replaced the flag-inspecting `WorkingSystem`-based design with a `GroundedBehavior`-indexed one. Added a full step-bridge section grounding withdraw, challenge, and tick inputs in operational `Step` firings.
+
+**Removed (−1):** `same_flags_same_behavior` — the flag-equality lemma for the old `WorkingSystem`-parameterised `Behavior`
+
+**New theorems (+5):** `behavior_step_consistent`, `behavior_from_step`, `grounded_export_step`, `grounded_behaviors_equivalent`; `canonLedger_get` (private)
+
+**Net: +4 theorems**
+
+**New definitions (not theorem-counted):** `input_to_action`, `observe_step_action`, `ReadyState`, `withdraw_ready_state`, `challenge_ready_state`; private helpers `canonDeposit`, `canonLedger`, `CState`, `CAction`, `Bubble.toNat`
+
+**Architectural change:** `Behavior` no longer inspects `isSome` flags and has no "missing primitives" fallback branch. `BehaviorallyEquivalent` is now `∀ B1 B2 : GroundedBehavior` (not `WorkingSystem`). `working_systems_equivalent` is unconditional — the `GroundedBehavior` certificate alone suffices; `SatisfiesAllProperties` premises are no longer required.
 

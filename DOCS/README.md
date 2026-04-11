@@ -1,6 +1,6 @@
 # EpArch Lean Formalization — Documentation Index
 
-This folder documents the Lean formalization of the Epistemic Architecture (EpArch) framework — 689 proved theorems, 0 axiom declarations, zero sorries.
+This folder documents the Lean formalization of the Epistemic Architecture (EpArch) framework — 693 proved theorems, 0 axiom declarations, zero sorries.
 
 **The core claim:** lifecycle gates, header-preserving export, a revision loop, and temporal validity are not design choices. They are *forced* by the combination of agent constraints (imperfect agents face permanent challenge pressure) and system health goals (safe withdrawal, reliable export, self-correction). The files below are the machine-checked record of that forcing argument.
 
@@ -59,7 +59,7 @@ For the full paper-section-to-Lean-artifact mapping (with math notation, A.# lab
 | 8 | Modal Properties — Safety/Sensitivity ↔ S/E/V header preservation |
 | 9 | Grounded Minimality — Each feature necessary for specific capabilities |
 | 9b | Abstract Structural Forcing — Six per-dimension `*_forces_*` theorems (no `WellFormed`, no biconditionals) + `SystemOperationalBundle` / `WorldBridgeBundle`; headline `bundled_structure_forces_bank_primitives`; six structural impossibility models + `StructurallyForced` / `convergence_structural` (`Minimality.lean` + `Convergence.lean`) |
-| 9c | Observation-Boundary Equivalence — Bank primitive flags fully determine observable behavior (`BehavioralEquivalence.lean`) |
+| 9c | Observation-Boundary Equivalence — Any two `GroundedBehavior` witnesses produce identical observations; step-bridge grounds withdraw/challenge/tick via `ReadyState` + `behavior_from_step` (`BehavioralEquivalence.lean`) |
 | 9d | Kernel Verification Depth — `DepthClaim` constructive witness; `bounded_verify` budget decision procedure; `DepthWorldCtx` closes `W_bounded_verification` by construction (`VerificationDepth.lean`) |
 | 10 | Adversarial Model — Attack structures, DDoS vectors, obligation theorems |
 | 11 | Repair Loop Semantics — Challenge-repair-revalidation cycle |
@@ -102,7 +102,7 @@ For the full paper-section-to-Lean-artifact mapping (with math notation, A.# lab
 | `Invariants.lean` | Protocol requirements | 0 |
 | `Minimality.lean` | Structural impossibility models + alternative-architecture dismissals | 0 |
 | `Convergence.lean` | `StructurallyForced`, `ForcingEmbedding`, `convergence_structural`, bridge predicates | 0 |
-| `BehavioralEquivalence.lean` | Observation-boundary equivalence; Bank flags determine behavior | 0 |
+| `BehavioralEquivalence.lean` | Observation-boundary equivalence; `Behavior` takes `GroundedBehavior`, step-grounded for withdraw/challenge/tick | 0 |
 | `ConcreteLedgerModel.lean` | Non-vacuity witness (constructive) | 0 |
 | `Meta/LeanKernelModel.lean` | Lean kernel self-application: `LeanKernelCtx`, `LeanWorkingSystem`, world-layer witnesses, architecture-layer proofs, convergence chain | 0 |
 
