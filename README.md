@@ -6,11 +6,22 @@ Standalone Lean 4 framework for reasoning about bounded epistemic systems under 
 
 [![CI](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml/badge.svg)](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml)
 
-**712 theorems. 0 axiom declarations. 0 sorries.**
+**0 axiom declarations. 0 sorries.**
 
 ```bash
 lake build   # Lean 4.3.0, no Mathlib
 ```
+
+**Start here depending on what you want:**
+
+| I want to… | Go to |
+|---|---|
+| Build and run it | `lake build` above, then [What EpArch Does](#what-eparch-does) |
+| Certify a system configuration | [Quick Example](#quick-example) |
+| Find a specific theorem | [DOCS/THEOREMS.md](DOCS/THEOREMS.md) |
+| Understand what the framework is for | [The EpArch Framework](#the-eparch-framework) |
+| Read the paper first, then find the Lean | [DOCS/PAPER-MAP.md](DOCS/PAPER-MAP.md) |
+| Extend or contribute | [DOCS/MODULARITY.md](DOCS/MODULARITY.md) |
 
 ---
 
