@@ -99,8 +99,8 @@ All paper claims should reference these definitions.
 |----------|------|-----------|------|
 | `Traction` | `structure` | Basic.lean | C |
 | `Authorization` | `structure` | Basic.lean | C |
-| `traction_broader_than_authorization` | `theorem` | Theorems.lean:2647 | A |
-| `authorization_implies_traction` | `theorem` | Theorems.lean:2666 | A |
+| `traction_broader_than_authorization` | `theorem` | Theorems.lean:3473 | A |
+| `authorization_implies_traction` | `theorem` | Theorems.lean:3492 | A |
 
 **Math:** $\text{Authorization}(x) \Rightarrow \text{Traction}(x)$ but $\neg(\text{Traction}(x) \Rightarrow \text{Authorization}(x))$
 
@@ -116,11 +116,11 @@ All paper claims should reference these definitions.
 
 | Artifact | Type | File:Line | Tier |
 |----------|------|-----------|------|
-| `GettierCase` | `structure` | Theorems.lean:335 | C |
-| `gettier_is_V_failure` | `theorem` | Theorems.lean:395 | A |
+| `GettierCase` | `structure` | Theorems.lean:339 | C |
+| `gettier_is_V_failure` | `theorem` | Theorems.lean:409 | A |
 | `canonical_gettier_is_gettier` | `theorem` | Theorems.lean:414 | A |
-| `FakeBarnCase` | `structure` | Theorems.lean:468 | C |
-| `fake_barn_is_E_failure` | `theorem` | Theorems.lean:513 | A |
+| `FakeBarnCase` | `structure` | Theorems.lean:476 | C |
+| `fake_barn_is_E_failure` | `theorem` | Theorems.lean:526 | A |
 
 ---
 
@@ -141,10 +141,10 @@ All paper claims should reference these definitions.
 | `LadderStage.Belief` | `constructor` | Basic.lean:125 | C |
 | `LadderStage.Certainty` | `constructor` | Basic.lean:126 | C |
 | `Entrenched` | `def` | Basic.lean:189 | C |
-| `EntrenchedAgent` | `structure` | Theorems.lean:2756 | C |
-| `deposit_no_longer_active` | `def` | Theorems.lean:2765 | C |
-| `entrenchment_breaks_safe_withdrawal` | `theorem` | Theorems.lean:2784 | A |
-| `entrenched_cannot_withdraw` | `theorem` | Theorems.lean:2806 | A |
+| `EntrenchedAgent` | `structure` | Theorems.lean:3582 | C |
+| `deposit_no_longer_active` | `def` | Theorems.lean:3591 | C |
+| `entrenchment_breaks_safe_withdrawal` | `theorem` | Theorems.lean:3617 | A |
+| `entrenched_cannot_withdraw` | `theorem` | Theorems.lean:3639 | A |
 
 > **Kernel note:** EpArch formalizes the ladder as a typed interface and boundary surface (`LadderStage`, `Entrenched`). Rich internal ladder dynamics — belief update rules, graded modulation, epistemic path-dependence — are intentionally outside the kernel to preserve agent agnosticism. Agents that do not operate on the full five-stage model remain first-class coordination participants.
 
@@ -180,7 +180,7 @@ All paper claims should reference these definitions.
 | `Validate_B`, `Accept_B`, `Challenge_B`, `Repair_B`, `Revoke_B`, `Restore_B`, `Export_B_C`, `Import_C` | `def` | Bank.lean | C |
 | `canWithdrawAt` | `def` | StepSemantics.lean | A |
 | `withdrawal_requires_three_gates` | `theorem` | StepSemantics.lean:1465 | A |
-| `canWithdrawAt_iff_gates` | `theorem` | Theorems.lean:164 | A |
+| `canWithdrawAt_iff_gates` | `theorem` | Theorems.lean:168 | A |
 
 ---
 
@@ -250,10 +250,10 @@ All paper claims should reference these definitions.
 | Artifact | Type | File:Line | Tier |
 |----------|------|-----------|------|
 | `strip` | `def` | Header.lean/Theorems.lean | A |
-| `no_strip_left_inverse` | `theorem` | Theorems.lean:1962 | A |
-| `import_cannot_reconstruct` | `theorem` | Theorems.lean:1988 | A |
-| `different_headers_same_strip` | `theorem` | Theorems.lean:1931 | A |
-| `stripV_not_injective` | `theorem` | Theorems.lean:1277 | A |
+| `no_strip_left_inverse` | `theorem` | Theorems.lean:2706 | A |
+| `import_cannot_reconstruct` | `theorem` | Theorems.lean:2732 | A |
+| `different_headers_same_strip` | `theorem` | Theorems.lean:2675 | A |
+| `stripV_not_injective` | `theorem` | Theorems.lean:2027 | A |
 
 **Math:** $\nexists f.\, f \circ \text{strip} = \text{id}$
 
@@ -309,10 +309,10 @@ All paper claims should reference these definitions.
 | Artifact | Type | File:Line | Tier |
 |----------|------|-----------|------|
 | `τ_valid` | `def` | StepSemantics.lean:152 | A |
-| `Stale` | `def` | Theorems.lean:2360 | A |
-| `stale_blocks_withdrawal` | `theorem` | Theorems.lean:2379 | A |
-| `tick_can_cause_staleness` | `theorem` | Theorems.lean:2398 | A |
-| `withdrawal_requires_fresh` | `theorem` | Theorems.lean:2367 | A |
+| `Stale` | `def` | Theorems.lean:3155 | A |
+| `stale_blocks_withdrawal` | `theorem` | Theorems.lean:3174 | A |
+| `tick_can_cause_staleness` | `theorem` | Theorems.lean:3193 | A |
+| `withdrawal_requires_fresh` | `theorem` | Theorems.lean:3162 | A |
 
 ---
 
@@ -342,8 +342,8 @@ All paper claims should reference these definitions.
 |----------|------|-----------|------|
 | `FieldCount_Full` | `def` | Theorems.lean | A |
 | `FieldCount_Stripped` | `def` | Theorems.lean | A |
-| `strip_reduces_field_count` | `theorem` | Theorems.lean:2100 | A |
-| `fewer_fields_coarser_repair` | `theorem` | Theorems.lean:2113 | A |
+| `strip_reduces_field_count` | `theorem` | Theorems.lean:2844 | A |
+| `fewer_fields_coarser_repair` | `theorem` | Theorems.lean:2857 | A |
 
 ---
 
@@ -393,14 +393,14 @@ All paper claims should reference these definitions.
 
 | Artifact | Type | File:Line | Tier |
 |----------|------|-----------|------|
-| `LotterySituation` | `structure` | Theorems.lean:539 | C |
-| `LotteryIsTypeError` | `theorem` | Theorems.lean:581 | A |
-| `ConfabulationCase` | `structure` | Theorems.lean:607 | C |
-| `confabulation_is_type_error` | `theorem` | Theorems.lean:626 | A |
-| `credence_does_not_auto_close` | `theorem` | Theorems.lean:2562 | A |
-| `status_distinction_blocks_lottery` | `theorem` | Theorems.lean:2591 | A |
-| `lottery_paradox_dissolved_architecturally` | `theorem` | Theorems.lean:2692 | A |
-| `candidate_blocks_withdrawal` | `theorem` | Theorems.lean:2527 | A |
+| `LotterySituation` | `structure` | Theorems.lean:1044 | C |
+| `LotteryIsTypeError` | `theorem` | Theorems.lean:1086 | A |
+| `ConfabulationCase` | `structure` | Theorems.lean:1112 | C |
+| `confabulation_is_type_error` | `theorem` | Theorems.lean:1131 | A |
+| `credence_does_not_auto_close` | `theorem` | Theorems.lean:3388 | A |
+| `status_distinction_blocks_lottery` | `theorem` | Theorems.lean:3417 | A |
+| `lottery_paradox_dissolved_architecturally` | `theorem` | Theorems.lean:3518 | A |
+| `candidate_blocks_withdrawal` | `theorem` | Theorems.lean:3353 | A |
 
 ---
 
@@ -687,13 +687,13 @@ This closes the argument: given realistic agents and desired properties, you **c
 | Existence under constraints | `existence_under_constraints_structural` | Feasibility.lean | A |
 | Bank primitives forced (structural) | `bundled_structure_forces_bank_primitives` | Feasibility.lean | A |
 | Self-correction requires revision | `no_revision_no_correction` | StepSemantics.lean:807 | A |
-| Strip has no left inverse | `no_strip_left_inverse` | Theorems.lean:1962 | A |
-| Lottery dissolved | `lottery_paradox_dissolved_architecturally` | Theorems.lean:2692 | A |
-| Stale blocks withdrawal | `stale_blocks_withdrawal` | Theorems.lean:2379 | A |
-| Gettier is V-failure | `gettier_is_V_failure` | Theorems.lean:395 | A |
+| Strip has no left inverse | `no_strip_left_inverse` | Theorems.lean:2706 | A |
+| Lottery dissolved | `lottery_paradox_dissolved_architecturally` | Theorems.lean:3518 | A |
+| Stale blocks withdrawal | `stale_blocks_withdrawal` | Theorems.lean:3174 | A |
+| Gettier is V-failure | `gettier_is_V_failure` | Theorems.lean:409 | A |
 | Diagnosability monotonic | `strip_reduces_diagnosability` | Diagnosability.lean | A |
 | Model is satisfiable | `all_commitments_satisfiable` | ConcreteLedgerModel.lean:559 | A |
-| Entrenchment breaks withdrawal | `entrenchment_breaks_safe_withdrawal` | Theorems.lean:2784 | A |
+| Entrenchment breaks withdrawal | `entrenchment_breaks_safe_withdrawal` | Theorems.lean:3617 | A |
 | Deposit observational completeness | `observational_completeness_full` | Header.lean:199 | A |
 | Deposit extensionality | `deposit_ext` | Header.lean:166 | A |
 

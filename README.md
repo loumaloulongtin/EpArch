@@ -6,7 +6,7 @@ Standalone Lean 4 framework for reasoning about bounded epistemic systems under 
 
 [![CI](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml/badge.svg)](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml)
 
-**693 theorems. 0 axiom declarations. 0 sorries.**
+**712 theorems. 0 axiom declarations. 0 sorries.**
 
 ```bash
 lake build   # Lean 4.3.0, no Mathlib
@@ -124,7 +124,7 @@ The framework has three layers:
 
 | Module | Purpose |
 |---|---|
-| `Theorems.lean` | Main theorem library (109 theorems) — lifecycle gates, case bindings, epistemic puzzle localizations |
+| `Theorems.lean` | Main theorem library (117 theorems) — lifecycle gates, case bindings, epistemic puzzle localizations |
 | `Diagnosability.lean` | Observability-based diagnosability ordering |
 | `AdversarialBase.lean` | Adversarial type definitions |
 | `AdversarialObligations.lean` | Attack/defense obligation theorems under world bundles |
@@ -143,7 +143,7 @@ The framework has three layers:
 | `Meta/Modular.lean` | Constraint-subset modularity: `PartialWellFormed`, `modular` (∀ S ⊆ constraints, biconditional fragment → forcing projection), `allConstraints`/`noConstraints` |
 | `Meta/ClusterRegistry.lean` | 29-cluster tag registry: `ClusterTag`, `EnabledXxxCluster` inductives, per-family canonical lists, `clusterEnabled`/`clusterDescription` routing |
 | `Meta/Config.lean` | Configurable certification engine: `CertifiedProjection`, `certify`, named proof witnesses for all 29 clusters |
-| `Meta/LeanKernelModel.lean` | Lean kernel self-application: `LeanKernelCtx` (world layer), `LeanWorkingSystem` (architecture layer), 23 theorems proving the Lean kernel is EpArch-compliant; the convergence chain closes with `lean_structural_convergence` (direct route: `lean_implements_bank_primitives`) |
+| `Meta/LeanKernelModel.lean` | Lean kernel self-application: `LeanKernelCtx` (world layer), `LeanWorkingSystem` (architecture layer), 30 theorems proving the Lean kernel is EpArch-compliant; the convergence chain closes with `lean_structural_convergence` (direct route: `lean_implements_bank_primitives`) |
 
 ### Safety and Scope
 

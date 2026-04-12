@@ -533,8 +533,7 @@ theorem canonical_fake_barn_is_fake_barn (P : PropLike) :
   ⟨rfl, rfl, rfl⟩
 
 /-- Fake Barn profile: the structural `e_certified` field directly certifies
-    E-coverage failure. The field must be proved at construction time, making
-    the E-failure an explicit structural invariant rather than a computed Bool. -/
+    E-coverage failure. The field is proved at construction time. -/
 theorem fake_barn_profile_yields_E_failure (fb : FakeBarnCase (PropLike := PropLike)) :
     barn_case_E_inadequate fb :=
   fb.e_certified
@@ -592,7 +591,7 @@ structure StandardClearance (Standard : Type u) where
 /-- Provenance mode: how the certifying source connects to the truth-maker.
     Only `.direct_inspection` counts as genuinely tracking.  The `tracks_genuine`
     Bool in `VProvenance` must be honest about `mode = .direct_inspection`;
-    the bridge is now a concrete enum comparison rather than `⟨fun _ => trivial, …⟩`. -/
+    the bridge requires a concrete enum comparison. -/
 inductive ProvenanceMode where
   | direct_inspection  -- source directly verified the claim
   | hearsay            -- source only received it from another party
@@ -601,11 +600,10 @@ inductive ProvenanceMode where
 
 /-- V-provenance witness: genuine provenance for the Standard case.
 
-    Mirrors `VIndependence` for the Gettier case, but represents the PASSING V:
-    the claim genuinely traces to the certifying source without coincidence.
-    `genuinely_tracks` is **derived** from `mode`: it holds iff
-    `mode = .direct_inspection`.  The bridge `tracks_sound` now requires a
-    concrete enum comparison, not bare `⟨fun _ => trivial, fun _ => rfl⟩`. -/
+    The claim genuinely traces to the certifying source without coincidence,
+    in contrast to the Gettier case (V-failure).  `genuinely_tracks` is derived
+    from `mode = .direct_inspection`; the `tracks_sound` bridge requires a
+    concrete enum comparison. -/
 structure VProvenance where
   /-- Who certified this claim (e.g., "the cook", "the supplier") -/
   certifying_source : String
@@ -617,13 +615,12 @@ structure VProvenance where
   tracks_sound      : tracks_genuine = true ↔ mode = .direct_inspection
 
 /-- V-provenance genuinely tracks the truth-maker iff the mode is direct inspection.
-    Derived from `mode` — not a free-floating `True`.
+    Derived from `mode`.
     `@[reducible]` makes this transparent to `decide` and definitional reduction. -/
 @[reducible] def VProvenance.genuinely_tracks (v : VProvenance) : Prop := v.mode = .direct_inspection
 
 /-- Typed threat categories for the error model.
-    Replacing the former `List String` with a typed list enables membership
-    proofs that are genuine `List.Mem` witnesses, not bare `trivial`. -/
+    Membership proofs use `List.Mem` witnesses, giving genuine decidable evidence. -/
 inductive Threat where
   | ingredient_contamination  -- e.g., peanut traces via shared equipment
   | cross_contact             -- e.g., packaging shared with allergen products
@@ -631,13 +628,9 @@ inductive Threat where
   | known_liar_testimony      -- testimony from a documented unreliable source
   deriving DecidableEq, Repr
 
-/-- Error-model adequacy witness: no relevant gap in the error model.
-
-    Mirrors `ErrorModelCoverage` for the Fake Barn case, but represents the PASSING E:
-    the error model covers all nearby relevant threats for this claim.
-    `no_relevant_gap` is **derived** from `relevant_threat ∈ modeled_threats` — a
-    real `List.Mem` witness, not bare `True`.  The `adequacy_sound` bridge now
-    requires proving a concrete membership fact at construction time. -/
+/-- Error-model adequacy witness for the Standard case: all nearby relevant threats
+    for this claim are covered.  `no_relevant_gap` derives from
+    `relevant_threat ∈ modeled_threats` via `adequacy_sound`. -/
 structure EAdequacy where
   /-- The threat this case is exposed to — what E must cover. -/
   relevant_threat     : Threat
@@ -649,7 +642,7 @@ structure EAdequacy where
   adequacy_sound      : no_nearby_unmodeled = true ↔ relevant_threat ∈ modeled_threats
 
 /-- E is adequate iff the relevant threat is on the modeled list.
-    Derived from concrete data — not a free-floating `True`.
+    Derived from concrete data.
     `@[reducible]` makes this transparent to `decide` and definitional reduction. -/
 @[reducible] def EAdequacy.no_relevant_gap (e : EAdequacy) : Prop :=
   e.relevant_threat ∈ e.modeled_threats
@@ -918,10 +911,9 @@ inductive ReliabilityTag where
   deriving DecidableEq, Repr
 
 /-- Source reliability record.
-    `is_unreliable` is **derived** from `tags`: it holds iff
-    `documented_liar ∈ tags ∨ audited_unreliable ∈ tags` — a real disjunctive
-    membership fact, not bare `True`.  `unreliability_sound` bridges the Bool
-    mirror with a concrete tag-membership proof at construction time. -/
+    `is_unreliable` derives from `tags`: it holds iff
+    `documented_liar ∈ tags ∨ audited_unreliable ∈ tags`. `unreliability_sound`
+    bridges the Bool mirror. -/
 structure SourceReliability where
   source_id             : String
   /-- Reliability tags recorded for this source in the error model. -/
@@ -933,7 +925,7 @@ structure SourceReliability where
                             .documented_liar ∈ tags ∨ .audited_unreliable ∈ tags
 
 /-- A source is unreliable iff it carries a documented or audited tag.
-    Derived from the tag list — not a free-floating `True`.
+    Derived from the tag list.
     `@[reducible]` makes this transparent to `decide` and definitional reduction. -/
 @[reducible] def SourceReliability.is_unreliable (sr : SourceReliability) : Prop :=
   .documented_liar ∈ sr.tags ∨ .audited_unreliable ∈ sr.tags
@@ -951,9 +943,8 @@ inductive TestimonyMode where
     unreliable, while V accurately traces the claim to that same source.
 
     Both E and V are structurally correct — the void is in S.
-    `testimony_only` is **derived** from `testimony_mode = .sole_source`;
-    the `testimony_sound` bridge requires a concrete mode comparison, not
-    bare `⟨fun _ => trivial, fun _ => rfl⟩`. -/
+    `testimony_only` derives from `testimony_mode = .sole_source`;
+    `testimony_sound` bridges the mode comparison. -/
 structure VacuousStandardCase where
   claim  : PropLike
   /-- The source whose testimony grounds the deposit.
@@ -972,7 +963,7 @@ structure VacuousStandardCase where
   s_testimony_certified      : s_is_source_testimony_only = true
 
 /-- S is testimony-only iff the testimony mode is `sole_source`.
-    Derived from the mode — not a free-floating `True`.
+    Derived from the mode.
     `@[reducible]` makes this transparent to `decide` and definitional reduction. -/
 @[reducible] def VacuousStandardCase.testimony_only
     (vc : VacuousStandardCase (PropLike := PropLike)) : Prop :=
@@ -1143,7 +1134,7 @@ theorem confabulation_is_type_error (c : ConfabulationCase (PropLike := PropLike
   exact ⟨high_fluency c, ungrounded c, h_fluency, h_ungrounded⟩
 
 
-/-! ### Wave 1: Structural Step-Grounded Forms
+/-! ### Structural Step-Grounded Forms
 
 These theorems provide the genuine operational content for the lottery and
 confabulation patterns.  `Step.withdraw` requires `isDeposited` as a hard
@@ -1167,7 +1158,8 @@ theorem lottery_no_deposit_blocks_withdraw
 /-! ## Diagnosability Metrics -/
 
 /-- Diagnosability type and scoring function.
-    Retained for backward compatibility; use `field_checkable` for structural reasoning. -/
+    Score-based ordering measure.  For structural reasoning about field accessibility,
+    use `field_checkable`. -/
 structure Diagnosability where
   score : Nat
 
@@ -1267,21 +1259,11 @@ theorem header_localization_link
 Safety and sensitivity conditions from modal epistemology,
 shown to be special cases of V/E field structure.
 
-The WorldCtx-parameterized structures (`SafetyCaseCtx`, `SensitivityCaseCtx`) below
-are the canonical forms: they carry genuine universally-quantified predicates over
-world-relative truth and connect to the concrete `LeanKernelCtx` instantiation.
-
-The former Bool-flag versions (`SafetyCase`, `SensitivityCase`) are retired:
-- `SafetyCase.modal_ok : Bool` / `SensitivityCase.modal_ok : Bool` cannot express
-  the modal content "in nearby P-false worlds, agent doesn't believe P"
-- The Bool versions' theorems (`safety_V_link_case`, `sensitivity_E_link_case`)
-  were one-step applications of a stored implication — not structural reasoning
-  about worlds
-- `SafetyCaseCtx.v_independent` and `SensitivityCaseCtx.e_covers` carry actual
-  universally-quantified predicates; their theorems instantiate the quantifier at
-  `sc.world` for genuine modus-tollens reasoning
-
-See `safety_ctx_V_link` and `sensitivity_ctx_E_link` below. -/
+The canonical forms here are `SafetyCaseCtx` and `SensitivityCaseCtx`: they carry
+genuinely universally-quantified predicates over world-relative truth.  The predicates
+`v_independent` and `e_covers` are obs-bounded — they quantify over observationally
+equivalent worlds rather than all worlds — which gives genuine modus-tollens structure
+to `safety_ctx_V_link` and `sensitivity_ctx_E_link` below. -/
 
 
 
@@ -1330,7 +1312,7 @@ theorem gettier_ctx_exhibits_provenance_gap (C : WorldCtx) (g : GettierCaseCtx C
 /-- Gettier profile (WorldCtx level) yields V-failure: the provenance gap witnesses
     a world where truth and observation come apart.
     This is the canonical statement of the Gettier result using the structural
-    WorldCtx-parameterized infrastructure from Phase 0A. -/
+    WorldCtx-parameterized infrastructure defined above. -/
 theorem gettier_profile_yields_V_failure (C : WorldCtx) (g : GettierCaseCtx C)
     (h : IsGettierCtx C g) :
     ∃ w', C.Truth w' g.P ∧ C.obs w' = C.obs g.world ∧ w' ≠ g.world :=
@@ -1514,7 +1496,7 @@ Once separated, the puzzles dissolve into parameter questions. -/
     don't auto-propagate: knowing P is deposited and P→Q doesn't automatically
     deposit Q. That requires a separate validation.
 
-    Structural invariants (Wave 3 upgrade):
+    Structural invariants:
     - `bank_no_entailment` enforces `bank_auto_propagates = false` at construction
       time; contradictory cases are rejected by the type checker.
     - The Ladder side is grounded by `certainty_closes_lts_grounded` (StepSemantics):
@@ -1576,7 +1558,7 @@ theorem certainty_closes_lts_grounded
     conflates two things: meta-certainty (Ladder: I can introspect my confidence)
     and header inspection (Bank: I can check the deposit's provenance).
 
-    Structural invariants (Wave 3 upgrade):
+    Structural invariants:
     - `either_available` enforces that at least one channel holds at construction
       time; cannot build a luminosity_puzzle with neither — that would not be a
       luminosity puzzle at all (the puzzle arises from having the channels conflated).
@@ -2141,9 +2123,9 @@ theorem testimony_is_export (t : testimony_case (PropLike := PropLike)) :
 
     We distinguish agent access (mutable) from deposit provenance (immutable in bubble).
 
-    Structural invariant (Wave 3 upgrade): `deposit_survives_access_loss` encodes
-    the key claim — access loss does NOT invalidate the deposit.  The theorem now
-    USES the `agent_lost_access` premise, routing it through this invariant.
+    Structural invariant: `deposit_survives_access_loss` encodes
+    the key claim — access loss does not invalidate the deposit.  The theorem uses
+    the `agent_lost_access` premise, routing it through this invariant.
     LTS grounding: `deposits_survive_revision_free_trace` (StepSemantics) proves
     that any revision-free trace preserves `isDeposited`; access loss corresponds
     to no revision action being issued against the deposit. -/
@@ -2178,10 +2160,8 @@ def provenance_intact (f : forgotten_evidence_case (PropLike := PropLike) (Stand
   f.deposit.h.V = f.original_evidence
 
 /-- Access loss ≠ deposit invalidation: agent access and bubble deposit are independent.
-    `agent_lost_access f` IS used — it flows through `f.deposit_survives_access_loss`
-    to derive `bubble_deposit_persists f`.  Contrast with Pattern B: previously
-    `intro _; exact ⟨h_in_bubble, h_provenance⟩` (premise discarded, `h_in_bubble`
-    supplied as an explicit parameter). -/
+    `agent_lost_access f` flows through `f.deposit_survives_access_loss`
+    to derive `bubble_deposit_persists f`. -/
 theorem forgotten_evidence_persistence
     (f : forgotten_evidence_case (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
@@ -2230,7 +2210,7 @@ theorem disagreement_is_routing (d : disagreement_case (PropLike := PropLike)) :
 
     Different bubbles, different deposits; scope makes this coherent.
 
-    `scope_separation` is a required structural field (Wave 3 upgrade): a
+    `scope_separation` is a required structural field: a
     `group_knowledge_case` must certify bubble distinctness at construction
     time.  The theorem has no premises — distinctness is part of the case
     definition itself, not supplied by the caller. -/
@@ -2430,11 +2410,11 @@ theorem context_is_policy (c : context_case (PropLike := PropLike))
     Identity-based filtering at trust gate distorts who gets heard;
     credibility deflation = unjustified ACL downgrade.
 
-    Structural invariants (Wave 3 upgrade): `identity_implies_deflation` and
+    Structural invariants: `identity_implies_deflation` and
     `identity_implies_downgrade` encode that identity-based filtering is
     definitionally a form of import corruption — certified at construction time.
-    The theorem NOW USES the `identity_based_filtering i` premise, routing it
-    through both invariants.  Previously the premise was discarded. -/
+    The theorem uses the `identity_based_filtering i` premise, routing it
+    through both invariants. -/
 structure injustice_case where
   speaker : Agent
   hearer : Agent
@@ -2462,10 +2442,9 @@ def credibility_deflation (i : injustice_case) : Prop := i.deflates_credibility 
 def unjustified_acl_downgrade (i : injustice_case) : Prop := i.downgrades_acl = true
 
 /-- Identity-based filtering at import gates constitutes credibility deflation.
-    `identity_based_filtering i` IS used — it flows through
+    `identity_based_filtering i` flows through
     `i.identity_implies_deflation` and `i.identity_implies_downgrade` to derive
-    both conclusions.  Contrast with Pattern B: previously `intro _; exact ⟨h_deflates, h_downgrades⟩`
-    (premise discarded, conclusion re-packed from explicit parameters). -/
+    both conclusions. -/
 theorem injustice_is_import_corruption (i : injustice_case) :
     identity_based_filtering i → (credibility_deflation i ∧ unjustified_acl_downgrade i) :=
   fun h_filter => ⟨i.identity_implies_deflation h_filter, i.identity_implies_downgrade h_filter⟩
@@ -2475,8 +2454,8 @@ theorem injustice_is_import_corruption (i : injustice_case) :
     Deposits live in bubbles that include artifacts;
     the question 'where is cognition?' becomes 'where is the bubble boundary and ACL?'
 
-    `artifact_is_included` is a required structural field (Wave 3 upgrade): the
-    extended_case represents the scenario where the artifact IS in the bubble,
+    `artifact_is_included` is a required structural field: the
+    extended_case represents the scenario where the artifact is in the bubble,
     certified at construction time.  The theorem derives membership directly from
     this invariant — no separate premise needed. -/
 structure extended_case where
@@ -2495,9 +2474,8 @@ def includes_artifact (e : extended_case) : Prop := e.artifact_included = true
 def artifact_in_bubble (e : extended_case) : Prop := e.artifact_included = true
 
 /-- Artifact is included in the bubble: derived from the structural invariant.
-    No premises required — `artifact_is_included` is certified at case construction.
-    Contrast: previously `intro h; exact h` (tautology — `includes_artifact` and
-    `artifact_in_bubble` are definitionally equal). -/
+    `includes_artifact` and `artifact_in_bubble` are definitionally equal;
+    no premises are needed beyond what is encoded at case construction. -/
 theorem artifact_bubble_membership (e : extended_case) :
     includes_artifact e :=
   e.artifact_is_included

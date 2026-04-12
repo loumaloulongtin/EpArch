@@ -1,6 +1,6 @@
 # Theorem Inventory
 
-This document catalogs **693** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
+This document catalogs **712** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
 
 **What the architecture claims:** Decentralized epistemic authorization requires specific structural mechanisms — a lifecycle with type-separated stages, header-preserving export, a revision loop, temporal validity, and a Bank substrate. These aren't design preferences; they are forced by the combination of agent constraints and system health goals.
 
@@ -157,10 +157,11 @@ $$f \notin \text{ObservableFields}(d) \Rightarrow \neg\text{canTargetRepair}(f, 
 
 | Theorem | File | Statement | Paper Claim |
 |---------|------|-----------|-------------|
-| `harder_without_headers` | Theorems.lean | diagLE(diagScore false, diagScore true) | §7: Stripped strictly harder |
+| `field_checkable_iff_header` | Theorems.lean | field_checkable s d_idx f ↔ depositHasHeader s d_idx (Field param is universally free) | §7: Checkability ≡ header presence |
+| `harder_without_headers` | Theorems.lean | ¬depositHasHeader → ¬field_checkable (structural; any field) | §7: Stripped strictly harder |
 | `header_stripped_harder` | Theorems.lean | header_stripped → systematically_harder | §7: Header effect (dispute level) |
-| `header_improves_diagnosability` | Theorems.lean | header_preserved → ¬systematically_harder self | §7: Preserved → non-pathological |
-| `header_localization_link` | Theorems.lean | dispute ∧ header_preserved → localizes | §7/§15: Header → localization |
+| `header_improves_diagnosability` | Theorems.lean | depositHasHeader → field_checkable (positive direction, dual to harder_without_headers) | §7: Header → field checkable |
+| `header_localization_link` | Theorems.lean | depositHasHeader → challenge_is_field_specific ∧ field_checkable | §7/§15: Header → localization |
 | `diagnose_finds_broken` | Theorems.lean | Sound diagnosis oracle finds broken field | §15: Diagnostic completeness |
 
 ### Diagnosability Coupling Theorems (Theorems.lean)
@@ -190,7 +191,7 @@ Bridge theorems coupling the Diagnosability.lean and Theorems.lean metric system
 | `withdrawal_requires_fresh` | Theorems.lean | Withdrawal needs τ-valid | §14: Freshness gate |
 | `τ_valid_mono` | StepSemantics.lean | τ validity is monotonic in clock | §14: Temporal ordering |
 | `current_from_clock` | Theorems.lean | current(clock, τ) iff τ ≤ clock | §14: Temporal predicate |
-| `current_stable` | Theorems.lean | current is preserved under non-tick steps | §14: Stability |
+| `current_stable` | Theorems.lean | every deposit is current w.r.t. its own timestamp (no external hypothesis required) | §14: Deposit-intrinsic currency |
 
 ### Math Form
 
@@ -208,25 +209,52 @@ $$\tau\text{-valid}(\text{clock}, \tau) \land \text{clock}' > \text{clock} \Righ
 
 | Theorem | File | Diagnosis |
 |---------|------|-----------|
-| `gettier_is_V_failure` | Theorems.lean | Gettier = V-field failure |
-| `GettierRoutesToVFailure` | Theorems.lean | Routes to V diagnosis |
-| `canonical_gettier_is_gettier` | Theorems.lean | Structure match |
+| `gettier_is_V_failure` | Theorems.lean | Gettier = V-field failure (unconditional; `tracks_false_certified` structural field) |
+| `gettier_ground_disconnected` | Theorems.lean | Truth-maker and provenance are structurally distinct grounds (`ground_distinct` field) |
+| `canonical_gettier_is_gettier` | Theorems.lean | Canonical Gettier satisfies `IsGettierCase` |
 | `canonical_gettier_conditions` | Theorems.lean | Canonical Gettier satisfies all GettierCase conditions |
 
 ### Fake Barn Cases
 
 | Theorem | Diagnosis |
 |---------|-----------|
-| `fake_barn_is_E_failure` | Fake Barn = E-field failure |
-| `FakeBarnRoutesToEFailure` | Routes to E diagnosis |
+| `fake_barn_is_E_failure` | Fake Barn = E-field failure (unconditional; `e_certified` structural field) |
+| `fake_barn_profile_yields_E_failure` | Alias demonstrating the structural certification pattern |
 | `canonical_fake_barn_is_fake_barn` | Canonical fake barn satisfies FakeBarnCase |
-| `canonical_fake_barn_has_E_failure` | Canonical fake barn → E-field failure |
+
+### Standard Case (S-Field Failure)
+
+Two subtypes: relational (threshold mismatch per consuming agent) and absolute/void (E + V together
+certify that S is vacuous regardless of consumer). Both repair by targeting Field.S.
+
+| Theorem | Diagnosis |
+|---------|------------|
+| `standard_case_is_S_failure` | IsStandardCase → case_S_inadequate (Prop-level; not Bool.not_false) |
+| `canonical_standard_case_is_standard` | Peanut-allergy canonical case satisfies IsStandardCase |
+| `standard_failure_targets_S` | IsStandardCase → S_fails = true (executable mirror) |
+| `standard_failure_is_relational` | Same deposit standard: allergic agent fails, lenient agent passes |
+| `same_deposit_standard_split_yields_relational_S_failure` | Generic: same deposit_standard + opposite threshold outcomes → RelationalClearanceSplit |
+| `canonical_allergy_is_relational_split` | Canonical allergy pair is a RelationalClearanceSplit |
+| `s_failure_v_is_sound` | In an S-failure, V-provenance is genuinely tracking (V is positively certified) |
+| `s_failure_e_is_sound` | In an S-failure, E-coverage has no relevant gap (E is positively certified) |
+| `s_failure_v_mode_and_e_threat` | Data-backed form: `mode = .direct_inspection` and `threat ∈ modeled_threats` (concrete witnesses) |
+| `relational_S_requires_matching_VE_data` | Relational S-failure: symmetric V/E data across both consumers; only threshold differs |
+
+### Vacuous Standard Case (S Voided by E + V Interaction)
+
+| Theorem | Diagnosis |
+|---------|------------|
+| `vacuous_standard_is_S_failure` | VacuousStandardCase → S_is_vacuous (both conditions certified as structural fields) |
+| `testimony_only_plus_unreliable_source_yields_void_S` | Generic: testimony-only S over documented-unreliable source → void S |
+| `canonical_liar_cook_is_void` | Known-liar cook case → S_is_vacuous (instance of generic theorem) |
+| `absolute_vs_relational_S_failure` | Both failure subtypes in one theorem: relational (allergy) ∧ absolute (liar cook) |
 
 ### Lottery Paradox
 
 | Theorem | Diagnosis |
 |---------|-----------|
 | `LotteryIsTypeError` | Lottery = type error (Traction ≠ Authorization) |
+| `lottery_no_deposit_blocks_withdraw` | Without an authorized deposit, `Step.withdraw` is uninhabited (operationally blocked, not just mislabelled) |
 | `confabulation_is_type_error` | Confabulation = type error (LLM instantiation of LotteryIsTypeError) |
 | `credence_does_not_auto_close` | High credence ≠ authorization |
 | `status_distinction_blocks_lottery` | Candidate/Deposited distinction blocks paradox |
@@ -267,6 +295,12 @@ $$\tau\text{-valid}(\text{clock}, \tau) \land \text{clock}' > \text{clock} \Righ
 | `step_no_revision_preserves_deposited` | StepSemantics.lean | Revision-free step preserves `isDeposited` for all deposits |
 | `trace_no_revision_preserves_deposited` | StepSemantics.lean | Revision-free trace preserves `isDeposited` (induction over steps) |
 | `deposits_survive_revision_free_trace` | Theorems.lean | LTS corollary: deposits survive any revision-free trace |
+| `step_preserves_ladder_map` | StepSemantics.lean | `ladder_map` is invariant under every Step (all constructors use `{ s with … }`) |
+| `closure_ladder_invariant` | StepSemantics.lean | Contextual alias of `step_preserves_ladder_map` for the closure puzzle |
+| `trace_preserves_ladder_map` | StepSemantics.lean | `ladder_map` is invariant under any Trace (induction over steps) |
+| `no_bank_trace_generates_ladder_content` | StepSemantics.lean | Point-wise: no Trace changes `ladder_map f P` for any (agent, claim) pair |
+| `trace_cannot_elevate_ladder` | StepSemantics.lean | A trace starting with Ignorance for (f, P) ends with Ignorance |
+| `bank_trace_cannot_discharge_closure` | StepSemantics.lean | A trace that starts with Certainty for (f, P) cannot remove it |
 
 ---
 
@@ -295,14 +329,17 @@ $$\text{Sensitive}(d) \Leftrightarrow \text{E-covers}(d) \Leftrightarrow \text{h
 
 ### Modal Case Theorems (Theorems.lean)
 
-Applications of the safety/sensitivity framework to specific epistemological cases:
+WorldCtx-parameterized forms: `SafetyCaseCtx` and `SensitivityCaseCtx` carry universally-quantified
+obs-bounded predicates; their theorems do genuine modus-tollens reasoning over worlds.
+The former Bool-flag `SafetyCase`/`SensitivityCase` structures and their one-step alias theorems
+have been retired in favour of these structural forms.
 
 | Theorem | File | Statement |
 |---------|------|-----------|
-| `safety_V_link_case` | Theorems.lean | SafetyCase → V-violation |
-| `safety_is_V_condition` | Theorems.lean | Safety collapses to V-independence for SafetyCase |
-| `sensitivity_E_link_case` | Theorems.lean | SensitivityCase → E-gap |
-| `sensitivity_is_E_condition` | Theorems.lean | Sensitivity collapses to E-coverage for SensitivityCase |
+| `safety_ctx_V_link` | Theorems.lean | ¬SafetyCtx → ¬V_indepCtx (instantiates `v_independent` at `sc.world` via `obs_aligned`) |
+| `sensitivity_ctx_E_link` | Theorems.lean | ¬SensitivityCtx → ¬E_counterfactualCtx (instantiates `e_covers` at `sc.world` via `cf_obs_aligned`) |
+| `gettier_profile_yields_V_failure` | Theorems.lean | GettierCaseCtx profile → provenance-gap witness (WorldCtx level) |
+| `gettier_ctx_exhibits_provenance_gap` | Theorems.lean | IsGettierCtx → ∃ w’ s.t. Truth w’ P ∧ obs w’ = obs world ∧ w’ ≠ world |
 
 ---
 
@@ -783,8 +820,8 @@ Each of the 20 original linking axioms is discharged by making an opaque predica
 | Original Axiom | Now Theorem | Mechanism |
 |----------------|-------------|-----------|
 | `DiagnoseField` | ✅ def + theorem | `DiagnosableDeposit` with `broken_fields` list |
-| `safety_V_link` | ✅ theorem | `SafetyCase` with `v_ok` field; Safety ≡ V_independence |
-| `sensitivity_E_link` | ✅ theorem | `SensitivityCase` with `e_ok` field; Sensitivity ≡ E_covers |
+| `safety_V_link` | ✅ theorem | `Unsafe d → ¬V_independent d`; uses `V_spoofable_iff_not_independent`; Safety and V-independence are the same `Deposit`-level predicate |
+| `sensitivity_E_link` | ✅ theorem | `Insensitive d → ¬E_covers_counterfactual d`; analogous to `safety_V_link`; discharged via `E_has_gap_iff_not_covers` |
 | `closure_type_separation` | ✅ theorem | `closure_puzzle` with boolean fields + explicit hypotheses |
 | `luminosity_type_separation` | ✅ theorem | `luminosity_puzzle` with boolean fields + disjunction hypothesis |
 | `higher_order_relocation` | ✅ theorem | `higher_order_case` + `WellFormedHigherOrder` constraint |
@@ -1167,16 +1204,16 @@ File: `Agent/Imposition.lean`
 
 | Theorem | File | Statement | Paper Claim |
 |---------|------|-----------|-------------|
-| `entrenchment_breaks_safe_withdrawal` | Theorems.lean:2784 | Entrenched + inactive deposit → ¬isDeposited | A.S7: Entrenchment blocks withdrawal |
-| `entrenched_cannot_withdraw` | Theorems.lean:2806 | Entrenched + inactive → no Step.withdraw fires | B1.10/B1.11: Full withdrawal failure |
+| `entrenchment_breaks_safe_withdrawal` | Theorems.lean:3617 | Entrenched + inactive deposit → ¬isDeposited | A.S7: Entrenchment blocks withdrawal |
+| `entrenched_cannot_withdraw` | Theorems.lean:3639 | Entrenched + inactive → no Step.withdraw fires | B1.10/B1.11: Full withdrawal failure |
 
 ### Supporting Definitions
 
 | Definition | File | Description |
 |------------|------|-------------|
 | `Entrenched` | Basic.lean:189 | `certainty_L a P ∧ ignores_bank_signal a P` — Certainty + closed review channel |
-| `EntrenchedAgent` | Theorems.lean:2756 | Structure bundling agent, claim, and entrenchment proof |
-| `deposit_no_longer_active` | Theorems.lean:2765 | Deposit is Quarantined or Revoked |
+| `EntrenchedAgent` | Theorems.lean:3582 | Structure bundling agent, claim, and entrenchment proof |
+| `deposit_no_longer_active` | Theorems.lean:3591 | Deposit is Quarantined or Revoked |
 
 ### Math Form
 
@@ -1605,4 +1642,36 @@ $$\text{containsBankPrimitives}(\text{LeanWorkingSystem}) \quad \text{(directly 
 **New definitions (not theorem-counted):** `input_to_action`, `observe_step_action`, `ReadyState`, `withdraw_ready_state`, `challenge_ready_state`; private helpers `canonDeposit`, `canonLedger`, `CState`, `CAction`, `Bubble.toNat`
 
 **Architectural change:** `Behavior` no longer inspects `isSome` flags and has no "missing primitives" fallback branch. `BehaviorallyEquivalent` is now `∀ B1 B2 : GroundedBehavior` (not `WorkingSystem`). `working_systems_equivalent` is unconditional — the `GroundedBehavior` certificate alone suffices; `SatisfiesAllProperties` premises are no longer required.
+
+---
+
+### non-definitional-cases branch additions (+19 → **712** total)
+
+**Theorems.lean (net +6):**
+
+**New structures and key definitions:** `StandardClearance`, `ProvenanceMode`, `VProvenance`, `EAdequacy`, `StandardCase`, `VacuousStandardCase`, `SourceReliability`, `TestimonyMode`, `RelationalClearanceSplit`, `SafetyCaseCtx`, `SensitivityCaseCtx`, `GettierCaseCtx`, `field_checkable`, `toyCtx` (4-world concrete WorldCtx instantiation)
+
+**GettierCase strengthened:** `ground_distinct` and `tracks_false_certified` structural certification fields added; `canonical_gettier` now requires `h_ground` argument; `gettier_is_V_failure` is now unconditional (no `IsGettierCase` hypothesis).
+
+**FakeBarnCase strengthened:** `e_certified` structural certification field added; `fake_barn_is_E_failure` is now unconditional.
+
+**Removed (−7):** `GettierRoutesToVFailure`, `FakeBarnRoutesToEFailure`, `canonical_fake_barn_has_E_failure`, `header_enables_localization_thm`, `safety_V_link_case`, `safety_is_V_condition`, `sensitivity_E_link_case`, `sensitivity_is_E_condition` — former aliases and Bool-flag structural forms retired
+
+**New theorems (+13):** `gettier_ground_disconnected`, `fake_barn_profile_yields_E_failure`; Standard Case suite: `standard_case_is_S_failure`, `canonical_standard_case_is_standard`, `standard_failure_targets_S`, `standard_failure_is_relational`, `same_deposit_standard_split_yields_relational_S_failure`, `canonical_allergy_is_relational_split`, `s_failure_v_is_sound`, `s_failure_e_is_sound`, `s_failure_v_mode_and_e_threat`, `relational_S_requires_matching_VE_data`; Vacuous Standard suite: `vacuous_standard_is_S_failure`, `testimony_only_plus_unreliable_source_yields_void_S`, `canonical_liar_cook_is_void`, `absolute_vs_relational_S_failure`; `lottery_no_deposit_blocks_withdraw`; `field_checkable_iff_header`; WorldCtx modal suite: `gettier_ctx_exhibits_provenance_gap`, `gettier_profile_yields_V_failure`, `safety_ctx_V_link`, `sensitivity_ctx_E_link` (net after removals: +6)
+
+**`current_stable` strengthened:** Now proves `Current d` directly from `d.h.τ ≤ d.h.τ` — deposit-intrinsic; no external clock hypothesis.
+
+**`harder_without_headers`, `header_improves_diagnosability`, `header_localization_link` upgraded:** From score-comparison/`dispute`-based forms to structural `field_checkable`-based forms.
+
+**StepSemantics.lean (net +6):**
+
+**New field:** `ladder_map : Agent → PropLike → LadderStage` added to `SystemState`; default `Ignorance`; never modified by any `Step`.
+
+**New theorems (+6):** `step_preserves_ladder_map`, `closure_ladder_invariant`, `trace_preserves_ladder_map`, `no_bank_trace_generates_ladder_content`, `trace_cannot_elevate_ladder`, `bank_trace_cannot_discharge_closure` — prove the Ladder is invariant under all Bank/LTS steps at both step and trace level.
+
+**Meta/LeanKernelModel.lean (net +7):**
+
+New theorems extending the Lean kernel self-application model; see file for details.
+
+**Net: +19 theorems**
 

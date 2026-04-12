@@ -21,6 +21,7 @@ structure SystemState (PropLike Standard ErrorModel Provenance : Type u) where
   clock       : Time
   acl_table   : List ACLEntry
   trust_bridges : List (Bubble × Bubble)
+  ladder_map  : Agent → PropLike → LadderStage := fun _ _ => LadderStage.Ignorance
 ```
 
 #### Action Type

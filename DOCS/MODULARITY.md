@@ -381,7 +381,7 @@ This means they are already halfway to being transport-safe — the predicate mo
 
 ## Tier 4 — Main Theorem Library (transport schema complete)
 
-**Files:** `Theorems.lean` (109 theorems), `Diagnosability.lean`, `Agent/Corroboration.lean`, `Agent/Resilience.lean`, `Invariants.lean`, `ScopeIrrelevance.lean`, `Predictions.lean`, `WorkedTraces.lean`
+**Files:** `Theorems.lean` (117 theorems), `Diagnosability.lean`, `Agent/Corroboration.lean`, `Agent/Resilience.lean`, `Invariants.lean`, `ScopeIrrelevance.lean`, `Predictions.lean`, `WorkedTraces.lean`
 
 **Status:** ✅ Closed by `Meta/Tier4Transport.lean`.
 
