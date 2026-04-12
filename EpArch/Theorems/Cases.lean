@@ -862,26 +862,4 @@ theorem confabulation_is_type_error (c : ConfabulationCase (PropLike := PropLike
   exact ⟨high_fluency c, ungrounded c, h_fluency, h_ungrounded⟩
 
 
-/-! ### Structural Step-Grounded Forms
-
-These theorems provide the genuine operational content for the lottery and
-confabulation patterns.  `Step.withdraw` requires `isDeposited` as a hard
-precondition; without a deposit the withdrawal transition is simply
-uninhabited.  This is structurally stronger than `LotteryIsTypeError`: the
-operational machinery itself is blocked, not just categorically mislabelled. -/
-
-/-- Without an authorized deposit, no withdrawal Step can fire.
-    `Step.withdraw` carries `h_deposited : isDeposited s d_idx` as a
-    precondition; `h` provides `¬isDeposited`, so the Step is uninhabited. -/
-theorem lottery_no_deposit_blocks_withdraw
-    (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat)
-    (h : ¬isDeposited s d_idx) :
-    ¬∃ (s' : SystemState PropLike Standard ErrorModel Provenance) (a : Agent) (B : Bubble),
-      Step (Reason := Reason) (Evidence := Evidence) s (.Withdraw a B d_idx) s' := by
-  intro ⟨_, _, _, h_step⟩
-  cases h_step
-  exact absurd ‹isDeposited s d_idx› h
-
-
-
 end EpArch

@@ -77,8 +77,17 @@ The formalization proves these claims:
    observability) enter the formalization.
 9. **RevisionSafety.lean** — Safe extensions: adding constraints doesn't break
    existing theorems (the Compatible/transport_core machinery).
-10. **Theorems.lean** — Derived theorems: withdrawal gates, epistemology diagnoses
-    (Gettier, Fake Barn, Lottery, etc.), competition gate corners.
+10. **Theorems/** — Derived theorems, split into seven focused modules:
+    - **Withdrawal.lean** — Withdrawal gates, repair lifecycle, diagnosis infrastructure
+    - **Cases.lean** — Classic epistemology case types (Gettier, Fake Barn, Standard,
+      Vacuous Standard, Lottery as type error, Confabulation)
+    - **Headers.lean** — Diagnosability metrics, field checkability, header-dispute link
+    - **Modal.lean** — WorldCtx-parameterized modal cases (Safety↔V, Sensitivity↔E)
+    - **Puzzles.lean** — Type-separation dissolutions, trace-level ladder impossibility,
+      remaining literature pathologies, bridge theorems
+    - **Strip.lean** — All stripping results: provenance loss (`stripV`/`Payload`) and
+      header loss (`strip`/`PayloadStripped`); competition gate corners 3, 4, 10
+    - **Corners.lean** — Corner theorems 1, 2, 6, 7, 8, 9; lottery gate; entrenchment
 11. **ConcreteLedgerModel.lean** — A constructive zero-axiom concrete model that
     witnesses satisfiability of all commitments. This proves non-vacuity.
 12. **PaperFacing.lean** — The stable public API: re-exports all paper-facing
@@ -94,7 +103,7 @@ Layer 0 (Types):      Basic, Header
 Layer 1 (Substrate):  Bank, LTS, WorldCtx
 Layer 2 (Semantics):  StepSemantics, RevisionSafety, Predictions, WorkedTraces, World (deprecated)
 Layer 3 (Theory):     Commitments, SystemSpec, Invariants, Minimality
-Layer 4 (Derived):    Theorems, Diagnosability, Health, ScopeIrrelevance
+Layer 4 (Derived):    Theorems/{Withdrawal,Cases,Headers,Modal,Puzzles,Strip,Corners}, Diagnosability, Health, ScopeIrrelevance
 Layer 5 (Agent):      Mechanisms, Agent/{Constraints, Imposition, Resilience, Corroboration}
 Layer 6 (Witness):    WorldWitness, ConcreteLedgerModel, Realizer, Feasibility
 Layer 7 (Adversarial): AdversarialBase, AdversarialObligations
@@ -118,7 +127,7 @@ are proved standalone theorems.  C1 (Traction/Authorization Split) is proved by
 `caveated_authorization_does_not_force_certainty`.  Some domain primitives are
 `opaque` constants (e.g., `agentTraction`, `ignores_bank_signal`, `pushback`,
 `τ_compress`, `V_spoof`, and the performance/adversarial-pressure opaques in
-`Theorems.lean` / `AdversarialBase.lean`); others, including `certainty_L` and
+`Theorems.Puzzles` / `AdversarialBase.lean`); others, including `certainty_L` and
 `knowledge_B`, are ordinary `def`s grounded in their respective types.
 None are `axiom` declarations.
 -/

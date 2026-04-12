@@ -1,8 +1,10 @@
 /-
 EpArch.Theorems.Strip — Export Stripping and Competition Gate Corners 3, 4, 10
 
-Non-injectivity of the strip operation, SEV-equivalence refinement,
-and the field-count / diagnosability bridge theorems.
+All stripping results live here:
+- `Payload` / `stripV`: provenance loss across trust boundaries (non-injectivity, irreversibility)
+- `strip` / `PayloadStripped`: header loss on deposit export (non-injectivity, SEV-equivalence)
+- Competition gate corners 3, 4, 10
 -/
 import EpArch.Basic
 import EpArch.StepSemantics
@@ -394,6 +396,107 @@ theorem stripped_not_implies_sev
       | inl h_E => exact h_E h_sev.2.1
       | inr h_V => exact h_V h_sev.2.2
 
+
+/-! ## Provenance Stripping: Non-Injectivity of V-Loss
+
+When deposits cross trust boundaries, provenance (V) may be stripped.
+This stripping is NOT INJECTIVE — different provenances collapse to the same
+stripped payload. Therefore you cannot "undo" the stripping; the information
+is genuinely lost.
+
+This underwrites "justification doesn't transfer cleanly across export boundaries."
+If it did, you could always recover V from the stripped payload, contradicting
+non-injectivity.
+
+Contrast with `strip`/`PayloadStripped` above: that operation strips the
+header from a full `Deposit`. This operation strips provenance from a
+minimal `Payload` (claim + provenance only). Both are one-way losses. -/
+
+/-- A payload packages a claim with its provenance.
+
+    Minimal structure for demonstrating information loss in export.
+    The full Deposit includes more structure (header, bubble, status),
+    but for the non-injectivity theorem we only need claim + provenance. -/
+structure Payload (PropLike Provenance : Type u) where
+  claim : PropLike
+  provenance : Option Provenance
+  deriving DecidableEq
+
+/-- Strip provenance from a payload.
+
+    This models export across a trust boundary that does not preserve
+    provenance chains (e.g., informal citation, oral transmission,
+    screenshot sharing, "I heard somewhere...").
+
+    The operation is definitionally simple: set provenance to none.
+    The interesting property is what this LOSES. -/
+def stripV (p : Payload PropLike Provenance) : Payload PropLike Provenance :=
+  { p with provenance := none }
+
+/-- stripV is not injective.
+
+    There exist two payloads with different provenances that become
+    identical after stripping.
+
+    This is the core information-loss theorem for cross-boundary transfer.
+    It proves that provenance is GENUINELY LOST, not merely hidden:
+    no function can recover it from the stripped payload.
+
+    Proof: Trivial witness construction. Given any two distinct provenances
+    p1 ≠ p2, the payloads (claim, some p1) and (claim, some p2) have
+    different provenances but identical stripped forms. -/
+theorem stripV_not_injective [Inhabited PropLike] [Inhabited Provenance]
+    (h_two_provenances : ∃ (p1 p2 : Provenance), p1 ≠ p2) :
+    ∃ (pay1 pay2 : Payload PropLike Provenance),
+      pay1.provenance ≠ pay2.provenance ∧ stripV pay1 = stripV pay2 :=
+  let ⟨p1, p2, h_ne⟩ := h_two_provenances
+  let claim : PropLike := default
+  let pay1 : Payload PropLike Provenance := ⟨claim, some p1⟩
+  let pay2 : Payload PropLike Provenance := ⟨claim, some p2⟩
+  ⟨pay1, pay2, fun h_eq => h_ne (Option.some.inj h_eq), rfl⟩
+
+/-- Corollary: stripping destroys provenance information.
+
+    No function can "unstripV" to recover original provenance,
+    because stripping is not injective.
+
+    If there were such a function f : Payload → Payload with
+    f ∘ stripV = id, then stripV would be injective (left-cancellable).
+    But we just proved stripV is NOT injective. -/
+theorem stripV_irreversible [Inhabited PropLike] [Inhabited Provenance]
+    (h_two_provenances : ∃ (p1 p2 : Provenance), p1 ≠ p2) :
+    ¬∃ (f : Payload PropLike Provenance → Payload PropLike Provenance),
+      ∀ p, f (stripV p) = p := fun ⟨f, h_inv⟩ =>
+  let ⟨pay1, pay2, h_ne, h_eq⟩ := stripV_not_injective h_two_provenances
+  -- If f were a left inverse, then pay1 = f (stripV pay1) = f (stripV pay2) = pay2
+  let h1 : pay1 = f (stripV pay1) := (h_inv pay1).symm
+  let h2 : f (stripV pay2) = pay2 := h_inv pay2
+  -- Since stripV pay1 = stripV pay2, we have f (stripV pay1) = f (stripV pay2)
+  let h3 : f (stripV pay1) = f (stripV pay2) := congrArg f h_eq
+  -- Therefore pay1 = pay2
+  let h_eq' : pay1 = pay2 := h1.trans (h3.trans h2)
+  -- But this contradicts pay1.provenance ≠ pay2.provenance
+  h_ne (congrArg Payload.provenance h_eq')
+
+/-- The stripping operation is idempotent.
+
+    Once stripped, further stripping does nothing.
+    This models: "you can't lose what you've already lost." -/
+theorem stripV_idempotent (p : Payload PropLike Provenance) :
+    stripV (stripV p) = stripV p := by
+  simp only [stripV]
+
+/-- Stripped payloads preserve the claim but lose provenance.
+
+    The claim survives export; only the validation metadata is lost. -/
+theorem stripV_preserves_claim (p : Payload PropLike Provenance) :
+    (stripV p).claim = p.claim := by
+  simp only [stripV]
+
+/-- Stripped payloads have no provenance. -/
+theorem stripV_loses_provenance (p : Payload PropLike Provenance) :
+    (stripV p).provenance = none := by
+  simp only [stripV]
 
 
 end EpArch

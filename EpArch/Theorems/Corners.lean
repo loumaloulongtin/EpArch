@@ -3,7 +3,10 @@ EpArch.Theorems.Corners — Competition Gate Corner Theorems
 
 Corner theorems 1, 2, 6, 7, 8, 9 — each formalizes a competition gate:
 a structural property that a rival architecture must implement or retreat.
-Also includes the three lottery dissolution theorems and entrenchment.
+Also includes:
+- lottery_no_deposit_blocks_withdraw: operational step-grounded lottery gate
+- The three lottery dissolution theorems (Corner 2 cluster)
+- Entrenchment corollary
 -/
 import EpArch.Basic
 import EpArch.StepSemantics
@@ -347,6 +350,31 @@ theorem export_ignores_target_acl
     -- Note: NO ACL requirement for B2!
     : ∃ s', Step (Reason := Reason) (Evidence := Evidence) s (.Export B1 B2 d_idx) s' := by
   exact ⟨_, Step.export_with_bridge s B1 B2 d_idx h_deposited h_header h_bridge⟩
+
+
+/-! ## Lottery Gate (Operational)
+
+    `Step.withdraw` requires `isDeposited` as a hard precondition.
+    Without a Deposited-status deposit the withdrawal transition is
+    simply uninhabited — the operational machinery is blocked, not
+    merely mislabelled.
+
+    This is the step-grounded bridge between the case-type taxonomy
+    (Cases.lean: LotteryIsTypeError) and the architectural dissolution
+    below (Corner 2: status_distinction_blocks_lottery,
+    lottery_paradox_dissolved_architecturally). -/
+
+/-- Without an authorized deposit, no withdrawal Step can fire.
+    `Step.withdraw` carries `h_deposited : isDeposited s d_idx` as a
+    precondition; `h` provides `¬isDeposited`, so the Step is uninhabited. -/
+theorem lottery_no_deposit_blocks_withdraw
+    (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat)
+    (h : ¬isDeposited s d_idx) :
+    ¬∃ (s' : SystemState PropLike Standard ErrorModel Provenance) (a : Agent) (B : Bubble),
+      Step (Reason := Reason) (Evidence := Evidence) s (.Withdraw a B d_idx) s' := by
+  intro ⟨_, _, _, h_step⟩
+  cases h_step
+  exact absurd ‹isDeposited s d_idx› h
 
 
 /-! ## Corner 2 — Candidate/Deposited gate (lottery paradox blocked by lifecycle)
