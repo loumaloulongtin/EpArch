@@ -915,63 +915,121 @@ inductive LeanAxiomLevel where
 /-- Does a proof at `deposit_level` satisfy the `required_level` threshold
     for a specific consuming agent?
 
-    The consuming agent supplies `clears` as a certified Bool — same
-    pattern as `StandardClearance` in Theorems.lean. EpArch records
-    that a threshold relationship holds; the ordering on `LeanAxiomLevel`
-    lives in the agent implementation, outside EpArch. -/
+    Mirrors `StandardClearance` in Theorems.lean (bucket 1 upgrade):
+    `threshold_met : Prop` is the real semantic content; `clears : Bool` is an
+    executable mirror; `clears_sound` bridges them.  EpArch records that the
+    threshold relationship holds or fails; the ordering on `LeanAxiomLevel`
+    (allows_sorry < classical_only < axiom_free) lives in the consuming agent's
+    acceptance policy, outside EpArch's scope. -/
 structure LeanStandardClearance where
   /-- The S value stamped on the proof: axiom level actually used. -/
   deposit_level  : LeanAxiomLevel
   /-- The minimum axiom level this consuming agent requires. -/
   required_level : LeanAxiomLevel
-  /-- Does deposit_level satisfy required_level for this agent? -/
+  /-- The real semantic content: does deposit_level satisfy required_level?
+      EpArch records that this relation holds or fails; the ordering on
+      LeanAxiomLevel lives in the consuming agent's policy. -/
+  threshold_met  : Prop
+  /-- Executable mirror of threshold_met for computable contexts. -/
   clears         : Bool
+  /-- Sound bridge: the Bool is honest about the Prop. -/
+  clears_sound   : clears = true ↔ threshold_met
+
+/-- V-witness for a Lean Standard case: the kernel genuinely elaborated the term.
+
+    Mirrors `VProvenance` in Theorems.lean.  V is sound when the kernel used
+    its normal elaboration path (no definitional shortcuts bypassing type-checking). -/
+structure LeanVWitness where
+  /-- The declaration name whose provenance is being witnessed -/
+  decl_name         : String
+  /-- Kernel genuinely elaborated this term (normal elaboration, not bypassed) -/
+  kernel_elaborated : Bool
+  /-- V passes: certified at construction time -/
+  kernel_cert       : kernel_elaborated = true
+
+/-- E-witness for a Lean Standard case: known failure modes are documented.
+
+    Mirrors `EAdequacy` in Theorems.lean.  E is sound when all relevant
+    known failure modes (e.g., sorryAx, inconsistent axioms) are explicitly
+    documented in the LeanGroundedRevocation surface. -/
+structure LeanEWitness where
+  /-- Known failure modes documented in the error model (e.g., "sorryAx") -/
+  documented_failures : List String
+  /-- E adequate: no relevant undocumented failure mode for this proof -/
+  e_adequate          : Bool
+  /-- E passes: certified at construction time -/
+  adequate_cert       : e_adequate = true
 
 /-- Lean Standard Case: the proof's S field doesn't clear a strict consumer.
-    E and V remain sound — the only issue is S. -/
+    V and E remain sound — the only issue is S.
+
+    Mirrors `StandardCase` in Theorems.lean (bucket 2 upgrade): replaces Bool
+    `e_passes`/`v_passes` with `LeanEWitness`/`LeanVWitness` carrying explicit
+    documented-failures and kernel-elaboration evidence. -/
 structure LeanStandardCase where
-  decl_name            : String
-  /-- E: proof components present (no detection gap). -/
-  e_passes             : Bool
-  /-- V: the kernel genuinely elaborated this term. -/
-  v_passes             : Bool
-  s_clearance          : LeanStandardClearance
-  /-- Structural witness: clearance fails. -/
-  clearance_fails_cert : s_clearance.clears = false
+  decl_name   : String
+  /-- V-field witness: kernel genuinely elaborated this term -/
+  v_witness   : LeanVWitness
+  /-- E-field witness: known failure modes are documented -/
+  e_witness   : LeanEWitness
+  s_clearance : LeanStandardClearance
+  /-- S fails: the threshold relation is not met (Prop-level, not Bool = false) -/
+  clearance_fails_cert : ¬s_clearance.threshold_met
 
 def lean_S_fails (lsc : LeanStandardCase) : Bool := !lsc.s_clearance.clears
 
 /-- A LeanStandardCase routes to S-failure.
-    Proof: `clearance_fails_cert` is the structural witness; no case analysis. -/
+    Proof: extracts `¬threshold_met` from `clearance_fails_cert` via Bool
+    case-split on `clears` + `clears_sound` bridge — a genuine Prop negation. -/
 theorem lean_standard_case_is_S_failure (lsc : LeanStandardCase) :
     lean_S_fails lsc = true := by
-  simp only [lean_S_fails, lsc.clearance_fails_cert, Bool.not_false]
+  simp only [lean_S_fails]
+  cases h_eq : lsc.s_clearance.clears with
+  | false => rfl
+  | true => exact absurd (lsc.s_clearance.clears_sound.mp h_eq) lsc.clearance_fails_cert
 
-/-- Canonical publication-mode failure: `allows_sorry` proof, `axiom_free` required. -/
+/-- Canonical publication-mode failure: `allows_sorry` proof, `axiom_free` required.
+
+    - `v_witness`: kernel genuinely elaborated the term (normal path)
+    - `e_witness`: "sorryAx" is documented in `LeanGroundedRevocation`
+    - `threshold_met = False`: allows_sorry does not satisfy axiom_free
+    - `clearance_fails_cert = False.elim`: witnesses `¬False` -/
 def canonical_sorry_publication_case (name : String) : LeanStandardCase :=
-  { decl_name           := name,
-    e_passes            := true,
-    v_passes            := true,
-    s_clearance         := { deposit_level  := .allows_sorry,
-                              required_level := .axiom_free,
-                              clears         := false },
-    clearance_fails_cert := rfl }
+  { decl_name   := name,
+    v_witness   := { decl_name         := name,
+                     kernel_elaborated  := true,
+                     kernel_cert        := rfl },
+    e_witness   := { documented_failures := ["sorryAx"],
+                     e_adequate          := true,
+                     adequate_cert       := rfl },
+    s_clearance := { deposit_level  := .allows_sorry,
+                     required_level := .axiom_free,
+                     threshold_met  := False,
+                     clears         := false,
+                     clears_sound   := ⟨Bool.noConfusion, False.elim⟩ },
+    clearance_fails_cert := False.elim }
 
-/-- Same proof, development-mode consumer: `allows_sorry` clears `allows_sorry`. -/
+/-- Same proof, development-mode consumer: `allows_sorry` clears `allows_sorry`.
+    `threshold_met = True` (trivially met); `clears_sound` bridges them. -/
 def canonical_sorry_dev_clearance : LeanStandardClearance :=
   { deposit_level  := .allows_sorry,
     required_level := .allows_sorry,
-    clears         := true }
+    threshold_met  := True,
+    clears         := true,
+    clears_sound   := ⟨fun _ => trivial, fun _ => rfl⟩ }
 
 /-- Relational S-failure at the kernel level.
 
-    Same declaration. Same E. Same V. Same axiom footprint.
-    Publication consumer: S-failure. Development consumer: clears.
-    What differs is the consuming agent's required threshold. -/
+    Same declaration. Same V (kernel_elaborated). Same E (sorryAx documented).
+    Same axiom footprint.  Publication consumer: `¬threshold_met` (S-failure).
+    Development consumer: `threshold_met = True` (clears).  What differs is the
+    consuming agent's required threshold — outside EpArch's scope. -/
 theorem lean_axiom_failure_is_relational (name : String) :
     lean_S_fails (canonical_sorry_publication_case name) = true ∧
-    canonical_sorry_dev_clearance.clears = true := by
-  simp [lean_S_fails, canonical_sorry_publication_case, canonical_sorry_dev_clearance]
+    canonical_sorry_dev_clearance.threshold_met := by
+  constructor
+  · exact lean_standard_case_is_S_failure _
+  · exact trivial
 
 /-- Absolute (void) S at the kernel level: `sorry ⊢ False`.
 
@@ -1026,9 +1084,9 @@ def canonical_sorry_false_case : LeanVacuousStandard :=
     are not modeled here. -/
 theorem lean_S_failure_taxonomy (name : String) :
     lean_S_fails (canonical_sorry_publication_case name) = true ∧
-    canonical_sorry_dev_clearance.clears = true ∧
+    canonical_sorry_dev_clearance.threshold_met ∧
     lean_S_is_void canonical_sorry_false_case := by
-  simp [lean_S_fails, canonical_sorry_publication_case,
-        canonical_sorry_dev_clearance, lean_S_is_void, canonical_sorry_false_case]
+  exact ⟨lean_standard_case_is_S_failure _, trivial,
+        lean_vacuous_standard_is_void _⟩
 
 end EpArch.LeanKernelModel

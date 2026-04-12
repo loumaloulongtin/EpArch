@@ -570,132 +570,180 @@ theorem fake_barn_profile_yields_E_failure (fb : FakeBarnCase (PropLike := PropL
 
 /-- Standard clearance: does the deposit's S satisfy the agent's required threshold?
 
-    Both fields are typed by the same `Standard` parameter — they represent
-    values in the same space. The `clears` field records whether the deposit
-    standard satisfies the agent's requirement. False = S-failure. -/
+    Both fields are typed by the same `Standard` parameter.  The real semantic
+    content is `threshold_met : Prop` — whether the deposit standard satisfies the
+    agent's threshold.  EpArch records that the relation holds or fails; the
+    ordering on Standard values lives in the consuming agent, outside EpArch's scope.
+    `clears : Bool` is an executable mirror with a soundness bridge. -/
 structure StandardClearance (Standard : Type u) where
   /-- The standard actually applied when the deposit was certified.
       This is the S field's content — truthful, stamped at certification. -/
-  deposit_standard  : Standard
+  deposit_standard   : Standard
   /-- The minimum standard this agent requires to accept withdrawal. -/
   required_threshold : Standard
-  /-- Does deposit_standard satisfy required_threshold?
-      False when the standard applied falls short of this agent's bar. -/
-  clears : Bool
+  /-- The real semantic content: does deposit_standard satisfy required_threshold?
+      EpArch records that this relation holds or fails; the ordering
+      lives in the consuming agent's implementation. -/
+  threshold_met      : Prop
+  /-- Executable mirror of threshold_met for computable contexts. -/
+  clears             : Bool
+  /-- Sound bridge: the Bool is honest about the Prop. -/
+  clears_sound       : clears = true ↔ threshold_met
+
+/-- V-provenance witness: genuine provenance for the Standard case.
+
+    Mirrors `VIndependence` for the Gettier case, but represents the PASSING V:
+    the claim genuinely traces to the certifying source without coincidence.
+    The `tracks_genuine` Bool is the executable mirror; `genuine_cert` certifies it
+    at construction time (same pattern as `FakeBarnCase.e_certified`). -/
+structure VProvenance where
+  /-- Who certified this claim (e.g., "the cook", "the supplier") -/
+  certifying_source : String
+  /-- Provenance genuinely tracks the truth-maker: no lucky coincidence -/
+  tracks_genuine    : Bool
+  /-- V passes: certified at construction time -/
+  genuine_cert      : tracks_genuine = true
+
+/-- Error-model adequacy witness: no relevant gap in the error model.
+
+    Mirrors `ErrorModelCoverage` for the Fake Barn case, but represents the PASSING E:
+    the error model covers all nearby relevant threats for this claim.
+    `modeled_threats` carries the explicit list; `no_nearby_unmodeled` is certified. -/
+structure EAdequacy where
+  /-- Failure modes the error model accounts for -/
+  modeled_threats      : List String
+  /-- E passes: no nearby unmodeled threats exist for this claim -/
+  no_nearby_unmodeled  : Bool
+  /-- E passes: certified at construction time -/
+  adequate_cert        : no_nearby_unmodeled = true
 
 /-- Standard Case structure.
 
     A Standard case has:
-    - True and well-provenanced claim (S and V are sound on their own terms)
-    - An adequate error model (E is sound)
-    - A StandardClearance whose `clears = false`
+    - Genuine provenance (`v_provenance`): the cook really did certify this
+    - Adequate error model (`e_adequacy`): no unmodeled threat gap
+    - A StandardClearance whose `threshold_met` is ¬Prop (not just Bool = false)
 
     The canonical instance: peanut allergy.
-    - claim: "this dish contains no peanuts"
-    - S = ingredient_check (certified by the cook)
-    - E = sound (no unmodeled detection gap)
-    - V = sound (cook is the genuine source; provenance is fine)
-    - required_threshold = cross_contamination_check
-    - clears = false (ingredient_check does not satisfy cross_contamination_check) -/
+    - v_provenance: cook certified, tracks_genuine = true
+    - e_adequacy: ingredient_contamination modeled, no nearby gaps
+    - S = ingredient_check; required = cross_contamination_check
+    - threshold_met = False (ingredient_check does not satisfy cross_contamination_check)
+    - clearance_fails = ¬False -/
 structure StandardCase (Standard : Type u) where
-  claim     : PropLike
-  /-- E-field passes (error model is adequate) -/
-  E_passes  : Bool
-  /-- V-field passes (provenance is genuine) -/
-  V_passes  : Bool
-  /-- The S-level clearance check — carries deposit_standard and required_threshold -/
-  s_clearance : StandardClearance Standard
-  /-- The standard fails to clear this agent's threshold — structural field. -/
-  clearance_fails_certified : s_clearance.clears = false
+  claim        : PropLike
+  /-- V-field witness: provenance is genuine — not a coincidence -/
+  v_provenance : VProvenance
+  /-- E-field witness: error model has no relevant gap -/
+  e_adequacy   : EAdequacy
+  /-- The S-level clearance check — carries deposit_standard, required_threshold,
+      threshold_met : Prop, clears : Bool, and soundness bridge -/
+  s_clearance  : StandardClearance Standard
+  /-- S fails: the threshold relation is not met (Prop-level, not Bool) -/
+  clearance_fails : ¬s_clearance.threshold_met
 
-/-- S fails when the deposit standard doesn't clear the agent's required threshold. -/
+/-- Boolean mirror: S clearance fails (for executable use). -/
 def S_fails (sc : StandardCase Standard (PropLike := PropLike)) : Bool :=
   !sc.s_clearance.clears
 
 /-- IsStandardCase: a genuine S-failure case iff:
-    1. E passes (no detection gap)
-    2. V passes (genuine provenance)
-    3. S clears = false (threshold mismatch)
+    1. V passes (genuine provenance: tracks_genuine = true)
+    2. E passes (no nearby unmodeled threat: no_nearby_unmodeled = true)
+    3. S fails (threshold relation not met: ¬threshold_met)
 
     The asymmetry with Gettier and FakeBarn is intentional: the deposit
     is structurally sound but insufficient for this agent. -/
 def IsStandardCase (sc : StandardCase Standard (PropLike := PropLike)) : Prop :=
-  sc.E_passes = true ∧ sc.V_passes = true ∧ sc.s_clearance.clears = false
+  sc.v_provenance.tracks_genuine = true ∧
+  sc.e_adequacy.no_nearby_unmodeled = true ∧
+  ¬sc.s_clearance.threshold_met
 
-/-- S-field inadequacy: the clearance check failed. -/
+/-- S-field inadequacy: the threshold relation is not met (Prop-level). -/
 def case_S_inadequate (sc : StandardCase Standard (PropLike := PropLike)) : Prop :=
-  S_fails sc = true
+  ¬sc.s_clearance.threshold_met
 
 /-- Standard cases route to S-failure.
 
-    When E and V are both sound, a withdrawal block is localized to Field.S.
-    Proof: sc.clearance_fails_certified directly witnesses S_fails = true;
-    discards IsStandardCase hypothesis. -/
+    When V and E are both sound, a withdrawal block localises to Field.S.
+    Proof: extracts `¬threshold_met` from the IsStandardCase bundle via pattern
+    matching — a genuine Prop negation, not Bool.not_false. -/
 theorem standard_case_is_S_failure (sc : StandardCase Standard (PropLike := PropLike)) :
-    IsStandardCase sc → case_S_inadequate sc := by
-  intro _
-  simp only [case_S_inadequate, S_fails, sc.clearance_fails_certified, Bool.not_false]
+    IsStandardCase sc → case_S_inadequate sc :=
+  fun ⟨_, _, h_fails⟩ => h_fails
 
 /-- CANONICAL Standard case: peanut allergy / ingredient-check vs cross-contamination.
 
-    - deposit_standard and required_threshold are left abstract (two distinct Standard
-      values supplied by the caller); the architecture doesn't need to know the ordering.
-    - E and V are both true: the cook didn't miss anything they were supposed to check,
-      and the claim is genuinely traceable to their inspection.
-    - clears = false: the ingredient-check standard doesn't satisfy the allergy threshold. -/
+    - `v_provenance`: the cook genuinely certified it (tracks_genuine = true)
+    - `e_adequacy`: ingredient contamination is modeled, no nearby gap
+    - `deposit_standard` and `required_threshold` are left abstract (two distinct
+      Standard values supplied by the caller — the architecture doesn't model the ordering)
+    - `threshold_met = False`: the ingredient-check standard does not satisfy the allergy
+      threshold (expressed as ⊥ since EpArch doesn't model the Standard ordering)
+    - `clearance_fails = False.elim`: witnesses `¬False` -/
 def canonical_standard_case (P : PropLike) (ingredient_check cross_contamination_check : Standard) :
     StandardCase Standard (PropLike := PropLike) :=
-  { claim      := P,
-    E_passes   := true,
-    V_passes   := true,
+  { claim := P,
+    v_provenance := {
+      certifying_source := "cook",
+      tracks_genuine    := true,
+      genuine_cert      := rfl },
+    e_adequacy := {
+      modeled_threats      := ["ingredient_contamination"],
+      no_nearby_unmodeled  := true,
+      adequate_cert        := rfl },
     s_clearance := {
       deposit_standard   := ingredient_check,
       required_threshold := cross_contamination_check,
-      clears             := false
-    },
-    clearance_fails_certified := rfl }
+      threshold_met      := False,
+      clears             := false,
+      clears_sound       := ⟨Bool.noConfusion, False.elim⟩ },
+    clearance_fails := False.elim }
 
 /-- Canonical Standard case satisfies IsStandardCase. -/
 theorem canonical_standard_case_is_standard (P : PropLike)
     (ingredient_check cross_contamination_check : Standard) :
     IsStandardCase (canonical_standard_case (Standard := Standard) P
-      ingredient_check cross_contamination_check) := by
-  unfold IsStandardCase canonical_standard_case
-  simp only [and_self]
+      ingredient_check cross_contamination_check) :=
+  ⟨rfl, rfl, False.elim⟩
 
 /-- S-failure is field-local: the failure routes to Field.S.
 
-    When E and V are both fine and only S fails, the failure localizes to
+    When V and E are both fine and only S fails, the failure localises to
     Field.S — not Field.E or Field.V. This demonstrates field independence:
     the deposit's provenance and error model are structurally unaffected.
-    What a consuming agent does with this localization is outside EpArch's scope.
 
-    This mirrors the diagnostic routing for Gettier → Field.V and
-    Fake Barn → Field.E. -/
+    Proof: Bool case-split on `s_clearance.clears`, then the `clears_sound`
+    bridge connects the Bool outcome to the Prop `¬threshold_met`. -/
 theorem standard_failure_targets_S (sc : StandardCase Standard (PropLike := PropLike)) :
     IsStandardCase sc → S_fails sc = true := by
-  intro ⟨_, _, hS⟩
-  simp only [S_fails, hS, Bool.not_false]
+  intro ⟨_, _, h_fails⟩
+  simp only [S_fails]
+  cases h_eq : sc.s_clearance.clears with
+  | false => rfl
+  | true => exact absurd (sc.s_clearance.clears_sound.mp h_eq) h_fails
 
 /-- CANONICAL lenient clearance: same deposit standard, lower threshold — clears.
 
     The disliking-peanuts agent is satisfied by ingredient_check — the exact
-    same S stamped on the deposit. For them, clears = true.
+    same S stamped on the deposit. `threshold_met = True` (trivially met);
+    `clears = true`; `clears_sound` bridges them.
 
-    This is a StandardClearance, not a StandardCase. StandardCase is typed as
-    a failure (clears = false by construction). A passing clearance is just
-    a StandardClearance where clears = true — there is no "case" to analyze. -/
+    This is a StandardClearance, not a StandardCase. StandardCase requires
+    `¬threshold_met`; a passing clearance has `threshold_met = True`. -/
 def canonical_lenient_clearance (ingredient_check : Standard) :
     StandardClearance Standard :=
   { deposit_standard   := ingredient_check,
     required_threshold := ingredient_check,
-    clears             := true }
+    threshold_met      := True,
+    clears             := true,
+    clears_sound       := ⟨fun _ => trivial, fun _ => rfl⟩ }
 
 /-- S-failure is relational: same deposit standard, different outcomes per agent.
 
-    The allergic agent's case fails (StandardCase.clears = false → S_fails).
-    The disliking agent's clearance passes (StandardClearance.clears = true).
-    Same claim. Same E. Same V. Same deposit_standard. Only required_threshold differs.
+    The allergic agent's case fails (`¬threshold_met` = `¬False` is trivially the
+    failure structure, held as a Prop — not Bool.not_false).
+    The disliking agent's clearance passes (`clears = true`, `threshold_met = True`).
+    Same claim. Same V. Same E. Same deposit_standard. Only required_threshold differs.
 
     This is what distinguishes S-failure from V-failure (Gettier) and E-failure
     (fake barn): those are deposit defects independent of who reads the deposit.
@@ -705,8 +753,8 @@ theorem standard_failure_is_relational
     let strict  := canonical_standard_case (Standard := Standard) P
                      ingredient_check cross_contamination_check
     let lenient := canonical_lenient_clearance (Standard := Standard) ingredient_check
-    case_S_inadequate strict ∧ lenient.clears = true := by
-  simp [case_S_inadequate, S_fails, canonical_standard_case, canonical_lenient_clearance]
+    case_S_inadequate strict ∧ lenient.threshold_met :=
+  ⟨False.elim, trivial⟩
 
 
 /-! ### Vacuous Standard Case: S Voided by E + V Interaction
@@ -794,23 +842,20 @@ def canonical_liar_cook_case (P : PropLike) : VacuousStandardCase (PropLike := P
 
 /-- Absolute vs relational S-failure: two kinds of S-void.
 
-    Relational (allergy): same deposit clears for the |dislikes-peanuts| agent,
-    fails for the |allergic| agent. Some agents can withdraw; some cannot.
+    Relational (allergy): `¬threshold_met` is the Prop-level failure structure;
+    the lenient agent has `threshold_met = True`. Same deposit, different agents.
 
     Absolute (known liar): E + V together witness that S is void regardless of
-    which agent inspects the deposit. No threshold makes "documented liar's testimony"
-    a sound epistemic standard.
+    which agent inspects the deposit.
 
-    Both repair by targeting Field.S. The nature of the failure differs:
-    relational = threshold question; absolute = the standard itself is void. -/
+    Both repair by targeting Field.S. -/
 theorem absolute_vs_relational_S_failure
     (P : PropLike) (ingredient_check cross_contamination_check : Standard) :
     let relational := canonical_standard_case (Standard := Standard) P
                         ingredient_check cross_contamination_check
     let absolute   := canonical_liar_cook_case (PropLike := PropLike) P
-    case_S_inadequate relational ∧ S_is_vacuous absolute := by
-  simp [case_S_inadequate, S_fails, canonical_standard_case,
-        S_is_vacuous, canonical_liar_cook_case]
+    case_S_inadequate relational ∧ S_is_vacuous absolute :=
+  ⟨False.elim, ⟨rfl, rfl⟩⟩
 
 
 /-! ## Lottery Problem -/
@@ -947,23 +992,33 @@ def diagScore (withHeader : Bool) : Diagnosability :=
 def diagLE (d1 d2 : Diagnosability) : Prop := d1.score ≤ d2.score
 
 /-- A deposit's suspected field is structurally checkable iff the deposit header is present.
-    The field parameter `_f` is intentionally free: any named field is checkable once
-    the header is present.  `field_checkable s d_idx f` is definitionally `depositHasHeader s d_idx`. -/
+    The `Field` parameter is free because all SEV fields live in the header: once the
+    header is present every named field is accessible.
+    `field_checkable s d_idx f` is definitionally `depositHasHeader s d_idx`. -/
 def field_checkable (s : SystemState PropLike Standard ErrorModel Provenance)
     (d_idx : Nat) (_f : Field) : Prop :=
   depositHasHeader s d_idx
 
+/-- Explicit isomorphism between field checkability and header presence.
+    The `Field` parameter is universally free: present header ↔ all fields checkable.
+    This makes the definitional equality visible at the type level and grounds
+    `harder_without_headers` and `header_improves_diagnosability`. -/
+theorem field_checkable_iff_header
+    (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat) (f : Field) :
+    field_checkable s d_idx f ↔ depositHasHeader s d_idx :=
+  Iff.rfl
+
 /-- Theorem: Diagnosis is harder without headers.
 
     Without headers, no field is checkable — any challenge names a field as a
-    guess, not a diagnosis from header inspection.
-    Structural form: `¬depositHasHeader → ¬field_checkable`.  No hardcoded constants. -/
+    guess, not a diagnosis from header inspection.  Proof routes through
+    `field_checkable_iff_header` making the equivalence explicit. -/
 theorem harder_without_headers
     (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat)
     (h : ¬depositHasHeader s d_idx)
     (c : EpArch.Challenge PropLike Reason Evidence) :
     ¬field_checkable s d_idx c.suspected :=
-  h
+  fun hf => h ((field_checkable_iff_header s d_idx c.suspected).mp hf)
 
 
 /-! ## Dispute Convergence -/
@@ -999,13 +1054,14 @@ theorem header_stripped_harder (B : Bubble) (P : PropLike)
 
 /-- Theorem: With headers, every challenge field is structurally checkable.
     Structural form of Commitment 7 (positive direction):
-    `depositHasHeader → field_checkable`.  Dual to `harder_without_headers`. -/
+    `depositHasHeader → field_checkable`.  Dual to `harder_without_headers`.
+    Proof routes through `field_checkable_iff_header`, symmetric to the negative direction. -/
 theorem header_improves_diagnosability
     (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat)
     (h_header : depositHasHeader s d_idx)
     (c : EpArch.Challenge PropLike Reason Evidence) :
     field_checkable s d_idx c.suspected :=
-  h_header
+  (field_checkable_iff_header s d_idx c.suspected).mpr h_header
 
 /-- Header preservation enables field-specific localization.
 
@@ -1025,97 +1081,23 @@ theorem header_localization_link
 Safety and sensitivity conditions from modal epistemology,
 shown to be special cases of V/E field structure.
 
-By making the modal conditions concrete with explicit fields
-that track which model component they depend on, the linking becomes
-structural rather than axiomatic. -/
+The WorldCtx-parameterized structures (`SafetyCaseCtx`, `SensitivityCaseCtx`) below
+are the canonical forms: they carry genuine universally-quantified predicates over
+world-relative truth and connect to the concrete `LeanKernelCtx` instantiation.
 
-/-- Safety case: tracks whether safety condition holds and why.
-    `modal_ok` tracks modal safety; `vind_ok` tracks structural V-independence.
-    `vind_implies_modal` is the structural invariant linking them. -/
-structure SafetyCase where
-  agent : Agent
-  P : PropLike
-  deposit : Deposit PropLike Standard ErrorModel Provenance
-  /-- Modal safety: in nearby P-false worlds, agent doesn't believe P -/
-  modal_ok : Bool
-  /-- V-independence: provenance doesn't depend on accidental features -/
-  vind_ok : Bool
-  /-- V-independence is necessary for modal safety -/
-  vind_implies_modal : vind_ok = true → modal_ok = true
+The former Bool-flag versions (`SafetyCase`, `SensitivityCase`) are retired:
+- `SafetyCase.modal_ok : Bool` / `SensitivityCase.modal_ok : Bool` cannot express
+  the modal content "in nearby P-false worlds, agent doesn't believe P"
+- The Bool versions' theorems (`safety_V_link_case`, `sensitivity_E_link_case`)
+  were one-step applications of a stored implication — not structural reasoning
+  about worlds
+- `SafetyCaseCtx.v_independent` and `SensitivityCaseCtx.e_covers` carry actual
+  universally-quantified predicates; their theorems instantiate the quantifier at
+  `sc.world` for genuine modus-tollens reasoning
 
-/-- Sensitivity case: tracks whether sensitivity condition holds and why.
-    `modal_ok` tracks modal sensitivity; `ecov_ok` tracks structural E-coverage.
-    `ecov_implies_modal` is the structural invariant linking them. -/
-structure SensitivityCase where
-  agent : Agent
-  P : PropLike
-  deposit : Deposit PropLike Standard ErrorModel Provenance
-  /-- Modal sensitivity: if P were false, the agent would not believe P -/
-  modal_ok : Bool
-  /-- E-coverage: error model includes the counterfactual scenario -/
-  ecov_ok : Bool
-  /-- E-coverage is necessary for modal sensitivity -/
-  ecov_implies_modal : ecov_ok = true → modal_ok = true
-
-/-- Safety: if P were false, S wouldn't believe P.
-    Safety holds iff the modal_ok field is set. -/
-def Safety (sc : SafetyCase (PropLike := PropLike) (Standard := Standard)
-    (ErrorModel := ErrorModel) (Provenance := Provenance)) : Prop :=
-  sc.modal_ok = true
-
-/-- Sensitivity: in the closest world where P is false, S would notice.
-    Sensitivity holds iff the modal_ok field is set. -/
-def Sensitivity (sc : SensitivityCase (PropLike := PropLike) (Standard := Standard)
-    (ErrorModel := ErrorModel) (Provenance := Provenance)) : Prop :=
-  sc.modal_ok = true
-
-/-- V-independence: provenance doesn't depend on accidental features. -/
-def V_independence (sc : SafetyCase (PropLike := PropLike) (Standard := Standard)
-    (ErrorModel := ErrorModel) (Provenance := Provenance)) : Prop :=
-  sc.vind_ok = true
-
-/-- E-covers-counterfactual: error model includes relevant nearby worlds. -/
-def E_covers_counterfactual (sc : SensitivityCase (PropLike := PropLike) (Standard := Standard)
-    (ErrorModel := ErrorModel) (Provenance := Provenance)) : Prop :=
-  sc.ecov_ok = true
-
-/-- Safety failure implies V-independence failure.
-
-    Safety requires that in nearby worlds where P is false,
-    the agent doesn't believe P. V-independence is a necessary condition:
-    if provenance is V-independent (`vind_ok`), then modal safety (`modal_ok`) holds
-    via the structural invariant `vind_implies_modal`.
-    Proof: applies `vind_implies_modal` to the V-independence hypothesis, then
-    derives contradiction with `h_not_safe`. Non-trivial: uses the structural link. -/
-theorem safety_V_link_case (sc : SafetyCase (PropLike := PropLike) (Standard := Standard)
-    (ErrorModel := ErrorModel) (Provenance := Provenance)) :
-    ¬Safety sc → ¬V_independence sc := by
-  intro h_not_safe h_vind
-  exact h_not_safe (sc.vind_implies_modal h_vind)
-
-/-- Sensitivity failure implies E-field gap.
-
-    Sensitivity requires that if P were false, the agent would not
-    believe P. E-coverage is a necessary condition: if the error model covers
-    the counterfactual (`ecov_ok`), then modal sensitivity (`modal_ok`) holds
-    via the structural invariant `ecov_implies_modal`.
-    Proof: applies `ecov_implies_modal` to the E-coverage hypothesis, then
-    derives contradiction with `h_not_sens`. Non-trivial: uses the structural link. -/
-theorem sensitivity_E_link_case (sc : SensitivityCase (PropLike := PropLike) (Standard := Standard)
-    (ErrorModel := ErrorModel) (Provenance := Provenance)) :
-    ¬Sensitivity sc → ¬E_covers_counterfactual sc := by
-  intro h_not_sens h_ecov
-  exact h_not_sens (sc.ecov_implies_modal h_ecov)
+See `safety_ctx_V_link` and `sensitivity_ctx_E_link` below. -/
 
 
-/-! ## WorldCtx-Parameterized Case Structures (Phase 0A)
-
-These structures parameterize the epistemic case scenarios over an abstract `WorldCtx`,
-replacing bare `Bool` flags with structural predicates about world-relative truth.
-
-This enables non-trivial theorem proofs at concrete instantiations (e.g., LeanKernelCtx
-where `Claim := Bool` and `Truth w P = (w = P)` lets `Bool.noConfusion` do real work).
-The existing Bool-based structures are preserved below for backward compatibility. -/
 
 /-- Gettier case parameterized over a WorldCtx.
     Carries a structural provenance-disconnection predicate: in any world where P is
@@ -1354,6 +1336,48 @@ theorem meta_certainty_lts_grounded
     (h : Step (Reason := Reason) (Evidence := Evidence) s a s') :
     s'.ladder_map = s.ladder_map :=
   luminosity_ladder_invariant s s' a h
+
+/-! ### Trace-Level Ladder Impossibility Theorems
+
+Lifted from the step-level invariants in StepSemantics to full Traces.
+These are the separation theorems: Bank operations cannot produce Ladder content. -/
+
+/-- Closure is Ladder-internal: no Trace changes the Ladder stage for any (agent, claim).
+    Certainty stage set before a trace remains set after; Ignorance likewise. -/
+theorem closure_state_invariant_under_trace
+    (s s' : SystemState PropLike Standard ErrorModel Provenance)
+    (t : Trace (Reason := Reason) (Evidence := Evidence) s s')
+    (f : Agent) (P : PropLike) :
+    s'.ladder_map f P = s.ladder_map f P :=
+  no_bank_trace_generates_ladder_content s s' t f P
+
+/-- No Bank trace generates Certainty from Ignorance.
+
+    If an agent has Ignorance for P before the trace, the same Ignorance holds
+    after.  Closure is not produced by any sequence of Submit/Withdraw/Export/…
+    transitions — it is agent-internal.  This is the impossibility direction of
+    `certainty_closes_lts_grounded`. -/
+theorem bank_cannot_generate_certainty
+    (s s' : SystemState PropLike Standard ErrorModel Provenance)
+    (t : Trace (Reason := Reason) (Evidence := Evidence) s s')
+    (f : Agent) (P : PropLike) :
+    s.ladder_map f P = LadderStage.Ignorance →
+    s'.ladder_map f P = LadderStage.Ignorance :=
+  trace_cannot_elevate_ladder s s' t f P
+
+/-- No Bank trace generates meta-certainty from Ignorance.
+
+    Same structure as `bank_cannot_generate_certainty`.  Meta-certainty
+    (the KK-style introspective stage) is not produced by any Bank-level
+    action sequence — it is Ladder-internal.  This is the impossibility
+    direction of `meta_certainty_lts_grounded`. -/
+theorem bank_cannot_generate_meta_certainty
+    (s s' : SystemState PropLike Standard ErrorModel Provenance)
+    (t : Trace (Reason := Reason) (Evidence := Evidence) s s')
+    (f : Agent) (P : PropLike) :
+    s.ladder_map f P = LadderStage.Ignorance →
+    s'.ladder_map f P = LadderStage.Ignorance :=
+  trace_cannot_elevate_ladder s s' t f P
 
 /-- Higher-order knowledge: V tracks provenance; agent withdraws, not re-justifies.
 
@@ -2224,7 +2248,7 @@ theorem bridge_monolithic_opaque
     (h_stripped : ¬depositHasHeader s d_idx)
     (c : EpArch.Challenge PropLike Reason Evidence) :
     ¬field_checkable s d_idx c.suspected :=
-  h_stripped
+  harder_without_headers s d_idx h_stripped c
 
 /-- Stripped deposit: has no header accessible for diagnosis. -/
 structure StrippedState where
@@ -2300,7 +2324,7 @@ def pathologyTable : List PathologyDiagnosis := [
 ### Literature Diagnoses (structural theorems about classic puzzles):
 - `gettier_is_V_failure` — Gettier cases exhibit V-independence failure
 - `fake_barn_is_E_failure` — Fake Barn cases exhibit E-field gaps
-- `safety_V_link_case`, `sensitivity_E_link_case` — Modal conditions map to V/E fields
+- `safety_ctx_V_link`, `sensitivity_ctx_E_link` — Modal conditions map to V/E fields (WorldCtx-parameterized)
 
 ### Type-Separation Dissolutions (architectural design):
 - `closure_type_separation` — Certainty closes, deposits don't auto-propagate

@@ -625,6 +625,59 @@ def Trace.demonstratesSelfCorrection
   isDeposited s d_idx ∧
   (∃ d, s'.ledger.get? d_idx = some d ∧ d.status = .Revoked)
 
+/-! ## Trace-Level Ladder Invariants
+
+Lifted versions of `step_preserves_ladder_map` for full Traces.
+These are the stronger impossibility-level results: no finite sequence
+of Bank/LTS actions can generate or modify Ladder content. -/
+
+/-- Ladder state is invariant under any Trace.
+
+    Induction on Trace structure:
+    - nil: reflexivity (no steps taken)
+    - cons: the step contributes `step_preserves_ladder_map`, the rest by IH
+
+    This is the trace-level closure of `step_preserves_ladder_map`. -/
+theorem trace_preserves_ladder_map
+    (s s' : SystemState PropLike Standard ErrorModel Provenance)
+    (t : Trace (Reason := Reason) (Evidence := Evidence) s s') :
+    s'.ladder_map = s.ladder_map := by
+  induction t with
+  | nil _ => rfl
+  | cons a h_step _rest ih => exact ih.trans (step_preserves_ladder_map _ _ a h_step)
+
+/-- Point-wise form: no Trace changes the Ladder stage of any (agent, claim) pair. -/
+theorem no_bank_trace_generates_ladder_content
+    (s s' : SystemState PropLike Standard ErrorModel Provenance)
+    (t : Trace (Reason := Reason) (Evidence := Evidence) s s')
+    (f : Agent) (P : PropLike) :
+    s'.ladder_map f P = s.ladder_map f P :=
+  congrFun (congrFun (trace_preserves_ladder_map s s' t) f) P
+
+/-- No trace can elevate a Ladder stage from Ignorance.
+
+    A trace that begins with the agent having no Ladder content for P ends
+    with the same. Bank transitions cannot install Ladder entries. -/
+theorem trace_cannot_elevate_ladder
+    (s s' : SystemState PropLike Standard ErrorModel Provenance)
+    (t : Trace (Reason := Reason) (Evidence := Evidence) s s')
+    (f : Agent) (P : PropLike) :
+    s.ladder_map f P = LadderStage.Ignorance →
+    s'.ladder_map f P = LadderStage.Ignorance :=
+  fun h => (no_bank_trace_generates_ladder_content s s' t f P).trans h
+
+/-- Bank traces cannot discharge closure.
+
+    Any trace that starts with the Certainty stage set for (agent, P) ends
+    with it intact. Closure is Ladder-internal; no Bank action can remove it. -/
+theorem bank_trace_cannot_discharge_closure
+    (s s' : SystemState PropLike Standard ErrorModel Provenance)
+    (t : Trace (Reason := Reason) (Evidence := Evidence) s s')
+    (f : Agent) (P : PropLike) :
+    s.ladder_map f P = LadderStage.Certainty →
+    s'.ladder_map f P = LadderStage.Certainty :=
+  fun h => (no_bank_trace_generates_ladder_content s s' t f P).trans h
+
 /-- A system state "prohibits revision" if no reachable trace contains
     Challenge or Revoke actions. Captures domains where revision is
     structurally blocked: all traces have hasRevision = false. -/
