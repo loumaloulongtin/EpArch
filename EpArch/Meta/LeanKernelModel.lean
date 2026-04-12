@@ -875,4 +875,160 @@ theorem leanKernel_gettier_gap :
       w' ≠ leanKernelGettierCase.world :=
   gettier_ctx_exhibits_provenance_gap LeanKernelCtx leanKernelGettierCase leanKernel_is_gettier
 
+/-! ## Kernel-Level S-Field: Axiom Footprint as Standard
+
+    The axiom footprint of a proof is its S field in the EpArch sense.
+    `#print axioms some_theorem` is the kernel's S-field readout — a
+    truthful record of what standard was applied at elaboration time.
+    It is stamped on the claim, fixed, and not changeable per reader.
+
+    S/E/V independence at the meta level:
+
+    - V: the kernel genuinely elaborated this term (provenance is sound).
+    - E: proof components are present; no detection gap.
+    - S: the axiom level actually used — `allows_sorry`, `classical_only`,
+         or `axiom_free`.
+
+    Two distinct kinds of S-failure arise, mirroring Theorems.lean:
+
+    1. **Relational** (axiom threshold mismatch): the same sorry-containing
+       proof is acceptable to a development consumer and a S-failure for a
+       publication consumer. Both V and E are sound. Only the consuming
+       agent's required threshold differs.
+
+    2. **Absolute/void** (`sorry ⊢ False`): when E already documents
+       `sorryTainted` as revocable (`LeanGroundedRevocation`) and S is
+       solely "sorry closed it", both structural conditions are present in
+       the fields — `lean_S_is_void` is witnessed. This is a demonstration
+       of field independence, not a prescription for agent acceptance policy.
+       Mirrors the known-liar-cook case in Theorems.lean.
+-/
+
+/-- Lean axiom levels: the S-field vocabulary for Lean proofs.
+    Stamped by the kernel at elaboration time. Property of the claim. -/
+inductive LeanAxiomLevel where
+  | allows_sorry    -- sorryAx in the axiom closure (dev standard)
+  | classical_only  -- Classical.choice / propext only; no sorryAx
+  | axiom_free      -- kernel primitives only; `#print axioms` empty
+  deriving DecidableEq, Repr
+
+/-- Does a proof at `deposit_level` satisfy the `required_level` threshold
+    for a specific consuming agent?
+
+    The consuming agent supplies `clears` as a certified Bool — same
+    pattern as `StandardClearance` in Theorems.lean. EpArch records
+    that a threshold relationship holds; the ordering on `LeanAxiomLevel`
+    lives in the agent implementation, outside EpArch. -/
+structure LeanStandardClearance where
+  /-- The S value stamped on the proof: axiom level actually used. -/
+  deposit_level  : LeanAxiomLevel
+  /-- The minimum axiom level this consuming agent requires. -/
+  required_level : LeanAxiomLevel
+  /-- Does deposit_level satisfy required_level for this agent? -/
+  clears         : Bool
+
+/-- Lean Standard Case: the proof's S field doesn't clear a strict consumer.
+    E and V remain sound — the only issue is S. -/
+structure LeanStandardCase where
+  decl_name            : String
+  /-- E: proof components present (no detection gap). -/
+  e_passes             : Bool
+  /-- V: the kernel genuinely elaborated this term. -/
+  v_passes             : Bool
+  s_clearance          : LeanStandardClearance
+  /-- Structural witness: clearance fails. -/
+  clearance_fails_cert : s_clearance.clears = false
+
+def lean_S_fails (lsc : LeanStandardCase) : Bool := !lsc.s_clearance.clears
+
+/-- A LeanStandardCase routes to S-failure.
+    Proof: `clearance_fails_cert` is the structural witness; no case analysis. -/
+theorem lean_standard_case_is_S_failure (lsc : LeanStandardCase) :
+    lean_S_fails lsc = true := by
+  simp only [lean_S_fails, lsc.clearance_fails_cert, Bool.not_false]
+
+/-- Canonical publication-mode failure: `allows_sorry` proof, `axiom_free` required. -/
+def canonical_sorry_publication_case (name : String) : LeanStandardCase :=
+  { decl_name           := name,
+    e_passes            := true,
+    v_passes            := true,
+    s_clearance         := { deposit_level  := .allows_sorry,
+                              required_level := .axiom_free,
+                              clears         := false },
+    clearance_fails_cert := rfl }
+
+/-- Same proof, development-mode consumer: `allows_sorry` clears `allows_sorry`. -/
+def canonical_sorry_dev_clearance : LeanStandardClearance :=
+  { deposit_level  := .allows_sorry,
+    required_level := .allows_sorry,
+    clears         := true }
+
+/-- Relational S-failure at the kernel level.
+
+    Same declaration. Same E. Same V. Same axiom footprint.
+    Publication consumer: S-failure. Development consumer: clears.
+    What differs is the consuming agent's required threshold. -/
+theorem lean_axiom_failure_is_relational (name : String) :
+    lean_S_fails (canonical_sorry_publication_case name) = true ∧
+    canonical_sorry_dev_clearance.clears = true := by
+  simp [lean_S_fails, canonical_sorry_publication_case, canonical_sorry_dev_clearance]
+
+/-- Absolute (void) S at the kernel level: `sorry ⊢ False`.
+
+    E already documents `sorryTainted` as revocable in `LeanGroundedRevocation`
+    (`witness_is_invalid`, `can_revoke`).  When S is solely "sorry closed it",
+    both structural conditions (`e_documents_sorry` and `s_is_sorry_only`) are
+    present in the fields — `lean_S_is_void` is witnessed structurally.
+
+    This is the known-liar-cook case instantiated in the kernel:
+    - V: the kernel genuinely elaborated this (V is accurate).
+    - E: `LeanGroundedRevocation` documents sorry as a known failure mode.
+    - S: "sorry closed the goal" — the structural pattern is recorded.
+
+    EpArch records the field pattern. What consuming agents do with
+    `lean_S_is_void` is outside the model's scope. -/
+structure LeanVacuousStandard where
+  decl_name              : String
+  /-- E documents sorry as a known failure mode (cf. LeanGroundedRevocation.witness_is_invalid). -/
+  e_documents_sorry      : Bool
+  e_documents_sorry_cert : e_documents_sorry = true
+  /-- S is solely "it elaborated via sorry" — no independent verification. -/
+  s_is_sorry_only        : Bool
+  s_is_sorry_only_cert   : s_is_sorry_only = true
+
+def lean_S_is_void (lvs : LeanVacuousStandard) : Prop :=
+  lvs.s_is_sorry_only = true ∧ lvs.e_documents_sorry = true
+
+/-- Void S is witnessed by the two structural fields — no case analysis. -/
+theorem lean_vacuous_standard_is_void (lvs : LeanVacuousStandard) :
+    lean_S_is_void lvs :=
+  ⟨lvs.s_is_sorry_only_cert, lvs.e_documents_sorry_cert⟩
+
+/-- Canonical void instance: a `sorry`-closed proof of `False`.
+    `e_documents_sorry = true` is grounded in `LeanGroundedRevocation`:
+    the same `.sorryTainted` constructor that makes `witness_is_invalid` fire
+    is what S = "sorry closed it" refers to. -/
+def canonical_sorry_false_case : LeanVacuousStandard :=
+  { decl_name              := "sorry_closes_False",
+    e_documents_sorry      := true,
+    e_documents_sorry_cert := rfl,
+    s_is_sorry_only        := true,
+    s_is_sorry_only_cert   := rfl }
+
+/-- Both kinds of S-failure, at the kernel level.
+
+    Relational: same sorry-containing proof; one consuming agent's clearance
+    fails, another's passes. S is a property of the claim; the threshold
+    is a property of the consuming agent — outside EpArch's scope.
+
+    Absolute/void: E + V together structurally witness `lean_S_is_void`.
+    EpArch records both conditions in the fields; agent acceptance decisions
+    are not modeled here. -/
+theorem lean_S_failure_taxonomy (name : String) :
+    lean_S_fails (canonical_sorry_publication_case name) = true ∧
+    canonical_sorry_dev_clearance.clears = true ∧
+    lean_S_is_void canonical_sorry_false_case := by
+  simp [lean_S_fails, canonical_sorry_publication_case,
+        canonical_sorry_dev_clearance, lean_S_is_void, canonical_sorry_false_case]
+
 end EpArch.LeanKernelModel

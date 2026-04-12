@@ -541,6 +541,278 @@ theorem fake_barn_profile_yields_E_failure (fb : FakeBarnCase (PropLike := PropL
   fb.e_certified
 
 
+/-! ### Standard Case: S-Field Failure (Threshold Mismatch)
+
+    S is a property of the claim — stamped at certification time, truthful,
+    and fixed. The friend's claim "no peanuts used as an ingredient" carries
+    `S = ingredient_check`. That is what the claim says. It is accurate.
+
+    The failure is relational: the deposit's S doesn't satisfy the consuming
+    agent's required threshold. The allergic agent needs `S ≥ cross_contamination_check`.
+    The same deposit, same S, same E (no detection gap), same V (genuine provenance).
+    E and V are both sound — the only mismatch is in S.
+
+    This is the one case where the deposit is not structurally defective:
+    - Gettier (V-failure): the deposit is defective regardless of who reads it
+    - Fake Barn (E-failure): the deposit is defective regardless of who reads it
+    - Standard (S-failure): the deposit is accurate; the standard it carries
+      doesn't clear THIS agent's acceptance threshold
+
+    The repair is field-local to S: obtain a new certification under a stricter
+    standard. V and E do not need to change.
+
+    Proxy: `StandardClearance.clears = false` represents the threshold mismatch.
+    The `deposit_standard` and `required_threshold` fields are left abstract
+    (typed by the `Standard` parameter) — EpArch records that they differ but
+    does not model the ordering on Standard values; that lives in the agent
+    implementation.
+-/
+
+/-- Standard clearance: does the deposit's S satisfy the agent's required threshold?
+
+    Both fields are typed by the same `Standard` parameter — they represent
+    values in the same space. The `clears` field records whether the deposit
+    standard satisfies the agent's requirement. False = S-failure. -/
+structure StandardClearance (Standard : Type u) where
+  /-- The standard actually applied when the deposit was certified.
+      This is the S field's content — truthful, stamped at certification. -/
+  deposit_standard  : Standard
+  /-- The minimum standard this agent requires to accept withdrawal. -/
+  required_threshold : Standard
+  /-- Does deposit_standard satisfy required_threshold?
+      False when the standard applied falls short of this agent's bar. -/
+  clears : Bool
+
+/-- Standard Case structure.
+
+    A Standard case has:
+    - True and well-provenanced claim (S and V are sound on their own terms)
+    - An adequate error model (E is sound)
+    - A StandardClearance whose `clears = false`
+
+    The canonical instance: peanut allergy.
+    - claim: "this dish contains no peanuts"
+    - S = ingredient_check (certified by the cook)
+    - E = sound (no unmodeled detection gap)
+    - V = sound (cook is the genuine source; provenance is fine)
+    - required_threshold = cross_contamination_check
+    - clears = false (ingredient_check does not satisfy cross_contamination_check) -/
+structure StandardCase (Standard : Type u) where
+  claim     : PropLike
+  /-- E-field passes (error model is adequate) -/
+  E_passes  : Bool
+  /-- V-field passes (provenance is genuine) -/
+  V_passes  : Bool
+  /-- The S-level clearance check — carries deposit_standard and required_threshold -/
+  s_clearance : StandardClearance Standard
+  /-- The standard fails to clear this agent's threshold — structural field. -/
+  clearance_fails_certified : s_clearance.clears = false
+
+/-- S fails when the deposit standard doesn't clear the agent's required threshold. -/
+def S_fails (sc : StandardCase Standard (PropLike := PropLike)) : Bool :=
+  !sc.s_clearance.clears
+
+/-- IsStandardCase: a genuine S-failure case iff:
+    1. E passes (no detection gap)
+    2. V passes (genuine provenance)
+    3. S clears = false (threshold mismatch)
+
+    The asymmetry with Gettier and FakeBarn is intentional: the deposit
+    is structurally sound but insufficient for this agent. -/
+def IsStandardCase (sc : StandardCase Standard (PropLike := PropLike)) : Prop :=
+  sc.E_passes = true ∧ sc.V_passes = true ∧ sc.s_clearance.clears = false
+
+/-- S-field inadequacy: the clearance check failed. -/
+def case_S_inadequate (sc : StandardCase Standard (PropLike := PropLike)) : Prop :=
+  S_fails sc = true
+
+/-- Standard cases route to S-failure.
+
+    When E and V are both sound, a withdrawal block is localized to Field.S.
+    Proof: sc.clearance_fails_certified directly witnesses S_fails = true;
+    discards IsStandardCase hypothesis. -/
+theorem standard_case_is_S_failure (sc : StandardCase Standard (PropLike := PropLike)) :
+    IsStandardCase sc → case_S_inadequate sc := by
+  intro _
+  simp only [case_S_inadequate, S_fails, sc.clearance_fails_certified, Bool.not_false]
+
+/-- CANONICAL Standard case: peanut allergy / ingredient-check vs cross-contamination.
+
+    - deposit_standard and required_threshold are left abstract (two distinct Standard
+      values supplied by the caller); the architecture doesn't need to know the ordering.
+    - E and V are both true: the cook didn't miss anything they were supposed to check,
+      and the claim is genuinely traceable to their inspection.
+    - clears = false: the ingredient-check standard doesn't satisfy the allergy threshold. -/
+def canonical_standard_case (P : PropLike) (ingredient_check cross_contamination_check : Standard) :
+    StandardCase Standard (PropLike := PropLike) :=
+  { claim      := P,
+    E_passes   := true,
+    V_passes   := true,
+    s_clearance := {
+      deposit_standard   := ingredient_check,
+      required_threshold := cross_contamination_check,
+      clears             := false
+    },
+    clearance_fails_certified := rfl }
+
+/-- Canonical Standard case satisfies IsStandardCase. -/
+theorem canonical_standard_case_is_standard (P : PropLike)
+    (ingredient_check cross_contamination_check : Standard) :
+    IsStandardCase (canonical_standard_case (Standard := Standard) P
+      ingredient_check cross_contamination_check) := by
+  unfold IsStandardCase canonical_standard_case
+  simp only [and_self]
+
+/-- S-failure is field-local: the failure routes to Field.S.
+
+    When E and V are both fine and only S fails, the failure localizes to
+    Field.S — not Field.E or Field.V. This demonstrates field independence:
+    the deposit's provenance and error model are structurally unaffected.
+    What a consuming agent does with this localization is outside EpArch's scope.
+
+    This mirrors the diagnostic routing for Gettier → Field.V and
+    Fake Barn → Field.E. -/
+theorem standard_failure_targets_S (sc : StandardCase Standard (PropLike := PropLike)) :
+    IsStandardCase sc → S_fails sc = true := by
+  intro ⟨_, _, hS⟩
+  simp only [S_fails, hS, Bool.not_false]
+
+/-- CANONICAL lenient clearance: same deposit standard, lower threshold — clears.
+
+    The disliking-peanuts agent is satisfied by ingredient_check — the exact
+    same S stamped on the deposit. For them, clears = true.
+
+    This is a StandardClearance, not a StandardCase. StandardCase is typed as
+    a failure (clears = false by construction). A passing clearance is just
+    a StandardClearance where clears = true — there is no "case" to analyze. -/
+def canonical_lenient_clearance (ingredient_check : Standard) :
+    StandardClearance Standard :=
+  { deposit_standard   := ingredient_check,
+    required_threshold := ingredient_check,
+    clears             := true }
+
+/-- S-failure is relational: same deposit standard, different outcomes per agent.
+
+    The allergic agent's case fails (StandardCase.clears = false → S_fails).
+    The disliking agent's clearance passes (StandardClearance.clears = true).
+    Same claim. Same E. Same V. Same deposit_standard. Only required_threshold differs.
+
+    This is what distinguishes S-failure from V-failure (Gettier) and E-failure
+    (fake barn): those are deposit defects independent of who reads the deposit.
+    S-failure is relational — it depends on the consuming agent's threshold. -/
+theorem standard_failure_is_relational
+    (P : PropLike) (ingredient_check cross_contamination_check : Standard) :
+    let strict  := canonical_standard_case (Standard := Standard) P
+                     ingredient_check cross_contamination_check
+    let lenient := canonical_lenient_clearance (Standard := Standard) ingredient_check
+    case_S_inadequate strict ∧ lenient.clears = true := by
+  simp [case_S_inadequate, S_fails, canonical_standard_case, canonical_lenient_clearance]
+
+
+/-! ### Vacuous Standard Case: S Voided by E + V Interaction
+
+    A second kind of S-failure, distinct from the relational (allergy) case.
+
+    Setup — the known-liar cook:
+    - V: provenance genuinely traces to the cook. V is accurate and honest.
+    - E: our error model explicitly documents "cook is a known liar."
+          E is sound — we have the threat modeled correctly.
+    - S: "the cook said it." Standard = source testimony.
+
+    E and V are both *correct*. Their correct content jointly witnesses that
+    S = "trust the cook's testimony" carries a structural void — the two
+    fields E and V together exhibit the pattern `VacuousStandardCase` describes.
+    This is a demonstration of field independence, not a prescription
+    for what any consuming agent should decide.
+
+    This is the architectural content of "E + V ≠ S":
+    - E being sound does not make S sound.
+    - V being accurate does not make S sound.
+    - The three fields are genuinely independent.
+    S can be the broken field while E and V are doing their jobs perfectly.
+
+    Contrast with the allergy case (relational S-failure):
+    - Relational: what makes the deposit pass or fail differs per consuming agent.
+    - Absolute/void: the two structural conditions are present in the fields
+      regardless of which agent inspects the deposit. How agents respond
+      to `S_is_vacuous` is outside EpArch's scope.
+
+    Repair in both cases localizes to S: the field structure tells you *where*
+    to look, not what the agent must do.
+-/
+
+/-- Source reliability record.
+    EpArch doesn't model what makes a source unreliable — that is agent/world
+    knowledge. We record only whether the source is documented unreliable in
+    the error model. -/
+structure SourceReliability where
+  source_id             : String
+  documented_unreliable : Bool
+
+/-- Vacuous Standard Case.
+
+    S is grounded in testimony from a source that E explicitly documents as
+    unreliable, while V accurately traces the claim to that same source.
+
+    Both E and V are structurally correct — the void is in S. -/
+structure VacuousStandardCase where
+  claim  : PropLike
+  /-- The source whose testimony grounds the deposit.
+      V is honest: the claim genuinely came from this source. -/
+  source : SourceReliability
+  /-- E documents this source as unreliable — E is sound.
+      Required Prop field: structural guarantee, not run-time check. -/
+  e_documents_unreliability : source.documented_unreliable = true
+  /-- S is pure source testimony — no independent verification path. -/
+  s_is_source_testimony_only : Bool
+  s_testimony_certified      : s_is_source_testimony_only = true
+
+/-- S is vacuous when it is grounded solely in testimony from a documented unreliable source.
+
+    Both conditions are required: the standard must be testimony-only AND the
+    source must be documented unreliable. Either condition alone is insufficient — a
+    documented unreliable source could still be confirmed by independent evidence (S
+    would then not be testimony-only), and testimony-only from a reliable source is the
+    ordinary case. The void arises from the intersection. -/
+def S_is_vacuous (vc : VacuousStandardCase (PropLike := PropLike)) : Prop :=
+  vc.s_is_source_testimony_only = true ∧ vc.source.documented_unreliable = true
+
+/-- Vacuous standard routes to S-failure — absolute, not relational.
+
+    Proof: both conditions are certified structural fields; no case analysis needed. -/
+theorem vacuous_standard_is_S_failure (vc : VacuousStandardCase (PropLike := PropLike)) :
+    S_is_vacuous vc :=
+  ⟨vc.s_testimony_certified, vc.e_documents_unreliability⟩
+
+/-- CANONICAL vacuous case: the known-liar cook. -/
+def canonical_liar_cook_case (P : PropLike) : VacuousStandardCase (PropLike := PropLike) :=
+  { claim                       := P,
+    source                      := { source_id := "cook", documented_unreliable := true },
+    e_documents_unreliability   := rfl,
+    s_is_source_testimony_only  := true,
+    s_testimony_certified       := rfl }
+
+/-- Absolute vs relational S-failure: two kinds of S-void.
+
+    Relational (allergy): same deposit clears for the |dislikes-peanuts| agent,
+    fails for the |allergic| agent. Some agents can withdraw; some cannot.
+
+    Absolute (known liar): E + V together witness that S is void regardless of
+    which agent inspects the deposit. No threshold makes "documented liar's testimony"
+    a sound epistemic standard.
+
+    Both repair by targeting Field.S. The nature of the failure differs:
+    relational = threshold question; absolute = the standard itself is void. -/
+theorem absolute_vs_relational_S_failure
+    (P : PropLike) (ingredient_check cross_contamination_check : Standard) :
+    let relational := canonical_standard_case (Standard := Standard) P
+                        ingredient_check cross_contamination_check
+    let absolute   := canonical_liar_cook_case (PropLike := PropLike) P
+    case_S_inadequate relational ∧ S_is_vacuous absolute := by
+  simp [case_S_inadequate, S_fails, canonical_standard_case,
+        S_is_vacuous, canonical_liar_cook_case]
+
+
 /-! ## Lottery Problem -/
 
 /-- Lottery situation: agent has high credence but no deposit.
