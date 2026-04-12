@@ -935,35 +935,68 @@ structure LeanStandardClearance where
   /-- Sound bridge: the Bool is honest about the Prop. -/
   clears_sound   : clears = true ↔ threshold_met
 
+/-- Kernel elaboration mode: how a declaration was accepted by the kernel.
+    Mirrors `ProvenanceMode` in Theorems.lean for the Lean-specific context.
+    `genuinely_elaborated` is derived from `mode = .kernel`; the bridge
+    requires a concrete enum comparison, not `⟨fun _ => trivial, …⟩`. -/
+inductive ElabMode where
+  | kernel   -- normal kernel elaboration path (no bypasses)
+  | bypass   -- definitional bypass (e.g., `native_decide` shortcut)
+  | admitted -- admitted via sorry / admit at this node
+  deriving DecidableEq, Repr
+
 /-- V-witness for a Lean Standard case: the kernel genuinely elaborated the term.
 
-    Prop-primary: `genuinely_elaborated` is the real semantic content;
-    `kernel_elaborated` is the executable mirror; `kernel_sound` bridges them.
-    Matches the `VProvenance` refactor in Theorems.lean. -/
+    `genuinely_elaborated` is **derived** from `mode = .kernel` — a concrete enum
+    comparison rather than a free-floating `True`.  `kernel_sound` bridges the
+    Bool mirror with the mode comparison; construction of a non-`.kernel` case
+    requires proving the Bool reflects the other mode. -/
 structure LeanVWitness where
   /-- The declaration name whose provenance is being witnessed -/
-  decl_name            : String
-  /-- Real semantic content: the kernel genuinely elaborated this term -/
-  genuinely_elaborated : Prop
-  /-- Executable mirror of `genuinely_elaborated` for computable contexts -/
-  kernel_elaborated    : Bool
-  /-- Sound bridge: the Bool is honest about the Prop -/
-  kernel_sound         : kernel_elaborated = true ↔ genuinely_elaborated
+  decl_name         : String
+  /-- How the kernel accepted this term — the data backing V. -/
+  mode              : ElabMode
+  /-- Executable mirror: reflects `mode = .kernel`. -/
+  kernel_elaborated : Bool
+  /-- Sound bridge: the Bool must honestly reflect the mode comparison. -/
+  kernel_sound      : kernel_elaborated = true ↔ mode = .kernel
+
+/-- V genuinely elaborated iff the elaboration mode is `.kernel`.
+    Derived from `mode` — not a free-floating `True`.
+    `@[reducible]` makes this transparent to `decide` and definitional reduction. -/
+@[reducible] def LeanVWitness.genuinely_elaborated (v : LeanVWitness) : Prop := v.mode = .kernel
+
+/-- Typed kernel failure categories.
+    Mirrors `Threat` in Theorems.lean but scoped to Lean-specific failure modes.
+    `no_relevant_gap` in `LeanEWitness` is derived from
+    `relevant_failure ∈ documented_failures`. -/
+inductive KernelFailure where
+  | sorryAx             -- sorryAx in the axiom closure
+  | inconsistent_axiom  -- user-supplied inconsistent axiom
+  | opaque_bypass       -- opaque constant hiding a non-kernel proof
+  deriving DecidableEq, Repr
 
 /-- E-witness for a Lean Standard case: known failure modes are documented.
 
-    Prop-primary: `no_relevant_gap` is the real semantic content;
-    `e_adequate` is the executable mirror; `adequate_sound` bridges them.
-    Matches the `EAdequacy` refactor in Theorems.lean. -/
+    `no_relevant_gap` is **derived** from
+    `relevant_failure ∈ documented_failures` — a real `List.Mem` witness.
+    `adequate_sound` bridges the Bool mirror with the membership fact;
+    construction requires a concrete membership proof at the `documented_failures` list. -/
 structure LeanEWitness where
-  /-- Known failure modes documented in the error model (e.g., "sorryAx") -/
-  documented_failures : List String
-  /-- Real semantic content: no relevant undocumented failure mode for this proof -/
-  no_relevant_gap     : Prop
-  /-- Executable mirror of `no_relevant_gap` for computable contexts -/
+  /-- The failure mode this proof is exposed to — what E must cover. -/
+  relevant_failure    : KernelFailure
+  /-- Known failure modes documented in the error model (typed list). -/
+  documented_failures : List KernelFailure
+  /-- Executable mirror: reflects `relevant_failure ∈ documented_failures`. -/
   e_adequate          : Bool
-  /-- Sound bridge: the Bool is honest about the Prop -/
-  adequate_sound      : e_adequate = true ↔ no_relevant_gap
+  /-- Sound bridge: the Bool must honestly reflect the membership fact. -/
+  adequate_sound      : e_adequate = true ↔ relevant_failure ∈ documented_failures
+
+/-- E is adequate iff the relevant failure mode is on the documented list.
+    Derived from data — not a free-floating `True`.
+    `@[reducible]` makes this transparent to `decide` and definitional reduction. -/
+@[reducible] def LeanEWitness.no_relevant_gap (e : LeanEWitness) : Prop :=
+  e.relevant_failure ∈ e.documented_failures
 
 /-- Lean Standard Case: the proof's S field doesn't clear a strict consumer.
     V and E remain sound — the only issue is S.
@@ -1001,14 +1034,14 @@ theorem lean_standard_case_is_S_failure (lsc : LeanStandardCase) :
     - `clearance_fails_cert = False.elim`: witnesses `¬False` -/
 def canonical_sorry_publication_case (name : String) : LeanStandardCase :=
   { decl_name   := name,
-    v_witness   := { decl_name            := name,
-                     genuinely_elaborated  := True,
-                     kernel_elaborated     := true,
-                     kernel_sound          := ⟨fun _ => trivial, fun _ => rfl⟩ },
-    e_witness   := { documented_failures := ["sorryAx"],
-                     no_relevant_gap     := True,
+    v_witness   := { decl_name         := name,
+                     mode              := .kernel,
+                     kernel_elaborated := true,
+                     kernel_sound      := ⟨fun _ => rfl, fun _ => rfl⟩ },
+    e_witness   := { relevant_failure    := .sorryAx,
+                     documented_failures := [.sorryAx],
                      e_adequate          := true,
-                     adequate_sound      := ⟨fun _ => trivial, fun _ => rfl⟩ },
+                     adequate_sound      := by decide },
     s_clearance := { deposit_level  := .allows_sorry,
                      required_level := .axiom_free,
                      threshold_met  := False,
@@ -1038,6 +1071,15 @@ theorem lean_axiom_failure_is_relational (name : String) :
   · exact lean_standard_case_is_S_failure _
   · exact trivial
 
+/-- Elaboration pattern for the sorry-closed-goal scenario.
+    Mirrors `TestimonyMode` in Theorems.lean for the Lean-specific context.
+    `testimony_only` in `LeanVacuousStandard` is derived from
+    `elab_pattern = .sorry_only`. -/
+inductive ElabPattern where
+  | sorry_only  -- proof closed solely by sorry; no independent kernel path
+  | full_proof  -- main proof is complete (sorry may appear in subterms)
+  deriving DecidableEq, Repr
+
 /-- Absolute (void) S at the kernel level: `sorry ⊢ False`.
 
     E already documents `sorryTainted` as revocable in `LeanGroundedRevocation`
@@ -1045,56 +1087,64 @@ theorem lean_axiom_failure_is_relational (name : String) :
     both structural conditions (`e_documents_sorry` and `s_is_sorry_only`) are
     present in the fields — `lean_S_is_void` is witnessed structurally.
 
-    This is the known-liar-cook case instantiated in the kernel:
-    - V: the kernel genuinely elaborated this (V is accurate).
-    - E: `LeanGroundedRevocation` documents sorry as a known failure mode.
-    - S: "sorry closed the goal" — the structural pattern is recorded.
+    `sorry_documented` and `testimony_only` are **derived** from concrete data:
+    - `sorry_documented = relevant_failure ∈ documented_failures` (a real membership
+      witness via `LeanEWitness.no_relevant_gap`)
+    - `testimony_only = elab_pattern = .sorry_only` (a concrete enum comparison)
 
     EpArch records the field pattern. What consuming agents do with
     `lean_S_is_void` is outside the model's scope. -/
 structure LeanVacuousStandard where
   decl_name              : String
-  /-- Real semantic content: E documents sorry as a known failure mode. -/
-  sorry_documented       : Prop
-  /-- Executable mirror of `sorry_documented` for computable contexts. -/
-  e_documents_sorry      : Bool
-  /-- Sound bridge: the Bool is honest about the Prop. -/
-  e_documents_sound      : e_documents_sorry = true ↔ sorry_documented
-  /-- Structural cert: grounding in `LeanGroundedRevocation.witness_is_invalid`. -/
-  e_documents_sorry_cert : e_documents_sorry = true
-  /-- Real semantic content: S is solely "it elaborated via sorry" — no independent path. -/
-  testimony_only         : Prop
-  /-- Executable mirror of `testimony_only` for computable contexts. -/
+  /-- E-witness: relevant failure (sorryAx) must be on the documented list. -/
+  e_witness              : LeanEWitness
+  /-- Structural cert: E documents the relevant failure at construction time. -/
+  e_documents_sorry_cert : e_witness.e_adequate = true
+  /-- How the proof was elaborated — the data backing the testimony condition. -/
+  elab_pattern           : ElabPattern
+  /-- Executable mirror: reflects `elab_pattern = .sorry_only`. -/
   s_is_sorry_only        : Bool
-  /-- Sound bridge: the Bool is honest about the Prop. -/
-  s_is_sorry_sound       : s_is_sorry_only = true ↔ testimony_only
+  /-- Sound bridge: the Bool must honestly reflect the pattern comparison. -/
+  s_is_sorry_sound       : s_is_sorry_only = true ↔ elab_pattern = .sorry_only
   /-- Structural cert: S is sorry-only at construction time. -/
   s_is_sorry_only_cert   : s_is_sorry_only = true
+
+/-- E documents the relevant failure iff it is on the documented list.
+    Derived from `e_witness` data — not a free-floating `True`.
+    `@[reducible]` makes this transparent to `decide` and definitional reduction. -/
+@[reducible] def LeanVacuousStandard.sorry_documented (lvs : LeanVacuousStandard) : Prop :=
+  lvs.e_witness.no_relevant_gap
+
+/-- S is testimony-only iff the elaboration pattern is `sorry_only`.
+    Derived from the pattern — not a free-floating `True`.
+    `@[reducible]` makes this transparent to `decide` and definitional reduction. -/
+@[reducible] def LeanVacuousStandard.testimony_only (lvs : LeanVacuousStandard) : Prop :=
+  lvs.elab_pattern = .sorry_only
 
 def lean_S_is_void (lvs : LeanVacuousStandard) : Prop :=
   lvs.testimony_only ∧ lvs.sorry_documented
 
-/-- Void S is witnessed by the soundness bridges — proof now flows through the bridges,
-    not directly from Bool certs. -/
+/-- Void S is witnessed by the soundness bridges — proof goes through the
+    data-backed derived fields rather than directly from Bool certs. -/
 theorem lean_vacuous_standard_is_void (lvs : LeanVacuousStandard) :
     lean_S_is_void lvs :=
   ⟨lvs.s_is_sorry_sound.mp lvs.s_is_sorry_only_cert,
-    lvs.e_documents_sound.mp lvs.e_documents_sorry_cert⟩
-
+    lvs.e_witness.adequate_sound.mp lvs.e_documents_sorry_cert⟩
 /-- Canonical void instance: a `sorry`-closed proof of `False`.
     `e_documents_sorry = true` is grounded in `LeanGroundedRevocation`:
     the same `.sorryTainted` constructor that makes `witness_is_invalid` fire
     is what S = "sorry closed it" refers to. -/
 def canonical_sorry_false_case : LeanVacuousStandard :=
   { decl_name            := "sorry_closes_False",
-    sorry_documented     := True,
-    e_documents_sorry    := true,
-    e_documents_sound    := ⟨fun _ => trivial, fun _ => rfl⟩,
+    e_witness            := { relevant_failure    := .sorryAx,
+                              documented_failures := [.sorryAx],
+                              e_adequate          := true,
+                              adequate_sound      := by decide },
     e_documents_sorry_cert := rfl,
-    testimony_only       := True,
-    s_is_sorry_only      := true,
-    s_is_sorry_sound     := ⟨fun _ => trivial, fun _ => rfl⟩,
-    s_is_sorry_only_cert := rfl }
+    elab_pattern           := .sorry_only,
+    s_is_sorry_only        := true,
+    s_is_sorry_sound       := ⟨fun _ => rfl, fun _ => rfl⟩,
+    s_is_sorry_only_cert   := rfl }
 
 /-- Both kinds of S-failure, at the kernel level.
 
@@ -1111,5 +1161,15 @@ theorem lean_S_failure_taxonomy (name : String) :
     lean_S_is_void canonical_sorry_false_case := by
   exact ⟨lean_standard_case_is_S_failure _, trivial,
         lean_vacuous_standard_is_void _⟩
+
+/-- Data-backed V and E evidence in a Lean S-failure.
+    Surfaces the concrete underlying data: `mode = .kernel` (not `True`) and
+    `relevant_failure ∈ documented_failures` (a real `List.Mem` witness, not `True`).
+    Mirrors `s_failure_v_mode_and_e_threat` from Theorems.lean at the kernel level. -/
+theorem lean_s_failure_VE_data (name : String) :
+    (canonical_sorry_publication_case name).v_witness.mode = .kernel ∧
+    (canonical_sorry_publication_case name).e_witness.relevant_failure ∈
+      (canonical_sorry_publication_case name).e_witness.documented_failures :=
+  ⟨rfl, List.Mem.head _⟩
 
 end EpArch.LeanKernelModel

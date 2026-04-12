@@ -589,38 +589,70 @@ structure StandardClearance (Standard : Type u) where
   /-- Sound bridge: the Bool is honest about the Prop. -/
   clears_sound       : clears = true ↔ threshold_met
 
+/-- Provenance mode: how the certifying source connects to the truth-maker.
+    Only `.direct_inspection` counts as genuinely tracking.  The `tracks_genuine`
+    Bool in `VProvenance` must be honest about `mode = .direct_inspection`;
+    the bridge is now a concrete enum comparison rather than `⟨fun _ => trivial, …⟩`. -/
+inductive ProvenanceMode where
+  | direct_inspection  -- source directly verified the claim
+  | hearsay            -- source only received it from another party
+  | coincidental       -- source's certification is coincidental to the truth-maker
+  deriving DecidableEq, Repr
+
 /-- V-provenance witness: genuine provenance for the Standard case.
 
     Mirrors `VIndependence` for the Gettier case, but represents the PASSING V:
     the claim genuinely traces to the certifying source without coincidence.
-    The `tracks_genuine` Bool is the executable mirror; `genuine_cert` certifies it
-    at construction time (same pattern as `FakeBarnCase.e_certified`). -/
+    `genuinely_tracks` is **derived** from `mode`: it holds iff
+    `mode = .direct_inspection`.  The bridge `tracks_sound` now requires a
+    concrete enum comparison, not bare `⟨fun _ => trivial, fun _ => rfl⟩`. -/
 structure VProvenance where
   /-- Who certified this claim (e.g., "the cook", "the supplier") -/
   certifying_source : String
-  /-- Real semantic content: provenance genuinely tracks the truth-maker.  Prop-primary;
-      `tracks_genuine` is the executable mirror with `tracks_sound` as the bridge. -/
-  genuinely_tracks  : Prop
-  /-- Executable mirror of `genuinely_tracks` for computable contexts. -/
+  /-- How the source connects to the truth-maker — the data backing V. -/
+  mode              : ProvenanceMode
+  /-- Executable mirror: reflects `mode = .direct_inspection`. -/
   tracks_genuine    : Bool
-  /-- Sound bridge: the Bool is honest about the Prop. -/
-  tracks_sound      : tracks_genuine = true ↔ genuinely_tracks
+  /-- Sound bridge: the Bool must honestly reflect the provenance-mode comparison. -/
+  tracks_sound      : tracks_genuine = true ↔ mode = .direct_inspection
+
+/-- V-provenance genuinely tracks the truth-maker iff the mode is direct inspection.
+    Derived from `mode` — not a free-floating `True`.
+    `@[reducible]` makes this transparent to `decide` and definitional reduction. -/
+@[reducible] def VProvenance.genuinely_tracks (v : VProvenance) : Prop := v.mode = .direct_inspection
+
+/-- Typed threat categories for the error model.
+    Replacing the former `List String` with a typed list enables membership
+    proofs that are genuine `List.Mem` witnesses, not bare `trivial`. -/
+inductive Threat where
+  | ingredient_contamination  -- e.g., peanut traces via shared equipment
+  | cross_contact             -- e.g., packaging shared with allergen products
+  | fake_barn_facade          -- deceptive replica in environment
+  | known_liar_testimony      -- testimony from a documented unreliable source
+  deriving DecidableEq, Repr
 
 /-- Error-model adequacy witness: no relevant gap in the error model.
 
     Mirrors `ErrorModelCoverage` for the Fake Barn case, but represents the PASSING E:
     the error model covers all nearby relevant threats for this claim.
-    `modeled_threats` carries the explicit list; `no_nearby_unmodeled` is certified. -/
+    `no_relevant_gap` is **derived** from `relevant_threat ∈ modeled_threats` — a
+    real `List.Mem` witness, not bare `True`.  The `adequacy_sound` bridge now
+    requires proving a concrete membership fact at construction time. -/
 structure EAdequacy where
-  /-- Failure modes the error model accounts for -/
-  modeled_threats     : List String
-  /-- Real semantic content: no relevant gap exists in the error model.  Prop-primary;
-      `no_nearby_unmodeled` is the executable mirror with `adequacy_sound` as the bridge. -/
-  no_relevant_gap     : Prop
-  /-- Executable mirror of `no_relevant_gap` for computable contexts. -/
+  /-- The threat this case is exposed to — what E must cover. -/
+  relevant_threat     : Threat
+  /-- Failure modes the error model accounts for (typed list). -/
+  modeled_threats     : List Threat
+  /-- Executable mirror: reflects `relevant_threat ∈ modeled_threats`. -/
   no_nearby_unmodeled : Bool
-  /-- Sound bridge: the Bool is honest about the Prop. -/
-  adequacy_sound      : no_nearby_unmodeled = true ↔ no_relevant_gap
+  /-- Sound bridge: the Bool must honestly reflect the membership fact. -/
+  adequacy_sound      : no_nearby_unmodeled = true ↔ relevant_threat ∈ modeled_threats
+
+/-- E is adequate iff the relevant threat is on the modeled list.
+    Derived from concrete data — not a free-floating `True`.
+    `@[reducible]` makes this transparent to `decide` and definitional reduction. -/
+@[reducible] def EAdequacy.no_relevant_gap (e : EAdequacy) : Prop :=
+  e.relevant_threat ∈ e.modeled_threats
 
 /-- Standard Case structure.
 
@@ -690,14 +722,14 @@ def canonical_standard_case (P : PropLike) (ingredient_check cross_contamination
   { claim := P,
     v_provenance := {
       certifying_source := "cook",
-      genuinely_tracks  := True,
+      mode              := .direct_inspection,
       tracks_genuine    := true,
-      tracks_sound      := ⟨fun _ => trivial, fun _ => rfl⟩ },
+      tracks_sound      := ⟨fun _ => rfl, fun _ => rfl⟩ },
     e_adequacy := {
-      modeled_threats     := ["ingredient_contamination"],
-      no_relevant_gap     := True,
+      relevant_threat     := .ingredient_contamination,
+      modeled_threats     := [.ingredient_contamination],
       no_nearby_unmodeled := true,
-      adequacy_sound      := ⟨fun _ => trivial, fun _ => rfl⟩ },
+      adequacy_sound      := by decide },
     s_clearance := {
       deposit_standard   := ingredient_check,
       required_threshold := cross_contamination_check,
@@ -711,7 +743,7 @@ theorem canonical_standard_case_is_standard (P : PropLike)
     (ingredient_check cross_contamination_check : Standard) :
     IsStandardCase (canonical_standard_case (Standard := Standard) P
       ingredient_check cross_contamination_check) :=
-  ⟨trivial, trivial, False.elim⟩
+  ⟨rfl, List.Mem.head _, False.elim⟩
 
 /-- S-failure is field-local: the failure routes to Field.S.
 
@@ -817,6 +849,32 @@ theorem s_failure_e_is_sound (sc : StandardCase Standard (PropLike := PropLike))
     sc.e_adequacy.no_relevant_gap :=
   h.2.1
 
+/-- Data-backed form of `s_failure_v_is_sound` + `s_failure_e_is_sound`.
+    Surfaces the concrete evidence: `mode = .direct_inspection` (not `True`)
+    and `relevant_threat ∈ modeled_threats` (a real `List.Mem` witness, not `True`).
+    These are stronger conclusions because the evidence structure is identified. -/
+theorem s_failure_v_mode_and_e_threat
+    (sc : StandardCase Standard (PropLike := PropLike))
+    (h : IsStandardCase sc) :
+    sc.v_provenance.mode = .direct_inspection ∧
+    sc.e_adequacy.relevant_threat ∈ sc.e_adequacy.modeled_threats :=
+  ⟨h.1, h.2.1⟩
+
+/-- In a relational S-failure, V and E data are symmetric across both consumers;
+    only the threshold differs.  Data-backed form: conclusions are concrete
+    (`mode = .direct_inspection`, `threat ∈ modeled_threats`), not `True`. -/
+theorem relational_S_requires_matching_VE_data
+    (sc : StandardCase Standard (PropLike := PropLike))
+    (lenient_clearance : StandardClearance Standard)
+    (h : IsStandardCase sc)
+    (h_same   : sc.s_clearance.deposit_standard = lenient_clearance.deposit_standard)
+    (h_lenient : lenient_clearance.threshold_met) :
+    sc.v_provenance.mode = .direct_inspection ∧
+    sc.e_adequacy.relevant_threat ∈ sc.e_adequacy.modeled_threats ∧
+    sc.s_clearance.deposit_standard = lenient_clearance.deposit_standard ∧
+    ¬sc.s_clearance.threshold_met ∧ lenient_clearance.threshold_met :=
+  ⟨h.1, h.2.1, h_same, h.2.2, h_lenient⟩
+
 
 /-! ### Vacuous Standard Case: S Voided by E + V Interaction
 
@@ -850,26 +908,52 @@ theorem s_failure_e_is_sound (sc : StandardCase Standard (PropLike := PropLike))
     to look, not what the agent must do.
 -/
 
+/-- Tags that document why a source is considered unreliable.
+    A source is unreliable iff it carries `documented_liar` or `audited_unreliable`;
+    membership in the tag list enables a real `List.Mem` witness below. -/
+inductive ReliabilityTag where
+  | documented_liar     -- source explicitly known to be deceptive
+  | audited_unreliable  -- source independently audited as unreliable
+  | plausible           -- no documented reliability issues
+  deriving DecidableEq, Repr
+
 /-- Source reliability record.
-    EpArch doesn't model what makes a source unreliable — that is agent/world
-    knowledge. We record only whether the source is documented unreliable in
-    the error model. -/
+    `is_unreliable` is **derived** from `tags`: it holds iff
+    `documented_liar ∈ tags ∨ audited_unreliable ∈ tags` — a real disjunctive
+    membership fact, not bare `True`.  `unreliability_sound` bridges the Bool
+    mirror with a concrete tag-membership proof at construction time. -/
 structure SourceReliability where
   source_id             : String
-  /-- Real semantic content: the source is documented as unreliable.  Prop-primary;
-      `documented_unreliable` is the executable mirror with `unreliability_sound` as the bridge. -/
-  is_unreliable         : Prop
-  /-- Executable mirror of `is_unreliable` for computable contexts. -/
+  /-- Reliability tags recorded for this source in the error model. -/
+  tags                  : List ReliabilityTag
+  /-- Executable mirror: reflects tag-based unreliability. -/
   documented_unreliable : Bool
-  /-- Sound bridge: the Bool is honest about the Prop. -/
-  unreliability_sound   : documented_unreliable = true ↔ is_unreliable
+  /-- Sound bridge: the Bool must honestly reflect `documented_liar ∈ tags ∨ …`. -/
+  unreliability_sound   : documented_unreliable = true ↔
+                            .documented_liar ∈ tags ∨ .audited_unreliable ∈ tags
+
+/-- A source is unreliable iff it carries a documented or audited tag.
+    Derived from the tag list — not a free-floating `True`.
+    `@[reducible]` makes this transparent to `decide` and definitional reduction. -/
+@[reducible] def SourceReliability.is_unreliable (sr : SourceReliability) : Prop :=
+  .documented_liar ∈ sr.tags ∨ .audited_unreliable ∈ sr.tags
+
+/-- Testimony mode: does the standard have an independent verification path,
+    or does it rely solely on the source's word? -/
+inductive TestimonyMode where
+  | sole_source   -- only testimony, no independent verification path
+  | corroborated  -- testimony supplemented by independent evidence
+  deriving DecidableEq, Repr
 
 /-- Vacuous Standard Case.
 
     S is grounded in testimony from a source that E explicitly documents as
     unreliable, while V accurately traces the claim to that same source.
 
-    Both E and V are structurally correct — the void is in S. -/
+    Both E and V are structurally correct — the void is in S.
+    `testimony_only` is **derived** from `testimony_mode = .sole_source`;
+    the `testimony_sound` bridge requires a concrete mode comparison, not
+    bare `⟨fun _ => trivial, fun _ => rfl⟩`. -/
 structure VacuousStandardCase where
   claim  : PropLike
   /-- The source whose testimony grounds the deposit.
@@ -878,14 +962,21 @@ structure VacuousStandardCase where
   /-- E documents this source as unreliable — E is sound.
       Required cert: guarantees `is_unreliable` holds via `unreliability_sound`. -/
   e_documents_unreliability : source.documented_unreliable = true
-  /-- Real semantic content: S is sourced solely from testimony; no independent path. -/
-  testimony_only             : Prop
-  /-- Executable mirror of `testimony_only` for computable contexts. -/
+  /-- How the standard was grounded — the data backing the testimony condition. -/
+  testimony_mode             : TestimonyMode
+  /-- Executable mirror: reflects `testimony_mode = .sole_source`. -/
   s_is_source_testimony_only : Bool
-  /-- Sound bridge: the Bool is honest about the Prop. -/
-  testimony_sound            : s_is_source_testimony_only = true ↔ testimony_only
+  /-- Sound bridge: the Bool must honestly reflect the mode comparison. -/
+  testimony_sound            : s_is_source_testimony_only = true ↔ testimony_mode = .sole_source
   /-- Structural cert: S is testimony-only at construction time. -/
   s_testimony_certified      : s_is_source_testimony_only = true
+
+/-- S is testimony-only iff the testimony mode is `sole_source`.
+    Derived from the mode — not a free-floating `True`.
+    `@[reducible]` makes this transparent to `decide` and definitional reduction. -/
+@[reducible] def VacuousStandardCase.testimony_only
+    (vc : VacuousStandardCase (PropLike := PropLike)) : Prop :=
+  vc.testimony_mode = .sole_source
 
 /-- S is vacuous when it is grounded solely in testimony from a documented unreliable source.
 
@@ -920,19 +1011,20 @@ theorem testimony_only_plus_unreliable_source_yields_void_S
 def canonical_liar_cook_case (P : PropLike) : VacuousStandardCase (PropLike := PropLike) :=
   { claim  := P,
     source := { source_id           := "cook",
-                is_unreliable       := True,
+                tags                := [.documented_liar],
                 documented_unreliable := true,
-                unreliability_sound := ⟨fun _ => trivial, fun _ => rfl⟩ },
+                unreliability_sound := by decide },
     e_documents_unreliability  := rfl,
-    testimony_only             := True,
+    testimony_mode             := .sole_source,
     s_is_source_testimony_only := true,
-    testimony_sound            := ⟨fun _ => trivial, fun _ => rfl⟩,
+    testimony_sound            := ⟨fun _ => rfl, fun _ => rfl⟩,
     s_testimony_certified      := rfl }
 
 /-- The canonical liar-cook case yields void S, as an instance of the generic theorem. -/
 theorem canonical_liar_cook_is_void (P : PropLike) :
     S_is_vacuous (canonical_liar_cook_case P) :=
-  testimony_only_plus_unreliable_source_yields_void_S _ trivial trivial
+  testimony_only_plus_unreliable_source_yields_void_S _ rfl
+    (Or.inl (List.Mem.head _))
 
 /-- Absolute vs relational S-failure: two kinds of S-void.
 
@@ -949,7 +1041,7 @@ theorem absolute_vs_relational_S_failure
                         ingredient_check cross_contamination_check
     let absolute   := canonical_liar_cook_case (PropLike := PropLike) P
     case_S_inadequate relational ∧ S_is_vacuous absolute :=
-  ⟨False.elim, ⟨trivial, trivial⟩⟩
+  ⟨False.elim, ⟨rfl, Or.inl (List.Mem.head _)⟩⟩
 
 
 /-! ## Lottery Problem -/
@@ -1306,6 +1398,95 @@ theorem sensitivity_ctx_E_link (C : WorldCtx) (sc : SensitivityCaseCtx C) :
     ¬SensitivityCtx C sc → ¬E_counterfactualCtx C sc := by
   intro h_sens h_ecov
   exact h_sens (h_ecov sc.world sc.cf_obs_aligned)
+
+
+/-! ## Toy WorldCtx: Concrete Safety / Sensitivity Witnesses
+
+A minimal four-world concrete instantiation of `WorldCtx`.  Purpose: give
+`SafetyCaseCtx` and `SensitivityCaseCtx` inhabited non-trivial examples so
+that `safety_ctx_V_link` and `sensitivity_ctx_E_link` are demonstrated at a
+specific model, not just abstract theorems.
+
+World layout (2×2):
+- `w0`, `w1` → obs-class 0, P is **True**   (the "actual" cluster)
+- `w2`, `w3` → obs-class 1, P is **False**  (the "counterfactual" cluster)
+
+This structure means obs-equivalence preserves P-truth within each class.
+Safety case uses `(world = w0, deposit_world = w1)`: same class, `obs_aligned = rfl`.
+`v_independent` is proved by a 4-way case split — discarding obs-1 worlds via
+`absurd h (by decide)`.  `Iff.rfl` closes the obs-0 cases because both worlds
+have the same `toyTruth` value.
+
+Sensitivity case uses `(world = w2, counterfactual = w3)`: symmetric. -/
+
+private inductive ToyWorld | w0 | w1 | w2 | w3 deriving DecidableEq, Repr
+
+/-- Obs map: w0/w1 → 0 (actual cluster); w2/w3 → 1 (counterfactual cluster). -/
+private def toyObs : ToyWorld → Fin 2
+  | .w0 | .w1 => 0
+  | .w2 | .w3 => 1
+
+/-- Truth: P is True in the actual cluster (obs 0) and False in the counterfactual cluster (obs 1). -/
+private def toyTruth : ToyWorld → Unit → Prop
+  | .w0 | .w1 => fun _ => True
+  | .w2 | .w3 => fun _ => False
+
+/-- The concrete four-world WorldCtx.
+    `@[reducible]` makes field accesses (`toyCtx.obs`, `toyCtx.Truth`, etc.) transparent
+    so that proofs like `absurd h (by decide)` can reduce through the struct. -/
+@[reducible] def toyCtx : WorldCtx :=
+  { World          := ToyWorld,
+    Agent          := Unit,
+    Claim          := Unit,
+    Obs            := Fin 2,
+    Truth          := toyTruth,
+    Utter          := fun _ _ => True,
+    obs            := toyObs,
+    VerifyWithin   := fun _ _ _ => True,
+    effectiveTime  := fun _ => 0,
+    world_inhabited := ⟨.w0⟩,
+    agent_inhabited := ⟨()⟩,
+    claim_inhabited := ⟨()⟩ }
+
+/-- Concrete safety case: `world = w0`, `deposit_world = w1` (distinct, same obs-class).
+    `obs_aligned = rfl` (both map to 0).
+    `v_independent`: proved by a 4-way case split on `ToyWorld`, discarding obs-1
+    worlds via `absurd h (by decide)` and closing obs-0 cases via `Iff.rfl`. -/
+def toySafetyCase : SafetyCaseCtx toyCtx :=
+  { world         := .w0,
+    P             := (),
+    deposit_world := .w1,
+    obs_aligned   := rfl,
+    v_independent := fun w' h =>
+      match w' with
+      | .w0 => Iff.rfl
+      | .w1 => Iff.rfl
+      | .w2 => absurd h (by decide)
+      | .w3 => absurd h (by decide) }
+
+/-- Safety holds for the toy safety case: V-independence implies agreement on P.
+    Proof: apply `v_independent` at `world = w0` with `obs_aligned = rfl`. -/
+theorem toy_safety_holds : SafetyCtx toyCtx toySafetyCase :=
+  toySafetyCase.v_independent .w0 rfl
+
+/-- Concrete sensitivity case: `world = w2`, `counterfactual = w3` (distinct, same obs-class 1).
+    `cf_obs_aligned = rfl`.  `e_covers`: 4-way case split symmetric to `v_independent`. -/
+def toySensitivityCase : SensitivityCaseCtx toyCtx :=
+  { world          := .w2,
+    P              := (),
+    counterfactual := .w3,
+    cf_obs_aligned := rfl,
+    e_covers := fun w' h =>
+      match w' with
+      | .w0 => absurd h (by decide)
+      | .w1 => absurd h (by decide)
+      | .w2 => Iff.rfl
+      | .w3 => Iff.rfl }
+
+/-- Sensitivity holds for the toy sensitivity case: E-coverage implies agreement on ¬P.
+    Proof: apply `e_covers` at `world = w2` with `cf_obs_aligned = rfl`. -/
+theorem toy_sensitivity_holds : SensitivityCtx toyCtx toySensitivityCase :=
+  toySensitivityCase.e_covers .w2 rfl
 
 
 /-! ## Type-Separation Dissolutions
