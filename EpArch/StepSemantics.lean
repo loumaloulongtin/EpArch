@@ -567,17 +567,9 @@ theorem step_preserves_ladder_map
   cases h <;> rfl
 
 /-- Closure puzzle — Bank side: no Step auto-propagates deposits via entailment.
-    The Ladder map is invariant across all Steps (operational closure invariant). -/
+    The Ladder map is invariant across all Steps (operational closure invariant).
+    Contextual alias of `step_preserves_ladder_map` for the closure puzzle. -/
 theorem closure_ladder_invariant
-    (s s' : SystemState PropLike Standard ErrorModel Provenance)
-    (a : Action PropLike Standard ErrorModel Provenance Reason Evidence)
-    (h : Step (Reason := Reason) (Evidence := Evidence) s a s') :
-    s'.ladder_map = s.ladder_map :=
-  step_preserves_ladder_map s s' a h
-
-/-- Luminosity / KK invariant: no Step creates meta-Ladder entries.
-    Ladder introspection is agent-internal — not produced by any LTS action. -/
-theorem luminosity_ladder_invariant
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (a : Action PropLike Standard ErrorModel Provenance Reason Evidence)
     (h : Step (Reason := Reason) (Evidence := Evidence) s a s') :

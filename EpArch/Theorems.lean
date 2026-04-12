@@ -403,13 +403,12 @@ def IsGettierCase (g : GettierCase (PropLike := PropLike)) : Prop :=
 
 /-- Gettier cases route to V-failure.
 
-    Routes through the structural `tracks_false_certified` field; the
-    IsGettierCase hypothesis is discarded — the conclusion follows from
-    the required structural invariant regardless. -/
+    Unconditional: the conclusion follows directly from the structural
+    `tracks_false_certified` field — `IsGettierCase g` is not needed.
+    The structural invariant is certified at construction time. -/
 theorem gettier_is_V_failure (g : GettierCase (PropLike := PropLike)) :
-    IsGettierCase g → case_V_independence_fails g := by
-  intro _
-  simp only [case_V_independence_fails, V_fails, g.tracks_false_certified, Bool.not_false]
+    case_V_independence_fails g :=
+  by simp only [case_V_independence_fails, V_fails, g.tracks_false_certified, Bool.not_false]
 
 /-- Canonical Gettier case satisfies IsGettierCase. -/
 theorem canonical_gettier_is_gettier (P truth_ground evidence_basis : PropLike)
@@ -521,12 +520,12 @@ def IsFakeBarnCase (fb : FakeBarnCase (PropLike := PropLike)) : Prop :=
 
 /-- Fake Barn cases route to E-failure.
 
-    The IsFakeBarnCase premise is discarded — the conclusion follows from the
-    required `e_certified` structural field alone.  Routes through `fb.e_certified`
-    rather than unpacking IsFakeBarnCase. -/
+    Unconditional: `IsFakeBarnCase fb` is not needed — the conclusion follows
+    directly from the structural `e_certified` field.  The field is certified
+    at construction time; `fake_barn_profile_yields_E_failure` is its alias. -/
 theorem fake_barn_is_E_failure (fb : FakeBarnCase (PropLike := PropLike)) :
-    IsFakeBarnCase fb → barn_case_E_inadequate fb :=
-  fun _ => fb.e_certified
+    barn_case_E_inadequate fb :=
+  fb.e_certified
 
 /-- Canonical Fake Barn case satisfies IsFakeBarnCase. -/
 theorem canonical_fake_barn_is_fake_barn (P : PropLike) :
@@ -599,10 +598,13 @@ structure StandardClearance (Standard : Type u) where
 structure VProvenance where
   /-- Who certified this claim (e.g., "the cook", "the supplier") -/
   certifying_source : String
-  /-- Provenance genuinely tracks the truth-maker: no lucky coincidence -/
+  /-- Real semantic content: provenance genuinely tracks the truth-maker.  Prop-primary;
+      `tracks_genuine` is the executable mirror with `tracks_sound` as the bridge. -/
+  genuinely_tracks  : Prop
+  /-- Executable mirror of `genuinely_tracks` for computable contexts. -/
   tracks_genuine    : Bool
-  /-- V passes: certified at construction time -/
-  genuine_cert      : tracks_genuine = true
+  /-- Sound bridge: the Bool is honest about the Prop. -/
+  tracks_sound      : tracks_genuine = true ↔ genuinely_tracks
 
 /-- Error-model adequacy witness: no relevant gap in the error model.
 
@@ -611,11 +613,14 @@ structure VProvenance where
     `modeled_threats` carries the explicit list; `no_nearby_unmodeled` is certified. -/
 structure EAdequacy where
   /-- Failure modes the error model accounts for -/
-  modeled_threats      : List String
-  /-- E passes: no nearby unmodeled threats exist for this claim -/
-  no_nearby_unmodeled  : Bool
-  /-- E passes: certified at construction time -/
-  adequate_cert        : no_nearby_unmodeled = true
+  modeled_threats     : List String
+  /-- Real semantic content: no relevant gap exists in the error model.  Prop-primary;
+      `no_nearby_unmodeled` is the executable mirror with `adequacy_sound` as the bridge. -/
+  no_relevant_gap     : Prop
+  /-- Executable mirror of `no_relevant_gap` for computable contexts. -/
+  no_nearby_unmodeled : Bool
+  /-- Sound bridge: the Bool is honest about the Prop. -/
+  adequacy_sound      : no_nearby_unmodeled = true ↔ no_relevant_gap
 
 /-- Standard Case structure.
 
@@ -654,8 +659,8 @@ def S_fails (sc : StandardCase Standard (PropLike := PropLike)) : Bool :=
     The asymmetry with Gettier and FakeBarn is intentional: the deposit
     is structurally sound but insufficient for this agent. -/
 def IsStandardCase (sc : StandardCase Standard (PropLike := PropLike)) : Prop :=
-  sc.v_provenance.tracks_genuine = true ∧
-  sc.e_adequacy.no_nearby_unmodeled = true ∧
+  sc.v_provenance.genuinely_tracks ∧
+  sc.e_adequacy.no_relevant_gap ∧
   ¬sc.s_clearance.threshold_met
 
 /-- S-field inadequacy: the threshold relation is not met (Prop-level). -/
@@ -685,12 +690,14 @@ def canonical_standard_case (P : PropLike) (ingredient_check cross_contamination
   { claim := P,
     v_provenance := {
       certifying_source := "cook",
+      genuinely_tracks  := True,
       tracks_genuine    := true,
-      genuine_cert      := rfl },
+      tracks_sound      := ⟨fun _ => trivial, fun _ => rfl⟩ },
     e_adequacy := {
-      modeled_threats      := ["ingredient_contamination"],
-      no_nearby_unmodeled  := true,
-      adequate_cert        := rfl },
+      modeled_threats     := ["ingredient_contamination"],
+      no_relevant_gap     := True,
+      no_nearby_unmodeled := true,
+      adequacy_sound      := ⟨fun _ => trivial, fun _ => rfl⟩ },
     s_clearance := {
       deposit_standard   := ingredient_check,
       required_threshold := cross_contamination_check,
@@ -704,7 +711,7 @@ theorem canonical_standard_case_is_standard (P : PropLike)
     (ingredient_check cross_contamination_check : Standard) :
     IsStandardCase (canonical_standard_case (Standard := Standard) P
       ingredient_check cross_contamination_check) :=
-  ⟨rfl, rfl, False.elim⟩
+  ⟨trivial, trivial, False.elim⟩
 
 /-- S-failure is field-local: the failure routes to Field.S.
 
@@ -756,6 +763,60 @@ theorem standard_failure_is_relational
     case_S_inadequate strict ∧ lenient.threshold_met :=
   ⟨False.elim, trivial⟩
 
+/-! ### Generic S-Failure Profile and Field-Exclusion Theorems
+
+The generic contract: an S-failure has V and E positively certified.
+These theorems make the taxonomy non-trivially structural — they show that
+S-failure and V/E-failure are orthogonal conditions, not just different labels. -/
+
+/-- A relational S-failure split: two clearances on the same deposit standard
+    where one consumer's threshold is unmet and another's is met.
+
+    Implementation note: `deposit_standard` is abstract — EpArch does not model the
+    ordering on Standard values.  `threshold_met` and its negation are the semantic
+    content.  Same deposit, same stamped S, different consuming agent outcomes. -/
+def RelationalClearanceSplit {Standard : Type u} (strict lenient : StandardClearance Standard) : Prop :=
+  strict.deposit_standard = lenient.deposit_standard ∧
+  ¬strict.threshold_met ∧
+  lenient.threshold_met
+
+/-- Generic construction: given same deposit standard and opposite threshold outcomes,
+    conclude a relational split.  The canonical allergy pair is an instance;
+    this theorem applies to any clearing structure. -/
+theorem same_deposit_standard_split_yields_relational_S_failure {Standard : Type u}
+    (strict lenient : StandardClearance Standard)
+    (h_same  : strict.deposit_standard = lenient.deposit_standard)
+    (h_fail  : ¬strict.threshold_met)
+    (h_pass  : lenient.threshold_met) :
+    RelationalClearanceSplit strict lenient :=
+  ⟨h_same, h_fail, h_pass⟩
+
+/-- The canonical allergy pair constitutes a relational split.
+    Proof: applies the generic theorem to the allergy/lenient constructors. -/
+theorem canonical_allergy_is_relational_split
+    (P : PropLike) (ingredient_check cross_contamination_check : Standard) :
+    RelationalClearanceSplit
+      (canonical_standard_case (Standard := Standard) P
+        ingredient_check cross_contamination_check).s_clearance
+      (canonical_lenient_clearance (Standard := Standard) ingredient_check) :=
+  same_deposit_standard_split_yields_relational_S_failure _ _ rfl False.elim trivial
+
+/-- In an S-failure, V is positively certified: the failure does not route through V.
+    V-failure (¬genuinely_tracks) and S-failure (genuinely_tracks ∧ ¬threshold_met)
+    have incompatible V conditions — they are mutually exclusive failure modes. -/
+theorem s_failure_v_is_sound (sc : StandardCase Standard (PropLike := PropLike))
+    (h : IsStandardCase sc) :
+    sc.v_provenance.genuinely_tracks :=
+  h.1
+
+/-- In an S-failure, E is positively certified: the failure does not route through E.
+    E-failure (¬no_relevant_gap) and S-failure (no_relevant_gap ∧ ¬threshold_met)
+    have incompatible E conditions — they are mutually exclusive failure modes. -/
+theorem s_failure_e_is_sound (sc : StandardCase Standard (PropLike := PropLike))
+    (h : IsStandardCase sc) :
+    sc.e_adequacy.no_relevant_gap :=
+  h.2.1
+
 
 /-! ### Vacuous Standard Case: S Voided by E + V Interaction
 
@@ -795,7 +856,13 @@ theorem standard_failure_is_relational
     the error model. -/
 structure SourceReliability where
   source_id             : String
+  /-- Real semantic content: the source is documented as unreliable.  Prop-primary;
+      `documented_unreliable` is the executable mirror with `unreliability_sound` as the bridge. -/
+  is_unreliable         : Prop
+  /-- Executable mirror of `is_unreliable` for computable contexts. -/
   documented_unreliable : Bool
+  /-- Sound bridge: the Bool is honest about the Prop. -/
+  unreliability_sound   : documented_unreliable = true ↔ is_unreliable
 
 /-- Vacuous Standard Case.
 
@@ -809,10 +876,15 @@ structure VacuousStandardCase where
       V is honest: the claim genuinely came from this source. -/
   source : SourceReliability
   /-- E documents this source as unreliable — E is sound.
-      Required Prop field: structural guarantee, not run-time check. -/
+      Required cert: guarantees `is_unreliable` holds via `unreliability_sound`. -/
   e_documents_unreliability : source.documented_unreliable = true
-  /-- S is pure source testimony — no independent verification path. -/
+  /-- Real semantic content: S is sourced solely from testimony; no independent path. -/
+  testimony_only             : Prop
+  /-- Executable mirror of `testimony_only` for computable contexts. -/
   s_is_source_testimony_only : Bool
+  /-- Sound bridge: the Bool is honest about the Prop. -/
+  testimony_sound            : s_is_source_testimony_only = true ↔ testimony_only
+  /-- Structural cert: S is testimony-only at construction time. -/
   s_testimony_certified      : s_is_source_testimony_only = true
 
 /-- S is vacuous when it is grounded solely in testimony from a documented unreliable source.
@@ -823,22 +895,44 @@ structure VacuousStandardCase where
     would then not be testimony-only), and testimony-only from a reliable source is the
     ordinary case. The void arises from the intersection. -/
 def S_is_vacuous (vc : VacuousStandardCase (PropLike := PropLike)) : Prop :=
-  vc.s_is_source_testimony_only = true ∧ vc.source.documented_unreliable = true
+  vc.testimony_only ∧ vc.source.is_unreliable
 
 /-- Vacuous standard routes to S-failure — absolute, not relational.
 
     Proof: both conditions are certified structural fields; no case analysis needed. -/
 theorem vacuous_standard_is_S_failure (vc : VacuousStandardCase (PropLike := PropLike)) :
     S_is_vacuous vc :=
-  ⟨vc.s_testimony_certified, vc.e_documents_unreliability⟩
+  ⟨vc.testimony_sound.mp vc.s_testimony_certified,
+    vc.source.unreliability_sound.mp vc.e_documents_unreliability⟩
+
+/-- Generic: for any `VacuousStandardCase`, testimony-only S over a documented-unreliable
+    source yields void S.  The proof uses the Prop fields directly — the soundness bridges
+    (`testimony_sound`, `unreliability_sound`) extract the Prop content from the Bool certs.
+    Canonical instances apply this theorem rather than re-proving via construction. -/
+theorem testimony_only_plus_unreliable_source_yields_void_S
+    (vc : VacuousStandardCase (PropLike := PropLike))
+    (h_testimony  : vc.testimony_only)
+    (h_unreliable : vc.source.is_unreliable) :
+    S_is_vacuous vc :=
+  ⟨h_testimony, h_unreliable⟩
 
 /-- CANONICAL vacuous case: the known-liar cook. -/
 def canonical_liar_cook_case (P : PropLike) : VacuousStandardCase (PropLike := PropLike) :=
-  { claim                       := P,
-    source                      := { source_id := "cook", documented_unreliable := true },
-    e_documents_unreliability   := rfl,
-    s_is_source_testimony_only  := true,
-    s_testimony_certified       := rfl }
+  { claim  := P,
+    source := { source_id           := "cook",
+                is_unreliable       := True,
+                documented_unreliable := true,
+                unreliability_sound := ⟨fun _ => trivial, fun _ => rfl⟩ },
+    e_documents_unreliability  := rfl,
+    testimony_only             := True,
+    s_is_source_testimony_only := true,
+    testimony_sound            := ⟨fun _ => trivial, fun _ => rfl⟩,
+    s_testimony_certified      := rfl }
+
+/-- The canonical liar-cook case yields void S, as an instance of the generic theorem. -/
+theorem canonical_liar_cook_is_void (P : PropLike) :
+    S_is_vacuous (canonical_liar_cook_case P) :=
+  testimony_only_plus_unreliable_source_yields_void_S _ trivial trivial
 
 /-- Absolute vs relational S-failure: two kinds of S-void.
 
@@ -855,7 +949,7 @@ theorem absolute_vs_relational_S_failure
                         ingredient_check cross_contamination_check
     let absolute   := canonical_liar_cook_case (PropLike := PropLike) P
     case_S_inadequate relational ∧ S_is_vacuous absolute :=
-  ⟨False.elim, ⟨rfl, rfl⟩⟩
+  ⟨False.elim, ⟨trivial, trivial⟩⟩
 
 
 /-! ## Lottery Problem -/
@@ -1145,8 +1239,9 @@ theorem gettier_profile_yields_V_failure (C : WorldCtx) (g : GettierCaseCtx C)
   gettier_ctx_exhibits_provenance_gap C g h
 
 /-- Safety case parameterized over a WorldCtx.
-    Carries a V-independence predicate: the truth value of P co-varies with
-    `deposit_world` across all worlds. -/
+    `obs_aligned` says the actual world and the deposit world are observationally
+    co-accessible.  `v_independent` is obs-bounded: truth of P co-varies in all
+    obs-equivalent worlds — not rigidly across all worlds. -/
 structure SafetyCaseCtx (C : WorldCtx) where
   /-- The actual world -/
   world         : C.World
@@ -1154,29 +1249,34 @@ structure SafetyCaseCtx (C : WorldCtx) where
   P             : C.Claim
   /-- The world from which evidence was gathered -/
   deposit_world : C.World
-  /-- V-independence: truth of P co-varies with deposit_world across all worlds -/
-  v_independent : ∀ w', C.Truth w' P ↔ C.Truth deposit_world P
+  /-- Observational alignment: the actual world is obs-equivalent to the deposit world.
+      V-independence is only meaningful relative to observable context; obs-alignment
+      certifies the two worlds are epistemically co-accessible. -/
+  obs_aligned   : C.obs world = C.obs deposit_world
+  /-- V-independence: truth of P co-varies with deposit_world in all obs-equivalent worlds.
+      Replaces the rigid "P has the same truth in ALL worlds" with the obs-bounded form. -/
+  v_independent : ∀ w', C.obs w' = C.obs deposit_world → (C.Truth w' P ↔ C.Truth deposit_world P)
 
 /-- Safety (modal): actual world and deposit world agree on P's truth. -/
 def SafetyCtx (C : WorldCtx) (sc : SafetyCaseCtx C) : Prop :=
   C.Truth sc.world sc.P ↔ C.Truth sc.deposit_world sc.P
 
-/-- V-independence (structural): truth of P co-varies with deposit_world across all worlds. -/
+/-- V-independence (structural): truth of P co-varies with deposit_world in obs-equivalent worlds. -/
 def V_indepCtx (C : WorldCtx) (sc : SafetyCaseCtx C) : Prop :=
-  ∀ w', C.Truth w' sc.P ↔ C.Truth sc.deposit_world sc.P
+  ∀ w', C.obs w' = C.obs sc.deposit_world → (C.Truth w' sc.P ↔ C.Truth sc.deposit_world sc.P)
 
 /-- Safety failure implies V-independence failure.
-    If actual world and deposit world disagree on P's truth (Safety fails),
-    then V-independence cannot hold: applying it to `sc.world` would give the
-    disagreeing biconditional, contradiction.
-    Proof instantiates the universal quantifier at `sc.world` — one step of
-    modus tollens that does not reduce to `exact h`. -/
+    Proof instantiates `v_independent` at `sc.world` with `sc.obs_aligned` — modus
+    tollens that genuinely uses `obs_aligned`; not reducible to `exact h`. -/
 theorem safety_ctx_V_link (C : WorldCtx) (sc : SafetyCaseCtx C) :
     ¬SafetyCtx C sc → ¬V_indepCtx C sc := by
   intro h_safety h_vind
-  exact h_safety (h_vind sc.world)
+  exact h_safety (h_vind sc.world sc.obs_aligned)
 
-/-- Sensitivity case parameterized over a WorldCtx. -/
+/-- Sensitivity case parameterized over a WorldCtx.
+    `cf_obs_aligned` says the actual world and counterfactual are obs-equivalent
+    (nearby).  `e_covers` is obs-bounded: falsity of P co-varies in obs-equivalent
+    worlds only — not globally. -/
 structure SensitivityCaseCtx (C : WorldCtx) where
   /-- The actual world -/
   world          : C.World
@@ -1184,23 +1284,28 @@ structure SensitivityCaseCtx (C : WorldCtx) where
   P              : C.Claim
   /-- The nearest counterfactual (where P is false) -/
   counterfactual : C.World
-  /-- E-coverage: P's falsity co-varies with counterfactual across all worlds -/
-  e_covers : ∀ w', (¬C.Truth w' P) ↔ (¬C.Truth counterfactual P)
+  /-- Observational alignment: actual world and counterfactual are obs-equivalent.
+      Sensitivity concerns nearby worlds; obs-alignment captures nearness. -/
+  cf_obs_aligned : C.obs world = C.obs counterfactual
+  /-- E-coverage: falsity of P co-varies with counterfactual in all obs-equivalent worlds.
+      Replaces the rigid global-covariation form with the obs-bounded form. -/
+  e_covers : ∀ w', C.obs w' = C.obs counterfactual → ((¬C.Truth w' P) ↔ (¬C.Truth counterfactual P))
 
 /-- Sensitivity (modal): falsity of P is consistent between actual and counterfactual. -/
 def SensitivityCtx (C : WorldCtx) (sc : SensitivityCaseCtx C) : Prop :=
   ¬C.Truth sc.world sc.P ↔ ¬C.Truth sc.counterfactual sc.P
 
-/-- E-covers-counterfactual (structural): falsity of P co-varies across all worlds. -/
+/-- E-covers-counterfactual (structural): falsity of P co-varies in obs-equivalent worlds. -/
 def E_counterfactualCtx (C : WorldCtx) (sc : SensitivityCaseCtx C) : Prop :=
-  ∀ w', (¬C.Truth w' sc.P) ↔ (¬C.Truth sc.counterfactual sc.P)
+  ∀ w', C.obs w' = C.obs sc.counterfactual → ((¬C.Truth w' sc.P) ↔ (¬C.Truth sc.counterfactual sc.P))
 
 /-- Sensitivity failure implies E-coverage gap.
-    Proof instantiates `e_covers` at `sc.world` — analogous to `safety_ctx_V_link`. -/
+    Proof instantiates `e_covers` at `sc.world` with `sc.cf_obs_aligned` — analogous
+    to `safety_ctx_V_link`; uses `cf_obs_aligned` genuinely. -/
 theorem sensitivity_ctx_E_link (C : WorldCtx) (sc : SensitivityCaseCtx C) :
     ¬SensitivityCtx C sc → ¬E_counterfactualCtx C sc := by
   intro h_sens h_ecov
-  exact h_sens (h_ecov sc.world)
+  exact h_sens (h_ecov sc.world sc.cf_obs_aligned)
 
 
 /-! ## Type-Separation Dissolutions
@@ -1225,7 +1330,7 @@ Once separated, the puzzles dissolve into parameter questions. -/
     Structural invariants (Wave 3 upgrade):
     - `bank_no_entailment` enforces `bank_auto_propagates = false` at construction
       time; contradictory cases are rejected by the type checker.
-    - The Ladder side is grounded by `closure_ladder_invariant` (StepSemantics):
+    - The Ladder side is grounded by `certainty_closes_lts_grounded` (StepSemantics):
       `step_preserves_ladder_map` proves `s'.ladder_map = s.ladder_map` for all
       8 Step constructors — Ladder inference is independent of Bank operations. -/
 structure closure_puzzle where
@@ -1268,15 +1373,15 @@ theorem closure_type_separation (c : closure_puzzle (PropLike := PropLike))
 
 /-- LTS-grounded Ladder side of the closure puzzle.
     Operational grounding for `certainty_closes`: the `ladder_map` field is
-    preserved under all Steps — `closure_ladder_invariant` from StepSemantics
+    preserved under all Steps — `step_preserves_ladder_map` in StepSemantics
     confirms that Ladder inference is independent of Bank operations
-    by exhaustive enumeration of the 8 Step constructors. -/
+    by exhaustive case analysis of the 8 Step constructors. -/
 theorem certainty_closes_lts_grounded
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (a : Action PropLike Standard ErrorModel Provenance Reason Evidence)
     (h : Step (Reason := Reason) (Evidence := Evidence) s a s') :
     s'.ladder_map = s.ladder_map :=
-  closure_ladder_invariant s s' a h
+  step_preserves_ladder_map s s' a h
 
 /-- Luminosity / KK principle: meta-certainty is Ladder; inspectable header is Bank.
 
@@ -1289,7 +1394,7 @@ theorem certainty_closes_lts_grounded
       time; cannot build a luminosity_puzzle with neither — that would not be a
       luminosity puzzle at all (the puzzle arises from having the channels conflated).
     - The Ladder side is grounded by `meta_certainty_lts_grounded` (see below):
-      `luminosity_ladder_invariant` confirms meta-certainty is agent-internal — not
+      `step_preserves_ladder_map` confirms meta-certainty is agent-internal — not
       produced by any LTS action. -/
 structure luminosity_puzzle where
   P : PropLike
@@ -1327,7 +1432,7 @@ theorem luminosity_type_separation (l : luminosity_puzzle (PropLike := PropLike)
 
 /-- LTS-grounded Ladder side of the luminosity puzzle.
     Operational grounding for `meta_certainty`: the `ladder_map` field is
-    preserved under all Steps — `luminosity_ladder_invariant` from StepSemantics
+    preserved under all Steps — `step_preserves_ladder_map` from StepSemantics
     confirms that meta-certainty introspection is agent-internal and is not
     produced by any Bank-level LTS action. -/
 theorem meta_certainty_lts_grounded
@@ -1335,43 +1440,20 @@ theorem meta_certainty_lts_grounded
     (a : Action PropLike Standard ErrorModel Provenance Reason Evidence)
     (h : Step (Reason := Reason) (Evidence := Evidence) s a s') :
     s'.ladder_map = s.ladder_map :=
-  luminosity_ladder_invariant s s' a h
+  step_preserves_ladder_map s s' a h
 
 /-! ### Trace-Level Ladder Impossibility Theorems
 
 Lifted from the step-level invariants in StepSemantics to full Traces.
 These are the separation theorems: Bank operations cannot produce Ladder content. -/
 
-/-- Closure is Ladder-internal: no Trace changes the Ladder stage for any (agent, claim).
-    Certainty stage set before a trace remains set after; Ignorance likewise. -/
-theorem closure_state_invariant_under_trace
-    (s s' : SystemState PropLike Standard ErrorModel Provenance)
-    (t : Trace (Reason := Reason) (Evidence := Evidence) s s')
-    (f : Agent) (P : PropLike) :
-    s'.ladder_map f P = s.ladder_map f P :=
-  no_bank_trace_generates_ladder_content s s' t f P
-
 /-- No Bank trace generates Certainty from Ignorance.
 
     If an agent has Ignorance for P before the trace, the same Ignorance holds
     after.  Closure is not produced by any sequence of Submit/Withdraw/Export/…
-    transitions — it is agent-internal.  This is the impossibility direction of
-    `certainty_closes_lts_grounded`. -/
+    transitions — it is agent-internal.  Grounded by `certainty_closes_lts_grounded`
+    (step-level) and `trace_preserves_ladder_map` (trace-level). -/
 theorem bank_cannot_generate_certainty
-    (s s' : SystemState PropLike Standard ErrorModel Provenance)
-    (t : Trace (Reason := Reason) (Evidence := Evidence) s s')
-    (f : Agent) (P : PropLike) :
-    s.ladder_map f P = LadderStage.Ignorance →
-    s'.ladder_map f P = LadderStage.Ignorance :=
-  trace_cannot_elevate_ladder s s' t f P
-
-/-- No Bank trace generates meta-certainty from Ignorance.
-
-    Same structure as `bank_cannot_generate_certainty`.  Meta-certainty
-    (the KK-style introspective stage) is not produced by any Bank-level
-    action sequence — it is Ladder-internal.  This is the impossibility
-    direction of `meta_certainty_lts_grounded`. -/
-theorem bank_cannot_generate_meta_certainty
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (t : Trace (Reason := Reason) (Evidence := Evidence) s s')
     (f : Agent) (P : PropLike) :
