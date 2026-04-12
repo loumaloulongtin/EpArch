@@ -128,7 +128,13 @@ import EpArch.Header
 import EpArch.Bank
 import EpArch.Commitments
 import EpArch.SystemSpec
-import EpArch.Theorems
+import EpArch.Theorems.Withdrawal
+import EpArch.Theorems.Cases
+import EpArch.Theorems.Headers
+import EpArch.Theorems.Modal
+import EpArch.Theorems.Puzzles
+import EpArch.Theorems.Strip
+import EpArch.Theorems.Corners
 import EpArch.Minimality
 import EpArch.BehavioralEquivalence
 import EpArch.Convergence

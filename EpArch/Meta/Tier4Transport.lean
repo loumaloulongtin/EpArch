@@ -53,7 +53,12 @@ Key theorem: `concrete_bank_all_goals_transport`.
 -/
 
 import EpArch.Commitments
-import EpArch.Theorems
+import EpArch.Theorems.Withdrawal
+import EpArch.Theorems.Cases
+import EpArch.Theorems.Headers
+import EpArch.Theorems.Puzzles
+import EpArch.Theorems.Strip
+import EpArch.Theorems.Corners
 import EpArch.Meta.TheoremTransport
 
 namespace EpArch.Meta.Tier4Transport
