@@ -33,6 +33,28 @@ that verifies `holds_W_lies_possible` is the entity described by
 `LeanKernelCtx.World`.  The heartbeat consumed elaborating
 `holds_W_bounded_verification` is bounded by `LeanKernelCtx.VerifyWithin`.
 
+## Gettier / Safety / Sensitivity Witnesses
+
+`LeanKernelCtx` exhibits a concrete Gettier case: a `sorry`-closed proof of
+`False` passes elaboration (world = true) but does not track the truth-maker
+(the world is actually false).  `leanKernelGettierCase` certifies this;
+`leanKernel_gettier_gap` derives the provenance gap via the generic
+`gettier_ctx_exhibits_provenance_gap`.
+
+## S-Failure Taxonomy
+
+The lower half of the file instantiates the Standard Case / Vacuous Standard
+Case structures at the kernel level:
+
+- `LeanStandardClearance` / `LeanVWitness` / `LeanEWitness` — kernel-level
+  field-clearance and witness structures.
+- `LeanStandardCase` — a proof whose S clearance does not meet the consumer's
+  threshold; `lean_standard_case_is_S_failure` proves the S-failure.
+- `LeanVacuousStandard` — a `sorry ⊢ False` proof; `lean_vacuous_standard_is_void`
+  proves void S.
+- `lean_S_failure_taxonomy` — both S-failure kinds appear at the kernel level.
+- `lean_s_failure_VE_data` — V and E evidence surfaces in any kernel S-failure.
+
 ## Limitation
 
 `LeanKernelCtx` is a proxy model matching kernel behavior by construction.

@@ -195,7 +195,7 @@ All paper claims should reference these definitions.
 | Artifact | Type | File:Line | Tier |
 |----------|------|-----------|------|
 | `Header` | `structure` | Header.lean | C |
-| `Field` | `inductive` | Basic.lean:200 (`.S`, `.E`, `.V`, `.τ`, `.content`, `.provenance`) | C |
+| `Field` | `inductive` | Basic.lean:247 (`.S`, `.E`, `.V`, `.τ`, `.redeemability`, `.acl`) | C |
 | `has_SEV_factorization` | `def` | StepSemantics.lean:934 | A |
 | `factorization_enables_legibility` | `theorem` | StepSemantics.lean:970 | A |
 | `factorization_enables_field_identification` | `theorem` | StepSemantics.lean:945 | A |

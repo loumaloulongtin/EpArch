@@ -62,8 +62,8 @@ and the "competition gate corners" that test each architectural feature.
 - `gettier_is_V_failure`: Gettier cases exhibit V-independence failure
 - `fake_barn_is_E_failure`: Fake Barn cases exhibit E-field failure
 - `lottery_no_deposit_blocks_withdraw`: No deposit ⇒ withdrawal Step uninhabited
-- `safety_V_link_case`: Modal safety requires V-independence
-- `sensitivity_E_link_case`: Modal sensitivity requires E-coverage
+- `safety_ctx_V_link`: Modal safety requires V-independence (WorldCtx-parameterized)
+- `sensitivity_ctx_E_link`: Modal sensitivity requires E-coverage (WorldCtx-parameterized)
 
 ## Design
 

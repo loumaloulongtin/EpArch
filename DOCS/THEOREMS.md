@@ -16,7 +16,7 @@ This document catalogs **712** proved theorems in the formalization, organized b
 |------|------|-------------|
 | `Trace.hasRevision t` | $\exists a \in t.\, a \in \{\text{Challenge}, \text{Revoke}\}$ | Trace contains revision action |
 | `demonstratesSelfCorrection t i` | $\text{status}_s(i) = \text{Deposited} \land \text{status}_{s'}(i) = \text{Revoked}$ | Deposit transitions to revoked |
-| `prohibits_revision s` | $\forall i.\, \neg\text{Quarantined}(s, i)$ | No deposit is challengeable |
+| `prohibits_revision s` | $\forall t : \text{Trace}(s, -).\ t.\text{hasRevision} = \text{false}$ | All traces from s contain no revision action |
 | `diagnosability(h)` | $|\text{ObservableFields}(h)|$ | Cardinality of observable fields |
 | `canTargetRepair f h` | $f \in \text{ObservableFields}(h)$ | Field is observable for repair |
 | `τ_valid clock τ` | $\tau \leq \text{clock}$ | Timestamp within validity window |
@@ -264,21 +264,21 @@ certify that S is vacuous regardless of consumer). Both repair by targeting Fiel
 
 | Theorem | Puzzle | Diagnosis |
 |---------|--------|-----------|
-| `closure_dissolution` | Closure | Type separation |
-| `luminosity_dissolution` | Luminosity | Type separation |
-| `skepticism_dissolution` | Skepticism | Local redeemability |
-| `contextualism_dissolution` | Contextualism | Policy variation |
-| `testimony_dissolution` | Testimony | Export structure |
-| `peer_disagreement_dissolution` | Disagreement | Routing |
-| `higher_order_knowledge_dissolution` | Higher-order knowledge | Epistemic regress dissolved |
-| `apriori_dissolution` | A priori knowledge | Domain parameterization |
+| `closure_type_separation` | Closure | Type separation |
+| `luminosity_type_separation` | Luminosity | Type separation |
+| `local_redeemability_survives` | Skepticism | Local redeemability survives |
+| `context_is_policy` | Contextualism | Policy variation |
+| `testimony_is_export` | Testimony | Export structure |
+| `disagreement_is_routing` | Disagreement | Routing |
+| `higher_order_relocation` | Higher-order knowledge | Relocation to S/E/V fields |
+| `apriori_domain_parameterization` | A priori knowledge | Domain parameterization |
 | `moorean_is_export_contradiction` | Moorean paradox | Export contradiction (pair to `moorean_export_contradiction`) |
 | `preface_dissolution` | Preface paradox | individual_deposits p → meta_deposit_about_collection p (standards differ by construction; non-tautological — preface_case requires standards_differ field) |
-| `forgotten_evidence_dissolution` | Forgotten evidence | Persistence via header |
-| `group_knowledge_dissolution` | Group knowledge | Bubble separation |
-| `value_of_knowledge_dissolution` | Value of knowledge | Exportability distinction |
-| `epistemic_injustice_dissolution` | Epistemic injustice | Import corruption |
-| `extended_cognition_dissolution` | Extended cognition | Bubble membership |
+| `forgotten_evidence_persistence` | Forgotten evidence | Persistence via header |
+| `group_bubble_separation` | Group knowledge | Bubble separation |
+| `deposit_exportability` / `certainty_not_exportable` | Value of knowledge | Exportability distinction |
+| `injustice_is_import_corruption` | Epistemic injustice | Import corruption |
+| `artifact_bubble_membership` | Extended cognition | Bubble membership |
 
 ---
 
