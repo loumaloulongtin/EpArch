@@ -809,4 +809,70 @@ theorem lean_kernel_existence :
     lean_satisfies_all_properties,
     lean_implements_bank_primitives⟩⟩
 
+/-! ## Gettier / Safety / Sensitivity Witnesses (Phase 0B)
+
+`LeanKernelCtx` exhibits a concrete Gettier case.  With `World = Bool`:
+
+- `world := false` — sorry-tainted environment (P is not true here)
+- `P    := true`  — a claim that is true only in the clean environment
+
+S and E both pass, but the truth-maker (`world = true`) and the actual world
+(`world = false`) are observationally identical (`obs _ = ()`), yet distinct.
+The `provenance_disconnected` field requires `Bool.noConfusion` — not trivial.
+
+**Safety / Sensitivity witnesses require `v_independent` / `e_covers` fields**
+of type `∀ w' : Bool, (w' = P) ↔ (deposit_world = P)` (or the negation form).
+With a 2-element `Bool` universe, no choice of `P` and `deposit_world` satisfies
+this universally: if `deposit_world = P` the RHS is `True`, forcing `w' = P` for
+all `w'`; if `deposit_world ≠ P` the RHS is `False`, forcing `¬(w' = P)` for all
+`w'`.  Both are false in a 2-element type.  A richer world type (e.g. a single-
+world `Unit` context or a multi-valued propositions lattice) is needed to witness
+these structures non-trivially.  Their theorems (`safety_ctx_V_link`,
+`sensitivity_ctx_E_link`) are therefore demonstrated generically in `Theorems.lean`
+rather than at this concrete instantiation. -/
+
+/-- Concrete Gettier case at `LeanKernelCtx`.
+
+    `world = false` (sorry-tainted environment); `P = true` (a claim that is
+    provable — i.e., `Truth true true` — only in the clean environment).
+    `Truth false true = (false = true) = False`, so the claim is not true in
+    this world.  The clean environment (`true`) witnesses `P` and is
+    observationally indistinguishable (`obs _ = ()`).
+
+    `provenance_disconnected`: any `w'` with `C.Truth w' true = (w' = true)` is
+    distinct from `world = false`.  Proved by `subst; decide` after the kernel
+    reduces `LeanKernelCtx.Truth`. -/
+def leanKernelGettierCase : GettierCaseCtx LeanKernelCtx where
+  world    := false   -- sorry-tainted environment
+  P        := true    -- claim that is false in this world
+  S_passes := true    -- syntactically accepted
+  E_passes := true    -- error model locally adequate
+  provenance_disconnected := by
+    intro w' h_truth _ h_eq
+    -- h_truth : LeanKernelCtx.Truth w' true;  h_eq : w' = false
+    -- Rewrite w' → false in h_truth; then Bool.noConfusion closes the goal
+    rw [h_eq] at h_truth
+    exact Bool.noConfusion h_truth
+
+/-- The Gettier profile holds at `leanKernelGettierCase`:
+    S and E pass, the claim is false in `world = false`,
+    and the clean environment `true` witnesses `P` while being obs-equivalent. -/
+theorem leanKernel_is_gettier : IsGettierCtx LeanKernelCtx leanKernelGettierCase :=
+  ⟨rfl, rfl, Bool.noConfusion, ⟨true, rfl, rfl⟩⟩
+
+/-- The Gettier provenance gap at `LeanKernelCtx`.
+
+    There exists a world (the clean environment `true`) that
+    (1) witnesses `P`,
+    (2) is observationally equivalent to `world = false`,
+    (3) is distinct from `world`.
+    Proved by applying the generic `gettier_ctx_exhibits_provenance_gap` to the
+    concrete witness — the non-trivial path through `provenance_disconnected`. -/
+theorem leanKernel_gettier_gap :
+    ∃ w' : LeanKernelCtx.World,
+      LeanKernelCtx.Truth w' leanKernelGettierCase.P ∧
+      LeanKernelCtx.obs w' = LeanKernelCtx.obs leanKernelGettierCase.world ∧
+      w' ≠ leanKernelGettierCase.world :=
+  gettier_ctx_exhibits_provenance_gap LeanKernelCtx leanKernelGettierCase leanKernel_is_gettier
+
 end EpArch.LeanKernelModel

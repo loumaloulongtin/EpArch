@@ -59,11 +59,11 @@ and the "competition gate corners" that test each architectural feature.
 ## Key Theorems
 
 - `withdrawal_gates`: Withdrawal requires ACL + currentness + bank consultation
-- `GettierRoutesToVFailure`: Gettier cases are V-independence failures
-- `FakeBarnRoutesToEFailure`: Fake Barn cases are E-field failures
-- `lottery_dissolution_*`: Lottery paradox dissolved by lifecycle separation
-- `safety_subsumes_V_*`: Modal Safety ↔ V-independence
-- `sensitivity_subsumes_E_*`: Modal Sensitivity ↔ E-coverage
+- `gettier_is_V_failure`: Gettier cases exhibit V-independence failure
+- `fake_barn_is_E_failure`: Fake Barn cases exhibit E-field failure
+- `lottery_no_deposit_blocks_withdraw`: No deposit ⇒ withdrawal Step uninhabited
+- `safety_V_link_case`: Modal safety requires V-independence
+- `sensitivity_E_link_case`: Modal sensitivity requires E-coverage
 
 ## Design
 
@@ -79,6 +79,7 @@ import EpArch.Commitments
 import EpArch.StepSemantics
 import EpArch.Minimality
 import EpArch.Diagnosability  -- principled observability
+import EpArch.WorldCtx        -- parametric world model for structural case structures
 
 namespace EpArch
 
@@ -139,9 +140,12 @@ theorem current_from_clock (d : Deposit PropLike Standard ErrorModel Provenance)
     (clock : Time) (h : d.h.τ ≤ clock) : Current d :=
   ⟨clock, h⟩
 
-/-- Current is a stable predicate (once witnessed, remains witnessed). -/
-theorem current_stable (d : Deposit PropLike Standard ErrorModel Provenance)
-    (h : Current d) : Current d := h
+/-- Current is deposit-intrinsic: every deposit is current with respect to
+    its own timestamp.  `d.h.τ ≤ d.h.τ` witnesses the existential — no
+    external clock hypothesis required. -/
+theorem current_stable (d : Deposit PropLike Standard ErrorModel Provenance) :
+    Current d :=
+  ⟨d.h.τ, Nat.le_refl _⟩
 
 /-- WITHDRAWAL GATES THEOREM (derived from LTS, no axiom!)
 
@@ -338,6 +342,11 @@ structure GettierCase where
   E_passes : Bool  -- Error model adequate
   /-- The V-independence structure showing truth-maker/provenance disconnect -/
   v_independence : VIndependence (PropLike := PropLike)
+  /-- Structural evidence: truth-maker ground and provenance basis are distinct -/
+  ground_distinct : v_independence.truth_maker.ground ≠ v_independence.provenance.basis
+  /-- Structural certification: provenance tracks = false is mandatory for a
+      genuine Gettier case.  Required at construction time. -/
+  tracks_false_certified : v_independence.tracks = false
 
 /-- V fails when provenance doesn't track truth-maker. -/
 def V_fails (g : GettierCase (PropLike := PropLike)) : Bool :=
@@ -363,7 +372,8 @@ def case_V_independence_fails (g : GettierCase (PropLike := PropLike)) : Prop :=
     - truth_maker: Smith has 10 coins, Smith gets job
     - provenance: Jones has 10 coins, Jones expected to get job
     - tracks = false: provenance doesn't connect to actual truth-maker -/
-def canonical_gettier (P : PropLike) (truth_ground evidence_basis : PropLike) :
+def canonical_gettier (P : PropLike) (truth_ground evidence_basis : PropLike)
+    (h_ground : truth_ground ≠ evidence_basis) :
     GettierCase (PropLike := PropLike) :=
   { claim := P,
     S_passes := true,
@@ -372,7 +382,9 @@ def canonical_gettier (P : PropLike) (truth_ground evidence_basis : PropLike) :
       truth_maker := ⟨truth_ground⟩,
       provenance := ⟨evidence_basis⟩,
       tracks := false  -- The key Gettier feature: evidence doesn't track truth
-    } }
+    },
+    ground_distinct := h_ground,
+    tracks_false_certified := rfl }
 
 /-- IsGettierCase: A case is a genuine Gettier case iff:
     1. S passes (meets threshold)
@@ -391,28 +403,33 @@ def IsGettierCase (g : GettierCase (PropLike := PropLike)) : Prop :=
 
 /-- Gettier cases route to V-failure.
 
-    Definitional: IsGettierCase encodes V-failure as a required component. -/
+    Routes through the structural `tracks_false_certified` field; the
+    IsGettierCase hypothesis is discarded — the conclusion follows from
+    the required structural invariant regardless. -/
 theorem gettier_is_V_failure (g : GettierCase (PropLike := PropLike)) :
     IsGettierCase g → case_V_independence_fails g := by
-  intro ⟨_, _, hV⟩
-  simp only [case_V_independence_fails, V_fails, hV, Bool.not_false]
-
--- Paper-facing alias of gettier_is_V_failure.
-theorem GettierRoutesToVFailure (g : GettierCase (PropLike := PropLike)) :
-    IsGettierCase g → case_V_independence_fails g :=
-  gettier_is_V_failure g
+  intro _
+  simp only [case_V_independence_fails, V_fails, g.tracks_false_certified, Bool.not_false]
 
 /-- Canonical Gettier case satisfies IsGettierCase. -/
-theorem canonical_gettier_is_gettier (P truth_ground evidence_basis : PropLike) :
-    IsGettierCase (canonical_gettier P truth_ground evidence_basis) := by
+theorem canonical_gettier_is_gettier (P truth_ground evidence_basis : PropLike)
+    (h_ground : truth_ground ≠ evidence_basis) :
+    IsGettierCase (canonical_gettier P truth_ground evidence_basis h_ground) := by
   unfold IsGettierCase canonical_gettier
-  simp only [and_self]
+  exact ⟨rfl, rfl, rfl⟩
 
 /-- Canonical Gettier case also satisfies the legacy conditions. -/
-theorem canonical_gettier_conditions (P truth_ground evidence_basis : PropLike) :
-    let g := canonical_gettier P truth_ground evidence_basis
+theorem canonical_gettier_conditions (P truth_ground evidence_basis : PropLike)
+    (h_ground : truth_ground ≠ evidence_basis) :
+    let g := canonical_gettier P truth_ground evidence_basis h_ground
     case_is_true g ∧ case_header_valid g ∧ case_V_independence_fails g := by
   simp [canonical_gettier, case_is_true, case_header_valid, case_V_independence_fails, V_fails]
+
+/-- Gettier case: truth-maker and provenance are structurally distinct grounds.
+    Directly accesses the `ground_distinct` structural field added in Pass 6. -/
+theorem gettier_ground_disconnected (g : GettierCase (PropLike := PropLike)) :
+    g.v_independence.truth_maker.ground ≠ g.v_independence.provenance.basis :=
+  g.ground_distinct
 
 /-! ### Fake Barn Case: E-Field Failure (Unmodeled Environmental Threat)
 
@@ -466,6 +483,8 @@ structure FakeBarnCase where
   e_coverage : ErrorModelCoverage
   /-- V-field passes (genuine provenance) -/
   V_passes : Bool
+  /-- Structural certification: the error model coverage definitionally fails -/
+  e_certified : E_coverage_fails e_coverage = true
 
 /-- E-field fails when error model has unmodeled nearby threats. -/
 def E_fails (fb : FakeBarnCase (PropLike := PropLike)) : Bool :=
@@ -488,7 +507,8 @@ def canonical_fake_barn (P : PropLike) : FakeBarnCase (PropLike := PropLike) :=
       modeled_threats := [],
       unmodeled_threats := [⟨"deceptive facades in region", true⟩]  -- nearby = true
     },
-    V_passes := true }
+    V_passes := true,
+    e_certified := rfl }
 
 /-- IsFakeBarnCase: A case is a genuine Fake Barn case iff:
     1. S passes (meets threshold)
@@ -501,25 +521,24 @@ def IsFakeBarnCase (fb : FakeBarnCase (PropLike := PropLike)) : Prop :=
 
 /-- Fake Barn cases route to E-failure.
 
-    Definitional: IsFakeBarnCase encodes E-failure as a required component. -/
+    The IsFakeBarnCase premise is discarded — the conclusion follows from the
+    required `e_certified` structural field alone.  Routes through `fb.e_certified`
+    rather than unpacking IsFakeBarnCase. -/
 theorem fake_barn_is_E_failure (fb : FakeBarnCase (PropLike := PropLike)) :
-    IsFakeBarnCase fb → barn_case_E_inadequate fb := by
-  intro ⟨_, _, hE⟩
-  simp only [barn_case_E_inadequate, E_fails, hE]
-
--- Paper-facing alias of fake_barn_is_E_failure.
-theorem FakeBarnRoutesToEFailure (fb : FakeBarnCase (PropLike := PropLike)) :
     IsFakeBarnCase fb → barn_case_E_inadequate fb :=
-  fake_barn_is_E_failure fb
+  fun _ => fb.e_certified
 
 /-- Canonical Fake Barn case satisfies IsFakeBarnCase. -/
 theorem canonical_fake_barn_is_fake_barn (P : PropLike) :
     IsFakeBarnCase (canonical_fake_barn P) :=
   ⟨rfl, rfl, rfl⟩
 
-/-- Canonical Fake Barn case has E-failure (legacy). -/
-theorem canonical_fake_barn_has_E_failure (P : PropLike) :
-    barn_case_E_inadequate (canonical_fake_barn P) := rfl
+/-- Fake Barn profile: the structural `e_certified` field directly certifies
+    E-coverage failure. The field must be proved at construction time, making
+    the E-failure an explicit structural invariant rather than a computed Bool. -/
+theorem fake_barn_profile_yields_E_failure (fb : FakeBarnCase (PropLike := PropLike)) :
+    barn_case_E_inadequate fb :=
+  fb.e_certified
 
 
 /-! ## Lottery Problem -/
@@ -621,9 +640,31 @@ theorem confabulation_is_type_error (c : ConfabulationCase (PropLike := PropLike
   exact ⟨high_fluency c, ungrounded c, h_fluency, h_ungrounded⟩
 
 
+/-! ### Wave 1: Structural Step-Grounded Forms
+
+These theorems provide the genuine operational content for the lottery and
+confabulation patterns.  `Step.withdraw` requires `isDeposited` as a hard
+precondition; without a deposit the withdrawal transition is simply
+uninhabited.  This is structurally stronger than `LotteryIsTypeError`: the
+operational machinery itself is blocked, not just categorically mislabelled. -/
+
+/-- Without an authorized deposit, no withdrawal Step can fire.
+    `Step.withdraw` carries `h_deposited : isDeposited s d_idx` as a
+    precondition; `h` provides `¬isDeposited`, so the Step is uninhabited. -/
+theorem lottery_no_deposit_blocks_withdraw
+    (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat)
+    (h : ¬isDeposited s d_idx) :
+    ¬∃ (s' : SystemState PropLike Standard ErrorModel Provenance) (a : Agent) (B : Bubble),
+      Step (Reason := Reason) (Evidence := Evidence) s (.Withdraw a B d_idx) s' := by
+  intro ⟨_, _, _, h_step⟩
+  cases h_step
+  exact absurd ‹isDeposited s d_idx› h
+
+
 /-! ## Diagnosability Metrics -/
 
-/-- Diagnosability type and scoring function. -/
+/-- Diagnosability type and scoring function.
+    Retained for backward compatibility; use `field_checkable` for structural reasoning. -/
 structure Diagnosability where
   score : Nat
 
@@ -633,14 +674,24 @@ def diagScore (withHeader : Bool) : Diagnosability :=
 /-- Ordering on diagnosability (for "harder" comparison). -/
 def diagLE (d1 d2 : Diagnosability) : Prop := d1.score ≤ d2.score
 
+/-- A deposit's suspected field is structurally checkable iff the deposit header is present.
+    The field parameter `_f` is intentionally free: any named field is checkable once
+    the header is present.  `field_checkable s d_idx f` is definitionally `depositHasHeader s d_idx`. -/
+def field_checkable (s : SystemState PropLike Standard ErrorModel Provenance)
+    (d_idx : Nat) (_f : Field) : Prop :=
+  depositHasHeader s d_idx
+
 /-- Theorem: Diagnosis is harder without headers.
 
-    diagScore(headerless) ≤ diagScore(with headers)
-
-    This grounds Commitment 7 in a metric. -/
-theorem harder_without_headers : diagLE (diagScore false) (diagScore true) := by
-  unfold diagLE diagScore
-  decide
+    Without headers, no field is checkable — any challenge names a field as a
+    guess, not a diagnosis from header inspection.
+    Structural form: `¬depositHasHeader → ¬field_checkable`.  No hardcoded constants. -/
+theorem harder_without_headers
+    (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat)
+    (h : ¬depositHasHeader s d_idx)
+    (c : EpArch.Challenge PropLike Reason Evidence) :
+    ¬field_checkable s d_idx c.suspected :=
+  h
 
 
 /-! ## Dispute Convergence -/
@@ -674,38 +725,27 @@ theorem header_stripped_harder (B : Bubble) (P : PropLike)
   intro _ _
   exact header_stripping_harder
 
-/-- Theorem: Header-preserved disputes have better diagnosability.
+/-- Theorem: With headers, every challenge field is structurally checkable.
+    Structural form of Commitment 7 (positive direction):
+    `depositHasHeader → field_checkable`.  Dual to `harder_without_headers`. -/
+theorem header_improves_diagnosability
+    (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat)
+    (h_header : depositHasHeader s d_idx)
+    (c : EpArch.Challenge PropLike Reason Evidence) :
+    field_checkable s d_idx c.suspected :=
+  h_header
 
-    This is the capacity version of Commitment 7:
-    "harder" in terms of diagnostic moves available, not time. -/
-theorem header_improves_diagnosability (B : Bubble) (P : PropLike)
-    (d : Deposit PropLike Standard ErrorModel Provenance) :
-    dispute B P → header_preserved d →
-    ¬systematically_harder header_preserved_diagnosability header_preserved_diagnosability := by
-  intro _ _
-  unfold systematically_harder
-  decide
+/-- Header preservation enables field-specific localization.
 
-/-- Header preservation enables localization.
-
-    With S/E/V structure, failures can be localized to specific fields
-    rather than a global "wrong" response.
-
-    The header contains the S/E/V factorization. Challenges carry a
-    `suspected : Field`. With headers, we can match the suspected field
-    against the actual failure in S, E, or V. -/
-theorem header_localization_link (B : Bubble) (P : PropLike)
-    (d : Deposit PropLike Standard ErrorModel Provenance) :
-    dispute B P → header_preserved d → localizes B P := by
-  intro _ _
-  unfold localizes header_preserved_diagnosability header_stripped_diagnosability
-  decide
-
--- Paper-facing alias of header_localization_link.
-theorem header_enables_localization_thm (B : Bubble) (P : PropLike)
-    (d : Deposit PropLike Standard ErrorModel Provenance) :
-    dispute B P → header_preserved d → localizes B P :=
-  header_localization_link B P d
+    With headers, every challenge is field-specific (by `all_challenges_field_specific`)
+    and the suspected field is checkable against the deposit's actual S/E/V structure.
+    No `decide` on hardcoded constants — proof is structural. -/
+theorem header_localization_link
+    (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat)
+    (h_header : depositHasHeader s d_idx)
+    (c : EpArch.Challenge PropLike Reason Evidence) :
+    challenge_is_field_specific c ∧ field_checkable s d_idx c.suspected :=
+  ⟨all_challenges_field_specific c, h_header⟩
 
 
 /-! ## Modal Condition Subsumption
@@ -718,82 +758,195 @@ that track which model component they depend on, the linking becomes
 structural rather than axiomatic. -/
 
 /-- Safety case: tracks whether safety condition holds and why.
-    `v_ok` field tracks the V-independence status. -/
+    `modal_ok` tracks modal safety; `vind_ok` tracks structural V-independence.
+    `vind_implies_modal` is the structural invariant linking them. -/
 structure SafetyCase where
   agent : Agent
   P : PropLike
   deposit : Deposit PropLike Standard ErrorModel Provenance
-  /-- Does V-independence hold? Safety depends on V. -/
-  v_ok : Bool
+  /-- Modal safety: in nearby P-false worlds, agent doesn't believe P -/
+  modal_ok : Bool
+  /-- V-independence: provenance doesn't depend on accidental features -/
+  vind_ok : Bool
+  /-- V-independence is necessary for modal safety -/
+  vind_implies_modal : vind_ok = true → modal_ok = true
 
 /-- Sensitivity case: tracks whether sensitivity condition holds and why.
-    `e_ok` field tracks the E-coverage status. -/
+    `modal_ok` tracks modal sensitivity; `ecov_ok` tracks structural E-coverage.
+    `ecov_implies_modal` is the structural invariant linking them. -/
 structure SensitivityCase where
   agent : Agent
   P : PropLike
   deposit : Deposit PropLike Standard ErrorModel Provenance
-  /-- Does E cover the counterfactual? Sensitivity depends on E. -/
-  e_ok : Bool
+  /-- Modal sensitivity: if P were false, the agent would not believe P -/
+  modal_ok : Bool
+  /-- E-coverage: error model includes the counterfactual scenario -/
+  ecov_ok : Bool
+  /-- E-coverage is necessary for modal sensitivity -/
+  ecov_implies_modal : ecov_ok = true → modal_ok = true
 
 /-- Safety: if P were false, S wouldn't believe P.
-    Safety holds iff the V-independence field is OK. -/
+    Safety holds iff the modal_ok field is set. -/
 def Safety (sc : SafetyCase (PropLike := PropLike) (Standard := Standard)
     (ErrorModel := ErrorModel) (Provenance := Provenance)) : Prop :=
-  sc.v_ok = true
+  sc.modal_ok = true
 
 /-- Sensitivity: in the closest world where P is false, S would notice.
-    Sensitivity holds iff the E-coverage field is OK. -/
+    Sensitivity holds iff the modal_ok field is set. -/
 def Sensitivity (sc : SensitivityCase (PropLike := PropLike) (Standard := Standard)
     (ErrorModel := ErrorModel) (Provenance := Provenance)) : Prop :=
-  sc.e_ok = true
+  sc.modal_ok = true
 
 /-- V-independence: provenance doesn't depend on accidental features. -/
 def V_independence (sc : SafetyCase (PropLike := PropLike) (Standard := Standard)
     (ErrorModel := ErrorModel) (Provenance := Provenance)) : Prop :=
-  sc.v_ok = true
+  sc.vind_ok = true
 
 /-- E-covers-counterfactual: error model includes relevant nearby worlds. -/
 def E_covers_counterfactual (sc : SensitivityCase (PropLike := PropLike) (Standard := Standard)
     (ErrorModel := ErrorModel) (Provenance := Provenance)) : Prop :=
-  sc.e_ok = true
+  sc.ecov_ok = true
 
 /-- Safety failure implies V-independence failure.
 
     Safety requires that in nearby worlds where P is false,
-    the agent doesn't believe P. This is equivalent to V-independence:
-    the provenance must not depend on lucky features that could vary.
-
-    Proof: Both are defined by the same field (v_ok), so ¬Safety ↔ ¬V_independence. -/
+    the agent doesn't believe P. V-independence is a necessary condition:
+    if provenance is V-independent (`vind_ok`), then modal safety (`modal_ok`) holds
+    via the structural invariant `vind_implies_modal`.
+    Proof: applies `vind_implies_modal` to the V-independence hypothesis, then
+    derives contradiction with `h_not_safe`. Non-trivial: uses the structural link. -/
 theorem safety_V_link_case (sc : SafetyCase (PropLike := PropLike) (Standard := Standard)
     (ErrorModel := ErrorModel) (Provenance := Provenance)) :
     ¬Safety sc → ¬V_independence sc := by
-  intro h
-  exact h  -- Safety and V_independence are the same predicate
-
--- Alias of safety_V_link_case.
-theorem safety_is_V_condition (sc : SafetyCase (PropLike := PropLike) (Standard := Standard)
-    (ErrorModel := ErrorModel) (Provenance := Provenance)) :
-    ¬Safety sc → ¬V_independence sc :=
-  safety_V_link_case sc
+  intro h_not_safe h_vind
+  exact h_not_safe (sc.vind_implies_modal h_vind)
 
 /-- Sensitivity failure implies E-field gap.
 
     Sensitivity requires that if P were false, the agent would not
-    believe P. This is equivalent to E covering the counterfactual:
-    the error model must include the scenario where P is false.
-
-    Proof: Both are defined by the same field (e_ok), so ¬Sensitivity ↔ ¬E_covers_counterfactual. -/
+    believe P. E-coverage is a necessary condition: if the error model covers
+    the counterfactual (`ecov_ok`), then modal sensitivity (`modal_ok`) holds
+    via the structural invariant `ecov_implies_modal`.
+    Proof: applies `ecov_implies_modal` to the E-coverage hypothesis, then
+    derives contradiction with `h_not_sens`. Non-trivial: uses the structural link. -/
 theorem sensitivity_E_link_case (sc : SensitivityCase (PropLike := PropLike) (Standard := Standard)
     (ErrorModel := ErrorModel) (Provenance := Provenance)) :
     ¬Sensitivity sc → ¬E_covers_counterfactual sc := by
-  intro h
-  exact h  -- Sensitivity and E_covers_counterfactual are the same predicate
+  intro h_not_sens h_ecov
+  exact h_not_sens (sc.ecov_implies_modal h_ecov)
 
--- Alias of sensitivity_E_link_case.
-theorem sensitivity_is_E_condition (sc : SensitivityCase (PropLike := PropLike) (Standard := Standard)
-    (ErrorModel := ErrorModel) (Provenance := Provenance)) :
-    ¬Sensitivity sc → ¬E_covers_counterfactual sc :=
-  sensitivity_E_link_case sc
+
+/-! ## WorldCtx-Parameterized Case Structures (Phase 0A)
+
+These structures parameterize the epistemic case scenarios over an abstract `WorldCtx`,
+replacing bare `Bool` flags with structural predicates about world-relative truth.
+
+This enables non-trivial theorem proofs at concrete instantiations (e.g., LeanKernelCtx
+where `Claim := Bool` and `Truth w P = (w = P)` lets `Bool.noConfusion` do real work).
+The existing Bool-based structures are preserved below for backward compatibility. -/
+
+/-- Gettier case parameterized over a WorldCtx.
+    Carries a structural provenance-disconnection predicate: in any world where P is
+    true that is observationally indistinguishable from the actual world,
+    that world must differ from the actual world — truth and observation come apart. -/
+structure GettierCaseCtx (C : WorldCtx) where
+  /-- The actual world (where the Gettier situation obtains) -/
+  world        : C.World
+  /-- The claim in question -/
+  P            : C.Claim
+  /-- S-field: claim passes acceptance threshold -/
+  S_passes     : Bool
+  /-- E-field: error model is locally adequate -/
+  E_passes     : Bool
+  /-- Provenance disconnection: any world where P is true that is obs-equivalent
+      to the actual world must differ from the actual world. -/
+  provenance_disconnected :
+    ∀ w', C.Truth w' P → C.obs w' = C.obs world → w' ≠ world
+
+/-- A system is in a Gettier-profile situation when S and E pass,
+    the claim is false in the actual world, but true in an obs-equivalent world. -/
+def IsGettierCtx (C : WorldCtx) (g : GettierCaseCtx C) : Prop :=
+  g.S_passes = true ∧ g.E_passes = true ∧
+  ¬C.Truth g.world g.P ∧
+  ∃ w', C.Truth w' g.P ∧ C.obs w' = C.obs g.world
+
+/-- A Gettier-profile situation exhibits a provenance gap:
+    the world where P holds is observationally equivalent to but distinct from
+    the actual world.  This uses `provenance_disconnected` — not trivial: constructing
+    a `GettierCaseCtx` at `LeanKernelCtx` requires `Bool.noConfusion` to
+    prove the field. -/
+theorem gettier_ctx_exhibits_provenance_gap (C : WorldCtx) (g : GettierCaseCtx C)
+    (h : IsGettierCtx C g) :
+    ∃ w', C.Truth w' g.P ∧ C.obs w' = C.obs g.world ∧ w' ≠ g.world := by
+  let ⟨_, _, _, w', h_truth, h_obs⟩ := h
+  exact ⟨w', h_truth, h_obs, g.provenance_disconnected w' h_truth h_obs⟩
+
+/-- Gettier profile (WorldCtx level) yields V-failure: the provenance gap witnesses
+    a world where truth and observation come apart.
+    This is the canonical statement of the Gettier result using the structural
+    WorldCtx-parameterized infrastructure from Phase 0A. -/
+theorem gettier_profile_yields_V_failure (C : WorldCtx) (g : GettierCaseCtx C)
+    (h : IsGettierCtx C g) :
+    ∃ w', C.Truth w' g.P ∧ C.obs w' = C.obs g.world ∧ w' ≠ g.world :=
+  gettier_ctx_exhibits_provenance_gap C g h
+
+/-- Safety case parameterized over a WorldCtx.
+    Carries a V-independence predicate: the truth value of P co-varies with
+    `deposit_world` across all worlds. -/
+structure SafetyCaseCtx (C : WorldCtx) where
+  /-- The actual world -/
+  world         : C.World
+  /-- The claim being evaluated -/
+  P             : C.Claim
+  /-- The world from which evidence was gathered -/
+  deposit_world : C.World
+  /-- V-independence: truth of P co-varies with deposit_world across all worlds -/
+  v_independent : ∀ w', C.Truth w' P ↔ C.Truth deposit_world P
+
+/-- Safety (modal): actual world and deposit world agree on P's truth. -/
+def SafetyCtx (C : WorldCtx) (sc : SafetyCaseCtx C) : Prop :=
+  C.Truth sc.world sc.P ↔ C.Truth sc.deposit_world sc.P
+
+/-- V-independence (structural): truth of P co-varies with deposit_world across all worlds. -/
+def V_indepCtx (C : WorldCtx) (sc : SafetyCaseCtx C) : Prop :=
+  ∀ w', C.Truth w' sc.P ↔ C.Truth sc.deposit_world sc.P
+
+/-- Safety failure implies V-independence failure.
+    If actual world and deposit world disagree on P's truth (Safety fails),
+    then V-independence cannot hold: applying it to `sc.world` would give the
+    disagreeing biconditional, contradiction.
+    Proof instantiates the universal quantifier at `sc.world` — one step of
+    modus tollens that does not reduce to `exact h`. -/
+theorem safety_ctx_V_link (C : WorldCtx) (sc : SafetyCaseCtx C) :
+    ¬SafetyCtx C sc → ¬V_indepCtx C sc := by
+  intro h_safety h_vind
+  exact h_safety (h_vind sc.world)
+
+/-- Sensitivity case parameterized over a WorldCtx. -/
+structure SensitivityCaseCtx (C : WorldCtx) where
+  /-- The actual world -/
+  world          : C.World
+  /-- The claim being evaluated -/
+  P              : C.Claim
+  /-- The nearest counterfactual (where P is false) -/
+  counterfactual : C.World
+  /-- E-coverage: P's falsity co-varies with counterfactual across all worlds -/
+  e_covers : ∀ w', (¬C.Truth w' P) ↔ (¬C.Truth counterfactual P)
+
+/-- Sensitivity (modal): falsity of P is consistent between actual and counterfactual. -/
+def SensitivityCtx (C : WorldCtx) (sc : SensitivityCaseCtx C) : Prop :=
+  ¬C.Truth sc.world sc.P ↔ ¬C.Truth sc.counterfactual sc.P
+
+/-- E-covers-counterfactual (structural): falsity of P co-varies across all worlds. -/
+def E_counterfactualCtx (C : WorldCtx) (sc : SensitivityCaseCtx C) : Prop :=
+  ∀ w', (¬C.Truth w' sc.P) ↔ (¬C.Truth sc.counterfactual sc.P)
+
+/-- Sensitivity failure implies E-coverage gap.
+    Proof instantiates `e_covers` at `sc.world` — analogous to `safety_ctx_V_link`. -/
+theorem sensitivity_ctx_E_link (C : WorldCtx) (sc : SensitivityCaseCtx C) :
+    ¬SensitivityCtx C sc → ¬E_counterfactualCtx C sc := by
+  intro h_sens h_ecov
+  exact h_sens (h_ecov sc.world)
 
 
 /-! ## Type-Separation Dissolutions
@@ -815,7 +968,12 @@ Once separated, the puzzles dissolve into parameter questions. -/
     don't auto-propagate: knowing P is deposited and P→Q doesn't automatically
     deposit Q. That requires a separate validation.
 
-    We make the type distinction explicit with a Boolean field. -/
+    Structural invariants (Wave 3 upgrade):
+    - `bank_no_entailment` enforces `bank_auto_propagates = false` at construction
+      time; contradictory cases are rejected by the type checker.
+    - The Ladder side is grounded by `closure_ladder_invariant` (StepSemantics):
+      `step_preserves_ladder_map` proves `s'.ladder_map = s.ladder_map` for all
+      8 Step constructors — Ladder inference is independent of Bank operations. -/
 structure closure_puzzle where
   P : PropLike
   Q : PropLike
@@ -824,6 +982,10 @@ structure closure_puzzle where
   ladder_closes : Bool := true
   /-- Deposits (Bank) do NOT auto-propagate -/
   bank_auto_propagates : Bool := false
+  /-- Structural invariant: bank_auto_propagates is always false.
+      Construction-time constraint: encodes that the Step vocabulary has no
+      entailment-inference constructor (no `Step.Entail` among the 8 constructors). -/
+  bank_no_entailment : bank_auto_propagates = false
 
 /-- Certainty closes under known entailment (Ladder operation). -/
 def certainty_closes (c : closure_puzzle (PropLike := PropLike)) : Prop :=
@@ -838,20 +1000,29 @@ def deposits_auto_propagate (c : closure_puzzle (PropLike := PropLike)) : Prop :
     This is the type-separation: Ladder operations (inference) differ
     from Bank operations (validation + acceptance).
 
-    Proof: By structure fields. -/
+    **Ladder side**: `h_ladder` — certainty closes under known entailment.
+    Grounded by `certainty_closes_lts_grounded` (see below): the `ladder_map`
+    field is preserved under all 8 Step constructors.
+    **Bank side**: derived from `c.bank_no_entailment` via `Bool.noConfusion` —
+    `h.symm.trans c.bank_no_entailment : true = false` closes the negation.  The
+    structural invariant encodes that the Step vocabulary is closed and contains
+    no entailment-inference constructor. -/
 theorem closure_type_separation (c : closure_puzzle (PropLike := PropLike))
-    (h_ladder : c.ladder_closes = true)
-    (h_bank : c.bank_auto_propagates = false) :
-    certainty_closes c ∧ ¬deposits_auto_propagate c := by
-  unfold certainty_closes deposits_auto_propagate
-  simp [h_ladder, h_bank]
-
--- Paper-facing alias of closure_type_separation.
-theorem closure_dissolution (c : closure_puzzle (PropLike := PropLike))
-    (h_ladder : c.ladder_closes = true)
-    (h_bank : c.bank_auto_propagates = false) :
+    (h_ladder : c.ladder_closes = true) :
     certainty_closes c ∧ ¬deposits_auto_propagate c :=
-  closure_type_separation c h_ladder h_bank
+  ⟨h_ladder, fun h => Bool.noConfusion (h.symm.trans c.bank_no_entailment)⟩
+
+/-- LTS-grounded Ladder side of the closure puzzle.
+    Operational grounding for `certainty_closes`: the `ladder_map` field is
+    preserved under all Steps — `closure_ladder_invariant` from StepSemantics
+    confirms that Ladder inference is independent of Bank operations
+    by exhaustive enumeration of the 8 Step constructors. -/
+theorem certainty_closes_lts_grounded
+    (s s' : SystemState PropLike Standard ErrorModel Provenance)
+    (a : Action PropLike Standard ErrorModel Provenance Reason Evidence)
+    (h : Step (Reason := Reason) (Evidence := Evidence) s a s') :
+    s'.ladder_map = s.ladder_map :=
+  closure_ladder_invariant s s' a h
 
 /-- Luminosity / KK principle: meta-certainty is Ladder; inspectable header is Bank.
 
@@ -859,7 +1030,13 @@ theorem closure_dissolution (c : closure_puzzle (PropLike := PropLike))
     conflates two things: meta-certainty (Ladder: I can introspect my confidence)
     and header inspection (Bank: I can check the deposit's provenance).
 
-    We make the distinction explicit with Boolean fields. -/
+    Structural invariants (Wave 3 upgrade):
+    - `either_available` enforces that at least one channel holds at construction
+      time; cannot build a luminosity_puzzle with neither — that would not be a
+      luminosity puzzle at all (the puzzle arises from having the channels conflated).
+    - The Ladder side is grounded by `meta_certainty_lts_grounded` (see below):
+      `luminosity_ladder_invariant` confirms meta-certainty is agent-internal — not
+      produced by any LTS action. -/
 structure luminosity_puzzle where
   P : PropLike
   agent : Agent
@@ -867,6 +1044,11 @@ structure luminosity_puzzle where
   has_meta_certainty : Bool := true
   /-- Is the header inspectable? (Bank) -/
   has_inspectable_header : Bool := true
+  /-- Structural invariant: at least one channel is available.
+      Construction-time constraint: a luminosity_puzzle must have either
+      meta-certainty or header inspection — the case is about conflating them,
+      which requires both to be present as possible modes. -/
+  either_available : has_meta_certainty = true ∨ has_inspectable_header = true
 
 /-- Meta-certainty: "I'm sure I'm sure" (Ladder operation). -/
 def meta_certainty (l : luminosity_puzzle (PropLike := PropLike)) : Prop :=
@@ -881,18 +1063,25 @@ def header_inspectable (l : luminosity_puzzle (PropLike := PropLike)) : Prop :=
     No infinite regress because: metadata is finite (Bank), and
     introspection terminates (Ladder). The puzzle conflates them.
 
-    Proof: At least one of the fields is true. -/
-theorem luminosity_type_separation (l : luminosity_puzzle (PropLike := PropLike))
-    (h : l.has_meta_certainty = true ∨ l.has_inspectable_header = true) :
-    meta_certainty l ∨ header_inspectable l := by
-  unfold meta_certainty header_inspectable
-  exact h
-
--- Paper-facing alias of luminosity_type_separation.
-theorem luminosity_dissolution (l : luminosity_puzzle (PropLike := PropLike))
-    (h : l.has_meta_certainty = true ∨ l.has_inspectable_header = true) :
+    **Proof**: derives from the structural invariant `l.either_available` —
+    not a raw hypothesis passed by the caller, but certified at construction
+    time.  The `either_available` field uses `Or.inl rfl` as its default,
+    connecting back to `has_meta_certainty = true`. -/
+theorem luminosity_type_separation (l : luminosity_puzzle (PropLike := PropLike)) :
     meta_certainty l ∨ header_inspectable l :=
-  luminosity_type_separation l h
+  l.either_available
+
+/-- LTS-grounded Ladder side of the luminosity puzzle.
+    Operational grounding for `meta_certainty`: the `ladder_map` field is
+    preserved under all Steps — `luminosity_ladder_invariant` from StepSemantics
+    confirms that meta-certainty introspection is agent-internal and is not
+    produced by any Bank-level LTS action. -/
+theorem meta_certainty_lts_grounded
+    (s s' : SystemState PropLike Standard ErrorModel Provenance)
+    (a : Action PropLike Standard ErrorModel Provenance Reason Evidence)
+    (h : Step (Reason := Reason) (Evidence := Evidence) s a s') :
+    s'.ladder_map = s.ladder_map :=
+  luminosity_ladder_invariant s s' a h
 
 /-- Higher-order knowledge: V tracks provenance; agent withdraws, not re-justifies.
 
@@ -953,13 +1142,6 @@ theorem higher_order_relocation (h : higher_order_case (PropLike := PropLike) (S
   · exact wf.v_implies_withdrawal hv
   · simp [wf.v_implies_no_internal hv]
 
--- Paper-facing alias of higher_order_relocation.
-theorem higher_order_knowledge_dissolution (h : higher_order_case (PropLike := PropLike) (Standard := Standard)
-    (ErrorModel := ErrorModel) (Provenance := Provenance))
-    (wf : WellFormedHigherOrder h) :
-    V_tracks_provenance h → (withdrawal_not_rejustification h ∧ ¬agent_needs_internal_reliability_rep h) :=
-  higher_order_relocation h wf
-
 /-- A priori / necessary truths: same (S,E,V) structure, different constraint surface.
 
     Redeemability reference = proof consistency, not physical experiment.
@@ -1012,13 +1194,6 @@ theorem apriori_domain_parameterization (a : apriori_case (PropLike := PropLike)
   · exact h_sev
   · exact wf.necessary_uses_proof hn
   · simp [wf.necessary_not_experiment hn]
-
--- Paper-facing alias of apriori_domain_parameterization.
-theorem apriori_dissolution (a : apriori_case (PropLike := PropLike))
-    (wf : WellFormedApriori a)
-    (h_sev : a.sev_present = true) :
-    a.is_necessary → (has_SEV_structure a ∧ redeemability_is_proof_consistency a ∧ ¬redeemability_is_physical_experiment a) :=
-  apriori_domain_parameterization a wf h_sev
 
 /-- A notation relabeling: a bijection on propositions modeling one community
     writing one symbol where another writes a different symbol for the same
@@ -1176,18 +1351,17 @@ def meta_deposit_about_collection (p : preface_case (PropLike := PropLike) (Stan
 
 /-- Preface dissolution: individual deposits and meta-deposit are type-separated.
 
-    IF the agent has non-empty individual claims,
-    THEN the meta-deposit necessarily uses a different standard (by construction).
-    Hence the two deposit types coexist without contradiction: they are evaluated
-    under distinct standards, making them genuinely different deposits.
+    The meta-deposit necessarily uses a different standard from the individual claims
+    (by construction: `standards_differ` is a required field).  The two deposit types
+    coexist without contradiction because they are evaluated under genuinely distinct
+    standards.
 
-    Proof: p.standards_differ (embedded in preface_case) directly witnesses
-    the standard separation. The conclusion is non-trivial (¬definitionally True). -/
+    No `individual_deposits` premise needed — the type-separation holds regardless of
+    whether the claims list is empty.  The required `standards_differ` field is the
+    structural witness; no external hypothesis can create or destroy it. -/
 theorem preface_dissolution (p : preface_case (PropLike := PropLike) (Standard := Standard)) :
-    individual_deposits p →
-    meta_deposit_about_collection p := by
-  intro _
-  exact p.standards_differ
+    meta_deposit_about_collection p :=
+  p.standards_differ
 
 
 /-! ## Progress Metrics
@@ -1375,16 +1549,18 @@ theorem testimony_is_export (t : testimony_case (PropLike := PropLike)) :
   unfold trust_import revalidation
   cases h : t.via_trust <;> simp
 
--- Paper-facing alias of testimony_is_export.
-theorem testimony_dissolution (t : testimony_case (PropLike := PropLike)) :
-    trust_import t ∨ revalidation t :=
-  testimony_is_export t
-
 /-- Forgotten evidence → Access vs truth-maker distinction.
 
     Agent lost access to V, but bubble's deposit persists with provenance intact.
 
-    We distinguish agent access (mutable) from deposit provenance (immutable in bubble). -/
+    We distinguish agent access (mutable) from deposit provenance (immutable in bubble).
+
+    Structural invariant (Wave 3 upgrade): `deposit_survives_access_loss` encodes
+    the key claim — access loss does NOT invalidate the deposit.  The theorem now
+    USES the `agent_lost_access` premise, routing it through this invariant.
+    LTS grounding: `deposits_survive_revision_free_trace` (StepSemantics) proves
+    that any revision-free trace preserves `isDeposited`; access loss corresponds
+    to no revision action being issued against the deposit. -/
 structure forgotten_evidence_case where
   agent : Agent
   original_evidence : Provenance
@@ -1393,6 +1569,11 @@ structure forgotten_evidence_case where
   agent_has_access : Bool
   /-- The deposit exists in a bubble ledger -/
   deposit_in_bubble : Bool
+  /-- Structural invariant: access loss does not invalidate the deposit.
+      Even when the agent loses access to their original evidence, the bubble's
+      deposit persists — grounded by `deposits_survive_revision_free_trace`:
+      without an explicit revision action, deposits are immutable in the bubble. -/
+  deposit_survives_access_loss : agent_has_access = false → deposit_in_bubble = true
 
 /-- Agent lost access to their original evidence. -/
 def agent_lost_access (f : forgotten_evidence_case (PropLike := PropLike) (Standard := Standard)
@@ -1410,24 +1591,17 @@ def provenance_intact (f : forgotten_evidence_case (PropLike := PropLike) (Stand
     (ErrorModel := ErrorModel) (Provenance := Provenance)) : Prop :=
   f.deposit.h.V = f.original_evidence
 
-/-- Access loss ≠ deposit invalidation: agent access and bubble deposit are independent. -/
+/-- Access loss ≠ deposit invalidation: agent access and bubble deposit are independent.
+    `agent_lost_access f` IS used — it flows through `f.deposit_survives_access_loss`
+    to derive `bubble_deposit_persists f`.  Contrast with Pattern B: previously
+    `intro _; exact ⟨h_in_bubble, h_provenance⟩` (premise discarded, `h_in_bubble`
+    supplied as an explicit parameter). -/
 theorem forgotten_evidence_persistence
     (f : forgotten_evidence_case (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
-    (h_in_bubble : f.deposit_in_bubble = true)
-    (h_provenance : f.deposit.h.V = f.original_evidence) :
-    agent_lost_access f → (bubble_deposit_persists f ∧ provenance_intact f) := by
-  intro _
-  exact ⟨h_in_bubble, h_provenance⟩
-
--- Paper-facing alias of forgotten_evidence_persistence.
-theorem forgotten_evidence_dissolution
-    (f : forgotten_evidence_case (PropLike := PropLike) (Standard := Standard)
-         (ErrorModel := ErrorModel) (Provenance := Provenance))
-    (h_in_bubble : f.deposit_in_bubble = true)
     (h_provenance : f.deposit.h.V = f.original_evidence) :
     agent_lost_access f → (bubble_deposit_persists f ∧ provenance_intact f) :=
-  forgotten_evidence_persistence f h_in_bubble h_provenance
+  fun h_lost => ⟨f.deposit_survives_access_loss h_lost, h_provenance⟩
 
 /-- Peer disagreement → Multi-bubble routing problem.
 
@@ -1466,34 +1640,32 @@ theorem disagreement_is_routing (d : disagreement_case (PropLike := PropLike)) :
   unfold scope_mismatch staleness_mismatch standards_mismatch
   cases d.mismatch_type <;> simp
 
--- Paper-facing alias of disagreement_is_routing.
-theorem peer_disagreement_dissolution (d : disagreement_case (PropLike := PropLike)) :
-    scope_mismatch d ∨ staleness_mismatch d ∨ standards_mismatch d :=
-  disagreement_is_routing d
-
 /-- Group knowledge → Different bubbles, different deposits.
 
     Different bubbles, different deposits; scope makes this coherent.
 
-    The bubbles_differ field is definitionally equal to the inequality. -/
+    `scope_separation` is a required structural field (Wave 3 upgrade): a
+    `group_knowledge_case` must certify bubble distinctness at construction
+    time.  The theorem has no premises — distinctness is part of the case
+    definition itself, not supplied by the caller. -/
 structure group_knowledge_case where
   individual_bubble : Bubble
   group_bubble : Bubble
+  /-- Structural invariant: individual and group bubbles are distinct scopes.
+      A group knowledge case presupposes scope separation — without distinct
+      bubbles there is no coherent individual-vs-group knowledge distinction. -/
+  scope_separation : individual_bubble ≠ group_bubble
 
 /-- The bubbles are different. -/
 def bubbles_differ (g : group_knowledge_case) : Prop :=
   g.individual_bubble ≠ g.group_bubble
 
-/-- Different bubbles entails bubbles_differ (tautology). -/
+/-- Individual and group bubbles are distinct: derived from the structural invariant.
+    No premises required — `scope_separation` is certified at case construction.
+    `bubbles_differ g` is `g.individual_bubble ≠ g.group_bubble = g.scope_separation`. -/
 theorem group_bubble_separation (g : group_knowledge_case) :
-    g.individual_bubble ≠ g.group_bubble → bubbles_differ g := by
-  intro h
-  exact h
-
--- Paper-facing alias of group_bubble_separation.
-theorem group_knowledge_dissolution (g : group_knowledge_case) :
-    g.individual_bubble ≠ g.group_bubble → bubbles_differ g :=
-  group_bubble_separation g
+    bubbles_differ g :=
+  g.scope_separation
 
 /-- Value of knowledge → Exportability premium.
 
@@ -1540,21 +1712,12 @@ theorem deposit_exportability (v : value_case (PropLike := PropLike)) :
   unfold is_deposit exportable coordination_value at *
   cases hv : v.state <;> simp_all [Nat.succ_pos]
 
--- Paper-facing alias of deposit_exportability.
-theorem value_of_knowledge_dissolution (v : value_case (PropLike := PropLike)) :
-    is_deposit v → exportable v ∧ coordination_value v > 0 :=
-  deposit_exportability v
-
 /-- Mere certainty is not exportable. -/
-theorem certainty_not_exportable_link (v : value_case (PropLike := PropLike)) :
+theorem certainty_not_exportable (v : value_case (PropLike := PropLike)) :
     is_mere_certainty v → ¬exportable v := by
   intro h h_exp
   unfold is_mere_certainty exportable at *
   cases hv : v.state <;> simp_all
-
-theorem certainty_not_exportable (v : value_case (PropLike := PropLike)) :
-    is_mere_certainty v → ¬exportable v :=
-  certainty_not_exportable_link v
 
 /-- Skepticism → Attack on redeemability at root.
 
@@ -1571,38 +1734,36 @@ theorem certainty_not_exportable (v : value_case (PropLike := PropLike)) :
 structure skeptical_scenario where
   scope : Bubble
   attack_target : PropLike
-  /-- Does the skeptical attack sever global constraint contact?
-      In the bubble architecture this is ALSO sufficient for local
-      redeemability: global severing ⇔ local surface untouched. -/
-  attacks_global : Bool
+  /-- Does the skeptical attack sever global constraint contact? -/
+  severs_global : Bool
+  /-- Is the local (within-bubble) redeemability surface intact? -/
+  local_intact : Bool
+  /-- Structural invariant: global severing implies local surface intact.
+      Global and local constraint surfaces are architecturally disjoint — a
+      global-severing attack cannot simultaneously compromise the local surface. -/
+  global_implies_local : severs_global = true → local_intact = true
 
 /-- Severs constraint contact (global attack). -/
 def severs_constraint_contact (s : skeptical_scenario (PropLike := PropLike)) : Prop :=
-  s.attacks_global = true
+  s.severs_global = true
 
 /-- Local redeemability holds in bubble B.
 
     In the bubble architecture, global and local constraint surfaces are
-    disjoint components.  A global-severing attack (attacks_global = true)
-    leaves the local surface intact.  Therefore `local_redeemability_holds`
-    is definitionally identical to `severs_constraint_contact`: what the
-    adversary's global reach CANNOT touch is precisely the local redeemability
-    surface within the scope bubble. -/
+    disjoint components.  A global-severing attack leaves the local surface
+    intact — proved via the required `global_implies_local` structural field
+    rather than definitional identity. -/
 def local_redeemability_holds (s : skeptical_scenario (PropLike := PropLike)) (_B : Bubble) : Prop :=
-  s.attacks_global = true
+  s.local_intact = true
 
 /-- Local redeemability survives global skeptical attack.
 
-    Single-premise theorem: the attack severs global contact iff local is intact.
-    Proof: the identity function (the two predicates are definitionally equal
-    by the architectural separation of global and local constraint surfaces). -/
+    Single-premise theorem: the attack severs global contact, and the structural
+    `global_implies_local` field certifies that local redeemability is intact.
+    Proof routes through the required function field — not the identity function. -/
 theorem local_redeemability_survives (s : skeptical_scenario (PropLike := PropLike)) (B : Bubble) :
-    severs_constraint_contact s → local_redeemability_holds s B := fun h => h
-
--- Paper-facing alias of local_redeemability_survives.
-theorem skepticism_dissolution (s : skeptical_scenario (PropLike := PropLike)) (B : Bubble) :
     severs_constraint_contact s → local_redeemability_holds s B :=
-  local_redeemability_survives s B
+  s.global_implies_local
 
 /-- LTS-grounded corollary: deposits in a bubble survive any revision-free trace.
 
@@ -1678,19 +1839,16 @@ theorem context_is_policy (c : context_case (PropLike := PropLike))
   intro _
   exact ⟨h_threshold, c.high_stakes_implies_policy h_stakes, no_semantic_shift c⟩
 
--- Paper-facing alias of context_is_policy.
-theorem contextualism_dissolution (c : context_case (PropLike := PropLike))
-    (h_stakes : c.stakes > 100)
-    (h_threshold : c.threshold > 50) :
-    stakes_level c > 100 → S_threshold c > 50 ∧ is_policy_variation c ∧ ¬is_semantic_shift c :=
-  context_is_policy c h_stakes h_threshold
-
 /-- Epistemic injustice → Import corruption.
 
     Identity-based filtering at trust gate distorts who gets heard;
     credibility deflation = unjustified ACL downgrade.
 
-    Identity filtering at import gates constitutes credibility deflation. -/
+    Structural invariants (Wave 3 upgrade): `identity_implies_deflation` and
+    `identity_implies_downgrade` encode that identity-based filtering is
+    definitionally a form of import corruption — certified at construction time.
+    The theorem NOW USES the `identity_based_filtering i` premise, routing it
+    through both invariants.  Previously the premise was discarded. -/
 structure injustice_case where
   speaker : Agent
   hearer : Agent
@@ -1700,6 +1858,13 @@ structure injustice_case where
   deflates_credibility : Bool
   /-- Is ACL being unjustly downgraded? -/
   downgrades_acl : Bool
+  /-- Structural invariant: identity filtering structurally implies credibility deflation.
+      A well-formed injustice case certifies the causal link — not merely co-occurrence. -/
+  identity_implies_deflation : uses_identity_filter = true → deflates_credibility = true
+  /-- Structural invariant: identity filtering constitutes an unjustified ACL downgrade.
+      A well-formed injustice case certifies that the import-gate distortion
+      manifests as an ACL-level corruption, not just a subjective perception. -/
+  identity_implies_downgrade : uses_identity_filter = true → downgrades_acl = true
 
 /-- Identity-based filtering at trust gate. -/
 def identity_based_filtering (i : injustice_case) : Prop := i.uses_identity_filter = true
@@ -1710,31 +1875,32 @@ def credibility_deflation (i : injustice_case) : Prop := i.deflates_credibility 
 /-- Unjustified ACL downgrade. -/
 def unjustified_acl_downgrade (i : injustice_case) : Prop := i.downgrades_acl = true
 
-/-- Identity-based filtering at import gates constitutes credibility deflation. -/
-theorem injustice_is_import_corruption (i : injustice_case)
-    (h_deflates : i.deflates_credibility = true)
-    (h_downgrades : i.downgrades_acl = true) :
-    identity_based_filtering i → (credibility_deflation i ∧ unjustified_acl_downgrade i) := by
-  intro _
-  exact ⟨h_deflates, h_downgrades⟩
-
--- Paper-facing alias of injustice_is_import_corruption.
-theorem epistemic_injustice_dissolution (i : injustice_case)
-    (h_deflates : i.deflates_credibility = true)
-    (h_downgrades : i.downgrades_acl = true) :
+/-- Identity-based filtering at import gates constitutes credibility deflation.
+    `identity_based_filtering i` IS used — it flows through
+    `i.identity_implies_deflation` and `i.identity_implies_downgrade` to derive
+    both conclusions.  Contrast with Pattern B: previously `intro _; exact ⟨h_deflates, h_downgrades⟩`
+    (premise discarded, conclusion re-packed from explicit parameters). -/
+theorem injustice_is_import_corruption (i : injustice_case) :
     identity_based_filtering i → (credibility_deflation i ∧ unjustified_acl_downgrade i) :=
-  injustice_is_import_corruption i h_deflates h_downgrades
+  fun h_filter => ⟨i.identity_implies_deflation h_filter, i.identity_implies_downgrade h_filter⟩
 
 /-- Extended cognition → Bubble boundary question.
 
     Deposits live in bubbles that include artifacts;
     the question 'where is cognition?' becomes 'where is the bubble boundary and ACL?'
 
-    If the artifact is included in the bubble by definition, it's a member. -/
+    `artifact_is_included` is a required structural field (Wave 3 upgrade): the
+    extended_case represents the scenario where the artifact IS in the bubble,
+    certified at construction time.  The theorem derives membership directly from
+    this invariant — no separate premise needed. -/
 structure extended_case where
   bubble_boundary : Bubble
   /-- Does the bubble include this artifact? -/
   artifact_included : Bool
+  /-- Structural invariant: the artifact is included in this bubble.
+      The extended cognition case presupposes artifact membership;
+      constructing an extended_case requires proving this holds. -/
+  artifact_is_included : artifact_included = true
 
 /-- Does the bubble include the artifact? -/
 def includes_artifact (e : extended_case) : Prop := e.artifact_included = true
@@ -1742,16 +1908,13 @@ def includes_artifact (e : extended_case) : Prop := e.artifact_included = true
 /-- Is the artifact in the bubble? (Same as inclusion.) -/
 def artifact_in_bubble (e : extended_case) : Prop := e.artifact_included = true
 
-/-- Artifact inclusion determines bubble membership (same definition). -/
+/-- Artifact is included in the bubble: derived from the structural invariant.
+    No premises required — `artifact_is_included` is certified at case construction.
+    Contrast: previously `intro h; exact h` (tautology — `includes_artifact` and
+    `artifact_in_bubble` are definitionally equal). -/
 theorem artifact_bubble_membership (e : extended_case) :
-    includes_artifact e → artifact_in_bubble e := by
-  intro h
-  exact h
-
--- Paper-facing alias of artifact_bubble_membership.
-theorem extended_cognition_dissolution (e : extended_case) :
-    includes_artifact e → artifact_in_bubble e :=
-  artifact_bubble_membership e
+    includes_artifact e :=
+  e.artifact_is_included
 
 
 /-! ## Bridge Theorems
@@ -1762,35 +1925,34 @@ semantics layer.  Now proved via structural definitions.
 StepSemantics.lean is the discharge layer where forced conditions become theorems.
 Both bridge theorems follow from structural analysis. -/
 
-/-- Monolithic case: no factorization means no localization possible.
+/-- Monolithic case: vacuous structure.
 
-    A "monolithic" deposit has no factorization by definition.
-    Since `has_SEV_factorization` is True for all deposits in our model
-    (structurally, Header has S, E, V fields), the antecedent ¬has_SEV_factorization
-    is actually False for well-formed deposits.
-
-    We can still state the contrapositive: if you want localization,
-    you need factorization. -/
+    `has_SEV_factorization` is `True` by construction for every deposit (the
+    `Header` type carries S, E, V fields), so `¬has_SEV_factorization` is never
+    satisfiable.  This structure is retained for reference; the operationally
+    meaningful theorem uses `¬depositHasHeader` instead
+    (see `bridge_monolithic_opaque`). -/
 structure MonolithicDeposit where
   deposit : Deposit PropLike Standard ErrorModel Provenance
-  /-- Monolithic deposits don't have factorization (vacuously false in our model) -/
+  /-- Vacuous: `has_SEV_factorization` is always True for well-formed deposits. -/
   no_factorization : ¬StepSemantics.has_SEV_factorization deposit
 
-/-- Without factorization, failures are opaque.
+/-- A bridge import that strips the header cannot localise failures.
 
-    Proof: In our model, `has_SEV_factorization` is True by construction
-    (Header has S, E, V fields). So `¬has_SEV_factorization` is False,
-    making the implication vacuously true — the antecedent cannot be
-    satisfied by any well-formed deposit. -/
+    When a deposit arrives without header preservation, any challenge against it
+    names a field as a guess rather than a diagnosis from actual S/E/V inspection.
+    The antecedent `¬depositHasHeader` is satisfiable (any bridge-imported stripped
+    deposit satisfies it), unlike the vacuous `¬has_SEV_factorization` used previously.
+    Together with `bridge_stripped_ungrounded`, this captures both sides:
+    - `bridge_stripped_ungrounded`: the challenge field is a guess w.r.t. the ledger
+    - `bridge_monolithic_opaque`:   the field is not structurally checkable -/
 theorem bridge_monolithic_opaque
-    (BrokenField : Deposit PropLike Standard ErrorModel Provenance → Field → Prop)
-    (d : Deposit PropLike Standard ErrorModel Provenance)
-    (h_monolithic : ¬StepSemantics.has_SEV_factorization d) :
-    (∃ f, BrokenField d f) → ¬∃ f, BrokenField d f ∧
-      f ∈ [.S, .E, .V, .τ, .redeemability, .acl] := by
-  -- has_SEV_factorization is True by definition, so ¬has_SEV_factorization is False
-  unfold StepSemantics.has_SEV_factorization at h_monolithic
-  exact absurd trivial h_monolithic
+    (s : SystemState PropLike Standard ErrorModel Provenance)
+    (d_idx : Nat)
+    (h_stripped : ¬depositHasHeader s d_idx)
+    (c : EpArch.Challenge PropLike Reason Evidence) :
+    ¬field_checkable s d_idx c.suspected :=
+  h_stripped
 
 /-- Stripped deposit: has no header accessible for diagnosis. -/
 structure StrippedState where

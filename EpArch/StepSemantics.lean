@@ -97,6 +97,9 @@ structure SystemState (PropLike Standard ErrorModel Provenance : Type u) where
   clock       : Time
   acl_table   : List ACLEntry
   trust_bridges : List (Bubble × Bubble)
+  /-- Per-agent, per-claim Ladder state.  Pass-through on every Step (no Step ever
+      modifies it — proved by `step_preserves_ladder_map`).  Default: Ignorance. -/
+  ladder_map  : Agent → PropLike → LadderStage := fun _ _ => LadderStage.Ignorance
 
 variable {PropLike Standard ErrorModel Provenance Reason Evidence : Type u}
 
@@ -547,6 +550,39 @@ inductive Step : SystemState PropLike Standard ErrorModel Provenance →
       (h_quarantined : isQuarantined s d_idx) :
       Step s (.Repair d_idx f)
         { s with ledger := updateDepositStatus s.ledger d_idx .Candidate }
+
+/-! ## Ladder Invariants
+
+The `ladder_map` field of `SystemState` is never modified by any Step.
+Every constructor either returns `s` unchanged (`withdraw`) or uses
+`{ s with <other-field> := ... }` which copies `ladder_map` from `s` by
+Lean 4's struct-update semantics. -/
+
+/-- Ladder state is invariant under all Steps. -/
+theorem step_preserves_ladder_map
+    (s s' : SystemState PropLike Standard ErrorModel Provenance)
+    (a : Action PropLike Standard ErrorModel Provenance Reason Evidence)
+    (h : Step (Reason := Reason) (Evidence := Evidence) s a s') :
+    s'.ladder_map = s.ladder_map := by
+  cases h <;> rfl
+
+/-- Closure puzzle — Bank side: no Step auto-propagates deposits via entailment.
+    The Ladder map is invariant across all Steps (operational closure invariant). -/
+theorem closure_ladder_invariant
+    (s s' : SystemState PropLike Standard ErrorModel Provenance)
+    (a : Action PropLike Standard ErrorModel Provenance Reason Evidence)
+    (h : Step (Reason := Reason) (Evidence := Evidence) s a s') :
+    s'.ladder_map = s.ladder_map :=
+  step_preserves_ladder_map s s' a h
+
+/-- Luminosity / KK invariant: no Step creates meta-Ladder entries.
+    Ladder introspection is agent-internal — not produced by any LTS action. -/
+theorem luminosity_ladder_invariant
+    (s s' : SystemState PropLike Standard ErrorModel Provenance)
+    (a : Action PropLike Standard ErrorModel Provenance Reason Evidence)
+    (h : Step (Reason := Reason) (Evidence := Evidence) s a s') :
+    s'.ladder_map = s.ladder_map :=
+  step_preserves_ladder_map s s' a h
 
 /-! ## Trace Type: Sequences of Steps
 
