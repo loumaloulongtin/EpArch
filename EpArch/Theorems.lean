@@ -1291,22 +1291,28 @@ See `safety_ctx_V_link` and `sensitivity_ctx_E_link` below. -/
     that world must differ from the actual world — truth and observation come apart. -/
 structure GettierCaseCtx (C : WorldCtx) where
   /-- The actual world (where the Gettier situation obtains) -/
-  world        : C.World
+  world         : C.World
   /-- The claim in question -/
-  P            : C.Claim
+  P             : C.Claim
   /-- S-field: claim passes acceptance threshold -/
-  S_passes     : Bool
+  S_passes      : Bool
+  /-- Structural cert: S clears the threshold in this Gettier case.
+      A `GettierCaseCtx` presupposes that S and E both pass (the claim satisfies
+      all classical knowledge conditions except V); the epistemic failure is in V alone. -/
+  s_passes_cert : S_passes = true
   /-- E-field: error model is locally adequate -/
-  E_passes     : Bool
+  E_passes      : Bool
+  /-- Structural cert: E is locally adequate in this Gettier case. -/
+  e_passes_cert : E_passes = true
   /-- Provenance disconnection: any world where P is true that is obs-equivalent
       to the actual world must differ from the actual world. -/
   provenance_disconnected :
     ∀ w', C.Truth w' P → C.obs w' = C.obs world → w' ≠ world
 
-/-- A system is in a Gettier-profile situation when S and E pass,
-    the claim is false in the actual world, but true in an obs-equivalent world. -/
+/-- A system is in a Gettier-profile situation when
+    the claim is false in the actual world but true in an obs-equivalent world.
+    S and E pass by structural cert; the Gettier condition is the provenance gap alone. -/
 def IsGettierCtx (C : WorldCtx) (g : GettierCaseCtx C) : Prop :=
-  g.S_passes = true ∧ g.E_passes = true ∧
   ¬C.Truth g.world g.P ∧
   ∃ w', C.Truth w' g.P ∧ C.obs w' = C.obs g.world
 
@@ -1318,7 +1324,7 @@ def IsGettierCtx (C : WorldCtx) (g : GettierCaseCtx C) : Prop :=
 theorem gettier_ctx_exhibits_provenance_gap (C : WorldCtx) (g : GettierCaseCtx C)
     (h : IsGettierCtx C g) :
     ∃ w', C.Truth w' g.P ∧ C.obs w' = C.obs g.world ∧ w' ≠ g.world := by
-  let ⟨_, _, _, w', h_truth, h_obs⟩ := h
+  let ⟨_, w', h_truth, h_obs⟩ := h
   exact ⟨w', h_truth, h_obs, g.provenance_disconnected w' h_truth h_obs⟩
 
 /-- Gettier profile (WorldCtx level) yields V-failure: the provenance gap witnesses
@@ -1610,6 +1616,27 @@ def header_inspectable (l : luminosity_puzzle (PropLike := PropLike)) : Prop :=
 theorem luminosity_type_separation (l : luminosity_puzzle (PropLike := PropLike)) :
     meta_certainty l ∨ header_inspectable l :=
   l.either_available
+
+/-- Header-only luminosity puzzle: Ladder absent, Bank inspection only.
+    `has_meta_certainty = false` with `either_available = Or.inr rfl` exercises
+    the non-default `Or.inr` branch — demonstrating `luminosity_type_separation`
+    is genuinely disjunctive, not always resolving to `Or.inl`. -/
+def header_only_luminosity (P : PropLike) (agent : Agent) :
+    luminosity_puzzle (PropLike := PropLike) :=
+  { P                    := P,
+    agent                := agent,
+    has_meta_certainty   := false,
+    has_inspectable_header := true,
+    either_available     := Or.inr rfl }
+
+/-- At the header-only instance, Bank inspection holds but Ladder meta-certainty does not.
+    Proves `meta_certainty` fails (`Bool.noConfusion` on `false = true`) while
+    `header_inspectable` holds (`rfl`).  Exercises the `Or.inr` branch of `either_available`.
+    Contrast with the default `either_available = Or.inl rfl` construction. -/
+theorem luminosity_header_only_separated (P : PropLike) (agent : Agent) :
+    ¬meta_certainty (header_only_luminosity P agent) ∧
+    header_inspectable (header_only_luminosity P agent) :=
+  ⟨Bool.noConfusion, rfl⟩
 
 /-- LTS-grounded Ladder side of the luminosity puzzle.
     Operational grounding for `meta_certainty`: the `ladder_map` field is
@@ -2484,24 +2511,10 @@ semantics layer.  Now proved via structural definitions.
 StepSemantics.lean is the discharge layer where forced conditions become theorems.
 Both bridge theorems follow from structural analysis. -/
 
-/-- Monolithic case: vacuous structure.
-
-    `has_SEV_factorization` is `True` by construction for every deposit (the
-    `Header` type carries S, E, V fields), so `¬has_SEV_factorization` is never
-    satisfiable.  This structure is retained for reference; the operationally
-    meaningful theorem uses `¬depositHasHeader` instead
-    (see `bridge_monolithic_opaque`). -/
-structure MonolithicDeposit where
-  deposit : Deposit PropLike Standard ErrorModel Provenance
-  /-- Vacuous: `has_SEV_factorization` is always True for well-formed deposits. -/
-  no_factorization : ¬StepSemantics.has_SEV_factorization deposit
-
 /-- A bridge import that strips the header cannot localise failures.
 
     When a deposit arrives without header preservation, any challenge against it
     names a field as a guess rather than a diagnosis from actual S/E/V inspection.
-    The antecedent `¬depositHasHeader` is satisfiable (any bridge-imported stripped
-    deposit satisfies it), unlike the vacuous `¬has_SEV_factorization` used previously.
     Together with `bridge_stripped_ungrounded`, this captures both sides:
     - `bridge_stripped_ungrounded`: the challenge field is a guess w.r.t. the ledger
     - `bridge_monolithic_opaque`:   the field is not structurally checkable -/

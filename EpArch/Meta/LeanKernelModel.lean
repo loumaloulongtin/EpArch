@@ -843,10 +843,12 @@ rather than at this concrete instantiation. -/
     distinct from `world = false`.  Proved by `subst; decide` after the kernel
     reduces `LeanKernelCtx.Truth`. -/
 def leanKernelGettierCase : GettierCaseCtx LeanKernelCtx where
-  world    := false   -- sorry-tainted environment
-  P        := true    -- claim that is false in this world
-  S_passes := true    -- syntactically accepted
-  E_passes := true    -- error model locally adequate
+  world         := false   -- sorry-tainted environment
+  P             := true    -- claim that is false in this world
+  S_passes      := true    -- syntactically accepted
+  s_passes_cert := rfl
+  E_passes      := true    -- error model locally adequate
+  e_passes_cert := rfl
   provenance_disconnected := by
     intro w' h_truth _ h_eq
     -- h_truth : LeanKernelCtx.Truth w' true;  h_eq : w' = false
@@ -855,10 +857,10 @@ def leanKernelGettierCase : GettierCaseCtx LeanKernelCtx where
     exact Bool.noConfusion h_truth
 
 /-- The Gettier profile holds at `leanKernelGettierCase`:
-    S and E pass, the claim is false in `world = false`,
+    S and E pass by structural cert; the claim is false in `world = false`,
     and the clean environment `true` witnesses `P` while being obs-equivalent. -/
 theorem leanKernel_is_gettier : IsGettierCtx LeanKernelCtx leanKernelGettierCase :=
-  ⟨rfl, rfl, Bool.noConfusion, ⟨true, rfl, rfl⟩⟩
+  ⟨Bool.noConfusion, ⟨true, rfl, rfl⟩⟩
 
 /-- The Gettier provenance gap at `LeanKernelCtx`.
 
@@ -1050,13 +1052,15 @@ def canonical_sorry_publication_case (name : String) : LeanStandardCase :=
     clearance_fails_cert := False.elim }
 
 /-- Same proof, development-mode consumer: `allows_sorry` clears `allows_sorry`.
-    `threshold_met = True` (trivially met); `clears_sound` bridges them. -/
+    `threshold_met` is `deposit_level = required_level` — a concrete enum equality,
+    not `True`.  Both bridge directions close by `rfl`, consistent with the
+    publication case which uses `Bool.noConfusion`/`False.elim`. -/
 def canonical_sorry_dev_clearance : LeanStandardClearance :=
   { deposit_level  := .allows_sorry,
     required_level := .allows_sorry,
-    threshold_met  := True,
+    threshold_met  := (.allows_sorry : LeanAxiomLevel) = .allows_sorry,
     clears         := true,
-    clears_sound   := ⟨fun _ => trivial, fun _ => rfl⟩ }
+    clears_sound   := ⟨fun _ => rfl, fun _ => rfl⟩ }
 
 /-- Relational S-failure at the kernel level.
 
@@ -1069,7 +1073,7 @@ theorem lean_axiom_failure_is_relational (name : String) :
     canonical_sorry_dev_clearance.threshold_met := by
   constructor
   · exact lean_standard_case_is_S_failure _
-  · exact trivial
+  · exact rfl
 
 /-- Elaboration pattern for the sorry-closed-goal scenario.
     Mirrors `TestimonyMode` in Theorems.lean for the Lean-specific context.
@@ -1159,7 +1163,7 @@ theorem lean_S_failure_taxonomy (name : String) :
     lean_S_fails (canonical_sorry_publication_case name) = true ∧
     canonical_sorry_dev_clearance.threshold_met ∧
     lean_S_is_void canonical_sorry_false_case := by
-  exact ⟨lean_standard_case_is_S_failure _, trivial,
+  exact ⟨lean_standard_case_is_S_failure _, rfl,
         lean_vacuous_standard_is_void _⟩
 
 /-- Data-backed V and E evidence in a Lean S-failure.
