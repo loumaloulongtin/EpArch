@@ -1,5 +1,5 @@
-﻿/-
-EpArch/Meta/LeanKernel/World.lean — Lean Kernel as EpArch Instantiation (World + Architecture layers)
+/-
+EpArch/Meta/LeanKernel/World.lean â Lean Kernel as EpArch Instantiation (World + Architecture layers)
 
 Proves that Lean's own type-checking kernel is a valid EpArch WorldCtx
 instantiation satisfying all three core world-assumption bundles.
@@ -14,13 +14,13 @@ instantiation satisfying all three core world-assumption bundles.
       Truth  := fun w P => w = P   -- clean env authenticates exactly clean claims
       Utter  := fun _ _ => True    -- `sorry` = unrestricted utterance gate
       obs    := fun _ => ()        -- all worlds look the same (proof irrelevance)
-      VerifyWithin := fun _ _ t => t â‰¥ 1  -- heartbeat-bounded elaboration
+      VerifyWithin := fun _ _ t => t ≥ 1  -- heartbeat-bounded elaboration
 
 ## Bundle Witnesses
 
 - `holds_W_lies_possible`       : `sorry` is an unconditional utterance gate;
                                    unprovable claims exist (e.g., `False`).
-- `holds_W_bounded_verification`: every term requires â‰¥ 1 heartbeat to elaborate;
+- `holds_W_bounded_verification`: every term requires ≥ 1 heartbeat to elaborate;
                                    the heartbeat budget is the VerifyWithin bound.
 - `holds_W_partial_observability`: proof irrelevance makes `obs` constant;
                                    two environments can differ on truth while
@@ -43,13 +43,17 @@ that verifies `holds_W_lies_possible` is the entity described by
 
 ## S-Failure Taxonomy
 
-Moved to `EpArch/Meta/LeanKernel/SFailure.lean`.
+The lower half of the file instantiates the Standard Case / Vacuous Standard
+Case structures at the kernel level:
 
-## .olean Cache Staleness
-
-`OleanStaleness` section: witnesses deposit lifecycle for `.olean` cache files.
-A stale `OleanRecord` (source changed since last build) blocks withdrawal,
-concretely instantiating the ConcreteLedgerModel staleness → revocability chain.
+- `LeanStandardClearance` / `LeanVWitness` / `LeanEWitness` — kernel-level
+  field-clearance and witness structures.
+- `LeanStandardCase` — a proof whose S clearance does not meet the consumer's
+  threshold; `lean_standard_case_is_S_failure` proves the S-failure.
+- `LeanVacuousStandard` — a `sorry ⊢ False` proof; `lean_vacuous_standard_is_void`
+  proves void S.
+- `lean_S_failure_taxonomy` — both S-failure kinds appear at the kernel level.
+- `lean_s_failure_VE_data` — V and E evidence surfaces in any kernel S-failure.
 
 ## Limitation
 
@@ -83,7 +87,7 @@ open EpArch
     | Truth w P = (w=P)  | Clean env authenticates exactly clean claims           |
     | Utter _ _ = True   | `sorry` makes every utterance syntactically available  |
     | obs _ = ()         | All worlds look the same externally (proof irrelevance) |
-    | VerifyWithin t â‰¥ 1 | Elaboration costs â‰¥ 1 heartbeat; budget is finite      |
+    | VerifyWithin t ≥ 1 | Elaboration costs ≥ 1 heartbeat; budget is finite      |
 
     Proxy-model note: this matches kernel behavior by construction.
     It is not a formal theorem obtained by introspecting kernel source code. -/
@@ -97,23 +101,23 @@ def LeanKernelCtx : EpArch.WorldCtx where
   -- Kernel reading: in a clean (true) environment, only provable (true) claims hold.
   Truth := fun w P => w = P
 
-  -- Utter: always True â€” `sorry` makes every syntactic utterance available
+  -- Utter: always True — `sorry` makes every syntactic utterance available
   -- regardless of whether the claimed type is actually inhabited.
   Utter := fun _ _ => True
 
-  -- obs: constant â€” proof irrelevance means proof-term identity is not observable.
+  -- obs: constant — proof irrelevance means proof-term identity is not observable.
   -- Two kernel environments (clean vs sorry-tainted) look identical externally.
   obs := fun _ => ()
 
   -- VerifyWithin: requires at least 1 heartbeat.
   -- Kernel reading: every elaboration step consumes heartbeats from the budget.
-  VerifyWithin := fun _ _ t => t â‰¥ 1
+  VerifyWithin := fun _ _ t => t ≥ 1
 
   effectiveTime := fun _ => 10
 
-  world_inhabited := âŸ¨trueâŸ©
-  agent_inhabited := âŸ¨()âŸ©
-  claim_inhabited := âŸ¨trueâŸ©
+  world_inhabited := ⟨true⟩
+  agent_inhabited := ⟨()⟩
+  claim_inhabited := ⟨true⟩
 
 
 /-! ## W_lies_possible: `sorry` as Unrestricted Utterance -/
@@ -125,10 +129,10 @@ def LeanKernelCtx : EpArch.WorldCtx where
     exactly the `unrestricted_utterance` field: the agent (elaborator) can
     utter any claim independent of its truth value.
 
-    The false proposition is `False` in the empty environment â€” formalized
+    The false proposition is `False` in the empty environment — formalized
     here as `Truth false true = (false = true) = False`. -/
 theorem holds_W_lies_possible : LeanKernelCtx.W_lies_possible where
-  some_false          := âŸ¨false, true, fun h => Bool.noConfusion hâŸ©
+  some_false          := ⟨false, true, fun h => Bool.noConfusion h⟩
   unrestricted_utterance := fun _ _ => trivial
 
 
@@ -139,19 +143,19 @@ theorem holds_W_lies_possible : LeanKernelCtx.W_lies_possible where
     Lean's elaborator operates under a heartbeat budget (set via
     `set_option maxHeartbeats`).  Every elaboration step consumes
     heartbeats; elaboration terminates (with an error) when the budget
-    is exhausted.  This is formalized as `VerifyWithin w P t = (t â‰¥ 1)`:
+    is exhausted.  This is formalized as `VerifyWithin w P t = (t ≥ 1)`:
     any non-trivial claim requires at least 1 heartbeat to verify.
 
     The witness claim is `true`, requiring step budget `k = 1`.  For any
     `t < 1` (i.e., `t = 0`), verification cannot succeed: 0 heartbeats
     are not enough to elaborate even the simplest non-trivial term. -/
 theorem holds_W_bounded_verification : LeanKernelCtx.W_bounded_verification where
-  verification_has_cost := âŸ¨true, 1, by decide, fun _ => by
+  verification_has_cost := ⟨true, 1, by decide, fun _ => by
     simp only [EpArch.WorldCtx.RequiresSteps, LeanKernelCtx]
     intro t h_lt h_ge
     cases t with
     | zero  => exact Nat.not_succ_le_zero 0 h_ge
-    | succ n => exact Nat.not_lt_zero n (Nat.lt_of_succ_lt_succ h_lt)âŸ©
+    | succ n => exact Nat.not_lt_zero n (Nat.lt_of_succ_lt_succ h_lt)⟩
 
 
 /-! ## W_partial_observability: Proof Irrelevance -/
@@ -160,7 +164,7 @@ theorem holds_W_bounded_verification : LeanKernelCtx.W_bounded_verification wher
 
     In Lean, proof irrelevance means two proofs of the same proposition are
     definitionally equal.  More broadly, the external observer sees only
-    whether a term type-checks â€” not the kernel environment (clean vs
+    whether a term type-checks — not the kernel environment (clean vs
     sorry-tainted) that produced it.
 
     This is formalized as `obs w = ()` for all `w`: observationally
@@ -168,23 +172,23 @@ theorem holds_W_bounded_verification : LeanKernelCtx.W_bounded_verification wher
     values for the same claim.  Here worlds `true` and `false` are
     obs-equivalent yet `Truth true true` and `Truth false true` differ. -/
 theorem holds_W_partial_observability : LeanKernelCtx.W_partial_observability where
-  obs_underdetermines := âŸ¨true, true, false, rfl, by
+  obs_underdetermines := ⟨true, true, false, rfl, by
     simp only [LeanKernelCtx]
     constructor
-    Â· intro _; exact fun h => nomatch h
-    Â· intro _; trivialâŸ©
+    · intro _; exact fun h => nomatch h
+    · intro _; trivial⟩
 
 
 /-! ## Bundle Satisfiability -/
 
 /-- All three core world-assumption bundles hold jointly in LeanKernelCtx. -/
 theorem lean_kernel_satisfies_bundles :
-    Nonempty LeanKernelCtx.W_lies_possible âˆ§
-    Nonempty LeanKernelCtx.W_bounded_verification âˆ§
+    Nonempty LeanKernelCtx.W_lies_possible ∧
+    Nonempty LeanKernelCtx.W_bounded_verification ∧
     Nonempty LeanKernelCtx.W_partial_observability :=
-  âŸ¨âŸ¨holds_W_lies_possibleâŸ©,
-   âŸ¨holds_W_bounded_verificationâŸ©,
-   âŸ¨holds_W_partial_observabilityâŸ©âŸ©
+  ⟨⟨holds_W_lies_possible⟩,
+   ⟨holds_W_bounded_verification⟩,
+   ⟨holds_W_partial_observability⟩⟩
 
 
 /-! ## Theory Floor -/
@@ -213,13 +217,13 @@ theorem lean_kernel_theory_floor : EpArch.Meta.TheoryFloor LeanKernelCtx :=
     (coordination / consistency).
 
     Kernel reading: Lean's proof environment faces the same inherent tension
-    between permissive elaboration (`sorry` closes any goal â€” innovation) and
-    strict global coherence (only consistent theorems count â€” coordination).
+    between permissive elaboration (`sorry` closes any goal — innovation) and
+    strict global coherence (only consistent theorems count — coordination).
     EpArch's Bank architecture is the structural response to this tension. -/
 theorem lean_kernel_no_tradeoff :
-    âˆ€ L : LeanKernelCtx.Ledger,
-      LeanKernelCtx.obs_based L â†’
-      Â¬(LeanKernelCtx.supports_innovation L âˆ§ LeanKernelCtx.supports_coordination L) :=
+    ∀ L : LeanKernelCtx.Ledger,
+      LeanKernelCtx.obs_based L →
+      ¬(LeanKernelCtx.supports_innovation L ∧ LeanKernelCtx.supports_coordination L) :=
   fun L hObs => WorldCtx.no_ledger_tradeoff LeanKernelCtx L hObs holds_W_partial_observability
 
 
@@ -232,18 +236,18 @@ theorem lean_kernel_no_tradeoff :
     `WorldWitness.lean`, this existential witness carries kernel-specific
     interpretations:
 
-    - `W_lies_possible`        â†” `sorry` mechanism
-    - `W_bounded_verification` â†” heartbeat budget
-    - `W_partial_observability`â†” proof irrelevance
+    - `W_lies_possible`        ↔ `sorry` mechanism
+    - `W_bounded_verification` ↔ heartbeat budget
+    - `W_partial_observability`↔ proof irrelevance
 
     The architecture-layer requirements follow from `LeanWorkingSystem`;
     see `lean_structural_convergence` and `lean_kernel_existence`. -/
 theorem lean_is_eparch_world :
-    âˆƒ C : @EpArch.WorldCtx.{0},
-      Nonempty C.W_lies_possible âˆ§
-      Nonempty C.W_bounded_verification âˆ§
+    ∃ C : @EpArch.WorldCtx.{0},
+      Nonempty C.W_lies_possible ∧
+      Nonempty C.W_bounded_verification ∧
       Nonempty C.W_partial_observability :=
-  âŸ¨LeanKernelCtx, lean_kernel_satisfies_bundlesâŸ©
+  ⟨LeanKernelCtx, lean_kernel_satisfies_bundles⟩
 
 
 /-! ## Architecture Layer: Lean as a Working System -/
@@ -280,29 +284,29 @@ Structural impossibility theorems built on this data appear after `lean_partial_
     `LeanName.intAdd` represents `Int.add` (in the `Int` namespace).
 
     These two names share the same short form `add` but live in different
-    namespaces â€” the essential property that forces scope separation. -/
+    namespaces — the essential property that forces scope separation. -/
 inductive LeanName where
   | natAdd   -- Nat.add: `add` resolved under `open Nat`
   | intAdd   -- Int.add: `add` resolved under `open Int`
 
 /-- Agent 1 (a compilation unit with `open Nat`) accepts `natAdd`. -/
-def openNatAccepts : LeanName â†’ Prop
+def openNatAccepts : LeanName → Prop
   | .natAdd => True
   | .intAdd => False
 
 /-- Agent 2 (a compilation unit with `open Int`) accepts `intAdd`. -/
-def openIntAccepts : LeanName â†’ Prop
+def openIntAccepts : LeanName → Prop
   | .natAdd => False
   | .intAdd => True
 
 /-- Bubble evidence: two Lean scopes disagree on `.natAdd`. -/
 def LeanGroundedBubbles : GroundedBubbles where
   Claim          := LeanName
-  scopeâ‚         := openNatAccepts
-  scopeâ‚‚         := openIntAccepts
+  scope₁         := openNatAccepts
+  scope₂         := openIntAccepts
   witness        := .natAdd
-  scopeâ‚_accepts := True.intro
-  scopeâ‚‚_rejects := fun h => nomatch h
+  scope₁_accepts := True.intro
+  scope₂_rejects := fun h => nomatch h
 
 /-- `LeanGroundedBubbles` with impossibility consequence: no flat resolver can represent
     both the Nat-namespace and Int-namespace scopes simultaneously.
@@ -323,12 +327,12 @@ inductive LeanLibrary where
   | userFile  -- a downstream file that imports Init
 
 /-- Init provides its own declarations. -/
-def initDeclarations : LeanLibrary â†’ Prop
+def initDeclarations : LeanLibrary → Prop
   | .init     => True
   | .userFile => False
 
 /-- After `import Init`, the user file can access Init's declarations via the bridge. -/
-def userImportsInit : LeanLibrary â†’ Prop
+def userImportsInit : LeanLibrary → Prop
   | .init     => True
   | .userFile => True
 
@@ -343,7 +347,7 @@ def LeanGroundedTrustBridges : GroundedTrustBridges where
   downstream_via_bridge := True.intro
 
 /-- `LeanGroundedTrustBridges` with bridge-forcing consequence: any downstream-sound
-    policy must accept Init declarations â€” a re-verify-only policy cannot exclude them. -/
+    policy must accept Init declarations — a re-verify-only policy cannot exclude them. -/
 def LeanGroundedTrustBridgesStrict : GroundedTrustBridgesStrict :=
   GroundedTrustBridgesStrict.mk' LeanGroundedTrustBridges
 
@@ -356,10 +360,10 @@ structure LeanDeclaration where
   typeSig : String
 
 /-- Extract the type signature (header). -/
-def leanExtractHeader : LeanDeclaration â†’ String := fun d => d.typeSig
+def leanExtractHeader : LeanDeclaration → String := fun d => d.typeSig
 
-/-- Export step: elaboration is modelled as `id` â€” type signature unchanged. -/
-def leanExportStep : LeanDeclaration â†’ LeanDeclaration := id
+/-- Export step: elaboration is modelled as `id` — type signature unchanged. -/
+def leanExportStep : LeanDeclaration → LeanDeclaration := id
 
 /-- Header evidence: `Nat.succ`'s type sig survives the identity export step. -/
 def LeanGroundedHeaders : GroundedHeaders where
@@ -367,7 +371,7 @@ def LeanGroundedHeaders : GroundedHeaders where
   Header           := String
   extract          := leanExtractHeader
   export_datum     := leanExportStep
-  witness          := { name := "Nat.succ", typeSig := "Nat â†’ Nat" }
+  witness          := { name := "Nat.succ", typeSig := "Nat → Nat" }
   header_preserved := rfl
 
 /-- `LeanGroundedHeaders` with routing invariance: a type-signature router agrees on
@@ -384,12 +388,12 @@ inductive LeanTermKind where
   | sorryTainted -- closes a goal via `sorry`
 
 /-- A term is valid iff it contains no sorry. -/
-def leanTermValid : LeanTermKind â†’ Prop
+def leanTermValid : LeanTermKind → Prop
   | .sorryFree    => True
   | .sorryTainted => False
 
 /-- A term is revocable iff it is sorry-tainted. -/
-def leanTermRevocable : LeanTermKind â†’ Prop
+def leanTermRevocable : LeanTermKind → Prop
   | .sorryFree    => False
   | .sorryTainted => True
 
@@ -416,20 +420,20 @@ inductive LeanEnvEntry where
   | userDef  -- a definition contributed by the user's module
 
 /-- The Init module produces its own definitions. -/
-def initProduces : LeanEnvEntry â†’ Prop
+def initProduces : LeanEnvEntry → Prop
   | .initDef => True
   | .userDef => False
 
 /-- The user module reads Init's definitions from the shared `Environment`. -/
-def userConsumes : LeanEnvEntry â†’ Prop
+def userConsumes : LeanEnvEntry → Prop
   | .initDef => True
   | .userDef => True
 
 /-- Bank evidence: `.initDef` produced by Init, consumed by user via shared Env. -/
 def LeanGroundedBank : GroundedBank where
   Entry           := LeanEnvEntry
-  agentâ‚_produces := initProduces
-  agentâ‚‚_consumes := userConsumes
+  agent₁_produces := initProduces
+  agent₂_consumes := userConsumes
   witness         := .initDef
   produced        := True.intro
   consumed        := True.intro
@@ -448,12 +452,12 @@ inductive LeanClaimStatus where
   | axiomFree    -- passed `#print axioms`
 
 /-- A claim is constrained iff it is under review. -/
-def leanIsConstrained : LeanClaimStatus â†’ Prop
+def leanIsConstrained : LeanClaimStatus → Prop
   | .underReview => True
   | .axiomFree   => False
 
 /-- `#print axioms` always terminates and reveals the full axiom footprint. -/
-def leanHasAuditPath : LeanClaimStatus â†’ Prop
+def leanHasAuditPath : LeanClaimStatus → Prop
   | .underReview => True
   | .axiomFree   => True
 
@@ -561,7 +565,7 @@ def LeanWorkingSystem : WorkingSystem :=
 -- `grounded_spec_contains_all LeanGroundedSystemSpec` proves all six features
 -- simultaneously.  After `unfold HasX LeanWorkingSystem`, the goal becomes
 -- `spec_has_X LeanGroundedSystemSpec.toSystemSpec`, which is the corresponding
--- component of the conjunction â€” no manually-set flag is consulted.
+-- component of the conjunction — no manually-set flag is consulted.
 theorem lean_has_bubbles : HasBubbles LeanWorkingSystem := by
   unfold HasBubbles LeanWorkingSystem
   exact (grounded_spec_contains_all LeanGroundedSystemSpec).1
@@ -591,7 +595,7 @@ theorem lean_has_redeemability : HasRedeemability LeanWorkingSystem := by
 
 /-- `LeanWorkingSystem` directly implements all six Bank primitives.
 
-    This is the *direct* route â€” independent of the convergence theorem.
+    This is the *direct* route — independent of the convergence theorem.
     It does not say "any system handling X must have Y, and this system
     handles X"; it says "this system has Y, constructed from evidence."
 
@@ -606,21 +610,21 @@ theorem lean_has_redeemability : HasRedeemability LeanWorkingSystem := by
     | `HasBubbles`        | `LeanGroundedBubbles` (Nat vs Int namespace disagreement) |
     | `HasTrustBridges`   | `LeanGroundedTrustBridges` (`import Init` trust bridge) |
     | `HasHeaders`        | `LeanGroundedHeaders` (`Nat.succ` type sig preserved)  |
-    | `HasRevocation`     | `LeanGroundedRevocation` (sorry-tainted â†’ quarantine)  |
+    | `HasRevocation`     | `LeanGroundedRevocation` (sorry-tainted → quarantine)  |
     | `HasBank`           | `LeanGroundedBank` (InitDef produced and consumed)     |
     | `HasRedeemability`  | `LeanGroundedRedeemability` (`#print axioms` audit path)| -/
 theorem lean_implements_bank_primitives : containsBankPrimitives LeanWorkingSystem := by
   intro P
   cases P
-  Â· exact lean_has_bubbles
-  Â· exact lean_has_trust_bridges
-  Â· exact lean_has_headers
-  Â· exact lean_has_revocation
-  Â· exact lean_has_bank
-  Â· exact lean_has_redeemability
+  · exact lean_has_bubbles
+  · exact lean_has_trust_bridges
+  · exact lean_has_headers
+  · exact lean_has_revocation
+  · exact lean_has_bank
+  · exact lean_has_redeemability
 
 /-- `LeanWorkingSystem` is partially well-formed at all constraints: stored
-    evidence fields â†” architectural features.
+    evidence fields ↔ architectural features.
 
     Applies `grounded_partial_wellformed`: any system built via
     `withGroundedBehavior`/`toSystemSpec` satisfies `PartialWellFormed W allConstraints`. -/
@@ -649,8 +653,8 @@ In Lean, a name like `add` lives in a namespace.  `Nat.add` and `Int.add`
 are both "add", but resolved in different namespaces.  When two compilation
 units open different namespaces:
 
-    -- Module A: `open Nat`  â†’ "add" means `Nat.add`
-    -- Module B: `open Int`  â†’ "add" means `Int.add`
+    -- Module A: `open Nat`  → "add" means `Nat.add`
+    -- Module B: `open Int`  → "add" means `Int.add`
 
 Each module has a different acceptance criterion for the unqualified name
 "add".  No single flat resolver can simultaneously agree with both.
@@ -661,15 +665,15 @@ We model Lean names as a two-constructor inductive reflecting a minimal
 namespace hierarchy: a qualified name belongs to one of two namespaces. -/
 
 /-- The namespace disagreement: two Lean compilation units disagree on
-    which `add` is canonical.  `natAdd` is the witness â€” accepted by the
+    which `add` is canonical.  `natAdd` is the witness — accepted by the
     `open Nat` module, rejected by the `open Int` module. -/
 def leanNamespaceDisagreement : AgentDisagreement where
   Claim           := LeanName
-  acceptâ‚         := openNatAccepts
-  acceptâ‚‚         := openIntAccepts
+  accept₁         := openNatAccepts
+  accept₂         := openIntAccepts
   witness         := .natAdd
   agent1_accepts  := trivial         -- openNatAccepts .natAdd = True
-  agent2_rejects  := id              -- openIntAccepts .natAdd = False; Â¬False = True
+  agent2_rejects  := id              -- openIntAccepts .natAdd = False; ¬False = True
 
 /-- **`flat_scope_impossible` fires on Lean's namespace structure.**
 
@@ -680,9 +684,9 @@ def leanNamespaceDisagreement : AgentDisagreement where
     Derived from `flat_scope_impossible` applied to `leanNamespaceDisagreement`:
     a flat (single-namespace) resolver is provably inadequate. -/
 theorem lean_namespace_requires_scope_separation :
-    Â¬âˆƒ (f : LeanName â†’ Prop),
-      (âˆ€ n, f n â†” openNatAccepts n) âˆ§
-      (âˆ€ n, f n â†” openIntAccepts n) :=
+    ¬∃ (f : LeanName → Prop),
+      (∀ n, f n ↔ openNatAccepts n) ∧
+      (∀ n, f n ↔ openIntAccepts n) :=
   flat_scope_impossible leanNamespaceDisagreement
 
 /-- `LeanWorkingSystem` carries the namespace disagreement data.
@@ -693,8 +697,8 @@ theorem lean_namespace_requires_scope_separation :
     it shows that a bubbleless `LeanWorkingSystem` would be self-contradictory. -/
 def lean_represents_disagreement : RepresentsDisagreement LeanWorkingSystem where
   Claim          := LeanName
-  acceptâ‚        := openNatAccepts
-  acceptâ‚‚        := openIntAccepts
+  accept₁        := openNatAccepts
+  accept₂        := openIntAccepts
   witness        := .natAdd
   agent1_accepts := trivial
   agent2_rejects := id
@@ -703,15 +707,15 @@ def lean_represents_disagreement : RepresentsDisagreement LeanWorkingSystem wher
     faithful to both namespace agents, the contradiction is immediate.
 
     This is the bridge impossibility applied to kernel data: `bridge_bubbles_impossible`
-    fires regardless of which system we consider â€” the flat-resolver commitment
+    fires regardless of which system we consider — the flat-resolver commitment
     is universally absurd, and `leanNamespaceDisagreement` supplies the
     concrete witness that makes it absurd for the Lean kernel specifically. -/
 theorem lean_no_flat_namespace_resolver
-    (f : LeanName â†’ Prop)
-    (hâ‚ : âˆ€ n, f n â†” openNatAccepts n)
-    (hâ‚‚ : âˆ€ n, f n â†” openIntAccepts n) :
+    (f : LeanName → Prop)
+    (h₁ : ∀ n, f n ↔ openNatAccepts n)
+    (h₂ : ∀ n, f n ↔ openIntAccepts n) :
     False :=
-  lean_namespace_requires_scope_separation âŸ¨f, hâ‚, hâ‚‚âŸ©
+  lean_namespace_requires_scope_separation ⟨f, h₁, h₂⟩
 
 
 /-! ## Single-Feature Grounded Spec (Stepping Stone)
@@ -724,7 +728,7 @@ before the full six-feature grounding was available. -/
 /-- A `SystemSpec` for the Lean kernel grounded in `LeanGroundedBubbles`.
 
     This is `LeanKernelSystemSpec` with `has_bubble_separation` set
-    *because* `LeanGroundedBubbles` was provided â€” not asserted manually.
+    *because* `LeanGroundedBubbles` was provided — not asserted manually.
     The other five fields are copied from `LeanKernelSystemSpec`. -/
 def LeanKernelSystemSpecGrounded : SystemSpec :=
   SystemSpec.withGroundedBubbles LeanGroundedBubbles LeanKernelSystemSpec
@@ -755,14 +759,14 @@ def lean_forcing_embedding : ForcingEmbedding LeanWorkingSystem where
     | .bank          => Or.inl lean_has_bank
     | .redeemability => Or.inl lean_has_redeemability
 
-/-- `LeanWorkingSystem` is structurally forced â€” derived from the
+/-- `LeanWorkingSystem` is structurally forced — derived from the
     forcing embedding via the generic translation layer. -/
 theorem lean_structurally_forced : StructurallyForced LeanWorkingSystem :=
   embedding_to_structurally_forced LeanWorkingSystem lean_forcing_embedding
 
 /-- `LeanWorkingSystem` contains Bank primitives.
 
-    Full chain: ForcingEmbedding â†’ StructurallyForced â†’ convergence.
+    Full chain: ForcingEmbedding → StructurallyForced → convergence.
     Self-referential: type-checked by the same kernel whose features populate
     `LeanKernelSystemSpec`. -/
 theorem lean_structural_convergence : containsBankPrimitives LeanWorkingSystem :=
@@ -782,67 +786,67 @@ def lean_grounded_consequences :=
     Citability anchor.  Two independent proofs are available in this file:
 
     - **Direct** (`lean_implements_bank_primitives`): via
-      `grounded_spec_contains_all LeanGroundedSystemSpec` â€” each `HasX`
+      `grounded_spec_contains_all LeanGroundedSystemSpec` — each `HasX`
       proof extracts the matching component of the conjunction; no Boolean
       flag is inspected directly.  Does not depend on the convergence theorem.
 
-    - **Structural** (`lean_structural_convergence`): by necessity â€” any
+    - **Structural** (`lean_structural_convergence`): by necessity — any
       system handling these six operational pressures must have the features.
-      Routes through `ForcingEmbedding â†’ StructurallyForced â†’
+      Routes through `ForcingEmbedding → StructurallyForced →
       convergence_structural`.
 
     This alias uses the direct route (`lean_implements_bank_primitives`). -/
 theorem lean_kernel_forces_bank_primitives : containsBankPrimitives LeanWorkingSystem :=
   lean_implements_bank_primitives
 
-/-- The Lean kernel satisfies all EpArch requirements â€” both layers.
+/-- The Lean kernel satisfies all EpArch requirements — both layers.
 
     **World layer** (`LeanKernelCtx`):
-    - `W_lies_possible`        â†” `sorry` mechanism
-    - `W_bounded_verification` â†” heartbeat budget
-    - `W_partial_observability`â†” proof irrelevance
+    - `W_lies_possible`        ↔ `sorry` mechanism
+    - `W_bounded_verification` ↔ heartbeat budget
+    - `W_partial_observability`↔ proof irrelevance
     - No obs-based ledger serves both innovation and coordination
       (`lean_kernel_no_tradeoff`)
 
     **Architecture layer** (`LeanWorkingSystem`):
-    - `PartialWellFormed W allConstraints` â€” all six behavioral â†” architectural biconditionals hold
-    - `containsBankPrimitives` â€” directly: all six `HasX` fields hold by construction;
+    - `PartialWellFormed W allConstraints` — all six behavioral ↔ architectural biconditionals hold
+    - `containsBankPrimitives` — directly: all six `HasX` fields hold by construction;
                                   separately: forced by `lean_structural_convergence`
-    - `StructurallyForced`     â€” six embedding arms all return `Or.inl`
-    - `SatisfiesAllProperties` â€” all six `handles_*` predicates hold via `Option *_ev.isSome = true`
+    - `StructurallyForced`     — six embedding arms all return `Or.inl`
+    - `SatisfiesAllProperties` — all six `handles_*` predicates hold via `Option *_ev.isSome = true`
 
     The proof is discharged by the kernel it models. -/
 theorem lean_kernel_existence :
-    (âˆƒ C : @EpArch.WorldCtx.{0},
-      Nonempty C.W_lies_possible âˆ§
-      Nonempty C.W_bounded_verification âˆ§
-      Nonempty C.W_partial_observability) âˆ§
-    (âˆƒ W : WorkingSystem,
-      PartialWellFormed W allConstraints âˆ§ StructurallyForced W âˆ§ SatisfiesAllProperties W âˆ§
+    (∃ C : @EpArch.WorldCtx.{0},
+      Nonempty C.W_lies_possible ∧
+      Nonempty C.W_bounded_verification ∧
+      Nonempty C.W_partial_observability) ∧
+    (∃ W : WorkingSystem,
+      PartialWellFormed W allConstraints ∧ StructurallyForced W ∧ SatisfiesAllProperties W ∧
       containsBankPrimitives W) :=
-  âŸ¨lean_is_eparch_world,
-   âŸ¨LeanWorkingSystem,
+  ⟨lean_is_eparch_world,
+   ⟨LeanWorkingSystem,
     lean_partial_wellformed,
     lean_structurally_forced,
     lean_satisfies_all_properties,
-    lean_implements_bank_primitivesâŸ©âŸ©
+    lean_implements_bank_primitives⟩⟩
 
 /-! ## Gettier / Safety / Sensitivity Witnesses
 
 `LeanKernelCtx` exhibits a concrete Gettier case.  With `World = Bool`:
 
-- `world := false` â€” sorry-tainted environment (P is not true here)
-- `P    := true`  â€” a claim that is true only in the clean environment
+- `world := false` — sorry-tainted environment (P is not true here)
+- `P    := true`  — a claim that is true only in the clean environment
 
 S and E both pass, but the truth-maker (`world = true`) and the actual world
 (`world = false`) are observationally identical (`obs _ = ()`), yet distinct.
-The `provenance_disconnected` field requires `Bool.noConfusion` â€” not trivial.
+The `provenance_disconnected` field requires `Bool.noConfusion` — not trivial.
 
 Safety / Sensitivity witnesses require `v_independent` / `e_covers` fields
-of type `âˆ€ w' : Bool, (w' = P) â†” (deposit_world = P)` (or the negation form).
+of type `∀ w' : Bool, (w' = P) ↔ (deposit_world = P)` (or the negation form).
 With a 2-element `Bool` universe, no choice of `P` and `deposit_world` satisfies
 this universally: if `deposit_world = P` the RHS is `True`, forcing `w' = P` for
-all `w'`; if `deposit_world â‰  P` the RHS is `False`, forcing `Â¬(w' = P)` for all
+all `w'`; if `deposit_world ≠ P` the RHS is `False`, forcing `¬(w' = P)` for all
 `w'`.  Both are false in a 2-element type.  A richer world type (e.g. a single-
 world `Unit` context or a multi-valued propositions lattice) is needed to witness
 these structures non-trivially.  Their theorems (`safety_ctx_V_link`,
@@ -852,7 +856,7 @@ rather than at this concrete instantiation. -/
 /-- Concrete Gettier case at `LeanKernelCtx`.
 
     `world = false` (sorry-tainted environment); `P = true` (a claim that is
-    provable â€” i.e., `Truth true true` â€” only in the clean environment).
+    provable — i.e., `Truth true true` — only in the clean environment).
     `Truth false true = (false = true) = False`, so the claim is not true in
     this world.  The clean environment (`true`) witnesses `P` and is
     observationally indistinguishable (`obs _ = ()`).
@@ -870,7 +874,7 @@ def leanKernelGettierCase : GettierCaseCtx LeanKernelCtx where
   provenance_disconnected := by
     intro w' h_truth _ h_eq
     -- h_truth : LeanKernelCtx.Truth w' true;  h_eq : w' = false
-    -- Rewrite w' â†’ false in h_truth; then Bool.noConfusion closes the goal
+    -- Rewrite w' → false in h_truth; then Bool.noConfusion closes the goal
     rw [h_eq] at h_truth
     exact Bool.noConfusion h_truth
 
@@ -878,7 +882,7 @@ def leanKernelGettierCase : GettierCaseCtx LeanKernelCtx where
     S and E pass by structural cert; the claim is false in `world = false`,
     and the clean environment `true` witnesses `P` while being obs-equivalent. -/
 theorem leanKernel_is_gettier : IsGettierCtx LeanKernelCtx leanKernelGettierCase :=
-  âŸ¨Bool.noConfusion, âŸ¨true, rfl, rflâŸ©âŸ©
+  ⟨Bool.noConfusion, ⟨true, rfl, rfl⟩⟩
 
 /-- The Gettier provenance gap at `LeanKernelCtx`.
 
@@ -887,19 +891,19 @@ theorem leanKernel_is_gettier : IsGettierCtx LeanKernelCtx leanKernelGettierCase
     (2) is observationally equivalent to `world = false`,
     (3) is distinct from `world`.
     Proved by applying the generic `gettier_ctx_exhibits_provenance_gap` to the
-    concrete witness â€” the non-trivial path through `provenance_disconnected`. -/
+    concrete witness — the non-trivial path through `provenance_disconnected`. -/
 theorem leanKernel_gettier_gap :
-    âˆƒ w' : LeanKernelCtx.World,
-      LeanKernelCtx.Truth w' leanKernelGettierCase.P âˆ§
-      LeanKernelCtx.obs w' = LeanKernelCtx.obs leanKernelGettierCase.world âˆ§
-      w' â‰  leanKernelGettierCase.world :=
+    ∃ w' : LeanKernelCtx.World,
+      LeanKernelCtx.Truth w' leanKernelGettierCase.P ∧
+      LeanKernelCtx.obs w' = LeanKernelCtx.obs leanKernelGettierCase.world ∧
+      w' ≠ leanKernelGettierCase.world :=
   gettier_ctx_exhibits_provenance_gap LeanKernelCtx leanKernelGettierCase leanKernel_is_gettier
 
 /-! ## .olean Cache: Deposit Staleness at the Bank-Primitive Level
 
 The Lean build system's cache invalidation is the deposit staleness lifecycle
 from `ConcreteLedgerModel` concretely instantiated: a compiled `.olean` is a
-deposit whose Ï„ is the source epoch at compilation; `compute_status` returns
+deposit whose τ is the source epoch at compilation; `compute_status` returns
 `.Stale` once the source advances past that epoch; a stale artifact blocks
 withdrawal (use). -/
 
@@ -908,40 +912,40 @@ open EpArch.ConcreteModel
 
 /-- An `.olean` record: epoch the artifact was compiled at, epoch last refreshed. -/
 structure OleanRecord where
-  /-- Source epoch at compilation time â€” the Ï„ field of the deposit. -/
+  /-- Source epoch at compilation time — the τ field of the deposit. -/
   compiled_at : CTime
   /-- Epoch of the last successful `lake build` refresh. -/
   last_refreshed : CTime
 
 /-- The `.olean` as a `CDeposit`.
-    Ï„ = `compiled_at`: current while source is unchanged; expired once
+    τ = `compiled_at`: current while source is unchanged; expired once
     the source epoch advances past it. -/
 def olean_as_deposit (r : OleanRecord) (path : CProp) : CDeposit :=
   { claim := path
     S     := 1                   -- CStandard = Nat; 1 = kernel type-check passes
     E     := []                  -- CErrorModel = List String; no known failures at compile time
     V     := ["lean-kernel"]
-    Ï„     := r.compiled_at
+    τ     := r.compiled_at
     cs    := { domain := "lean-cache", test_procedure := "lake build" } }
 
-/-- Source change = staleness: source epoch has advanced past Ï„. -/
+/-- Source change = staleness: source epoch has advanced past τ. -/
 def source_changed (current_epoch : CTime) (r : OleanRecord) : Prop :=
   r.compiled_at < current_epoch
 
 /-- A changed source makes `compute_status = .Stale`.
-    First branch (Ï„ = 0) is excluded by `hÏ„`; second branch fires because
-    Ï„ = compiled_at â‰¤ current_epoch (from `source_changed`). -/
+    First branch (τ = 0) is excluded by `hτ`; second branch fires because
+    τ = compiled_at ≤ current_epoch (from `source_changed`). -/
 theorem olean_stale_when_source_changed (r : OleanRecord) (path : CProp)
     (current_epoch : CTime)
-    (hÏ„ : 0 < r.compiled_at)
+    (hτ : 0 < r.compiled_at)
     (hchg : source_changed current_epoch r) :
     compute_status (olean_as_deposit r path) current_epoch = .Stale := by
   simp only [source_changed] at hchg
   simp only [compute_status, olean_as_deposit]
   by_cases h1 : r.compiled_at = 0
-  Â· simp_all
-  Â· rw [if_neg h1]
-    have h2 : r.compiled_at â‰¤ current_epoch := Nat.le_of_lt hchg
+  · simp_all
+  · rw [if_neg h1]
+    have h2 : r.compiled_at ≤ current_epoch := Nat.le_of_lt hchg
     rw [if_pos h2]
 
 /-- Stale `.olean` blocks withdrawal.
@@ -949,12 +953,12 @@ theorem olean_stale_when_source_changed (r : OleanRecord) (path : CProp)
     that check before ACL or membership are reached. -/
 theorem stale_olean_blocks_withdrawal (r : OleanRecord) (path : CProp)
     (current_epoch : CTime) (acl : CACL) (agent : CAgent) (bubble : CBubble)
-    (hÏ„ : 0 < r.compiled_at)
+    (hτ : 0 < r.compiled_at)
     (hchg : source_changed current_epoch r) :
-    Â¬ c_can_withdraw acl agent bubble (olean_as_deposit r path) current_epoch := by
+    ¬ c_can_withdraw acl agent bubble (olean_as_deposit r path) current_epoch := by
   simp only [c_can_withdraw]
-  intro âŸ¨_, h_status, _âŸ©
-  rw [olean_stale_when_source_changed r path current_epoch hÏ„ hchg] at h_status
+  intro ⟨_, h_status, _⟩
+  rw [olean_stale_when_source_changed r path current_epoch hτ hchg] at h_status
   exact absurd h_status (by decide)
 
 end OleanStaleness
