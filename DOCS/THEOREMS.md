@@ -515,7 +515,7 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 | `grounded_behavior_satisfies_all` | Minimality.lean | `∀ B W, SatisfiesAllProperties (withGroundedBehavior B W)` | Behavioral flags → all six `handles_*` predicates |
 | `grounded_partial_wellformed` | Minimality.lean | `∀ B G, PartialWellFormed (withGroundedBehavior B {spec := G.toSystemSpec, …}) allConstraints` | Behavioral + spec evidence → full biconditional closure |
 
-**Usage pattern:** supply `GroundedBehavior` + `GroundedSystemSpec` → get `PartialWellFormed W allConstraints` + `SatisfiesAllProperties W` in one call. See `lean_partial_wellformed` / `lean_satisfies_all_properties` in `Meta/LeanKernelModel.lean` for the self-referential instantiation.
+**Usage pattern:** supply `GroundedBehavior` + `GroundedSystemSpec` → get `PartialWellFormed W allConstraints` + `SatisfiesAllProperties W` in one call. See `lean_partial_wellformed` / `lean_satisfies_all_properties` in `Meta/LeanKernel/World.lean` for the self-referential instantiation.
 
 ---
 
@@ -1497,11 +1497,11 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 
 ---
 
-## Bucket 29: Lean Kernel Instantiation (Meta/LeanKernelModel.lean)
+## Bucket 29: Lean Kernel Instantiation (Meta/LeanKernel/)
 
 **Role:** Self-referential demonstration that Lean's own type-checking kernel is a valid, fully-grounded EpArch instantiation. Two layers are proved: (1) `LeanKernelCtx : WorldCtx` satisfies three W_* world-assumption bundles with kernel-specific interpretations (`sorry` ↔ lies, heartbeat ↔ bounded verification, proof irrelevance ↔ partial observability); (2) `LeanWorkingSystem : WorkingSystem` satisfies all six architectural features, `PartialWellFormed allConstraints`, and `containsBankPrimitives` — both by direct construction and by the structural convergence path. Self-referential note: this file is type-checked by the same kernel it models.
 
-**File:** `Meta/LeanKernelModel.lean`
+**Files:** `Meta/LeanKernel/World.lean` (world + architecture layers, OleanStaleness), `Meta/LeanKernel/SFailure.lean` (S-field failure taxonomy)
 
 ### World Layer (LeanKernelCtx — WorldCtx Instantiation)
 

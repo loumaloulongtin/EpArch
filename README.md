@@ -153,7 +153,8 @@ The framework has three layers:
 | `Meta/Modular.lean` | Constraint-subset modularity: `PartialWellFormed`, `modular` (∀ S ⊆ constraints, biconditional fragment → forcing projection), `allConstraints`/`noConstraints` |
 | `Meta/ClusterRegistry.lean` | 29-cluster tag registry: `ClusterTag`, `EnabledXxxCluster` inductives, per-family canonical lists, `clusterEnabled`/`clusterDescription` routing |
 | `Meta/Config.lean` | Configurable certification engine: `CertifiedProjection`, `certify`, named proof witnesses for all 29 clusters |
-| `Meta/LeanKernelModel.lean` | Lean kernel self-application: `LeanKernelCtx` (world layer), `LeanWorkingSystem` (architecture layer), 30 theorems proving the Lean kernel is EpArch-compliant; the convergence chain closes with `lean_structural_convergence` (direct route: `lean_implements_bank_primitives`) |
+| `Meta/LeanKernel/World.lean` | Lean kernel self-application — world layer (`LeanKernelCtx`, bundle witnesses, Gettier), architecture layer (`LeanWorkingSystem`, HasX proofs, convergence chain), and OleanStaleness deposit witness; 30 theorems proving the Lean kernel is EpArch-compliant |
+| `Meta/LeanKernel/SFailure.lean` | Lean kernel S-field failure taxonomy: `LeanAxiomLevel`, `ElabMode`, `LeanStandardCase`, `LeanVacuousStandard`, relational vs. absolute S-failure theorems |
 
 ### Safety and Scope
 

@@ -498,13 +498,14 @@ projection_valid S W           -- forcing theorems certified ✓
 
 ### Full Example
 
-`EpArch/Meta/LeanKernelModel.lean` is the full research-level instantiation showing all six
+`EpArch/Meta/LeanKernel/World.lean` is the full research-level instantiation showing all six
 constraints simultaneously, plus the world layer (`LeanKernelCtx`), structural impossibility
 theorems, and the convergence chain. It is not intended as a copy-paste template — it is the
 proof that the Lean kernel itself is EpArch-compliant, and was built to discover and fix the
 flag-bag soundness gap that motivated the `GroundedX` / `PartialGroundedSpec` API.
+The S-failure taxonomy (axiom-footprint failure modes) lives in `EpArch/Meta/LeanKernel/SFailure.lean`.
 
-For a new product, start with `PartialGroundedSpec` — not `LeanKernelModel.lean`.
+For a new product, start with `PartialGroundedSpec` — not `LeanKernel/World.lean`.
 
 **Mechanism:** None needed. `structural_theorems_unconditional` packages all four as a
 machine-checked conjunction to formally certify the "no transport needed" status.

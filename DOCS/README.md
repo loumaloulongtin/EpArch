@@ -98,7 +98,8 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | `Convergence.lean` | `StructurallyForced`, `ForcingEmbedding`, `convergence_structural`, bridge predicates | 0 |
 | `BehavioralEquivalence.lean` | Observation-boundary equivalence; `Behavior` takes `GroundedBehavior`, step-grounded for withdraw/challenge/tick | 0 |
 | `ConcreteLedgerModel.lean` | Non-vacuity witness (constructive) | 0 |
-| `Meta/LeanKernelModel.lean` | Lean kernel self-application: `LeanKernelCtx`, `LeanWorkingSystem`, world-layer witnesses, architecture-layer proofs, convergence chain | 0 |
+| `Meta/LeanKernel/World.lean` | Lean kernel self-application: `LeanKernelCtx`, `LeanWorkingSystem`, world-layer witnesses, architecture-layer proofs, convergence chain, OleanStaleness | 0 |
+| `Meta/LeanKernel/SFailure.lean` | Lean kernel S-field failure taxonomy: axiom levels, standard/vacuous cases, relational vs. absolute failure | 0 |
 
 ## Build & Verification
 
