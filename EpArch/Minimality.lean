@@ -29,7 +29,7 @@ these structural elements, but implementations can differ.
 
 ## Related Files
 
-- **BehavioralEquivalence.lean:** sharp observation-boundary equivalence theorems
+- **Theorems/BehavioralEquivalence.lean:** sharp observation-boundary equivalence theorems
   (`Input`, `Observation`, `Behavior`, `BehaviorallyEquivalent`, equivalence theorems)
 - **Convergence.lean:** `StructurallyForced`, `ForcingEmbedding`, Bridge predicates,
   Scenario predicates, `convergence_structural`, `structural_impossibility`

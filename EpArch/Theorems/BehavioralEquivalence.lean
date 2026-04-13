@@ -1,5 +1,5 @@
 /-
-EpArch/BehavioralEquivalence.lean — Observation-Boundary Equivalence
+EpArch/Theorems/BehavioralEquivalence.lean — Observation-Boundary Equivalence
 
 Defines the abstract input/observation interface for WorkingSystems and
 proves that any two grounded systems produce identical observations on all inputs.

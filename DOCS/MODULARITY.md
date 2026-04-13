@@ -81,7 +81,7 @@ does what prevents confusion about where to look and where to edit.
 - `Minimality.lean` — Tier 2 six individual lifting theorems.
 - `Convergence.lean` — `StructurallyForced`, `convergence_structural`, impossibility models, §1b–§6b alternative dismissals; six per-dimension `*_forces_*` theorems; `SystemOperationalBundle W` and `WorldBridgeBundle W` record structures.
 - `Feasibility.lean` — `grounded_world_and_structure_force_bank_primitives` (explicit `Represents*` witnesses, no `WorldCtx`); `bundled_structure_forces_bank_primitives` (headline 4-argument form).
-- `BehavioralEquivalence.lean` — `GroundedBehavior`-indexed behavioral-equivalence results; step-bridge section grounds withdraw/challenge/tick via `ReadyState` witnesses and `behavior_from_step`.
+- `Theorems/BehavioralEquivalence.lean` — `GroundedBehavior`-indexed behavioral-equivalence results; step-bridge section grounds withdraw/challenge/tick via `ReadyState` witnesses and `behavior_from_step`.
 - `Health.lean`, `Meta/TheoremTransport.lean` — Tier 3 goal predicates and transport.
 - `Commitments.lean`, `Theorems/` (8 sub-modules), `Diagnosability.lean`, `Agent/*.lean`,
   `Invariants.lean`, `ScopeIrrelevance.lean`, `Predictions.lean`, `WorkedTraces.lean` — Tier 4.

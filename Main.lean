@@ -142,7 +142,7 @@ import EpArch.Theorems.Pathologies
 import EpArch.Theorems.Strip
 import EpArch.Theorems.Corners
 import EpArch.Minimality
-import EpArch.BehavioralEquivalence
+import EpArch.Theorems.BehavioralEquivalence
 import EpArch.Convergence
 import EpArch.Adversarial.Base  -- Base types/structures (no axioms)
 import EpArch.Invariants

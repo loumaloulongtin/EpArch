@@ -519,7 +519,7 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 
 ---
 
-## Bucket 9c: Observation-Boundary Equivalence (BehavioralEquivalence.lean)
+## Bucket 9c: Observation-Boundary Equivalence (Theorems/BehavioralEquivalence.lean)
 
 **Role:** Proves that any two `GroundedBehavior` certificates produce identical observations on all inputs. `Behavior B i` is determined solely by the input constructor — not by the structural content of `B`. The step-bridge section operationally grounds this: for withdraw, challenge, and tick inputs, a concrete `Step` is constructed from `B`'s evidence (`bank`, `trust_bridges`, `revocation`) and structurally consumed via `cases h`, so the equality is derived *through* an actual firing. Export falls back to definitional equality because `header_preserved` is opaque and cannot be reflected into a concrete `depositHasHeader` for the unit-type instantiation.
 
