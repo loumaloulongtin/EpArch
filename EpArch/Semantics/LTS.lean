@@ -55,10 +55,6 @@ inductive Trace (L : LTS State Action) : State → State → Prop where
 def Reaches (L : LTS State Action) (s s' : State) : Prop :=
   Trace L s s'
 
-/-- The set of all states reachable from a given state. -/
-def TracesFrom (L : LTS State Action) (s : State) (s' : State) : Prop :=
-  Reaches L s s'
-
 /-! ## Safety Properties
 
 Safety = "bad things don't happen"
@@ -69,11 +65,6 @@ by all possible transitions (downward closed under reachability).
 /-- A predicate P is an invariant if Step preserves it. -/
 def IsInvariant (L : LTS State Action) (P : State → Prop) : Prop :=
   ∀ s a s', P s → L.Step s a s' → P s'
-
-/-- A safety property: invariant under all transitions. -/
-structure SafetyProperty (L : LTS State Action) where
-  P : State → Prop
-  invariant : IsInvariant L P
 
 /-- Invariants are preserved along traces (induction on trace). -/
 theorem invariant_preserved_along_trace
@@ -143,30 +134,7 @@ theorem safety_preserved_under_refinement
   have h_l1_step : L₁.Step (R.φ s₂) (R.ψ a) (R.φ s₂') := R.simulation _ _ _ h_step
   exact h_inv _ _ _ h_ps₂ h_l1_step
 
-/-! ## Bisimulation (Optional - for Compatibility)
-
-Full semantic equivalence: forward AND backward simulation.
-Used for Compatible extensions (not just refinement).
--/
-
-/-- Bisimulation: mutual simulation between L₁ and L₂.
-
-    This is stronger than refinement: both LTSs have "the same" traces
-    up to state correspondence. -/
-structure Bisimulation
-    {State₁ : Type u} {Action₁ : Type v}
-    {State₂ : Type u} {Action₂ : Type v}
-    (L₁ : LTS State₁ Action₁) (L₂ : LTS State₂ Action₂) extends Refinement L₁ L₂ where
-  /-- Inverse state map for completeness -/
-  φ_inv : State₁ → State₂
-  /-- φ_inv is left inverse of φ -/
-  left_inv : ∀ s₁, φ (φ_inv s₁) = s₁
-  /-- Completeness: L₁ steps lift to L₂ steps. -/
-  completeness : ∀ s₁ a s₁',
-    L₁.Step s₁ a s₁' →
-    ∃ a₂, L₂.Step (φ_inv s₁) a₂ (φ_inv s₁')
-
-/-! ## Core Semantics = StepSemantics
+/-! ## Core Semantics = Semantics/StepSemantics
 
 The canonical LTS for EpArch is defined in Semantics/StepSemantics.lean.
 RevisionSafety uses these definitions to establish revision safety

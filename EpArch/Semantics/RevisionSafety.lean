@@ -2,9 +2,8 @@
 EpArch/Semantics/RevisionSafety.lean — Revision Safety Meta-Theorems
 
 This module provides meta-theorems guaranteeing that:
-1. Adding constraints doesn't invalidate existing implications
-2. Extensions preserve the revision gate via forgetful projection
-3. Compatible extensions don't silently drift semantics
+1. Extensions preserve the revision gate via forgetful projection
+2. Compatible extensions don't silently drift semantics
 
 ## Key Properties
 
@@ -27,39 +26,6 @@ import EpArch.Semantics.LTS
 namespace EpArch.RevisionSafety
 
 universe u
-
-/-! ## Premise Strengthening (Assumption Monotonicity)
-
-If `A → Claim` then `(A ∧ B) → Claim`.
-
-This is trivially true but worth stating explicitly:
-adding extra constraints cannot invalidate implication theorems,
-it only narrows their applicability.
--/
-
-/-- Premise strengthening: adding constraints preserves implications.
-
-    If a claim follows from assumption A, it also follows from A ∧ B.
-    This is the fundamental revision-safety property. -/
-theorem premise_strengthening {A B Claim : Prop} :
-    (A → Claim) → ((A ∧ B) → Claim) := by
-  intro h_impl ⟨h_A, _⟩
-  exact h_impl h_A
-
-/-- Premise strengthening for dependent props.
-
-    More general version for type-indexed claims. -/
-theorem premise_strengthening_dep {α : Type u} {A B : α → Prop} {Claim : Prop} :
-    (∀ x, A x → Claim) → (∀ x, A x ∧ B x → Claim) := by
-  intro h_impl x ⟨h_A, _⟩
-  exact h_impl x h_A
-
-/-- Chained strengthening: can add multiple constraints. -/
-theorem premise_chain {A B C Claim : Prop} :
-    (A → Claim) → ((A ∧ B ∧ C) → Claim) := by
-  intro h_impl ⟨h_A, _, _⟩
-  exact h_impl h_A
-
 
 /-! ## Core Signature
 
@@ -344,42 +310,6 @@ theorem safe_extension_preserves (C : CoreModel) (R : RevisionSafeExtension C) :
   transport_core R.ext C R.compat
 
 
-/-! ## Refinement Preservation
-
-Safety properties are preserved under refinement.
-This is proved in LTS.lean using trace semantics.
--/
-
-/-- Refinement relation for CoreModels via LTS semantics.
-
-    R refines C if R has fewer behaviors than C (trace inclusion).
-    This is expressed via an LTS.Refinement between their operational semantics. -/
-structure RefinesWith (R C : CoreModel) where
-  /-- State type for both LTSs -/
-  StateType : Type u
-  /-- Action type for both LTSs -/
-  ActionType : Type u
-  /-- LTS for the core model -/
-  core_lts : LTS.LTS StateType ActionType
-  /-- LTS for the refined model -/
-  refined_lts : LTS.LTS StateType ActionType
-  /-- Refinement witness -/
-  refinement : LTS.Refinement core_lts refined_lts
-
-/-- Safety properties are preserved under refinement.
-
-    **KEY THEOREM**: Proved using LTS.safety_preserved_under_refinement.
-
-    If C satisfies a safety property (invariant under transitions) and R refines C,
-    then R satisfies the same property (pulled back via the refinement map). -/
-theorem safety_preserved_under_contract_refinement {R C : CoreModel}
-    (h_refines : RefinesWith R C)
-    {Safety : h_refines.StateType → Prop}
-    (h_invariant : LTS.IsInvariant h_refines.core_lts Safety) :
-    LTS.IsInvariant h_refines.refined_lts (Safety ∘ h_refines.refinement.φ) :=
-  LTS.safety_preserved_under_refinement h_refines.refinement h_invariant
-
-
 /-! ## Acceptance Tests
 
 These examples demonstrate that Compatible is a REAL constraint:
@@ -517,25 +447,19 @@ end AcceptanceTests
 
 /-! ## Summary: Revision Safety Guarantees
 
-1. **Premise Strengthening**: `premise_strengthening`
-   - Adding assumptions never breaks existing implications
-
-2. **RevisionGate**: NOT `True` — real predicate on CoreModel
+1. **RevisionGate**: NOT `True` — real predicate on CoreModel
    - Competition gate must hold
 
-3. **Compatible**: NOT type equality — semantic commuting laws
+2. **Compatible**: NOT type equality — semantic commuting laws
    - Operations must commute with projection maps
    - **Acceptance tests prove**: bad extensions FAIL Compatible
 
-4. **Transport**: `transport_core`
+3. **Transport**: `transport_core`
    - Compatible extensions preserve the revision gate
    - **Real proof**: uses commuting laws, not record equality
 
-5. **Safe Extension**: `safe_extension_preserves`
+4. **Safe Extension**: `safe_extension_preserves`
    - Revision-safe extensions preserve the revision gate
-
-6. **Refinement**: `safety_preserved_under_contract_refinement`
-   - Safety properties preserved under trace refinement
 
 These guarantees answer: "Will later constraints break this?" with a Lean theorem.
 -/
