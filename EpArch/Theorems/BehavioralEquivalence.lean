@@ -59,6 +59,34 @@ type checker enforces.
 - `grounded_behaviors_equivalent` — same result, no Step witnesses; shows the equivalence is
                                  input-determined regardless of which evidence route is taken
 
+## Extension Model
+
+`GroundedBehavior` is intentionally domain-agnostic.  Its fields (`bank`,
+`trust_bridges`, `revocation`, …) carry abstract type parameters — `Entry`,
+`Claim`, `Clause`, etc. — that a domain fills in with its own types:
+
+    EV charging    → GroundedBank.Entry = ChargingSession
+    Finance        → GroundedBank.Entry = SettlementRecord
+    Lean kernel    → GroundedBank.Entry = LeanEnvEntry   (see Meta/LeanKernel/World.lean)
+
+Any domain that instantiates `GroundedBehavior` with its own types immediately
+inherits `working_systems_equivalent`: any two implementations holding the
+certificate agree at the observation boundary, regardless of internal design.
+
+The `let _ :=` lines in `withdraw_ready_state` / `challenge_ready_state` are
+the deliberate extension hooks.  At this layer they confirm only that the
+certificate fields typecheck — presence, not quality.  A domain taking
+correctness seriously replaces them with substantive obligations: proving their
+concrete types flow through the step machinery in a domain-meaningful way.
+That is the upgrade path from "typechecks against EpArch's signatures" to
+"mechanically grounded in domain evidence", taken per domain rather than in
+the abstract kernel.
+
+This is not a certification shortcut.  The kernel deliberately stops at the
+observation boundary: it enforces the mechanism signatures and the output
+contract; it does not and cannot enforce whether a domain's design is good.
+That judgment belongs to the domain instantiator.
+
 ## Dependencies
 
 - **Minimality.lean:** WorkingSystem, SatisfiesAllProperties, GroundedBehavior

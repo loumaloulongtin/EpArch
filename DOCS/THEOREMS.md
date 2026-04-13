@@ -521,7 +521,11 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 
 ## Bucket 9c: Observation-Boundary Equivalence (Theorems/BehavioralEquivalence.lean)
 
-**Role:** Proves that any two `GroundedBehavior` certificates produce identical observations on all inputs. `Behavior B i` is determined solely by the input constructor — not by the structural content of `B`. The step-bridge section operationally grounds this: for withdraw, challenge, and tick inputs, a concrete `Step` is constructed from `B`'s evidence (`bank`, `trust_bridges`, `revocation`) and structurally consumed via `cases h`, so the equality is derived *through* an actual firing. Export falls back to definitional equality because `header_preserved` is opaque and cannot be reflected into a concrete `depositHasHeader` for the unit-type instantiation.
+**Role:** Proves that any two `GroundedBehavior` certificates produce identical observations on all inputs. `Behavior B i` is determined solely by the input constructor — not by the structural content of `B`. The step-bridge section operationally grounds this: for withdraw, challenge, and tick inputs, a concrete `Step` is constructed at Unit types and structurally consumed via `cases h`, so the equality is derived *through* an actual firing. Export falls back to definitional equality because `header_preserved` is opaque and cannot be reflected into a concrete `depositHasHeader` for the unit-type instantiation.
+
+**Certificate semantics:** `GroundedBehavior` is intentionally domain-agnostic — its fields carry abstract type parameters (`Entry`, `Claim`, etc.) that a domain fills in with its own types. `B` is a type-level certificate confirming the caller's features typecheck against EpArch's mechanism signatures; it does not construct the `CState` and does not guarantee design quality. The `let _ :=` lines in the ready-state builders confirm certificate field presence only. A domain instantiator (EV charging, finance, Lean kernel) that wants mechanically grounded evidence replaces those lines with substantive obligations over their own types. The kernel enforces the observation boundary contract; domain correctness is the instantiator's responsibility.
+
+**Extension model:** Any domain that provides a `GroundedBehavior` instantiation immediately inherits `working_systems_equivalent` — any two implementations holding the certificate agree at the observation boundary, regardless of internal design. See `Meta/LeanKernel/World.lean` (`LeanGroundedBehavior`) for the reference instantiation.
 
 ### Definitions
 
@@ -532,8 +536,8 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 - `input_to_action` — maps `Input` to the matching concrete `StepSemantics.Action`
 - `observe_step_action` — extracts an `Observation` from a concrete action
 - `ReadyState i` — a `CState` + proof that `Step` fires for `input_to_action i`
-- `withdraw_ready_state B a b d` — constructs `ReadyState` from `B.bank`/`B.trust_bridges`
-- `challenge_ready_state B c f` — constructs `ReadyState` from `B.revocation`
+- `withdraw_ready_state B a b d` — constructs `ReadyState` at Unit types; `B` is the type-level certificate
+- `challenge_ready_state B c f` — constructs `ReadyState` at Unit types; `B` is the type-level certificate
 
 ### Theorems
 
