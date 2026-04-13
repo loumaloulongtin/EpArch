@@ -124,7 +124,7 @@ The lifecycle operators (`Validate_B`, `Accept_B`, `Challenge_B`, `Repair_B`,
 `Revoke_B`, `Restore_B`, `Export_B_C`, `Import_C`, `repair`, `τ_refresh`,
 `deprecate`) and their status postcondition theorems are now concrete
 guarded struct-update definitions. Each operator is grounded in
-`StepSemantics.lean` and witnessed by `ConcreteLedgerModel.lean`.
+`StepSemantics.lean` and witnessed by `EpArch/Concrete/`.
 
 `knowledge_B` is a `def` (= `hasDeposit`); `KnowledgeIffDeposited` proved by `Iff.rfl`.
 `deposited` and `hasDeposit` are now **`def`s** grounded in `DepositStatus` fields (not opaque):
@@ -175,5 +175,5 @@ only theorems, definitions, and opaque constants.
 | `Invariants.lean` | Grounded operational invariants |
 | `StepSemantics.lean` | Concrete step semantics |
 | `Theorems/` | Derived theorems (8 sub-modules) |
-| `ConcreteLedgerModel.lean` | Constructive concrete model |
+| `EpArch/Concrete/` | Constructive concrete model (5 modules: Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity) |
 | All others | Theorem-bearing or definitional surfaces only |

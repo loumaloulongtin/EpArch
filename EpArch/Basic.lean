@@ -34,8 +34,7 @@ knowledge is public authorization.
 All base types are minimal Nat-indexed inductives. This gives every type
 a canonical inhabitant (e.g., `Bubble.mk 0`), `DecidableEq`, and `Repr`
 without existence axioms — enabling fully constructive witnesses in
-`ConcreteLedgerModel`. The wrappers carry no payload beyond their index;
-semantics live in the structures and theorems that use them.
+`EpArch/Concrete/`.
 
 ## File Dependencies
 

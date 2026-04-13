@@ -1086,8 +1086,8 @@ File: `Agent/Imposition.lean`
 | `commitments_feasible` | Feasibility.lean | 8 commitments satisfiable | Model non-vacuity |
 | `joint_feasible` | Feasibility.lean | Constraints + objectives jointly satisfiable | Non-vacuity |
 | `all_bundles_satisfiable` | WorldWitness.lean | W_* bundles jointly satisfiable | World witness |
-| `all_commitments_satisfiable` | ConcreteLedgerModel.lean | 8 commitments have witnesses | Commitment witness |
-| `concrete_satisfies_all_properties` | ConcreteLedgerModel.lean | ConcreteWorkingSystem satisfies all properties | Witness for success |
+| `all_commitments_satisfiable` | Concrete/Commitments.lean | 8 commitments have witnesses | Commitment witness |
+| `concrete_satisfies_all_properties` | Concrete/WorkingSystem.lean | ConcreteWorkingSystem satisfies all properties | Witness for success |
 
 ### Supporting Structures
 

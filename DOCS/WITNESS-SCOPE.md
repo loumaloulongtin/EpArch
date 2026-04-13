@@ -1,6 +1,6 @@
-# Witness Scope: What `ConcreteLedgerModel.lean` Establishes
+# Witness Scope: What `EpArch/Concrete/` Establishes
 
-This document specifies what is **directly witnessed by `ConcreteLedgerModel.lean`**, what is **proved elsewhere in the repo**, and what is **out of scope**.
+This document specifies what is **directly witnessed by the `EpArch/Concrete/` modules** (formerly `ConcreteLedgerModel.lean`, now split into five files), what is **proved elsewhere in the repo**, and what is **out of scope**.
 
 Its job is narrow:
 
@@ -9,9 +9,9 @@ Its job is narrow:
 
 ---
 
-## What "Witnessed by `ConcreteLedgerModel.lean`" Means
+## What "Witnessed by `EpArch/Concrete/`" Means
 
-A property is **witnessed here** if `ConcreteLedgerModel.lean` contains a proof that a **concrete instantiation** satisfies it.
+A property is **witnessed here** if one of the `EpArch/Concrete/` modules contains a proof that a **concrete instantiation** satisfies it.
 
 That buys three things:
 
@@ -29,9 +29,11 @@ What it does **not** buy by itself:
 
 ---
 
-## Directly Witnessed in `ConcreteLedgerModel.lean`
+## Directly Witnessed in `EpArch/Concrete/`
 
 These are concrete-instance results, not merely abstract theorems.
+They are split across five modules: `Concrete/Types.lean`, `Concrete/Commitments.lean`,
+`Concrete/WorkingSystem.lean`, `Concrete/DeficientSystems.lean`, `Concrete/NonVacuity.lean`.
 
 | Property | Theorem |
 |----------|---------|
@@ -145,8 +147,10 @@ For those, consult:
 ## Audit Commands
 
 ```powershell
-# List concrete witness theorems
-Select-String -Path "EpArch/ConcreteLedgerModel.lean" -Pattern "theorem concrete_"
+# List concrete witness theorems (now split across Concrete/ modules)
+Get-ChildItem -Path "EpArch/Concrete/" -Filter "*.lean" | ForEach-Object {
+    Select-String -Path $_.FullName -Pattern "theorem concrete_"
+}
 
 # Check the packaged repo-level existence theorem
 Select-String -Path "EpArch/Feasibility.lean" -Pattern "existence_under_constraints"

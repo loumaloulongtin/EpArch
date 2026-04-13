@@ -64,7 +64,11 @@ would require importing the kernel's own implementation as a Lean library).
 -/
 
 import EpArch.WorldCtx
-import EpArch.ConcreteLedgerModel
+import EpArch.Concrete.Types
+import EpArch.SystemSpec
+import EpArch.Minimality
+import EpArch.Convergence
+import EpArch.Theorems.Modal
 import EpArch.Meta.FalsifiableNotAuthorizable
 
 namespace EpArch.LeanKernelModel
@@ -902,7 +906,7 @@ theorem leanKernel_gettier_gap :
 /-! ## .olean Cache: Deposit Staleness at the Bank-Primitive Level
 
 The Lean build system's cache invalidation is the deposit staleness lifecycle
-from `ConcreteLedgerModel` concretely instantiated: a compiled `.olean` is a
+from `EpArch/Concrete/Types.lean` concretely instantiated: a compiled `.olean` is a
 deposit whose τ is the source epoch at compilation; `compute_status` returns
 `.Stale` once the source advances past that epoch; a stale artifact blocks
 withdrawal (use). -/

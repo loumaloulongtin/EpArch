@@ -150,7 +150,11 @@ import EpArch.WorkedTraces
 import EpArch.Predictions
 import EpArch.StepSemantics
 import EpArch.Diagnosability  -- principled observability
-import EpArch.ConcreteLedgerModel  -- Full model now compiles
+import EpArch.Concrete.Types
+import EpArch.Concrete.Commitments
+import EpArch.Concrete.WorkingSystem
+import EpArch.Concrete.DeficientSystems
+import EpArch.Concrete.NonVacuity
 import EpArch.World  -- World layer for obligation theorems
 import EpArch.WorldWitness  -- Non-vacuity witness for world bundles
 import EpArch.Adversarial.Obligations  -- Adversarial axioms → obligation theorems

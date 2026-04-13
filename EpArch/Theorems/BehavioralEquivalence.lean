@@ -103,7 +103,7 @@ namespace EpArch
 /-! ### Input Events -/
 
 /-- Abstract input events a WorkingSystem can receive.
-    Analogues of CInputEvent in ConcreteLedgerModel.lean. -/
+    Analogues of CInputEvent in EpArch/Concrete/WorkingSystem.lean. -/
 inductive Input where
   /-- Request to withdraw/rely on a deposit. -/
   | WithdrawRequest (agent_id : Nat) (bubble_id : Nat) (claim_id : Nat)
@@ -118,7 +118,7 @@ inductive Input where
 /-! ### Observable Outcomes -/
 
 /-- Observable outcomes from processing inputs.
-    Analogues of COutcome in ConcreteLedgerModel.lean. -/
+    Analogues of COutcome in EpArch/Concrete/WorkingSystem.lean. -/
 inductive Observation where
   /-- Withdrawal succeeded. -/
   | WithdrawSuccess (claim_id : Nat)

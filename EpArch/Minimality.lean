@@ -38,7 +38,7 @@ these structural elements, but implementations can differ.
 
 - **SystemSpec.lean:** provides the `SystemSpec` structure that `MinimalConstraints` wraps
 - **Commitments.lean:** the commitments that are shown to be forced
-- **ConcreteLedgerModel.lean:** proves `WorkingSystem` is nonempty (non-vacuity)
+- **EpArch/Concrete/WorkingSystem.lean:** proves `WorkingSystem` is nonempty (non-vacuity)
 -/
 
 import EpArch.Basic

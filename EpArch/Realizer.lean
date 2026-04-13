@@ -14,12 +14,12 @@ at least one concrete model satisfying all core commitments.
 
 - Thin interface: only fields we can populate from existing code
 - Commitments as Prop field, not definitional equalities
-- ConcreteRealizer witnesses via ConcreteLedgerModel
+- ConcreteRealizer witnesses via EpArch/Concrete/
 - SuccessfulSystem bundles WorkingSystem + StructurallyForced + SatisfiesAllProperties
 
 -/
 
-import EpArch.ConcreteLedgerModel
+import EpArch.Concrete.WorkingSystem
 import EpArch.Minimality
 
 namespace EpArch
@@ -59,7 +59,7 @@ structure Realizer where
 
 /-- Canonical witness: the concrete ledger model already in the repo.
 
-    This is a trivial wrapper—the work was done in ConcreteLedgerModel.lean.
+    This is a trivial wrapper—the work was done in EpArch/Concrete/Commitments.lean.
     The Realizer just packages it into a stable type-level object. -/
 def ConcreteRealizer : Realizer :=
   { commitments := EpArch.ConcreteModel.all_commitments_satisfiable }

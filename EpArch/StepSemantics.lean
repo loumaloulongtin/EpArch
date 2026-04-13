@@ -56,9 +56,8 @@ Deposited status — making it impossible to withdraw without all three gates.
 
 - **Bank.lean**: Specification operators (WHAT). StepSemantics provides the
   constructive HOW.
-- **ConcreteLedgerModel.lean**: A fully constructive concrete model that
-  witnesses satisfiability of all commitments (zero axioms). Uses different
-  data types but demonstrates the same architectural principles.
+- **EpArch/Concrete/**: A fully constructive concrete model (split from ConcreteLedgerModel.lean)
+  that witnesses satisfiability of all commitments (zero axioms).
 - **Theorems.lean**: Imports StepSemantics to derive withdrawal gates,
   repair theorems, and competition gate corners as proved theorems.
 - **Agent/Resilience.lean**: Builds a simplified AgentLTS on top of

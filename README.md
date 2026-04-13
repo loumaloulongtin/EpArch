@@ -33,7 +33,7 @@ lake build   # Lean 4.3.0, no Mathlib
 | **See why primitives are structurally forced** — constraint-to-feature necessity proofs | `EpArch/Minimality.lean`, `EpArch/Convergence.lean`, `EpArch/Agent/Imposition.lean`, `EpArch/Feasibility.lean` (`bundled_structure_forces_bank_primitives` — world-assumption-free; `world_assumptions_force_bank_primitives` — W_* bundle path) |
 | **Transport theorems through compatible extensions** — Tier 3–4 closure | `EpArch/Meta/TheoremTransport.lean`, `EpArch/Meta/Tier4Transport.lean` |
 | **Extend or adapt the framework** — 29-cluster registry + contributor recipes | [`DOCS/MODULARITY.md`](DOCS/MODULARITY.md) |
-| **Verify a constructive witness** — zero-axiom trace from initial state to revoked | `EpArch/ConcreteLedgerModel.lean` |
+| **Verify a constructive witness** — zero-axiom trace from initial state to revoked | `EpArch/Concrete/NonVacuity.lean` |
 | **Localize an epistemic puzzle** (Gettier, Lottery, Fake Barn, confabulation) | `EpArch/Theorems/Cases.lean` — `gettier_is_V_failure`, `confabulation_is_type_error`; `EpArch/Theorems/Corners.lean` — `lottery_paradox_dissolved_architecturally` |
 
 ---
@@ -81,7 +81,7 @@ The framework has three layers:
 | Gettier → V-field failure | `EpArch/Theorems/Cases.lean` — `gettier_is_V_failure` |
 | Lottery → type error | `EpArch/Theorems/Corners.lean` — `lottery_paradox_dissolved_architecturally` |
 | Header stripping has no left inverse | `EpArch/Theorems/Strip.lean` — `no_strip_left_inverse` |
-| Non-vacuity witnesses (all constraints satisfiable) | `EpArch/WorldWitness.lean`, `EpArch/ConcreteLedgerModel.lean` |
+| Non-vacuity witnesses (all constraints satisfiable) | `EpArch/WorldWitness.lean`, `EpArch/Concrete/` |
 | Adversarial obligation theorems | `EpArch/Adversarial/Obligations.lean` |
 | Revision safety (extensions can't break existing results) | `EpArch/RevisionSafety.lean` |
 
@@ -103,7 +103,7 @@ The framework has three layers:
 | Each W_* bundle independently forces its architectural primitive | `w_lies_forces_revocation_need`, `w_bounded_forces_incompleteness`, `w_partial_obs_forces_redeemability` | Feasibility.lean |
 | In any world satisfying all three bundles, Bank primitives are necessary | `world_assumptions_force_bank_primitives` | Feasibility.lean |
 | Bank primitives necessary — no free assumptions (W_* discharged by WitnessCtx) | `kernel_world_forces_bank_primitives` | Feasibility.lean |
-| Concrete model satisfies all commitments | `all_commitments_satisfiable` | ConcreteLedgerModel.lean |
+| Concrete model satisfies all commitments | `all_commitments_satisfiable` | Concrete/Commitments.lean |
 
 ---
 
@@ -171,7 +171,7 @@ The framework has three layers:
 | Module | Purpose |
 |---|---|
 | `Main.lean` | Full build entry point |
-| `ConcreteLedgerModel.lean` | Zero-axiom constructive witness: explicit trace from initial state to revoked |
+| `EpArch/Concrete/` | Zero-axiom constructive witness (5 modules: Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity) |
 
 ---
 
@@ -233,7 +233,7 @@ The kernel enforces the observation boundary contract and the mechanism signatur
 | [DOCS/WORLD.md](DOCS/WORLD.md) | World layer: parametric semantic interface and W_* obligation theorems |
 | [DOCS/CORROBORATION.md](DOCS/CORROBORATION.md) | Corroboration module design notes |
 | [DOCS/FEASIBILITY.md](DOCS/FEASIBILITY.md) | Feasibility witness strategy |
-| [DOCS/WITNESS-SCOPE.md](DOCS/WITNESS-SCOPE.md) | What ConcreteLedgerModel.lean witnesses, what is proved elsewhere, and what is out of scope |
+| [DOCS/WITNESS-SCOPE.md](DOCS/WITNESS-SCOPE.md) | What `EpArch/Concrete/` witnesses, what is proved elsewhere, and what is out of scope |
 | [DOCS/MODULARITY.md](DOCS/MODULARITY.md) | Modularity tiers: what survives disabling a constraint, health goal, or world bundle, and by what mechanism |
 
 ---
@@ -258,7 +258,9 @@ Select-String -Path "EpArch\*.lean", "EpArch\**\*.lean" -Pattern "^\s*sorry\b"
 (Select-String -Path "EpArch\*.lean", "EpArch\**\*.lean" -Pattern "^axiom\s" | Measure-Object).Count
 # Expected: 0
 
-# Verify ConcreteLedgerModel has no axioms
-Select-String -Path "EpArch\ConcreteLedgerModel.lean" -Pattern "^axiom\s"
+# Verify Concrete/ modules have no axioms
+Get-ChildItem -Path "EpArch\Concrete\" -Filter "*.lean" | ForEach-Object {
+    Select-String -Path $_.FullName -Pattern "^axiom\s"
+}
 # Expected: no output
 ```

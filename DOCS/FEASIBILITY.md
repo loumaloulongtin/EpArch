@@ -216,7 +216,7 @@ the per-dimension obligations.
 |---------|-----------|------|
 | `world_bundles_feasible` | `∃ C : WorldCtx, Nonempty C.W_lies_possible ∧ Nonempty C.W_bounded_verification ∧ Nonempty C.W_partial_observability` | W_* bundles jointly satisfiable; witnessed by `WitnessCtx` |
 | `constraints_feasible` | (alias for `world_bundles_feasible`) | Backward-compatible name |
-| `commitments_feasible` | All 8 commitments simultaneously satisfiable | Re-exports `ConcreteLedgerModel.all_commitments_satisfiable` |
+| `commitments_feasible` | All 8 commitments simultaneously satisfiable | Re-exports `EpArch.Concrete.Commitments.all_commitments_satisfiable` |
 | `objectives_feasible` | `∃ _ : EpArch.Realizer, True` | `Realizer` (commitment conjunction) is non-empty |
 | `joint_feasible` | World constraints + objectives both nonempty | Combines the two; kept for backward compat |
 
@@ -237,10 +237,16 @@ Defines `WitnessCtx` — a concrete `WorldCtx` instantiation — and proves
 (the three non-vacuity witnesses). Used by `kernel_world_forces_bank_primitives` to
 discharge the W_* antecedents.
 
-### `EpArch/ConcreteLedgerModel.lean`
+### `EpArch/Concrete/`
 
-Proves `all_commitments_satisfiable` (all 8 commitment witnesses) and provides
-`ConcreteWorkingSystem` with `concrete_structurally_forced` and
+Split from the former `ConcreteLedgerModel.lean` into five focused modules:
+- `Concrete/Types.lean` — concrete types (CProp, CDeposit, CBubble, …)
+- `Concrete/Commitments.lean` — C1–C8 commitment witnesses + `all_commitments_satisfiable`
+- `Concrete/WorkingSystem.lean` — behavioral equivalence, grounding, `ConcreteWorkingSystem`
+- `Concrete/DeficientSystems.lean` — six deficient-system bridge-impossibility witnesses
+- `Concrete/NonVacuity.lean` — advanced non-vacuity: traces, legibility, convergence, modal
+
+Provides `ConcreteWorkingSystem` with `concrete_structurally_forced` and
 `concrete_satisfies_all_properties`.
 
 ---
@@ -263,7 +269,7 @@ What these theorems do not establish:
 ## Strength and Axiom Impact
 
 **Tier A** — All theorems are fully proved by composing existing witnesses from
-`WorldWitness`, `ConcreteLedgerModel`, `Minimality`, and `Convergence`.
+`WorldWitness`, `EpArch/Concrete/`, `Minimality`, and `Convergence`.
 No `axiom` declarations are introduced.
 
 **Semantic role:** Non-vacuity + forced-primitives — not world realism.

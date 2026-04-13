@@ -97,7 +97,11 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | `Minimality.lean` | Structural impossibility models + alternative-architecture dismissals | 0 |
 | `Convergence.lean` | `StructurallyForced`, `ForcingEmbedding`, `convergence_structural`, bridge predicates | 0 |
 | `Theorems/BehavioralEquivalence.lean` | Observation-boundary equivalence; `Behavior` takes `GroundedBehavior`, step-grounded for withdraw/challenge/tick | 0 |
-| `ConcreteLedgerModel.lean` | Non-vacuity witness (constructive) | 0 |
+| `Concrete/Types.lean` | Concrete types (CProp/CDeposit/CBubble/etc.) | 0 |
+| `Concrete/Commitments.lean` | C1–C8 concrete witnesses | 0 |
+| `Concrete/WorkingSystem.lean` | Behavioral equivalence, grounding, `ConcreteWorkingSystem` | 0 |
+| `Concrete/DeficientSystems.lean` | 6 deficient-system bridge-impossibility witnesses | 0 |
+| `Concrete/NonVacuity.lean` | Advanced non-vacuity: traces, legibility, convergence, modal | 0 |
 | `Meta/LeanKernel/World.lean` | Lean kernel self-application: `LeanKernelCtx`, `LeanWorkingSystem`, world-layer witnesses, architecture-layer proofs, convergence chain, OleanStaleness | 0 |
 | `Meta/LeanKernel/SFailure.lean` | Lean kernel S-field failure taxonomy: axiom levels, standard/vacuous cases, relational vs. absolute failure | 0 |
 

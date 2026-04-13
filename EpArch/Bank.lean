@@ -21,7 +21,7 @@ precondition/postcondition chains are internally consistent.
 
 The constructive and operational groundings live in:
 - **StepSemantics.lean**: Concrete `Step` LTS.
-- **ConcreteLedgerModel.lean**: Zero-axiom concrete model (satisfiability witness).
+- **EpArch/Concrete/**: Zero-axiom concrete model split (Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity).
 
 Runtime behavioral profiling (`DepositDynamics`, `reliance_level`, `blast_radius`,
 `success_driven_bypass`, `blast_radius_scales_with_reliance`) lives in:

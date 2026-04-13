@@ -25,7 +25,7 @@ exploit this factorization.
 
 These types appear throughout the codebase:
 - **StepSemantics.lean:** operational lifecycle (deposit, challenge, withdraw)
-- **ConcreteLedgerModel.lean:** zero-axiom constructive model witnessing all headers
+- **EpArch/Concrete/:** zero-axiom constructive model witnessing all headers
 - **Theorems.lean:** epistemological analyses (Gettier, fake barns, safety/sensitivity)
 - **Bank.lean:** governance theorems over deposits with these headers
 -/

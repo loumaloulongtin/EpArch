@@ -39,7 +39,7 @@ Commitments are the SPECIFICATION LAYER: they say WHAT a correct system
 must satisfy, not HOW it achieves it. Think of them as architectural
 design requirements.
 
-- **Constructive witness:** ConcreteLedgerModel.lean provides a concrete
+- **Constructive witness:** EpArch/Concrete/ provides a concrete
   model satisfying ALL 8 commitments — proving they are consistent and
   non-vacuous.
 - **Operational HOW:** StepSemantics.lean gives the constructive
