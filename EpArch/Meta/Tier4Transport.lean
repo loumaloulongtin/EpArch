@@ -1,7 +1,7 @@
 /-
 EpArch/Meta/Tier4Transport.lean — Tier 4 Transport Closure
 
-Certifies that all theorem clusters in the main library (Theorems.lean,
+Certifies that all theorem clusters in the main library (`Theorems/`,
 Commitments.lean) are machine-checked and transport-safe.
 
 ## The Clusters
@@ -27,7 +27,7 @@ Key theorem: `structural_theorems_unconditional`.
 Two sub-results:
 
 **§3b — LTS-Universal Operational Theorems**
-The withdrawal/repair/submit theorems from `Theorems.lean` are Cluster-B-style:
+The withdrawal/repair/submit theorems from `Theorems/Withdrawal.lean` are Cluster-B-style:
 they hold for every `SystemState`/`Step` instance by virtue of constructor
 preconditions. No model parameter varies, so no transport is needed.
 
@@ -177,7 +177,7 @@ theorem concrete_bank_vacuous_transport
 
 /-! ## §3b  LTS-Universal Theorems (Operational Layer)
 
-The concrete operational theorems from `Theorems.lean` mirror Cluster B:
+The concrete operational theorems from `Theorems/Withdrawal.lean` mirror Cluster B:
 they are universally valid about the `Step` LTS and hold for **every**
 `SystemState` instance with no model parameter to transport.
 
