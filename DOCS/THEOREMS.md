@@ -216,38 +216,38 @@ $$\tau\text{-valid}(\text{clock}, \tau) \land \text{clock}' > \text{clock} \Righ
 
 ### Fake Barn Cases
 
-| Theorem | Diagnosis |
-|---------|-----------|
-| `fake_barn_is_E_failure` | Fake Barn = E-field failure (unconditional; `e_certified` structural field) |
-| `fake_barn_profile_yields_E_failure` | Alias demonstrating the structural certification pattern |
-| `canonical_fake_barn_is_fake_barn` | Canonical fake barn satisfies FakeBarnCase |
+| Theorem | File | Diagnosis |
+|---------|------|----------|
+| `fake_barn_is_E_failure` | Theorems/Cases.lean | Fake Barn = E-field failure (unconditional; `e_certified` structural field) |
+| `fake_barn_profile_yields_E_failure` | Theorems/Cases.lean | Alias demonstrating the structural certification pattern |
+| `canonical_fake_barn_is_fake_barn` | Theorems/Cases.lean | Canonical fake barn satisfies FakeBarnCase |
 
 ### Standard Case (S-Field Failure)
 
 Two subtypes: relational (threshold mismatch per consuming agent) and absolute/void (E + V together
 certify that S is vacuous regardless of consumer). Both repair by targeting Field.S.
 
-| Theorem | Diagnosis |
-|---------|------------|
-| `standard_case_is_S_failure` | IsStandardCase → case_S_inadequate (Prop-level; not Bool.not_false) |
-| `canonical_standard_case_is_standard` | Peanut-allergy canonical case satisfies IsStandardCase |
-| `standard_failure_targets_S` | IsStandardCase → S_fails = true (executable mirror) |
-| `standard_failure_is_relational` | Same deposit standard: allergic agent fails, lenient agent passes |
-| `same_deposit_standard_split_yields_relational_S_failure` | Generic: same deposit_standard + opposite threshold outcomes → RelationalClearanceSplit |
-| `canonical_allergy_is_relational_split` | Canonical allergy pair is a RelationalClearanceSplit |
-| `s_failure_v_is_sound` | In an S-failure, V-provenance is genuinely tracking (V is positively certified) |
-| `s_failure_e_is_sound` | In an S-failure, E-coverage has no relevant gap (E is positively certified) |
-| `s_failure_v_mode_and_e_threat` | Data-backed form: `mode = .direct_inspection` and `threat ∈ modeled_threats` (concrete witnesses) |
-| `relational_S_requires_matching_VE_data` | Relational S-failure: symmetric V/E data across both consumers; only threshold differs |
+| Theorem | File | Diagnosis |
+|---------|------|------------|
+| `standard_case_is_S_failure` | Theorems/Cases.lean | IsStandardCase → case_S_inadequate (Prop-level; not Bool.not_false) |
+| `canonical_standard_case_is_standard` | Theorems/Cases.lean | Peanut-allergy canonical case satisfies IsStandardCase |
+| `standard_failure_targets_S` | Theorems/Cases.lean | IsStandardCase → S_fails = true (executable mirror) |
+| `standard_failure_is_relational` | Theorems/Cases.lean | Same deposit standard: allergic agent fails, lenient agent passes |
+| `same_deposit_standard_split_yields_relational_S_failure` | Theorems/Cases.lean | Generic: same deposit_standard + opposite threshold outcomes → RelationalClearanceSplit |
+| `canonical_allergy_is_relational_split` | Theorems/Cases.lean | Canonical allergy pair is a RelationalClearanceSplit |
+| `s_failure_v_is_sound` | Theorems/Cases.lean | In an S-failure, V-provenance is genuinely tracking (V is positively certified) |
+| `s_failure_e_is_sound` | Theorems/Cases.lean | In an S-failure, E-coverage has no relevant gap (E is positively certified) |
+| `s_failure_v_mode_and_e_threat` | Theorems/Cases.lean | Data-backed form: `mode = .direct_inspection` and `threat ∈ modeled_threats` (concrete witnesses) |
+| `relational_S_requires_matching_VE_data` | Theorems/Cases.lean | Relational S-failure: symmetric V/E data across both consumers; only threshold differs |
 
 ### Vacuous Standard Case (S Voided by E + V Interaction)
 
-| Theorem | Diagnosis |
-|---------|------------|
-| `vacuous_standard_is_S_failure` | VacuousStandardCase → S_is_vacuous (both conditions certified as structural fields) |
-| `testimony_only_plus_unreliable_source_yields_void_S` | Generic: testimony-only S over documented-unreliable source → void S |
-| `canonical_liar_cook_is_void` | Known-liar cook case → S_is_vacuous (instance of generic theorem) |
-| `absolute_vs_relational_S_failure` | Both failure subtypes in one theorem: relational (allergy) ∧ absolute (liar cook) |
+| Theorem | File | Diagnosis |
+|---------|------|------------|
+| `vacuous_standard_is_S_failure` | Theorems/Cases.lean | VacuousStandardCase → S_is_vacuous (both conditions certified as structural fields) |
+| `testimony_only_plus_unreliable_source_yields_void_S` | Theorems/Cases.lean | Generic: testimony-only S over documented-unreliable source → void S |
+| `canonical_liar_cook_is_void` | Theorems/Cases.lean | Known-liar cook case → S_is_vacuous (instance of generic theorem) |
+| `absolute_vs_relational_S_failure` | Theorems/Cases.lean | Both failure subtypes in one theorem: relational (allergy) ∧ absolute (liar cook) |
 
 ### Lottery Paradox
 
@@ -262,23 +262,23 @@ certify that S is vacuous regardless of consumer). Both repair by targeting Fiel
 
 ### Other Puzzles
 
-| Theorem | Puzzle | Diagnosis |
-|---------|--------|-----------|
-| `closure_type_separation` | Closure | Type separation |
-| `luminosity_type_separation` | Luminosity | Type separation |
-| `local_redeemability_survives` | Skepticism | Local redeemability survives |
-| `context_is_policy` | Contextualism | Policy variation |
-| `testimony_is_export` | Testimony | Export structure |
-| `disagreement_is_routing` | Disagreement | Routing |
-| `higher_order_relocation` | Higher-order knowledge | Relocation to S/E/V fields |
-| `apriori_domain_parameterization` | A priori knowledge | Domain parameterization |
-| `moorean_is_export_contradiction` | Moorean paradox | Export contradiction (pair to `moorean_export_contradiction`) |
-| `preface_dissolution` | Preface paradox | individual_deposits p → meta_deposit_about_collection p (standards differ by construction; non-tautological — preface_case requires standards_differ field) |
-| `forgotten_evidence_persistence` | Forgotten evidence | Persistence via header |
-| `group_bubble_separation` | Group knowledge | Bubble separation |
-| `deposit_exportability` / `certainty_not_exportable` | Value of knowledge | Exportability distinction |
-| `injustice_is_import_corruption` | Epistemic injustice | Import corruption |
-| `artifact_bubble_membership` | Extended cognition | Bubble membership |
+| Theorem | Puzzle | File | Diagnosis |
+|---------|--------|------|----------|
+| `closure_type_separation` | Closure | Theorems/Dissolutions.lean | Type separation |
+| `luminosity_type_separation` | Luminosity | Theorems/Dissolutions.lean | Type separation |
+| `local_redeemability_survives` | Skepticism | Theorems/Pathologies.lean | Local redeemability survives |
+| `context_is_policy` | Contextualism | Theorems/Pathologies.lean | Policy variation |
+| `testimony_is_export` | Testimony | Theorems/Pathologies.lean | Export structure |
+| `disagreement_is_routing` | Disagreement | Theorems/Pathologies.lean | Routing |
+| `higher_order_relocation` | Higher-order knowledge | Theorems/Dissolutions.lean | Relocation to S/E/V fields |
+| `apriori_domain_parameterization` | A priori knowledge | Theorems/Dissolutions.lean | Domain parameterization |
+| `moorean_is_export_contradiction` | Moorean paradox | Theorems/Dissolutions.lean | Export contradiction (pair to `moorean_export_contradiction`) |
+| `preface_dissolution` | Preface paradox | Theorems/Dissolutions.lean | individual_deposits p → meta_deposit_about_collection p (standards differ by construction; non-tautological — preface_case requires standards_differ field) |
+| `forgotten_evidence_persistence` | Forgotten evidence | Theorems/Pathologies.lean | Persistence via header |
+| `group_bubble_separation` | Group knowledge | Theorems/Pathologies.lean | Bubble separation |
+| `deposit_exportability` / `certainty_not_exportable` | Value of knowledge | Theorems/Pathologies.lean | Exportability distinction |
+| `injustice_is_import_corruption` | Epistemic injustice | Theorems/Pathologies.lean | Import corruption |
+| `artifact_bubble_membership` | Extended cognition | Theorems/Pathologies.lean | Bubble membership |
 
 ---
 
@@ -1674,4 +1674,25 @@ $$\text{containsBankPrimitives}(\text{LeanWorkingSystem}) \quad \text{(directly 
 New theorems extending the Lean kernel self-application model; see file for details.
 
 **Net: +19 theorems**
+
+---
+
+### refactor/theorems-split branch (±0 theorems → **712** total)
+
+**Structural reorganization — no theorem count change.**
+
+`EpArch/Theorems.lean` (monolithic, 3639 lines) split into `EpArch/Theorems/` sub-directory with 8 focused modules:
+
+| Sub-module | Content |
+|------------|--------|
+| `Theorems/Withdrawal.lean` | Three-gate withdrawal, repair/revalidation, diagnosis (`canWithdrawAt_iff_gates`, `repair_requires_prior_challenge`, `diagnose_finds_broken`, etc.) |
+| `Theorems/Cases.lean` | Gettier, Fake Barn, Standard, Vacuous Standard, Lottery, Confabulation case bindings |
+| `Theorems/Headers.lean` | Diagnosability metrics, field checkability (`field_checkable_iff_header`, `header_improves_diagnosability`, etc.) |
+| `Theorems/Modal.lean` | WorldCtx-parameterized Safety↔V, Sensitivity↔E (`safety_ctx_V_link`, `gettier_profile_yields_V_failure`, etc.) |
+| `Theorems/Strip.lean` | All stripping (`strip`/`stripV`), irreversibility, field count theorems |
+| `Theorems/Corners.lean` | Competition gate corners 1,2,6,7,8,9; lottery gate; entrenchment; traction theorem (`traction_broader_than_authorization`, `lottery_paradox_dissolved_architecturally`, etc.) |
+| `Theorems/Dissolutions.lean` | Type-separation dissolutions, progress metrics, `valid_dissolution` criterion |
+| `Theorems/Pathologies.lean` | Literature pathology diagnoses, bridge theorems (`bridge_monolithic_opaque`, `bridge_stripped_ungrounded`), grounding index |
+
+`Puzzles.lean` (type-separation and pathology diagnoses) split into `Theorems/Dissolutions.lean` + `Theorems/Pathologies.lean` (absorbed into the above split). All callers and imports updated.
 
