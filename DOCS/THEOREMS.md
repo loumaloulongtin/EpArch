@@ -273,7 +273,7 @@ certify that S is vacuous regardless of consumer). Both repair by targeting Fiel
 | `higher_order_relocation` | Higher-order knowledge | Theorems/Dissolutions.lean | Relocation to S/E/V fields |
 | `apriori_domain_parameterization` | A priori knowledge | Theorems/Dissolutions.lean | Domain parameterization |
 | `moorean_is_export_contradiction` | Moorean paradox | Theorems/Dissolutions.lean | Export contradiction (pair to `moorean_export_contradiction`) |
-| `preface_dissolution` | Preface paradox | Theorems/Dissolutions.lean | individual_deposits p → meta_deposit_about_collection p (standards differ by construction; non-tautological — preface_case requires standards_differ field) |
+| `preface_dissolution` | Preface paradox | Theorems/Dissolutions.lean | `meta_deposit_about_collection p` directly from `p.standards_differ`; no `individual_deposits` premise — type-separation holds regardless of whether the claims list is empty |
 | `forgotten_evidence_persistence` | Forgotten evidence | Theorems/Pathologies.lean | Persistence via header |
 | `group_bubble_separation` | Group knowledge | Theorems/Pathologies.lean | Bubble separation |
 | `deposit_exportability` / `certainty_not_exportable` | Value of knowledge | Theorems/Pathologies.lean | Exportability distinction |
@@ -809,7 +809,7 @@ Each of the 20 original linking axioms is discharged by making an opaque predica
 | `group_bubble_separation` | ✅ theorem | Tautological (`≠` = `bubbles_differ`) |
 | `deposit_exportability` | ✅ theorem | `KnowledgeState` distinguishes deposit/certainty |
 | `certainty_not_exportable_link` | ✅ theorem | Pattern matching on `KnowledgeState` |
-| `local_redeemability_survives` | ✅ theorem | Definitional identity: `local_redeemability_holds = severs_constraint_contact` |
+| `local_redeemability_survives` | ✅ theorem | `severs_constraint_contact s → local_redeemability_holds s B` via required `global_implies_local` structural field; not a definitional identity |
 | `context_is_policy` | ✅ theorem | Fields make policy variation explicit; uses `high_stakes_implies_policy` structural invariant |
 | `no_semantic_shift` | ✅ theorem | `is_semantic_shift` is vacuously false (`PropLike ≠ PropLike` is `False`) |
 | `injustice_is_import_corruption` | ✅ theorem | Fields encode deflation/downgrade |
@@ -830,7 +830,7 @@ Each of the 20 original linking axioms is discharged by making an opaque predica
 | `notation_invariance_of_redeemability` | ✅ theorem | Proof-redeemability is invariant under coherent bijective relabeling of propositions |
 | `notation_invariance_of_empirical_redeemability` | ✅ theorem | Empirical redeemability likewise notation-invariant |
 | `math_practice_is_bubble_distinct` | ✅ theorem | Mathematical practice is a bubble: notation varies, structural position (constraint surface) does not |
-| `bridge_monolithic_opaque` | ✅ theorem | Vacuously true (has_SEV_factorization = True by construction) |
+| `bridge_monolithic_opaque` | ✅ theorem | `¬depositHasHeader → ¬field_checkable` via `harder_without_headers`; header absence makes challenge fields guesses, not diagnoses |
 | `bridge_stripped_ungrounded` | ✅ theorem | Follows from depositHasHeader definition |
 
 ---
