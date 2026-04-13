@@ -77,7 +77,7 @@ The formalization proves these claims:
    observability) enter the formalization.
 9. **RevisionSafety.lean** — Safe extensions: adding constraints doesn't break
    existing theorems (the Compatible/transport_core machinery).
-10. **Theorems/** — Derived theorems, split into seven focused modules:
+10. **Theorems/** — Derived theorems, split into eight focused modules:
     - **Withdrawal.lean** — Withdrawal gates, repair lifecycle, diagnosis infrastructure
     - **Cases.lean** — Classic epistemology case types (Gettier, Fake Barn, Standard,
       Vacuous Standard, Lottery as type error, Confabulation)
