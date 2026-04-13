@@ -195,7 +195,7 @@ All necessity theorems (corrigible_needs_revision, self_correction_needs_revisio
 sound_deposits_needs_verification) are proved from definitions, not axioms. -/
 
 
-/-! ## Paper-Facing Summary
+/-! ## Health Goals Summary
 
 The health predicates connect to the architectural invariants:
 

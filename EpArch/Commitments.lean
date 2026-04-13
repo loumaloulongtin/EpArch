@@ -453,7 +453,7 @@ def cross_axis_dispute_about (B : Bubble)
     signatures where those types are not yet in scope.
 
     The structurally grounded `dispute_about B d` and `cross_axis_dispute_about B d`
-    are the new primary predicates; `dispute B P` is retained for paper-facing
+    are the new primary predicates; `dispute B P` is retained for
     theorem signatures that state "in a dispute over P" as context. -/
 def dispute (B : Bubble) (P : PropLike) : Prop :=
   ∃ (Std Em Prov : Type u) (B2 : Bubble) (d1 d2 : Deposit PropLike Std Em Prov),

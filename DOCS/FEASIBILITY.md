@@ -181,7 +181,7 @@ theorem structural_goals_force_bank_primitives :
       StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W
 ```
 
-Paper-facing alias for `convergence_structural` (from `Convergence.lean`). The preferred
+Structural alias for `convergence_structural` (from `Convergence.lean`). The preferred
 citation when the structural path needs to be made explicit — no `WorldCtx`, no W_* bundles.
 
 ### `existence_under_constraints_embedding`

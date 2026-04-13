@@ -240,7 +240,7 @@ theorem witness_not_fully_authorizable : ¬ FullyAuthorizableByObs WorldWitness.
 
 /-! ## 5. Pillar 3: Safe on Credit (Extension Safety) -/
 
-/-- Re-export: safe extensions preserve paper-facing results.
+/-- Re-export: safe extensions preserve revision-gate results.
 
     This is the "non-collapse under incompleteness" pillar: even when
     operating on credit (incomplete information), extending the theory

@@ -841,7 +841,7 @@ Each linking axiom is discharged by making an opaque predicate concrete — repl
 
 **File:** `RevisionSafety.lean`
 
-Three levels of safety are formalized: premise strengthening (adding premises preserves implications), compatible extensions (commuting laws preserve paper-facing properties), and LTS refinement safety (refinements preserve invariants).
+Three levels of safety are formalized: premise strengthening (adding premises preserves implications), compatible extensions (commuting laws preserve revision-gate properties), and LTS refinement safety (refinements preserve invariants).
 
 ### Premise Strengthening Theorems (Tier A)
 
@@ -1118,7 +1118,7 @@ File: `Agent/Imposition.lean`
 | `credit_required_implies_not_fully_authorizable` | Meta/FalsifiableNotAuthorizable.lean | CreditRequired C → ¬FullyAuthorizableByObs C | Bridge lemma |
 | `theory_floor_implies_not_fully_authorizable` | Meta/FalsifiableNotAuthorizable.lean | TheoryFloor C → ¬FullyAuthorizableByObs C | Clean P2 |
 | `witness_not_fully_authorizable` | Meta/FalsifiableNotAuthorizable.lean | ¬FullyAuthorizableByObs WitnessCtx | Instantiated P2 |
-| `credit_safe_under_extension` | Meta/FalsifiableNotAuthorizable.lean | Extensions preserve paper-facing | Non-collapse |
+| `credit_safe_under_extension` | Meta/FalsifiableNotAuthorizable.lean | Extensions preserve revision-gate | Non-collapse |
 | `trivial_has_no_lies` | Meta/FalsifiableNotAuthorizable.lean | `¬∃ w a P, TrivialCtx.Lie w a P` — if all propositions are true everywhere, no lie is constructible; uses `kernel_redundant_without_lies` | Contrapositive of `W_lies_possible`; EpArch mechanisms are non-trivial in any world that departs from TrivialCtx |
 
 ### Optional Stretch: Theory Core Claim (Witness-Specific)
@@ -1252,10 +1252,6 @@ $$\forall\, \text{Pred},\ d_1 = d_2 \implies \text{Pred}(d_1) \implies \text{Pre
 
 **The headline claim:** EpArch is a floor, not a cage. Any sub-bundle is a valid EpArch instantiation; any compatible extension of a sub-bundle is safe.
 
-### Decomposition
-
-| Theorem | File | Statement | Role |
-|---------|------|-----------|------|
 ### Downward: Graceful Degradation
 
 | Theorem | File | Statement | Role |
@@ -1298,7 +1294,7 @@ $$\text{ModularityPack} := \text{GracefulDegradation} \land \text{SubRevisionSaf
 
 | Definition | File | Purpose |
 |------------|------|---------|
-| `RevisionGate` | Modularity.lean | `∀ B, selfCorrects B → hasRevision B` — competition gate predicate |
+| `RevisionGate` | RevisionSafety.lean | `∀ B, selfCorrects B → hasRevision B` — competition gate predicate |
 | `NoSelfCorrection` | Modularity.lean | Sub-bundle predicate: no bubble self-corrects |
 | `SubBundle` | Modularity.lean | CoreModel + active SubGoal predicate + satisfaction witness |
 | `OdometerModel` | Modularity.lean | Concrete sub-bundle: one bubble, append-only, SoundDepositsGoal only |

@@ -170,7 +170,7 @@ structure Bisimulation
 
 The canonical LTS for EpArch is defined in StepSemantics.lean.
 RevisionSafety uses these definitions to establish revision safety
-for the paper-facing architecture.
+for the revision-gate architecture.
 -/
 
 end EpArch.LTS

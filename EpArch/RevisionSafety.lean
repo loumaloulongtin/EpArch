@@ -16,7 +16,7 @@ Compatible requires semantic preservation via commuting laws, not mere type equa
 Answer: "If I adopt this architecture and it's later incomplete, do I get stuck?"
 
 Prove: Adding constraints / extending the world does NOT collapse already-proved
-paper-facing results, as long as extensions preserve the core interface.
+revision-gate results, as long as extensions preserve the core interface.
 
 -/
 
@@ -63,7 +63,7 @@ theorem premise_chain {A B C Claim : Prop} :
 
 /-! ## Core Signature
 
-The core signature defines what operations matter for paper-facing claims.
+The core signature defines what operations matter for revision-gate claims.
 -/
 
 /--
@@ -74,7 +74,7 @@ Any extension claiming compatibility must preserve these semantics exactly.
 
 ### Frozen Core Surface
 
-This is the paper-facing core surface. All primitives listed here are load-bearing
+This is the revision-gate core surface. All primitives listed here are load-bearing
 for the formalization's core architectural claims. Extensions must preserve all of them.
 
 **Primitive Types (CoreSig):**
@@ -288,8 +288,8 @@ structure Compatible (E : ExtModel) (C : CoreModel) where
 
 /-! ## Transport Theorem
 
-If E is compatible with C, and C is paper-facing,
-then the forgetful projection of E is paper-facing.
+If E is compatible with C, and C satisfies the revision gate,
+then the forgetful projection of E also satisfies the revision gate.
 
 The proof uses the commuting laws to transfer the competition gate property.
 -/
@@ -319,7 +319,7 @@ theorem transport_core (E : ExtModel) (C : CoreModel) (h : Compatible E C) :
   -- Step 1: Transfer to C using commuting laws
   have h_sc_C : C.ops.selfCorrects (h.πBubble B_E) := h.selfCorrects_comm B_E |>.mp h_sc_E
 
-  -- Step 2: Apply paper-facing property of C
+  -- Step 2: Apply revision-gate property of C
   have h_hr_C : C.ops.hasRevision (h.πBubble B_E) := h_pf_C (h.πBubble B_E) h_sc_C
 
   -- Step 3: Transfer back using hasRevision_comm

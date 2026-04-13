@@ -4,7 +4,7 @@ EpArch/ScopeIrrelevance.lean — Scope Irrelevance Layer
 This module turns "out of scope" from prose into machine-checkable scope boundaries.
 
 Core results:
-- S1: Substrate Independence — physics/implementation don't affect paper-facing theorems
+- S1: Substrate Independence — physics/implementation don't affect revision-gate theorems
 - S2: Minimal Agency — agents need only functional capabilities, not consciousness
 - S3: Extra-State Erasure — adding qualia/psychology/embodiment doesn't affect theorems
 
@@ -26,7 +26,7 @@ open EpArch.RevisionSafety
 /-! ## Substrate Independence
 
 "Physics don't matter": any substrate implementing the interface yields the same
-paper-facing theorems.
+revision-gate theorems.
 
 The key insight: our theorems already quantify over abstract types (World, Agent,
 PropLike). If two substrates implement the same interface, they yield the same theorems.
@@ -106,7 +106,7 @@ neural architecture) doesn't affect theorems if primitives ignore it.
     component at all. Swapping in any X (qualia, psychology, embodiment) is safe
     because P never looks at it.
 
-    Paper-facing preservation is closed by `extra_state_paper_facing_transport`,
+    Revision-gate preservation is closed by `extra_state_revision_gate_transport`,
     which builds a `Compatible` witness and calls `transport_core`. -/
 theorem extra_state_erasure {Agent X : Type} (P : Agent → Prop)
     (a : Agent) (x : X) :
@@ -115,7 +115,7 @@ theorem extra_state_erasure {Agent X : Type} (P : Agent → Prop)
 
 /-- **Seam theorem.** Names the psychology boundary for citation purposes.
     `system_property` does not inspect the second component.
-    Paper-facing binding: `psychology_irrelevant_paper_facing`. -/
+    Revision-gate binding: `psychology_irrelevant_revision_gate`. -/
 theorem psychology_irrelevant {Agent Psychology : Type}
     (system_property : Agent → Prop)
     (a : Agent) (psych : Psychology) :
@@ -123,7 +123,7 @@ theorem psychology_irrelevant {Agent Psychology : Type}
   Iff.rfl
 
 /-- **Seam theorem.** Names the consciousness/qualia boundary for citation purposes.
-    Paper-facing binding: `consciousness_irrelevant_paper_facing`. -/
+    Revision-gate binding: `consciousness_irrelevant_revision_gate`. -/
 theorem consciousness_irrelevant {Agent Qualia : Type}
     (functional_property : Agent → Prop)
     (a : Agent) (q : Qualia) :
@@ -253,7 +253,7 @@ def extendWithExtraState (C : CoreModel)
 /-- Extra-state extension is Compatible with base.
 
     The extended model preserves all core operations.
-    This is the key binding that makes scope-irrelevance paper-facing.
+    This is the key binding that makes scope-irrelevance revision-gate-compatible.
 
     The projections are identity (types are shared).
     The commuting laws are all Iff.refl because extendWithExtraState
@@ -297,24 +297,24 @@ theorem extra_state_revision_gate_transport (C : CoreModel)
     RevisionGate C → RevisionGate (forget (extendWithExtraState C AgentExtra WorldExtra)) :=
   transport_core _ C (extra_state_compatible C AgentExtra WorldExtra)
 
-/-- **Named plug-in point.** Delegates to `extra_state_paper_facing_transport`.
+/-- **Named plug-in point.** Delegates to `extra_state_revision_gate_transport`.
     Instantiates X = ConsciousnessState so citation sites are self-documenting.
     ConsciousnessState can be any inhabited type (Unit for trivial consciousness). -/
-theorem consciousness_irrelevant_paper_facing (C : CoreModel)
+theorem consciousness_irrelevant_revision_gate (C : CoreModel)
     (ConsciousnessState : Type) [Inhabited ConsciousnessState] :
     RevisionGate C → RevisionGate (forget (extendWithExtraState C ConsciousnessState Unit)) :=
   extra_state_revision_gate_transport C ConsciousnessState Unit
 
-/-- **Named plug-in point.** Delegates to `extra_state_paper_facing_transport`.
+/-- **Named plug-in point.** Delegates to `extra_state_revision_gate_transport`.
     Instantiates X = PsychologyState so citation sites are self-documenting. -/
-theorem psychology_irrelevant_paper_facing (C : CoreModel)
+theorem psychology_irrelevant_revision_gate (C : CoreModel)
     (PsychologyState : Type) [Inhabited PsychologyState] :
     RevisionGate C → RevisionGate (forget (extendWithExtraState C PsychologyState Unit)) :=
   extra_state_revision_gate_transport C PsychologyState Unit
 
-/-- **Named plug-in point.** Delegates to `extra_state_paper_facing_transport`.
+/-- **Named plug-in point.** Delegates to `extra_state_revision_gate_transport`.
     Instantiates X = QualiaState so citation sites are self-documenting. -/
-theorem qualia_irrelevant_paper_facing (C : CoreModel)
+theorem qualia_irrelevant_revision_gate (C : CoreModel)
     (QualiaState : Type) [Inhabited QualiaState] :
     RevisionGate C → RevisionGate (forget (extendWithExtraState C QualiaState Unit)) :=
   extra_state_revision_gate_transport C QualiaState Unit

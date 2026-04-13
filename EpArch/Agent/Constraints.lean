@@ -292,7 +292,7 @@ Therefore, extensions can be projected away by simply ignoring the predicates.
 
 /-- Core Agent signature: the minimal structure for agent constraints.
 
-    This captures what paper-facing theorems depend on. -/
+    This captures what revision-gate theorems depend on. -/
 structure AgentCoreSig where
   /-- Agent type (from core model) -/
   Agent : Type u
