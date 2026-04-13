@@ -171,9 +171,9 @@ theorem WorldCtx.kernel_redundant_without_lies (C : WorldCtx)
 
 ---
 
-## Adversarial Obligation Theorems (`AdversarialObligations.lean`)
+## Adversarial Obligation Theorems (`Adversarial/Obligations.lean`)
 
-`AdversarialObligations.lean` converts the adversarial axioms from `AdversarialBase.lean` into conditional obligation theorems using the same `W_*` / `_of_W` pattern.
+`Adversarial/Obligations.lean` converts the adversarial axioms from `Adversarial/Base.lean` into conditional obligation theorems using the same `W_*` / `_of_W` pattern.
 
 | Original Axiom | Obligation Theorem | World Bundle |
 |----------------|-------------------|--------------|
@@ -221,13 +221,13 @@ Basic.lean
     ↓
 WorldCtx.lean
     ↓                             ↓                          ↓
-World.lean (re-exports)    AdversarialObligations.lean    Feasibility.lean
+World.lean (re-exports)    Adversarial/Obligations.lean    Feasibility.lean
                            (W-bundles → obligations)      (W-bundles → containsBankPrimitives)
                                   ↑
-                            AdversarialBase.lean (attack patterns)
+                            Adversarial/Base.lean (attack patterns)
 ```
 
-`WorldCtx.lean` provides the semantic interface for truth, observation, and bounded verification. `World.lean` is a compatibility/re-export layer, not the conceptual center. `AdversarialBase.lean` imports `Basic`, `Header`, `Bank`, and `Commitments` (not `World.lean`); `AdversarialObligations.lean` imports `WorldCtx` plus `AdversarialBase`. `Feasibility.lean` imports `WorldCtx` directly and uses all three W_* bundles as antecedents in `world_assumptions_force_bank_primitives`, closing the loop from world assumptions to architectural convergence.
+`WorldCtx.lean` provides the semantic interface for truth, observation, and bounded verification. `World.lean` is a compatibility/re-export layer, not the conceptual center. `Adversarial/Base.lean` imports `Basic`, `Header`, `Bank`, and `Commitments` (not `World.lean`); `Adversarial/Obligations.lean` imports `WorldCtx` plus `Adversarial/Base`. `Feasibility.lean` imports `WorldCtx` directly and uses all three W_* bundles as antecedents in `world_assumptions_force_bank_primitives`, closing the loop from world assumptions to architectural convergence.
 
 ---
 

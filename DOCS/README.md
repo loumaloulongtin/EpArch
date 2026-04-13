@@ -85,7 +85,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | `StepSemantics.lean` | Labeled transition system (Step, Trace, Action) | 0 |
 | `Theorems/` | Primary theorem library split into 8 focused sub-modules (Withdrawal, Cases, Headers, Modal, Strip, Corners, Dissolutions, Pathologies) | 0 |
 | `World.lean` | World layer for obligation theorems | 0 |
-| `AdversarialObligations.lean` | Adversarial axioms → obligation theorems | 0 |
+| `Adversarial/Obligations.lean` | Adversarial axioms → obligation theorems | 0 |
 | `RevisionSafety.lean` | Premise strengthening + compatible extensions | 0 |
 | `ScopeIrrelevance.lean` | Scope irrelevance theorems | 0 |
 | `Bank.lean` | Bank substrate, lifecycle operators | 0 |

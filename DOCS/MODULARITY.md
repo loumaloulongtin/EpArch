@@ -85,7 +85,7 @@ does what prevents confusion about where to look and where to edit.
 - `Health.lean`, `Meta/TheoremTransport.lean` — Tier 3 goal predicates and transport.
 - `Commitments.lean`, `Theorems/` (8 sub-modules), `Diagnosability.lean`, `Agent/*.lean`,
   `Invariants.lean`, `ScopeIrrelevance.lean`, `Predictions.lean`, `WorkedTraces.lean` — Tier 4.
-- `WorldCtx.lean`, `AdversarialObligations.lean`, `WorldWitness.lean` — Tier 1 / world.
+- `WorldCtx.lean`, `Adversarial/Obligations.lean`, `WorldWitness.lean` — Tier 1 / world.
 - `Meta/Modular.lean` — meta-modularity; `Modularity.lean` — lattice-stability.
 - **Editing here does not change the cluster surface** unless Config.lean is updated too.
 
@@ -298,7 +298,7 @@ For contributor instructions, see §§3–7 above.
 Disabling a world assumption = not providing a proof of that structure.
 The type system then mechanically excludes all and only the theorems that depended on it.
 
-**Files:** `WorldCtx.lean`, `AdversarialObligations.lean`, `WorldWitness.lean`
+**Files:** `WorldCtx.lean`, `Adversarial/Obligations.lean`, `WorldWitness.lean`
 
 | World Bundle | Fields | What it enables | File | Disable by |
 |---|---|---|---|---|
@@ -306,10 +306,10 @@ The type system then mechanically excludes all and only the theorems that depend
 | `W_bounded_verification` | `verification_has_cost` | Bounded-audit necessity results | WorldCtx.lean | Not providing proof |
 | `W_partial_observability` | `obs_underdetermines` | Underdetermination results | WorldCtx.lean | Not providing proof |
 | `W_asymmetric_costs` | `export_cost`, `defense_cost`, `asymmetry` | Cost-asymmetry obligation theorems | WorldCtx.lean | Not providing proof |
-| `W_spoofedV` | `broken_chain_no_path` | `spoofed_V_blocks_path_of_W` | AdversarialObligations.lean | Not providing proof |
-| `W_lies_scale` | (lies-scale fields) | `lies_scale_of_W` | AdversarialObligations.lean | Not providing proof |
-| `W_rolex_ddos` | (rolex/ddos fields) | `rolex_ddos_structural_equivalence_of_W` | AdversarialObligations.lean | Not providing proof |
-| `W_ddos` | (ddos fields) | `ddos_causes_verification_collapse_of_W`, `ddos_to_centralization_of_W` | AdversarialObligations.lean | Not providing proof |
+| `W_spoofedV` | `broken_chain_no_path` | `spoofed_V_blocks_path_of_W` | Adversarial/Obligations.lean | Not providing proof |
+| `W_lies_scale` | (lies-scale fields) | `lies_scale_of_W` | Adversarial/Obligations.lean | Not providing proof |
+| `W_rolex_ddos` | (rolex/ddos fields) | `rolex_ddos_structural_equivalence_of_W` | Adversarial/Obligations.lean | Not providing proof |
+| `W_ddos` | (ddos fields) | `ddos_causes_verification_collapse_of_W`, `ddos_to_centralization_of_W` | Adversarial/Obligations.lean | Not providing proof |
 
 **Transport:** `transport_lies_possible`, `transport_lie_possible` in `WorldCtx.lean` — world bundles are already transported through compatible extensions.
 
@@ -552,7 +552,7 @@ This is the real Cluster C result — not just the competition gate but the full
 
 | Layer | Mechanism | Current status | Certifying file |
 |---|---|---|---|
-| World bundles (`W_*`) | Explicit hypothesis — not providing proof disables | ✅ Complete | `WorldCtx.lean`, `AdversarialObligations.lean` |
+| World bundles (`W_*`) | Explicit hypothesis — not providing proof disables | ✅ Complete | `WorldCtx.lean`, `Adversarial/Obligations.lean` |
 | Constraints (6 forcing results) | Independent conjuncts + `PartialWellFormed`/`modular` meta-theorem | ✅ Complete | `Minimality.lean`, `Convergence.lean`, `Meta/Modular.lean` |
 | `RevisionGate` / competition gate | `transport_core` + `sub_revision_safety` | ✅ Complete | `RevisionSafety.lean`, `Modularity.lean` |
 | Health goals (5 predicates) | `CoreModel`-parameterized + individual transport theorems | ✅ Complete | `Health.lean`, `Meta/TheoremTransport.lean` |

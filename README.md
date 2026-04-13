@@ -82,7 +82,7 @@ The framework has three layers:
 | Lottery → type error | `EpArch/Theorems/Corners.lean` — `lottery_paradox_dissolved_architecturally` |
 | Header stripping has no left inverse | `EpArch/Theorems/Strip.lean` — `no_strip_left_inverse` |
 | Non-vacuity witnesses (all constraints satisfiable) | `EpArch/WorldWitness.lean`, `EpArch/ConcreteLedgerModel.lean` |
-| Adversarial obligation theorems | `EpArch/AdversarialObligations.lean` |
+| Adversarial obligation theorems | `EpArch/Adversarial/Obligations.lean` |
 | Revision safety (extensions can't break existing results) | `EpArch/RevisionSafety.lean` |
 
 **Notable derived interpretations:** The notation-invariance theorems (`notation_invariance_of_redeemability`, `math_practice_is_bubble_distinct`) show that mathematical practice is itself a bubble in the architecture's terms, with Lean's kernel as the constraint surface — and these claims are discharged by that same kernel.
@@ -136,8 +136,8 @@ The framework has three layers:
 |---|---|
 | `Theorems/` | Primary theorem library — 8 focused sub-modules: `Withdrawal`, `Cases`, `Headers`, `Modal`, `Strip`, `Corners`, `Dissolutions`, `Pathologies` |
 | `Diagnosability.lean` | Observability-based diagnosability ordering |
-| `AdversarialBase.lean` | Adversarial type definitions |
-| `AdversarialObligations.lean` | Attack/defense obligation theorems under world bundles |
+| `Adversarial/Base.lean` | Adversarial type definitions |
+| `Adversarial/Obligations.lean` | Attack/defense obligation theorems under world bundles |
 | `Agent/Corroboration.lean` | k-of-n corroboration guarantees and independence conditions |
 | `Commitments.lean` | The 8 structural commitments; all proved as standalone theorems; `commitments_pack` bundles the unconditional ones (C3/C4b/C7b/C8) |
 | `Minimality.lean` | Structural impossibility models + alternative-architecture dismissals; `Pressure` inductive as canonical dimension index |

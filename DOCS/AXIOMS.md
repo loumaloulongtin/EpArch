@@ -102,7 +102,7 @@ Key opaque primitives:
 | `path_route_exists` / `contact_was_made` / `verdict_discriminates` | Commitments.lean | Opaque evidence predicates for VerificationPath (C4: redeemability external to consensus) |
 | `pushback` | Commitments.lean | Agent-level contestation of a deposit; used in C6 repair-loop machinery |
 | `withdraw` / `exportDep` / `TrustBridge` / `Revalidate` / `RepairAction` | Bank.lean | Abstract behavioral hooks (withdrawal reliance, cross-bubble export, trust bridge, revalidation, repair action type) |
-| AdversarialBase.lean opaques | AdversarialBase.lean | 21 opaques constituting the adversarial model: attack channel (`AuditChannel`, `channel_capacity`, `attack_volume`), DDoS state (`ladder_overloaded`, `V_channel_exhausted`, etc.), countermeasures (`cheap_validator_reachable`, `trust_bridge_on_hand`, etc.), cost primitives (`export_cost`, `import_defense_cost`) — see §Adversarial Model in THEOREMS.md |
+| Adversarial/Base.lean opaques | Adversarial/Base.lean | 21 opaques constituting the adversarial model: attack channel (`AuditChannel`, `channel_capacity`, `attack_volume`), DDoS state (`ladder_overloaded`, `V_channel_exhausted`, etc.), countermeasures (`cheap_validator_reachable`, `trust_bridge_on_hand`, etc.), cost primitives (`export_cost`, `import_defense_cost`) — see §Adversarial Model in THEOREMS.md |
 
 Note: `reliance_level` and `blast_radius` are **`def`s** (not opaques), grounded in `DepositDynamics` struct fields (`dd.relying_agents` and `dd.cascade_agents` respectively). The behavioral theorems `success_driven_bypass` and `blast_radius_scales_with_reliance` are proved over these defs.
 

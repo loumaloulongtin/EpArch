@@ -25,7 +25,7 @@ axiom declarations, zero sorries. Build: `lake build`.
 - Health goal definitions live in `Health.lean`.
 - Commitments (C1–C8) live in `Commitments.lean`.
 - World assumption bundles (`W_*`) live in `WorldCtx.lean`.
-- Adversarial obligation theorems (`*_of_W`) live in `AdversarialObligations.lean`.
+- Adversarial obligation theorems (`*_of_W`) live in `Adversarial/Obligations.lean`.
 - The cluster tag registry lives in `Meta/ClusterRegistry.lean`.
 - The certification engine (`certify`, `CertifiedProjection`) lives in `Meta/Config.lean`.
 - Transport theorems live in `Meta/TheoremTransport.lean` (Tier 3) and `Meta/Tier4Transport.lean` (Tier 4).

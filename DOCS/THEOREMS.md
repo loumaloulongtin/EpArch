@@ -578,7 +578,7 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 
 ---
 
-## Bucket 10: Adversarial Model (AdversarialBase.lean)
+## Bucket 10: Adversarial Model (Adversarial/Base.lean)
 
 **Role:** Formalize attack patterns and boundary conditions.
 
@@ -594,14 +594,14 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 | `Lie` | Primitive false deposit |
 | `ProxySubstitution` | Similarity exploitation |
 
-### Core Theorems in AdversarialBase.lean (Proved)
+### Core Theorems in Adversarial/Base.lean (Proved)
 
 | Theorem | File | Statement |
 |---------|------|----------|
-| `sophistication_monotonic` | AdversarialBase.lean | Attack levels form monotonic hierarchy |
-| `sincerity_norms_irrelevant` | AdversarialBase.lean | Lies don't require violating sincerity norms |
-| `lies_structurally_possible` | AdversarialBase.lean | Lies are structurally possible given `is_lie` |
-| `adversarial_proxy_signature` | AdversarialBase.lean | Adversarial proxy = truthful but mislicensed |
+| `sophistication_monotonic` | Adversarial/Base.lean | Attack levels form monotonic hierarchy |
+| `sincerity_norms_irrelevant` | Adversarial/Base.lean | Lies don't require violating sincerity norms |
+| `lies_structurally_possible` | Adversarial/Base.lean | Lies are structurally possible given `is_lie` |
+| `adversarial_proxy_signature` | Adversarial/Base.lean | Adversarial proxy = truthful but mislicensed |
 
 ---
 
@@ -640,7 +640,7 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 
 **Role:** Convert implicit mechanism axioms into explicit conditional theorems.
 
-**Files:** `World.lean`, `AdversarialObligations.lean`
+**Files:** `World.lean`, `Adversarial/Obligations.lean`
 
 ### Core Theorems (World.lean)
 
@@ -652,30 +652,30 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 | `cost_asymmetry_of_W` | WorldCtx.lean | W_asymmetric_costs → export < defense | Adversarial: cost asymmetry |
 | `partial_obs_no_omniscience` | WorldCtx.lean | W_partial_observability → ∃ P, NotDeterminedByObs P | No omniscience: obs underdetermines truth |
 
-### Adversarial Obligation Theorems (AdversarialObligations.lean)
+### Adversarial Obligation Theorems (Adversarial/Obligations.lean)
 
 #### Batch A: Mechanism Axioms
 
 | Theorem | File | Statement | Original Axiom |
 |---------|------|-----------|----------------|
-| `spoofed_V_blocks_path_of_W` | AdversarialObligations.lean | W_spoofedV → spoofed V → ¬path | `spoofed_V_blocks_path` |
-| `ddos_causes_verification_collapse_of_W` | AdversarialObligations.lean | W_ddos → overwhelmed → collapsed | `ddos_causes_verification_collapse` |
-| `collapse_causes_centralization_of_W` | AdversarialObligations.lean | W_collapse → collapsed → centralized | `collapse_causes_centralization` |
-| `lies_scale_of_W` | AdversarialObligations.lean | W_lies_scale → export < defense | `lies_scale` |
-| `rolex_ddos_structural_equivalence_of_W` | AdversarialObligations.lean | W_rolex_ddos → same_structure | `rolex_ddos_structural_equivalence` |
-| `ddos_to_centralization_of_W` | AdversarialObligations.lean | W_ddos_full → overwhelmed → centralized | (composed chain) |
+| `spoofed_V_blocks_path_of_W` | Adversarial/Obligations.lean | W_spoofedV → spoofed V → ¬path | `spoofed_V_blocks_path` |
+| `ddos_causes_verification_collapse_of_W` | Adversarial/Obligations.lean | W_ddos → overwhelmed → collapsed | `ddos_causes_verification_collapse` |
+| `collapse_causes_centralization_of_W` | Adversarial/Obligations.lean | W_collapse → collapsed → centralized | `collapse_causes_centralization` |
+| `lies_scale_of_W` | Adversarial/Obligations.lean | W_lies_scale → export < defense | `lies_scale` |
+| `rolex_ddos_structural_equivalence_of_W` | Adversarial/Obligations.lean | W_rolex_ddos → same_structure | `rolex_ddos_structural_equivalence` |
+| `ddos_to_centralization_of_W` | Adversarial/Obligations.lean | W_ddos_full → overwhelmed → centralized | (composed chain) |
 
 #### Batch B: Boundary Condition Countermeasures
 
 | Theorem | File | Statement | Original Axiom |
 |---------|------|-----------|----------------|
-| `cheap_validator_blocks_V_attack_of_W` | AdversarialObligations.lean | W_cheap_validator → cheap validator → ¬V_attack | `cheap_validator_blocks_V_attack` |
-| `trust_bridge_blocks_V_attack_of_W` | AdversarialObligations.lean | W_trust_bridge → trust bridge → ¬V_attack | `trust_bridge_blocks_V_attack` |
-| `reversibility_neutralizes_τ_of_W` | AdversarialObligations.lean | W_reversibility → reversible → ¬τ_attack | `reversibility_neutralizes_τ` |
-| `E_inclusion_closes_expertise_gap_of_W` | AdversarialObligations.lean | W_E_inclusion → E includes threat → ¬gap_exploited | `E_inclusion_closes_expertise_gap` |
-| `cheap_constraint_blocks_V_spoof_of_W` | AdversarialObligations.lean | W_cheap_constraint → cheap test → ¬V_attack | `cheap_constraint_blocks_V_spoof` |
+| `cheap_validator_blocks_V_attack_of_W` | Adversarial/Obligations.lean | W_cheap_validator → cheap validator → ¬V_attack | `cheap_validator_blocks_V_attack` |
+| `trust_bridge_blocks_V_attack_of_W` | Adversarial/Obligations.lean | W_trust_bridge → trust bridge → ¬V_attack | `trust_bridge_blocks_V_attack` |
+| `reversibility_neutralizes_τ_of_W` | Adversarial/Obligations.lean | W_reversibility → reversible → ¬τ_attack | `reversibility_neutralizes_τ` |
+| `E_inclusion_closes_expertise_gap_of_W` | Adversarial/Obligations.lean | W_E_inclusion → E includes threat → ¬gap_exploited | `E_inclusion_closes_expertise_gap` |
+| `cheap_constraint_blocks_V_spoof_of_W` | Adversarial/Obligations.lean | W_cheap_constraint → cheap test → ¬V_attack | `cheap_constraint_blocks_V_spoof` |
 
-**World Assumption Bundles:** 16 `W_*` bundles (`W_lies_possible` through `W_cheap_constraint`) each gate exactly one obligation theorem above; full definitions in WorldCtx.lean and AdversarialObligations.lean.
+**World Assumption Bundles:** 16 `W_*` bundles (`W_lies_possible` through `W_cheap_constraint`) each gate exactly one obligation theorem above; full definitions in WorldCtx.lean and Adversarial/Obligations.lean.
 
 ### Math Form
 
@@ -689,7 +689,7 @@ $$\text{W-ddos-full} \land \text{overwhelmed}(s) \Rightarrow \text{centralized}(
 
 ## Adversarial Attack Surfaces
 
-Each architectural constraint creates both a capability and an exploitable surface. Five canonical surfaces follow directly from the bucket structure: **Lifecycle** (ladder overload, premature closure — `DDoSVector.LadderOverload`, `τ_compressed`), **Revision** (challenge flooding, denial triggering — `DDoSVector.DenialTriggering`), **Export/Strip Asymmetry** (V-spoofing, proxy substitution, provenance laundering — `stripV_loses_provenance`, `ProxySubstitution`, `no_strip_left_inverse`), **Diagnosability** (E-field poisoning, diagnostic denial — `DDoSVector.EFieldPoisoning`, `stripped_no_field_repair`), and **Temporal Validity** (τ compression, staleness induction — `FullStackAttack.τ_compressed`, `tick_can_cause_staleness`). Coordinated full-stack attacks are formalized as `FullStackAttack` in AdversarialBase.lean; the four `DDoSVector` constructors cover the exhaustive attack vector taxonomy.
+Each architectural constraint creates both a capability and an exploitable surface. Five canonical surfaces follow directly from the bucket structure: **Lifecycle** (ladder overload, premature closure — `DDoSVector.LadderOverload`, `τ_compressed`), **Revision** (challenge flooding, denial triggering — `DDoSVector.DenialTriggering`), **Export/Strip Asymmetry** (V-spoofing, proxy substitution, provenance laundering — `stripV_loses_provenance`, `ProxySubstitution`, `no_strip_left_inverse`), **Diagnosability** (E-field poisoning, diagnostic denial — `DDoSVector.EFieldPoisoning`, `stripped_no_field_repair`), and **Temporal Validity** (τ compression, staleness induction — `FullStackAttack.τ_compressed`, `tick_can_cause_staleness`). Coordinated full-stack attacks are formalized as `FullStackAttack` in Adversarial/Base.lean; the four `DDoSVector` constructors cover the exhaustive attack vector taxonomy.
 
 
 ---
@@ -1348,7 +1348,7 @@ clusters) are always enabled because they depend on no config gate. Given any
 `EpArchConfig`, the engine computes exactly which clusters apply and provides
 machine-checked justification for each enabled cluster. This includes 8 world-bundle
 obligation clusters wiring `EpArchConfig.worlds` to proved obligation theorems in
-`WorldCtx.lean` and `AdversarialObligations.lean`, 1 constraint-modularity cluster from
+`WorldCtx.lean` and `Adversarial/Obligations.lean`, 1 constraint-modularity cluster from
 `Meta/Modular.lean`, and 3 lattice-stability clusters from `Modularity.lean`.
 
 **Note on `.partial_observability`:** Now fully wired. `WorldCtx.partial_obs_no_omniscience`
