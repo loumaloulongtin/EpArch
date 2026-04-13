@@ -68,6 +68,7 @@ import EpArch.Concrete.Types
 import EpArch.SystemSpec
 import EpArch.Minimality
 import EpArch.Convergence
+import EpArch.Scenarios
 import EpArch.Theorems.Modal
 import EpArch.Meta.FalsifiableNotAuthorizable
 

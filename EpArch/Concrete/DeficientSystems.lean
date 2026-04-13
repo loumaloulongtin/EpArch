@@ -10,6 +10,7 @@ Part of: EpArch/Concrete/ split of ConcreteLedgerModel.lean
 -/
 
 import EpArch.Concrete.WorkingSystem
+import EpArch.Scenarios
 
 namespace EpArch.ConcreteInstance
 

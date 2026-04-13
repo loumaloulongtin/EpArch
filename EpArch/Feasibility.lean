@@ -39,7 +39,7 @@ These package non-vacuity + forced primitives into citable results.
 import EpArch.WorldWitness
 import EpArch.Realizer
 import EpArch.Minimality
-import EpArch.Convergence
+import EpArch.Scenarios
 
 namespace EpArch.Feasibility
 
