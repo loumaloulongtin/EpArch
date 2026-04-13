@@ -1567,7 +1567,7 @@ $$\text{containsBankPrimitives}(\text{LeanWorkingSystem}) \quad \text{(directly 
 
 ### .olean Cache as Deposit Lifecycle (OleanStaleness)
 
-`OleanRecord` maps a compiled object-file artifact to a `CDeposit` by setting τ = `compiled_at` (the source epoch at build time).  Two theorems close the bank-primitive loop for the build cache.
+`OleanRecord` maps a compiled object-file artifact to a `CDeposit` by setting τ = `compiled_at` (the source epoch at build time).
 
 | Name | Statement | Interpretation |
 |------|-----------|---------------|
