@@ -130,6 +130,7 @@ None are `axiom` declarations.
 import EpArch.Basic
 import EpArch.Header
 import EpArch.Bank
+import EpArch.Bank.Dynamics    -- Runtime behavioral profiling: DepositDynamics, reliance/blast-radius theorems
 import EpArch.Commitments
 import EpArch.SystemSpec
 import EpArch.Theorems.Withdrawal
