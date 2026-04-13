@@ -141,7 +141,7 @@ $$\text{diagnosability}(\text{full}) = 6 > 0 = \text{diagnosability}(\text{strip
 
 $$f \notin \text{ObservableFields}(d) \Rightarrow \neg\text{canTargetRepair}(f, d)$$
 
-### Field-Localization Bridge (Semantics/StepSemantics.lean)
+### Field-Localization Bridge (Semantics/StepSemantics.lean — core namespace)
 
 | Theorem | Statement | Claim |
 |---------|-----------|-------------|
@@ -151,7 +151,6 @@ $$f \notin \text{ObservableFields}(d) \Rightarrow \neg\text{canTargetRepair}(f, 
 | `all_challenges_field_specific` | All challenges target one of 6 canonical fields | Field specificity |
 | `headers_enable_field_diagnosis` | depositHasHeader → challenge is field-specific | Header enables diagnosis |
 | `header_enables_efficient_resolution` | depositHasHeader → efficient resolution via field targeting | Header efficiency |
-| `headers_improve_localization` | depositHasHeader → localization_score = 1 | Optimal localization |
 
 ### Diagnosability Metric Theorems (Theorems/Headers.lean)
 
@@ -312,14 +311,14 @@ certify that S is vacuous regardless of consumer). Both repair by targeting Fiel
 
 | Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
-| `safety_V_link` | Semantics/StepSemantics.lean | Unsafe → ¬V_independent | Safety = V |
-| `sensitivity_E_link` | Semantics/StepSemantics.lean | Insensitive → ¬E_covers | Sensitivity = E |
-| `safety_iff_V_independence` | Semantics/StepSemantics.lean | Safe ↔ V_independent | Biconditional |
-| `sensitivity_iff_E_coverage` | Semantics/StepSemantics.lean | Sensitive ↔ E_covers | Biconditional |
-| `headers_provide_modal_properties` | Semantics/StepSemantics.lean | header_preserved → Safe ∧ Sensitive | Headers matter |
-| `stripped_headers_lose_modal_properties` | Semantics/StepSemantics.lean | ¬header_preserved → Unsafe ∧ Insensitive | Stripping hurts |
-| `safety_sensitivity_coincide` | Semantics/StepSemantics.lean | Safe ↔ Sensitive | Coincidence |
-| `modal_robustness_is_header_preservation` | Semantics/StepSemantics.lean | (Safe ∧ Sensitive) ↔ header_preserved | Unified |
+| `safety_V_link` | Semantics/ModalLinks.lean | Unsafe → ¬V_independent | Safety = V |
+| `sensitivity_E_link` | Semantics/ModalLinks.lean | Insensitive → ¬E_covers | Sensitivity = E |
+| `safety_iff_V_independence` | Semantics/ModalLinks.lean | Safe ↔ V_independent | Biconditional |
+| `sensitivity_iff_E_coverage` | Semantics/ModalLinks.lean | Sensitive ↔ E_covers | Biconditional |
+| `headers_provide_modal_properties` | Semantics/ModalLinks.lean | header_preserved → Safe ∧ Sensitive | Headers matter |
+| `stripped_headers_lose_modal_properties` | Semantics/ModalLinks.lean | ¬header_preserved → Unsafe ∧ Insensitive | Stripping hurts |
+| `safety_sensitivity_coincide` | Semantics/ModalLinks.lean | Safe ↔ Sensitive | Coincidence |
+| `modal_robustness_is_header_preservation` | Semantics/ModalLinks.lean | (Safe ∧ Sensitive) ↔ header_preserved | Unified |
 
 ### Math Form
 
@@ -343,19 +342,19 @@ have been retired in favour of these structural forms.
 
 ---
 
-## Bucket 9: Grounded Minimality (Semantics/StepSemantics.lean)
+## Bucket 9: Grounded Minimality (Semantics/LinkingAxioms.lean)
 
 **Role:** Each architectural feature is necessary for specific capabilities.
 
 | Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
-| `grounded_coordination_requires_bank` | Semantics/StepSemantics.lean | Coordination → Bank | Bank necessity |
-| `grounded_export_requires_headers` | Semantics/StepSemantics.lean | Export → Headers | Header necessity |
-| `grounded_bounded_audit_requires_bridges` | Semantics/StepSemantics.lean | Bounded audit → Bridges | Bridge necessity |
-| `grounded_no_bridge_forces_revalidation` | Semantics/StepSemantics.lean | No bridge → revalidate | Export cost |
-| `grounded_revocation_requires_quarantine` | Semantics/StepSemantics.lean | Revocation → Quarantine | Quarantine necessity |
-| `grounded_distributed_agents_require_bubbles` | Semantics/StepSemantics.lean | Distributed → Bubbles | Bubble necessity |
-| `grounded_truth_pressure_requires_redeemability` | Semantics/StepSemantics.lean | Truth pressure → Redeemability | Redeemability necessity |
+| `grounded_coordination_requires_bank` | Semantics/LinkingAxioms.lean | Coordination → Bank | Bank necessity |
+| `grounded_export_requires_headers` | Semantics/LinkingAxioms.lean | Export → Headers | Header necessity |
+| `grounded_bounded_audit_requires_bridges` | Semantics/LinkingAxioms.lean | Bounded audit → Bridges | Bridge necessity |
+| `grounded_no_bridge_forces_revalidation` | Semantics/LinkingAxioms.lean | No bridge → revalidate | Export cost |
+| `grounded_revocation_requires_quarantine` | Semantics/LinkingAxioms.lean | Revocation → Quarantine | Quarantine necessity |
+| `grounded_distributed_agents_require_bubbles` | Semantics/LinkingAxioms.lean | Distributed → Bubbles | Bubble necessity |
+| `grounded_truth_pressure_requires_redeemability` | Semantics/LinkingAxioms.lean | Truth pressure → Redeemability | Redeemability necessity |
 
 ---
 

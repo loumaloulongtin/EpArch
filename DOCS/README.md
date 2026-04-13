@@ -82,7 +82,9 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 |-----------|------|--------|
 | `Basic.lean` | Core types (Claim, Agent, Bubble, Field, etc.) | 0 |
 | `Header.lean` | S/E/V header structure + Deposit records | 0 |
-| `Semantics/StepSemantics.lean` | Labeled transition system (Step, Trace, Action) | 0 |
+| `Semantics/StepSemantics.lean` | Labeled transition system (Step, Trace, Action, invariant preservation) | 0 |
+| `Semantics/LinkingAxioms.lean` | Grounded linking theorems: Step preconditions force architectural features | 0 |
+| `Semantics/ModalLinks.lean` | Modal epistemology (Safety/Sensitivity ↔ S/E/V fields via header_preserved) | 0 |
 | `Theorems/` | Primary theorem library split into 8 focused sub-modules (Withdrawal, Cases, Headers, Modal, Strip, Corners, Dissolutions, Pathologies) | 0 |
 | `World.lean` | World layer for obligation theorems | 0 |
 | `Adversarial/Obligations.lean` | Adversarial axioms → obligation theorems | 0 |

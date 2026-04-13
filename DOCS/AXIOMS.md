@@ -173,7 +173,9 @@ only theorems, definitions, and opaque constants.
 | `Bank.lean` | Bank substrate (concrete operators; `deposited`/`hasDeposit`/`knowledge_B`/`reliance_level`/`blast_radius` are defs; opaque: `withdraw`, `exportDep`, `TrustBridge`, `Revalidate`, `RepairAction`) |
 | `Commitments.lean` | Structural commitments (all 8 proved as standalone theorems) |
 | `Invariants.lean` | Grounded operational invariants |
-| `Semantics/StepSemantics.lean` | Concrete step semantics |
+| `Semantics/StepSemantics.lean` | Concrete step semantics (LTS core) |
+| `Semantics/LinkingAxioms.lean` | Grounded linking theorems (Step preconditions → architectural features) |
+| `Semantics/ModalLinks.lean` | Modal epistemology conditions (Safety/Sensitivity ↔ header_preserved) |
 | `Theorems/` | Derived theorems (8 sub-modules) |
 | `EpArch/Concrete/` | Constructive concrete model (5 modules: Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity) |
 | All others | Theorem-bearing or definitional surfaces only |

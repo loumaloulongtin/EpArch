@@ -13,6 +13,7 @@ Part of: EpArch/Concrete/ split of ConcreteLedgerModel.lean
 
 import EpArch.Concrete.WorkingSystem
 import EpArch.Semantics.StepSemantics
+import EpArch.Semantics.ModalLinks
 
 namespace EpArch.ConcreteInstance
 
@@ -317,10 +318,6 @@ theorem concrete_challenge_field_specific9 :
     challenge_is_field_specific concreteChallenge7 := by
   unfold challenge_is_field_specific concreteChallenge7
   decide
-
-/-- The concrete model has optimal localization score. -/
-theorem concrete_optimal_localization9 :
-    localization_score concreteChallenge7 = 1 := rfl
 
 /-- A convergence witness for the concrete model with time = 2.
     Computable since concrete_resolution_trace9 is explicit. -/
