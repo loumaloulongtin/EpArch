@@ -393,7 +393,7 @@ is invisible to the transport machinery.
 
 This is exactly what "conservative extension" means:
 - Adding agent predicates doesn't break existing theorems
-- PaperFacing results transfer unchanged
+- RevisionGate results transfer unchanged
 - RevisionSafety.transport_core works as-is
 
 No additional Agent-specific transport is needed beyond what's in RevisionSafety.

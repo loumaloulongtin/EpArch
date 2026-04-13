@@ -135,9 +135,9 @@ to ensure paper-facing status.
 
 /-- Self-correction requires revision.
 
-    This is exactly PaperFacing M from RevisionSafety.lean. -/
+    This is exactly RevisionGate M from RevisionSafety.lean. -/
 theorem self_correction_requires_revision_paper (M : CoreModel) :
-    (∀ B, M.ops.selfCorrects B → M.ops.hasRevision B) ↔ PaperFacing M := by
+    (∀ B, M.ops.selfCorrects B → M.ops.hasRevision B) ↔ RevisionGate M := by
   constructor <;> intro h <;> exact h
 
 

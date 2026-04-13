@@ -95,8 +95,6 @@ The four theorems form a natural arc: corroboration is required (T1), works unde
 
 - **Imports:** Only `EpArch.Basic`
 - **Re-exported via:** `EpArch/Agent.lean`
-- **Paper-facing exports:** `EpArch/PaperFacing.lean` (appendix block)
-
 ## Technical Notes
 
 ### Proof Status

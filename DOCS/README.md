@@ -4,12 +4,9 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 
 **The core claim:** lifecycle gates, header-preserving export, a revision loop, and temporal validity are not design choices. They are *forced* by the combination of agent constraints (imperfect agents face permanent challenge pressure) and system health goals (safe withdrawal, reliable export, self-correction). The files below are the machine-checked record of that forcing argument.
 
-## Build Surfaces
+## Build Surface
 
-| Surface | Entry Point | Axiom decls | Description |
-|---------|-------------|--------|-------------|
-| **Paper-Facing** | `MainPaper.lean` | 0 | Only theorems cited by the paper |
-| **Full** | `Main.lean` | 0 | Full build |
+`lake build` (via `Main.lean`) is the single build target. **0 axiom declarations.**
 
 ## Documents
 
@@ -23,9 +20,6 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | [SEMANTICS.md](SEMANTICS.md) | Step semantics and LTS overview |
 | [WITNESS-SCOPE.md](WITNESS-SCOPE.md) | What the concrete model witnesses (and doesn't) |
 | [MODULARITY.md](MODULARITY.md) | Modularity tiers: what survives disabling a constraint, health goal, or world bundle, and by what mechanism |
-| [PAPER-MAP.md](PAPER-MAP.md) | Paper-section–to–Lean-artifact mapping with tier labels, file:line references, and certification-engine inventory |
-
-For the full paper-section-to-Lean-artifact mapping (with math notation, A.# labels, and claim-budget notes), see [PAPER-MAP.md](PAPER-MAP.md) or **Appendix A** of the paper.
 
 ## Core Concepts (Glossary)
 

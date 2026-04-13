@@ -859,8 +859,8 @@ Three levels of safety are formalized: premise strengthening (adding premises pr
 
 | Theorem | Statement | Description |
 |---------|-----------|-------------|
-| `transport_core` | Compatible E C → PaperFacing C → PaperFacing (forget E) | Core transport |
-| `safe_extension_preserves` | RevisionSafeExtension C → PaperFacing C → PaperFacing (forget R.ext) | Safe extension |
+| `transport_core` | Compatible E C → RevisionGate C → RevisionGate (forget E) | Core transport |
+| `safe_extension_preserves` | RevisionSafeExtension C → RevisionGate C → RevisionGate (forget R.ext) | Safe extension |
 | `safety_preserved_under_contract_refinement` | Refinement → IsInvariant C Safety → IsInvariant R (Safety âˆ˜ φ) | LTS refinement |
 
 ### Acceptance Tests (Diagnostic)
@@ -873,7 +873,7 @@ Three levels of safety are formalized: premise strengthening (adding premises pr
 
 ### Math Form
 
-$$\text{Compatible}(E, C) \land \text{PaperFacing}(C) \Rightarrow \text{PaperFacing}(\text{forget}(E))$$
+$$\text{Compatible}(E, C) \land \text{RevisionGate}(C) \Rightarrow \text{RevisionGate}(\text{forget}(E))$$
 
 $$\text{Compatible} := \forall B.\, E.\text{selfCorrects}(B) \Leftrightarrow C.\text{selfCorrects}(\pi_B(B))$$
 
@@ -924,7 +924,7 @@ $$\text{PRP} \Rightarrow \neg\exists t_{\text{final}}.\, \forall t \geq t_{\text
 
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
-| `vacuous_selfCorrects_paper_facing` | Meta/TheoremTransport.lean | `VacuousSelfCorrects M → PaperFacing M` | Disabled self-correction → PaperFacing vacuous |
+| `vacuous_selfCorrects_revision_gate` | Meta/TheoremTransport.lean | `VacuousSelfCorrects M → RevisionGate M` | Disabled self-correction → RevisionGate vacuous |
 | `vacuous_revision_corrigible_universal` | Meta/TheoremTransport.lean | `VacuousRevise M → universal corrigibility` | Disabled revise → revision part trivial |
 | `vacuous_submit_safe_withdrawal` | Meta/TheoremTransport.lean | `VacuousSubmit M → SafeWithdrawalGoal M` | Disabled submit → safe withdrawal vacuous |
 | `vacuous_truth_sound_deposits` | Meta/TheoremTransport.lean | `VacuousTruth M → SoundDepositsGoal M` | Disabled truth → sound deposits vacuous |
@@ -941,7 +941,7 @@ $$\text{PRP} \Rightarrow \neg\exists t_{\text{final}}.\, \forall t \geq t_{\text
 | Definition | File | Purpose |
 |------------|------|---------|
 | `OperationMask` | Meta/TheoremTransport.lean | 8-bool operation dependency record |
-| `mask_selfCorrection` | Meta/TheoremTransport.lean | Mask for PaperFacing |
+| `mask_selfCorrection` | Meta/TheoremTransport.lean | Mask for RevisionGate |
 | `mask_safeWithdrawal` | Meta/TheoremTransport.lean | Mask for SafeWithdrawalGoal |
 | `mask_reliableExport` | Meta/TheoremTransport.lean | Mask for ReliableExportGoal |
 | `mask_soundDeposits` | Meta/TheoremTransport.lean | Mask for SoundDepositsGoal |
@@ -983,8 +983,8 @@ C1, C2, C4b, C5, C6b are proved as named theorems in `Commitments.lean`
 
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
-| `concrete_bank_vacuous_pf` | Meta/Tier4Transport.lean | `ConcreteBankModel` with `selfCorrects := False` is PaperFacing | Base case |
-| `concrete_bank_transport` | Meta/Tier4Transport.lean | `Compatible E ConcreteBankModel → PaperFacing base → PaperFacing (forget E)` | Extension safety |
+| `concrete_bank_vacuous_pf` | Meta/Tier4Transport.lean | `ConcreteBankModel` with `selfCorrects := False` satisfies RevisionGate | Base case |
+| `concrete_bank_transport` | Meta/Tier4Transport.lean | `Compatible E ConcreteBankModel → RevisionGate base → RevisionGate (forget E)` | Extension safety |
 | `concrete_bank_vacuous_transport` | Meta/Tier4Transport.lean | Combines base + transport for the vacuous case | Convenience theorem |
 
 ### Cluster C Extended: All Five Health Goals Transport
@@ -1246,7 +1246,7 @@ $$\forall\, \text{Pred},\ d_1 = d_2 \implies \text{Pred}(d_1) \implies \text{Pre
 
 ## Bucket 24: Lattice-Stability / Graceful Scale-Down
 
-**Paper Role:** Proves EpArch is bidirectionally modular at the `PaperFacing` / competition-gate layer: the `PaperFacing` predicate is preserved in both directions under bundle perturbation. Removing the self-correction health goal leaves a valid sub-architecture where `PaperFacing` holds vacuously; compatible extensions at any level preserve `PaperFacing` through the existing transport machinery.
+**Paper Role:** Proves EpArch is bidirectionally modular at the `RevisionGate` / competition-gate layer: the `RevisionGate` predicate is preserved in both directions under bundle perturbation. Removing the self-correction health goal leaves a valid sub-architecture where `RevisionGate` holds vacuously; compatible extensions at any level preserve `RevisionGate` through the existing transport machinery.
 
 **File:** `Modularity.lean`
 
@@ -1256,13 +1256,11 @@ $$\forall\, \text{Pred},\ d_1 = d_2 \implies \text{Pred}(d_1) \implies \text{Pre
 
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
-| `paperfacing_decomposition` | Modularity.lean | `PaperFacing M ↔ RevisionGate M` | PaperFacing = RevisionGate component |
-
 ### Downward: Graceful Degradation
 
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
-| `graceful_degradation` | Modularity.lean | `NoSelfCorrection M → PaperFacing M` | Vacuous gate: drop self-correction goal → PaperFacing survives |
+| `graceful_degradation` | Modularity.lean | `NoSelfCorrection M → RevisionGate M` | Vacuous gate: drop self-correction goal → RevisionGate holds |
 
 ### OdometerModel — Concrete Minimal Sub-bundle
 
@@ -1271,7 +1269,7 @@ A non-revisable system satisfying only `SoundDepositsGoal` (readings must be ver
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
 | `odometer_no_self_correction` | Modularity.lean | `NoSelfCorrection OdometerModel` | Odometer has no self-correction |
-| `odometer_paper_facing` | Modularity.lean | `PaperFacing OdometerModel` | Odometer satisfies paper-facing (vacuously) |
+| `odometer_revision_gate` | Modularity.lean | `RevisionGate OdometerModel` | Odometer satisfies the revision gate (vacuously) |
 | `odometer_sound_deposits` | Modularity.lean | `SoundDepositsGoal OdometerModel` | Readings are verifiable within effectiveTime |
 | `odometer_not_corrigible` | Modularity.lean | `¬CorrigibleLedgerGoal OdometerModel` | Correctly fails the revision goal it does not claim |
 
@@ -1279,8 +1277,8 @@ A non-revisable system satisfying only `SoundDepositsGoal` (readings must be ver
 
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
-| `sub_revision_safety` | Modularity.lean | `Compatible E S.model → PaperFacing S.model → PaperFacing (forget E)` | RevisionSafety holds at every sub-bundle level |
-| `odometer_extension_safe` | Modularity.lean | `Compatible E OdometerModel → PaperFacing (forget E)` | Any compatible extension of the odometer is paper-facing |
+| `sub_revision_safety` | Modularity.lean | `Compatible E S.model → RevisionGate S.model → RevisionGate (forget E)` | RevisionSafety holds at every sub-bundle level |
+| `odometer_extension_safe` | Modularity.lean | `Compatible E OdometerModel → RevisionGate (forget E)` | Any compatible extension of the odometer satisfies the revision gate |
 
 ### Headline: ModularityPack
 
@@ -1290,9 +1288,9 @@ A non-revisable system satisfying only `SoundDepositsGoal` (readings must be ver
 
 ### Math Form
 
-$$\text{NoSelfCorrection}(M) \Rightarrow \text{PaperFacing}(M)$$
+$$\text{NoSelfCorrection}(M) \Rightarrow \text{RevisionGate}(M)$$
 
-$$\text{Compatible}(E, S) \land \text{PaperFacing}(S) \Rightarrow \text{PaperFacing}(\text{forget}(E))$$
+$$\text{Compatible}(E, S) \land \text{RevisionGate}(S) \Rightarrow \text{RevisionGate}(\text{forget}(E))$$
 
 $$\text{ModularityPack} := \text{GracefulDegradation} \land \text{SubRevisionSafety} \land \text{safe\_extension\_preserves}$$
 
@@ -1300,7 +1298,7 @@ $$\text{ModularityPack} := \text{GracefulDegradation} \land \text{SubRevisionSaf
 
 | Definition | File | Purpose |
 |------------|------|---------|
-| `RevisionGate` | Modularity.lean | `∀ B, selfCorrects B → hasRevision B` — PaperFacing component |
+| `RevisionGate` | Modularity.lean | `∀ B, selfCorrects B → hasRevision B` — competition gate predicate |
 | `NoSelfCorrection` | Modularity.lean | Sub-bundle predicate: no bubble self-corrects |
 | `SubBundle` | Modularity.lean | CoreModel + active SubGoal predicate + satisfaction witness |
 | `OdometerModel` | Modularity.lean | Concrete sub-bundle: one bubble, append-only, SoundDepositsGoal only |
@@ -1497,8 +1495,8 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
-| `cluster_lattice_graceful` | Meta/Config.lean | `∀ M, NoSelfCorrection M → PaperFacing M` | Witness for `.lattice_graceful` |
-| `cluster_lattice_sub_safety` | Meta/Config.lean | `Compatible E S.model → PaperFacing S.model → PaperFacing (forget E)` | Witness for `.lattice_sub_safety` |
+| `cluster_lattice_graceful` | Meta/Config.lean | `∀ M, NoSelfCorrection M → RevisionGate M` | Witness for `.lattice_graceful` |
+| `cluster_lattice_sub_safety` | Meta/Config.lean | `Compatible E S.model → RevisionGate S.model → RevisionGate (forget E)` | Witness for `.lattice_sub_safety` |
 | `cluster_lattice_pack` | Meta/Config.lean | Full bidirectional lattice-stability conjunction (graceful + sub-safety + full revision safety) | Witness for `.lattice_pack` |
 
 ---

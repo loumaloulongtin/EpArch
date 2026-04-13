@@ -15,7 +15,7 @@ axiom declarations, zero sorries. Build: `lake build`.
 - `EpArch/Agent/` — agent-level constraints, corroboration, imposition, resilience.
 - `EpArch/Meta/` — certification engine, cluster registry, transport, modularity meta-theorems.
 - `DOCS/` — documentation. Each `.md` describes one area. Read `DOCS/README.md` for the index.
-- `Main.lean` — full build entry point. `MainPaper.lean` — paper-cited subset only.
+- `Main.lean` — full build entry point.
 
 ### Naming conventions (stable patterns, not exhaustive lists)
 
@@ -39,7 +39,6 @@ file describe what that module owns.
 doc covers a topic. Key docs for common questions:
 
 - Cluster families, how to add/remove clusters → `DOCS/MODULARITY.md`
-- Paper-section-to-Lean-artifact mapping → `DOCS/PAPER-MAP.md`
 - Axiom boundary → `DOCS/AXIOMS.md`
 
 ---
@@ -75,8 +74,8 @@ These are architectural invariants, not version-specific facts.
 - **Traction ≠ authorization.** Core architectural split. Search `Theorems.lean`
   for `traction_broader_than_authorization`.
 
-- **PaperFacing = SelfCorrectionGoal.** Definitionally equal. See
-  `self_correction_is_paper_facing` in `Health.lean`.
+- **RevisionGate = SelfCorrectionGoal.** Definitionally equal. See
+  `self_correction_is_revision_gate` in `Health.lean`.
 
 - **Tier 4 has distinct sub-clusters** (commitments, structural, LTS-universal,
   bank-goal transport). Do not conflate them. Inspect the `EnabledTier4Cluster`

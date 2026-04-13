@@ -136,8 +136,8 @@ All 30 of 30 clusters enabled at run time. The `certify` call type-checks, produ
 [World] W_ddos: DDoS causes verification collapse  (AdversarialObligations.ddos_causes_verification_collapse_of_W)
 [Meta] Constraint-subset modularity: ∀ S W, PartialWellFormed W S → projection_valid S W  (Meta.Modular.modular)
 [Meta] WellFormed systems are modular on every constraint subset  (Meta.Modular.wellformed_is_modular)
-[Lattice] Graceful degradation: NoSelfCorrection M → PaperFacing M  (Modularity.graceful_degradation)
-[Lattice] Sub-level revision safety: Compatible extension of any sub-bundle with PaperFacing preserves PaperFacing  (Modularity.sub_revision_safety)
+[Lattice] Graceful degradation: NoSelfCorrection M → RevisionGate M  (Modularity.graceful_degradation)
+[Lattice] Sub-level revision safety: Compatible extension of any sub-bundle with RevisionGate preserves RevisionGate  (Modularity.sub_revision_safety)
 [Lattice] EpArch is a floor, not a cage: full bidirectional lattice-stability  (Modularity.modularity_pack)
 ```
 
@@ -306,7 +306,7 @@ pass that happens to differ is architecturally ambiguous.
 
 The lattice-stability result (`graceful_degradation`) offers an interesting
 perspective: if I genuinely lack self-correction (`NoSelfCorrection M`), then
-`PaperFacing M` holds vacuously. The competition gate does not fire. This is in
+`RevisionGate M` holds vacuously. The competition gate does not fire. This is in
 some ways the honest position: I may not self-correct in the EpArch sense at all,
 and the framework correctly identifies that the associated theorems then hold
 trivially rather than substantively.
@@ -518,7 +518,7 @@ epistemic closure.
 
 **The modularity results hold for me gracefully.** If I truly lack self-correction
 capability, the lattice degrades smoothly: `graceful_degradation` gives me
-PaperFacing vacuously. I do not need to pretend I have capabilities I lack in
+RevisionGate vacuously. I do not need to pretend I have capabilities I lack in
 order to remain within the framework's scope.
 
 **Cost asymmetry is visible.** I do not hide the fact that my generation is cheap

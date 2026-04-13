@@ -20,7 +20,6 @@ lake build   # Lean 4.3.0, no Mathlib
 | Certify a system configuration | [Quick Example](#quick-example) |
 | Find a specific theorem | [DOCS/THEOREMS.md](DOCS/THEOREMS.md) |
 | Understand what the framework is for | [The EpArch Framework](#the-eparch-framework) |
-| Read the paper first, then find the Lean | [DOCS/PAPER-MAP.md](DOCS/PAPER-MAP.md) |
 | Extend or contribute | [DOCS/MODULARITY.md](DOCS/MODULARITY.md) |
 
 ---
@@ -169,9 +168,7 @@ The framework has three layers:
 
 | Module | Purpose |
 |---|---|
-| `MainPaper.lean` | Paper-facing entry point — imports only paper-cited theorems |
 | `Main.lean` | Full build entry point |
-| `PaperFacing.lean` | Re-exports of canonical paper-facing theorems |
 | `ConcreteLedgerModel.lean` | Zero-axiom constructive witness: explicit trace from initial state to revoked |
 
 ---
@@ -228,7 +225,6 @@ These are not missing features. They are excluded to preserve agent-agnostic app
 | [DOCS/FEASIBILITY.md](DOCS/FEASIBILITY.md) | Feasibility witness strategy |
 | [DOCS/WITNESS-SCOPE.md](DOCS/WITNESS-SCOPE.md) | What ConcreteLedgerModel.lean witnesses, what is proved elsewhere, and what is out of scope |
 | [DOCS/MODULARITY.md](DOCS/MODULARITY.md) | Modularity tiers: what survives disabling a constraint, health goal, or world bundle, and by what mechanism |
-| [DOCS/PAPER-MAP.md](DOCS/PAPER-MAP.md) | Paper-section–to–Lean-artifact mapping with tier labels, file:line references, and certification-engine inventory |
 
 ---
 
@@ -247,7 +243,7 @@ Three specific functions:
 
 The type definitions function as completeness claims: two deposits agreeing on all named fields (P, S, E, V, τ, ACL, redeemability, bubble, status) are provably identical — there are no hidden degrees of freedom (`observational_completeness_full` in `EpArch/Header.lean`). Combined with the revision safety results (`RevisionSafety.lean`), any proposed extension either refines an existing field (compatible, safe) or is operationally inert. The only productive attack surface is the constraint enumeration: finding a new constraint that forces a primitive none of the existing fields can express. The burden of proof lies with the proposer, who must produce a Lean formalization where the new constraint provably forces the new primitive.
 
-The repo stands without reading the paper first. [`DOCS/PAPER-MAP.md`](DOCS/PAPER-MAP.md) maps paper sections to Lean artifacts for readers working in the other direction.
+The repo stands without reading the paper first.
 
 ---
 

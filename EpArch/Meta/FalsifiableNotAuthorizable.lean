@@ -247,7 +247,7 @@ theorem witness_not_fully_authorizable : ¬ FullyAuthorizableByObs WorldWitness.
     doesn't break safety properties. -/
 theorem credit_safe_under_extension :
     ∀ (C : RevisionSafety.CoreModel) (R : RevisionSafety.RevisionSafeExtension C),
-      RevisionSafety.PaperFacing C → RevisionSafety.PaperFacing (RevisionSafety.forget R.ext) :=
+      RevisionSafety.RevisionGate C → RevisionSafety.RevisionGate (RevisionSafety.forget R.ext) :=
   fun C R => RevisionSafety.safe_extension_preserves C R
 
 
@@ -272,7 +272,7 @@ theorem meta_status_proof_pack :
     CreditRequired WorldWitness.WitnessCtx ∧
     -- P3: Extension safety
     (∀ (C : RevisionSafety.CoreModel) (R : RevisionSafety.RevisionSafeExtension C),
-      RevisionSafety.PaperFacing C → RevisionSafety.PaperFacing (RevisionSafety.forget R.ext)) :=
+      RevisionSafety.RevisionGate C → RevisionSafety.RevisionGate (RevisionSafety.forget R.ext)) :=
   ⟨theory_floor_satisfiable,
    theory_floor_falsifiable,
    witness_requires_credit,

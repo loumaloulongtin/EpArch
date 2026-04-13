@@ -146,21 +146,21 @@ noncomputable def ConcreteBankModel
   }
   hasBubble := ⟨default⟩
 
-/-- `ConcreteBankModel` with `selfCorrects := fun _ => False` is PaperFacing.
+/-- `ConcreteBankModel` with `selfCorrects := fun _ => False` satisfies RevisionGate.
     The competition gate holds vacuously since the premise is always False. -/
 theorem concrete_bank_vacuous_pf
     (ops : ConcreteBankOps PropLike Standard ErrorModel Provenance) :
-    PaperFacing (ConcreteBankModel { ops with selfCorr_pred := fun _ => False }) :=
+    RevisionGate (ConcreteBankModel { ops with selfCorr_pred := fun _ => False }) :=
   fun _B h_sc => h_sc.elim
 
-/-- Compatible extensions of `ConcreteBankModel` preserve `PaperFacing`.
+/-- Compatible extensions of `ConcreteBankModel` preserve `RevisionGate`.
     Direct application of `transport_self_correction`. -/
 theorem concrete_bank_transport
     (ops : ConcreteBankOps PropLike Standard ErrorModel Provenance)
     (E : ExtModel)
     (h_compat : Compatible E (ConcreteBankModel ops))
-    (h_pf : PaperFacing (ConcreteBankModel ops)) :
-    PaperFacing (forget E) :=
+    (h_pf : RevisionGate (ConcreteBankModel ops)) :
+    RevisionGate (forget E) :=
   transport_self_correction E _ h_compat h_pf
 
 /-- Vacuous concrete bank extension: specialises `concrete_bank_transport` to
@@ -169,7 +169,7 @@ theorem concrete_bank_vacuous_transport
     (ops : ConcreteBankOps PropLike Standard ErrorModel Provenance)
     (E : ExtModel)
     (h_compat : Compatible E (ConcreteBankModel { ops with selfCorr_pred := fun _ => False })) :
-    PaperFacing (forget E) :=
+    RevisionGate (forget E) :=
   transport_self_correction E _
     h_compat
     (concrete_bank_vacuous_pf ops)
@@ -223,7 +223,7 @@ theorem lts_theorems_step_universal {Reason Evidence : Type} :
 /-! ## §3c  All Five Health Goals Transport Through ConcreteBankModel
 
 This section closes the actual Cluster C gap: not just the competition gate
-(PaperFacing / SelfCorrectionGoal) but **all five** ∀-health goals survive
+(RevisionGate / SelfCorrectionGoal) but **all five** ∀-health goals survive
 any compatible extension of a concrete-bank-shaped CoreModel.
 
 Proof: direct application of the five individual transport theorems from
@@ -301,7 +301,7 @@ theorem concrete_bank_all_goals_transport_surj
 
 /-! ## §4  Full Tier 4 Certification -/
 
-/-- `tier4_transport_pack` — legacy pack (PaperFacing only, vacuous base).
+/-- `tier4_transport_pack` — legacy pack (RevisionGate only, vacuous base).
 
     Kept for backward compatibility. For the full Cluster C certification
     (all five health goals), use `tier4_full_pack`. -/
@@ -313,7 +313,7 @@ theorem tier4_transport_pack
     (∀ (d : Deposit PropLike Standard ErrorModel Provenance),
         ∃ (s : Standard) (e : ErrorModel) (v : Provenance),
           d.h.S = s ∧ d.h.E = e ∧ d.h.V = v) ∧
-    PaperFacing (forget E_bank) :=
+    RevisionGate (forget E_bank) :=
   ⟨SEVFactorization,
    concrete_bank_vacuous_transport ops E_bank h_compat⟩
 
@@ -358,7 +358,7 @@ theorem tier4_full_pack
     ReliableExportGoal (forget E_bank) ∧
     -- (C3) SoundDepositsGoal transports
     SoundDepositsGoal (forget E_bank) ∧
-    -- (C4) SelfCorrectionGoal (= PaperFacing) transports
+    -- (C4) SelfCorrectionGoal (= RevisionGate) transports
     SelfCorrectionGoal (forget E_bank) ∧
     -- (C5) Universal CorrigibleLedgerGoal: hasRevision → revision preserves truth (∀-part)
     --     The ∃-part requires SurjectiveCompatible; this is what Compatible alone guarantees.
@@ -410,7 +410,7 @@ theorem tier4_full_pack_surj
     ReliableExportGoal (forget E_bank) ∧
     -- (C3) SoundDepositsGoal transports
     SoundDepositsGoal (forget E_bank) ∧
-    -- (C4) SelfCorrectionGoal (= PaperFacing) transports
+    -- (C4) SelfCorrectionGoal (= RevisionGate) transports
     SelfCorrectionGoal (forget E_bank) ∧
     -- (C5) Full CorrigibleLedgerGoal transports (∃-witness pulled back via bubbleSurj)
     CorrigibleLedgerGoal (forget E_bank) :=
