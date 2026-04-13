@@ -374,18 +374,18 @@ are Prop-valued, keeping `LatticeWitness` in `Type 1`. -/
 /-- Indexed proof carrier for lattice-stability clusters. -/
 inductive LatticeWitness : EnabledLatticeCluster → Type 1 where
   | graceful :
-      (forall (M : CoreModel), NoSelfCorrection M → PaperFacing M) →
+      (forall (M : CoreModel), NoSelfCorrection M → RevisionGate M) →
       LatticeWitness .lattice_graceful
   | subSafety :
       (forall (S : SubBundle) (E : ExtModel),
-        Compatible E S.model → PaperFacing S.model → PaperFacing (forget E)) →
+        Compatible E S.model → RevisionGate S.model → RevisionGate (forget E)) →
       LatticeWitness .lattice_sub_safety
   | pack :
-      ((forall (M : CoreModel), NoSelfCorrection M → PaperFacing M) ∧
+      ((forall (M : CoreModel), NoSelfCorrection M → RevisionGate M) ∧
        (forall (S : SubBundle) (E : ExtModel),
-          Compatible E S.model → PaperFacing S.model → PaperFacing (forget E)) ∧
+          Compatible E S.model → RevisionGate S.model → RevisionGate (forget E)) ∧
        (forall (C : CoreModel) (R : RevisionSafeExtension C),
-          PaperFacing C → PaperFacing (forget R.ext))) →
+          RevisionGate C → RevisionGate (forget R.ext))) →
       LatticeWitness .lattice_pack
 
 /-- For every lattice-stability cluster, deliver its `LatticeWitness`. -/
@@ -629,7 +629,7 @@ Usage:  `#check cluster_forcing_distributed_agents`
          `#check cluster_meta_modular`
          → `∀ (S : ConstraintSubset) (W : WorkingSystem), PartialWellFormed W S → projection_valid S W`
          `#check cluster_lattice_graceful`
-         → `∀ (M : CoreModel), NoSelfCorrection M → PaperFacing M`
+         → `∀ (M : CoreModel), NoSelfCorrection M → RevisionGate M`
 
 -- ── Tier 2 forcing ──────────────────────────────────────────────────────── -/
 
@@ -807,27 +807,27 @@ theorem cluster_meta_modular (S : ConstraintSubset) (W : WorkingSystem)
 -- ── Lattice-stability theorems ─────────────────────────────────────────────────
 
 /-- Cluster `.lattice_graceful`: graceful degradation — removing self-correction
-    collapses the PaperFacing obligation to True (vacuously satisfied). -/
+    collapses the RevisionGate obligation to True (vacuously satisfied). -/
 theorem cluster_lattice_graceful (M : CoreModel) (h : NoSelfCorrection M) :
-    PaperFacing M :=
+    RevisionGate M :=
   graceful_degradation M h
 
 /-- Cluster `.lattice_sub_safety`: compatible extension of any sub-bundle that
-    already satisfies PaperFacing preserves PaperFacing. -/
+    already satisfies RevisionGate preserves RevisionGate. -/
 theorem cluster_lattice_sub_safety (S : SubBundle) (E : ExtModel)
-    (h_compat : Compatible E S.model) (h_pf : PaperFacing S.model) :
-    PaperFacing (forget E) :=
-  sub_revision_safety S E h_compat h_pf
+    (h_compat : Compatible E S.model) (h_gate : RevisionGate S.model) :
+    RevisionGate (forget E) :=
+  sub_revision_safety S E h_compat h_gate
 
 /-- Cluster `.lattice_pack`: EpArch is a floor, not a cage — the full
     bidirectional lattice-stability result (graceful degradation + sub-level
     revision safety + full-level revision safety). -/
 theorem cluster_lattice_pack :
-    (∀ (M : CoreModel), NoSelfCorrection M → PaperFacing M) ∧
+    (∀ (M : CoreModel), NoSelfCorrection M → RevisionGate M) ∧
     (∀ (S : SubBundle) (E : ExtModel),
-        Compatible E S.model → PaperFacing S.model → PaperFacing (forget E)) ∧
+        Compatible E S.model → RevisionGate S.model → RevisionGate (forget E)) ∧
     (∀ (C : CoreModel) (R : RevisionSafeExtension C),
-        PaperFacing C → PaperFacing (forget R.ext)) :=
+        RevisionGate C → RevisionGate (forget R.ext)) :=
   modularity_pack
 
 

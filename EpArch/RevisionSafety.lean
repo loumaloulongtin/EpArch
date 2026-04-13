@@ -3,12 +3,12 @@ EpArch/RevisionSafety.lean — Revision Safety Meta-Theorems
 
 This module provides meta-theorems guaranteeing that:
 1. Adding constraints doesn't invalidate existing implications
-2. Extensions preserve paper-facing results via forgetful projection
+2. Extensions preserve the revision gate via forgetful projection
 3. Compatible extensions don't silently drift semantics
 
 ## Key Properties
 
-PaperFacing is a real predicate capturing the architectural core claims.
+RevisionGate is the competition-gate predicate capturing the architectural core claim.
 Compatible requires semantic preservation via commuting laws, not mere type equality.
 
 ## Purpose
@@ -16,7 +16,7 @@ Compatible requires semantic preservation via commuting laws, not mere type equa
 Answer: "If I adopt this architecture and it's later incomplete, do I get stuck?"
 
 Prove: Adding constraints / extending the world does NOT collapse already-proved
-paper-facing results, as long as extensions preserve the core interface.
+revision-gate results, as long as extensions preserve the core interface.
 
 -/
 
@@ -63,7 +63,7 @@ theorem premise_chain {A B C Claim : Prop} :
 
 /-! ## Core Signature
 
-The core signature defines what operations matter for paper-facing claims.
+The core signature defines what operations matter for revision-gate claims.
 -/
 
 /--
@@ -74,7 +74,7 @@ Any extension claiming compatibility must preserve these semantics exactly.
 
 ### Frozen Core Surface
 
-This is the paper-facing core surface. All primitives listed here are load-bearing
+This is the revision-gate core surface. All primitives listed here are load-bearing
 for the formalization's core architectural claims. Extensions must preserve all of them.
 
 **Primitive Types (CoreSig):**
@@ -110,7 +110,7 @@ abbrev CorePrims : List String :=
    "deposit_header", "submit", "revise",
    "hasRevision", "selfCorrects"]
 
-/-- Core signature: the type structure of paper-facing models. -/
+/-- Core signature: the type structure of core models. -/
 structure CoreSig where
   /-- Agent type -/
   Agent : Type u
@@ -125,9 +125,9 @@ structure CoreSig where
   /-- Header type -/
   Header : Type u
 
-/-- Core operations: the semantic content of paper-facing models.
+/-- Core operations: the semantic content of core models.
 
-    These operations constitute the frozen paper-facing surface.
+    These operations constitute the frozen core surface.
     Any Compatible extension must preserve all of them via commuting laws. -/
 structure CoreOps (Sig : CoreSig) where
   /-- Deposit → Header projection -/
@@ -163,17 +163,17 @@ structure CoreModel where
   hasBubble : Nonempty sig.Bubble
 
 
-/-! ## Paper-Facing Property
+/-! ## RevisionGate
 
-PaperFacing is a real predicate, not `True`.
-A model is paper-facing if it satisfies the core architectural invariants.
+RevisionGate is a real predicate, not `True`.
+A model satisfies the revision gate if it satisfies the core architectural invariant.
 -/
 
-/-- Paper-facing property: the competition gate holds.
+/-- RevisionGate: the competition-gate predicate.
 
-    A model is paper-facing if selfCorrects B → hasRevision B for all bubbles.
+    A model satisfies the revision gate if selfCorrects B → hasRevision B for all bubbles.
     (Header projection and non-triviality are structural guarantees of CoreModel.) -/
-def PaperFacing (M : CoreModel) : Prop :=
+def RevisionGate (M : CoreModel) : Prop :=
   -- Competition Gate: revision is necessary for self-correction
   ∀ B : M.sig.Bubble, M.ops.selfCorrects B → M.ops.hasRevision B
 
@@ -288,13 +288,13 @@ structure Compatible (E : ExtModel) (C : CoreModel) where
 
 /-! ## Transport Theorem
 
-If E is compatible with C, and C is paper-facing,
-then the forgetful projection of E is paper-facing.
+If E is compatible with C, and C satisfies the revision gate,
+then the forgetful projection of E also satisfies the revision gate.
 
 The proof uses the commuting laws to transfer the competition gate property.
 -/
 
-/-- Transport: Compatible extensions preserve paper-facing properties.
+/-- Transport: Compatible extensions preserve the revision gate.
 
     This is a real proof using commuting laws, not trivial record equality.
 
@@ -303,15 +303,15 @@ The proof uses the commuting laws to transfer the competition gate property.
     2. Want: forget E satisfies competition gate
     3. Use commuting laws to transfer the property
 
-    The key insight: PaperFacing (forget E) unfolds to a statement about
+    The key insight: RevisionGate (forget E) unfolds to a statement about
     E.ops.selfCorrects and E.ops.hasRevision. The commuting laws let us
-    transfer these to C, apply C's paper-facing property, and transfer back. -/
+    transfer these to C, apply C's revision gate property, and transfer back. -/
 theorem transport_core (E : ExtModel) (C : CoreModel) (h : Compatible E C) :
-    PaperFacing C → PaperFacing (forget E) := by
-  intro h_pf_C
-  -- PaperFacing (forget E) means: ∀ B, (forget E).ops.selfCorrects B → (forget E).ops.hasRevision B
+    RevisionGate C → RevisionGate (forget E) := by
+  intro h_gate_C
+  -- RevisionGate (forget E) means: ∀ B, (forget E).ops.selfCorrects B → (forget E).ops.hasRevision B
   -- By definition of forget: (forget E).ops.selfCorrects = E.ops.selfCorrects
-  unfold PaperFacing
+  unfold RevisionGate
   intro B_E h_sc_E
   -- h_sc_E : E.ops.selfCorrects B_E
   -- Need: E.ops.hasRevision B_E
@@ -319,8 +319,8 @@ theorem transport_core (E : ExtModel) (C : CoreModel) (h : Compatible E C) :
   -- Step 1: Transfer to C using commuting laws
   have h_sc_C : C.ops.selfCorrects (h.πBubble B_E) := h.selfCorrects_comm B_E |>.mp h_sc_E
 
-  -- Step 2: Apply paper-facing property of C
-  have h_hr_C : C.ops.hasRevision (h.πBubble B_E) := h_pf_C (h.πBubble B_E) h_sc_C
+  -- Step 2: Apply revision-gate property of C
+  have h_hr_C : C.ops.hasRevision (h.πBubble B_E) := h_gate_C (h.πBubble B_E) h_sc_C
 
   -- Step 3: Transfer back using hasRevision_comm
   exact h.hasRevision_comm B_E |>.mpr h_hr_C
@@ -338,9 +338,9 @@ structure RevisionSafeExtension (C : CoreModel) where
   /-- Consistency: extension has a model (non-triviality witnessed by hasBubble) -/
   consistent : True  -- Already witnessed by ext.hasBubble
 
-/-- Safe extensions preserve all paper-facing results. -/
+/-- Safe extensions preserve all revision gate results. -/
 theorem safe_extension_preserves (C : CoreModel) (R : RevisionSafeExtension C) :
-    PaperFacing C → PaperFacing (forget R.ext) :=
+    RevisionGate C → RevisionGate (forget R.ext) :=
   transport_core R.ext C R.compat
 
 
@@ -520,7 +520,7 @@ end AcceptanceTests
 1. **Premise Strengthening**: `premise_strengthening`
    - Adding assumptions never breaks existing implications
 
-2. **PaperFacing**: NOT `True` — real predicate on CoreModel
+2. **RevisionGate**: NOT `True` — real predicate on CoreModel
    - Competition gate must hold
 
 3. **Compatible**: NOT type equality — semantic commuting laws
@@ -528,11 +528,11 @@ end AcceptanceTests
    - **Acceptance tests prove**: bad extensions FAIL Compatible
 
 4. **Transport**: `transport_core`
-   - Compatible extensions preserve paper-facing property
+   - Compatible extensions preserve the revision gate
    - **Real proof**: uses commuting laws, not record equality
 
 5. **Safe Extension**: `safe_extension_preserves`
-   - Revision-safe extensions preserve all paper-facing results
+   - Revision-safe extensions preserve the revision gate
 
 6. **Refinement**: `safety_preserved_under_contract_refinement`
    - Safety properties preserved under trace refinement

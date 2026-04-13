@@ -20,7 +20,6 @@ lake build   # Lean 4.3.0, no Mathlib
 | Certify a system configuration | [Quick Example](#quick-example) |
 | Find a specific theorem | [DOCS/THEOREMS.md](DOCS/THEOREMS.md) |
 | Understand what the framework is for | [The EpArch Framework](#the-eparch-framework) |
-| Read the paper first, then find the Lean | [DOCS/PAPER-MAP.md](DOCS/PAPER-MAP.md) |
 | Extend or contribute | [DOCS/MODULARITY.md](DOCS/MODULARITY.md) |
 
 ---
@@ -140,7 +139,7 @@ The framework has three layers:
 | `AdversarialBase.lean` | Adversarial type definitions |
 | `AdversarialObligations.lean` | Attack/defense obligation theorems under world bundles |
 | `Agent/Corroboration.lean` | k-of-n corroboration guarantees and independence conditions |
-| `Commitments.lean` | The paper's 8 structural commitments; all proved as standalone theorems; `commitments_pack` bundles the unconditional ones (C3/C4b/C7b/C8) |
+| `Commitments.lean` | The 8 structural commitments; all proved as standalone theorems; `commitments_pack` bundles the unconditional ones (C3/C4b/C7b/C8) |
 | `Minimality.lean` | Structural impossibility models + alternative-architecture dismissals; `Pressure` inductive as canonical dimension index |
 | `Convergence.lean` | `StructurallyForced`, `ForcingEmbedding`, `convergence_structural`, bridge predicates; six per-dimension `*_forces_*` theorems; `SystemOperationalBundle`, `WorldBridgeBundle` |
 | `VerificationDepth.lean` | Kernel-grounded verification depth: `DepthClaim` constructive witness; `bounded_verify` budget decision procedure; `DepthWorldCtx` instantiates `W_bounded_verification` by construction |
@@ -169,9 +168,7 @@ The framework has three layers:
 
 | Module | Purpose |
 |---|---|
-| `MainPaper.lean` | Paper-facing entry point — imports only paper-cited theorems |
 | `Main.lean` | Full build entry point |
-| `PaperFacing.lean` | Re-exports of canonical paper-facing theorems |
 | `ConcreteLedgerModel.lean` | Zero-axiom constructive witness: explicit trace from initial state to revoked |
 
 ---
@@ -221,33 +218,19 @@ These are not missing features. They are excluded to preserve agent-agnostic app
 | Document | Description |
 |---|---|
 | [DOCS/AXIOMS.md](DOCS/AXIOMS.md) | Full axiom inventory with categories and justifications |
-| [DOCS/THEOREMS.md](DOCS/THEOREMS.md) | Theorem inventory organized by paper role |
-| [DOCS/SEMANTICS.md](DOCS/SEMANTICS.md) | Operational proxy definitions and their paper counterparts |
+| [DOCS/THEOREMS.md](DOCS/THEOREMS.md) | Theorem inventory organized by architectural role |
+| [DOCS/SEMANTICS.md](DOCS/SEMANTICS.md) | Operational proxy definitions and formal interpretations |
 | [DOCS/WORLD.md](DOCS/WORLD.md) | World layer: parametric semantic interface and W_* obligation theorems |
 | [DOCS/CORROBORATION.md](DOCS/CORROBORATION.md) | Corroboration module design notes |
 | [DOCS/FEASIBILITY.md](DOCS/FEASIBILITY.md) | Feasibility witness strategy |
 | [DOCS/WITNESS-SCOPE.md](DOCS/WITNESS-SCOPE.md) | What ConcreteLedgerModel.lean witnesses, what is proved elsewhere, and what is out of scope |
 | [DOCS/MODULARITY.md](DOCS/MODULARITY.md) | Modularity tiers: what survives disabling a constraint, health goal, or world bundle, and by what mechanism |
-| [DOCS/PAPER-MAP.md](DOCS/PAPER-MAP.md) | Paper-section–to–Lean-artifact mapping with tier labels, file:line references, and certification-engine inventory |
 
 ---
 
-## Relationship to the Paper
+## References
 
 > Longtin, L.-M. (2026). *Epistemic Architecture: A Constraints-and-Objectives Framework for Bounded Agents Under Adversarial Pressure.* PhilArchive: <https://philarchive.org/rec/LONEAA-7>
-
-The paper gives the narrative motivation, the philosophical argument, and the design rationale.
-This repo is the standalone executable artifact: the paper's claims are machine-checked here, not just asserted.
-
-Three specific functions:
-
-1. **Consistency** — the architecture is non-vacuously satisfiable (zero sorries, concrete witnesses)
-2. **Conditional necessity** — rival architectures must address specific theorem-level challenges to compete
-3. **Operational grounding** — abstract paper commitments have concrete LTS semantics that can be inspected
-
-The type definitions function as completeness claims: two deposits agreeing on all named fields (P, S, E, V, τ, ACL, redeemability, bubble, status) are provably identical — there are no hidden degrees of freedom (`observational_completeness_full` in `EpArch/Header.lean`). Combined with the revision safety results (`RevisionSafety.lean`), any proposed extension either refines an existing field (compatible, safe) or is operationally inert. The only productive attack surface is the constraint enumeration: finding a new constraint that forces a primitive none of the existing fields can express. The burden of proof lies with the proposer, who must produce a Lean formalization where the new constraint provably forces the new primitive.
-
-The repo stands without reading the paper first. [`DOCS/PAPER-MAP.md`](DOCS/PAPER-MAP.md) maps paper sections to Lean artifacts for readers working in the other direction.
 
 ---
 

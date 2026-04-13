@@ -1187,4 +1187,68 @@ theorem lean_s_failure_VE_data (name : String) :
       (canonical_sorry_publication_case name).e_witness.documented_failures :=
   ⟨rfl, List.Mem.head _⟩
 
+/-! ## .olean Cache: Deposit Staleness at the Bank-Primitive Level
+
+The Lean build system's cache invalidation is the deposit staleness lifecycle
+from `ConcreteLedgerModel` concretely instantiated: a compiled `.olean` is a
+deposit whose τ is the source epoch at compilation; `compute_status` returns
+`.Stale` once the source advances past that epoch; a stale artifact blocks
+withdrawal (use). -/
+
+section OleanStaleness
+open EpArch.ConcreteModel
+
+/-- An `.olean` record: epoch the artifact was compiled at, epoch last refreshed. -/
+structure OleanRecord where
+  /-- Source epoch at compilation time — the τ field of the deposit. -/
+  compiled_at : CTime
+  /-- Epoch of the last successful `lake build` refresh. -/
+  last_refreshed : CTime
+
+/-- The `.olean` as a `CDeposit`.
+    τ = `compiled_at`: current while source is unchanged; expired once
+    the source epoch advances past it. -/
+def olean_as_deposit (r : OleanRecord) (path : CProp) : CDeposit :=
+  { claim := path
+    S     := 1                   -- CStandard = Nat; 1 = kernel type-check passes
+    E     := []                  -- CErrorModel = List String; no known failures at compile time
+    V     := ["lean-kernel"]
+    τ     := r.compiled_at
+    cs    := { domain := "lean-cache", test_procedure := "lake build" } }
+
+/-- Source change = staleness: source epoch has advanced past τ. -/
+def source_changed (current_epoch : CTime) (r : OleanRecord) : Prop :=
+  r.compiled_at < current_epoch
+
+/-- A changed source makes `compute_status = .Stale`.
+    First branch (τ = 0) is excluded by `hτ`; second branch fires because
+    τ = compiled_at ≤ current_epoch (from `source_changed`). -/
+theorem olean_stale_when_source_changed (r : OleanRecord) (path : CProp)
+    (current_epoch : CTime)
+    (hτ : 0 < r.compiled_at)
+    (hchg : source_changed current_epoch r) :
+    compute_status (olean_as_deposit r path) current_epoch = .Stale := by
+  simp only [source_changed] at hchg
+  simp only [compute_status, olean_as_deposit]
+  by_cases h1 : r.compiled_at = 0
+  · simp_all
+  · rw [if_neg h1]
+    have h2 : r.compiled_at ≤ current_epoch := Nat.le_of_lt hchg
+    rw [if_pos h2]
+
+/-- Stale `.olean` blocks withdrawal.
+    `c_can_withdraw` requires `compute_status = .Deposited`; `.Stale` fails
+    that check before ACL or membership are reached. -/
+theorem stale_olean_blocks_withdrawal (r : OleanRecord) (path : CProp)
+    (current_epoch : CTime) (acl : CACL) (agent : CAgent) (bubble : CBubble)
+    (hτ : 0 < r.compiled_at)
+    (hchg : source_changed current_epoch r) :
+    ¬ c_can_withdraw acl agent bubble (olean_as_deposit r path) current_epoch := by
+  simp only [c_can_withdraw]
+  intro ⟨_, h_status, _⟩
+  rw [olean_stale_when_source_changed r path current_epoch hτ hchg] at h_status
+  exact absurd h_status (by decide)
+
+end OleanStaleness
+
 end EpArch.LeanKernelModel

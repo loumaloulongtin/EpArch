@@ -11,7 +11,7 @@ rather than axioms.
 
 The key insight: health goals ARE predicates over traces and operations.
 - `SafeWithdrawalGoal`: submission of a deposit implies some authorization
-  witness exists — operationalizes the paper's "safe withdrawal" property
+  witness exists — operationalizes the “safe withdrawal” property
 - `ReliableExportGoal`: false deposits do not appear true across bubble
   boundaries (unless the target bubble has revision capability)
 - `CorrigibleLedgerGoal`: when revision capability exists, revisions
@@ -91,7 +91,7 @@ def SoundDepositsGoal (M : CoreModel) : Prop :=
 /-- SelfCorrectionGoal: The system can correct its errors.
 
     Defined as: selfCorrects → hasRevision.
-    See `self_correction_is_paper_facing` for the equivalence with PaperFacing. -/
+    See `self_correction_is_revision_gate` for the equivalence with RevisionGate. -/
 def SelfCorrectionGoal (M : CoreModel) : Prop :=
   ∀ B : M.sig.Bubble, M.ops.selfCorrects B → M.ops.hasRevision B
 
@@ -179,11 +179,11 @@ structure FullSystemHealth (M : CoreModel) where
   sound_deposits : SoundDepositsGoal M
   self_correction : SelfCorrectionGoal M
 
-/-- Full system health is equivalent to PaperFacing + other goals.
+/-- Full system health is equivalent to RevisionGate + other goals.
 
-    **Key observation:** SelfCorrectionGoal M ↔ PaperFacing M -/
-theorem self_correction_is_paper_facing (M : CoreModel) :
-    SelfCorrectionGoal M ↔ PaperFacing M := by
+    **Key observation:** SelfCorrectionGoal M ↔ RevisionGate M -/
+theorem self_correction_is_revision_gate (M : CoreModel) :
+    SelfCorrectionGoal M ↔ RevisionGate M := by
   constructor
   · intro h; exact h
   · intro h; exact h
@@ -195,7 +195,7 @@ All necessity theorems (corrigible_needs_revision, self_correction_needs_revisio
 sound_deposits_needs_verification) are proved from definitions, not axioms. -/
 
 
-/-! ## Paper-Facing Summary
+/-! ## Health Goals Summary
 
 The health predicates connect to the architectural invariants:
 
@@ -205,7 +205,7 @@ The health predicates connect to the architectural invariants:
 | ReliableExportGoal | Revalidation | `hasRevision`, `truth` |
 | CorrigibleLedgerGoal | Revision | `revise`, `hasRevision` |
 | SoundDepositsGoal | Verification | `verifyWithin`, `effectiveTime` |
-| SelfCorrectionGoal | Revision | `hasRevision` (= PaperFacing) |
+| SelfCorrectionGoal | Revision | `hasRevision` (= RevisionGate) |
 
 Health goals ARE definitional predicates over CoreOps.
 Necessity theorems follow from what health MEANS.

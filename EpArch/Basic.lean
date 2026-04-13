@@ -25,7 +25,7 @@ The "Ladder vs Bank" distinction is central:
   (Denial → Doubt → Ignorance → Belief → Certainty). This is private.
 - **Bank** (system-side): The shared ledger of validated deposits.
   This is public, challengeable, and redeemable.
-The paper's key claim: being CERTAIN (Ladder) is not the same as KNOWING
+The key claim: being CERTAIN (Ladder) is not the same as KNOWING
 (having a valid Bank deposit). Certainty is private traction;
 knowledge is public authorization.
 
@@ -137,7 +137,7 @@ inductive LadderStage where
 
     The function can be thought of as modulated by the agent's internal processes;
     the opaqueness is intentional — different agent types (human, AI, institution)
-    can implement it differently without affecting any paper-facing theorem. -/
+    can implement it differently without affecting any revision-gate theorem. -/
 opaque agentTraction : Agent → (Claim → LadderStage)
 
 /-- ladder_stage: the current traction level of agent `a` for claim P.

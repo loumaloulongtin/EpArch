@@ -4,13 +4,13 @@ EpArch/ScopeIrrelevance.lean — Scope Irrelevance Layer
 This module turns "out of scope" from prose into machine-checkable scope boundaries.
 
 Core results:
-- S1: Substrate Independence — physics/implementation don't affect paper-facing theorems
+- S1: Substrate Independence — physics/implementation don't affect revision-gate theorems
 - S2: Minimal Agency — agents need only functional capabilities, not consciousness
 - S3: Extra-State Erasure — adding qualia/psychology/embodiment doesn't affect theorems
 
-These patterns are bound to PaperFacing via RevisionSafety.
+These patterns are bound to RevisionGate via RevisionSafety.
 The `extra_state_compatible` theorem shows any extra-state extension is Compatible,
-and thus paper-facing properties transport via `transport_core`.
+and thus the revision gate transports via `transport_core`.
 -/
 
 import EpArch.Basic
@@ -26,7 +26,7 @@ open EpArch.RevisionSafety
 /-! ## Substrate Independence
 
 "Physics don't matter": any substrate implementing the interface yields the same
-paper-facing theorems.
+revision-gate theorems.
 
 The key insight: our theorems already quantify over abstract types (World, Agent,
 PropLike). If two substrates implement the same interface, they yield the same theorems.
@@ -106,7 +106,7 @@ neural architecture) doesn't affect theorems if primitives ignore it.
     component at all. Swapping in any X (qualia, psychology, embodiment) is safe
     because P never looks at it.
 
-    Paper-facing preservation is closed by `extra_state_paper_facing_transport`,
+    Revision-gate preservation is closed by `extra_state_revision_gate_transport`,
     which builds a `Compatible` witness and calls `transport_core`. -/
 theorem extra_state_erasure {Agent X : Type} (P : Agent → Prop)
     (a : Agent) (x : X) :
@@ -115,7 +115,7 @@ theorem extra_state_erasure {Agent X : Type} (P : Agent → Prop)
 
 /-- **Seam theorem.** Names the psychology boundary for citation purposes.
     `system_property` does not inspect the second component.
-    Paper-facing binding: `psychology_irrelevant_paper_facing`. -/
+    Revision-gate binding: `psychology_irrelevant_revision_gate`. -/
 theorem psychology_irrelevant {Agent Psychology : Type}
     (system_property : Agent → Prop)
     (a : Agent) (psych : Psychology) :
@@ -123,7 +123,7 @@ theorem psychology_irrelevant {Agent Psychology : Type}
   Iff.rfl
 
 /-- **Seam theorem.** Names the consciousness/qualia boundary for citation purposes.
-    Paper-facing binding: `consciousness_irrelevant_paper_facing`. -/
+    Revision-gate binding: `consciousness_irrelevant_revision_gate`. -/
 theorem consciousness_irrelevant {Agent Qualia : Type}
     (functional_property : Agent → Prop)
     (a : Agent) (q : Qualia) :
@@ -204,15 +204,15 @@ The module establishes the pattern for scope-irrelevance claims.
 -/
 
 
-/-! ## Binding to PaperFacing via RevisionSafety
+/-! ## Binding to RevisionGate via RevisionSafety
 
 The abstract erasure theorems above are generic patterns.
-This section BINDS them to the paper-facing architecture via RevisionSafety.
+This section BINDS them to the architecture via RevisionSafety.
 
-Key result: `extra_state_paper_facing_transport`
+Key result: `extra_state_revision_gate_transport`
 - Any CoreModel C can be extended with extra state X
 - The extension is Compatible with C
-- Therefore PaperFacing properties transport
+- Therefore RevisionGate properties transport
 
 This means: adding consciousness, qualia, psychology, etc. as X cannot break core architectural theorems.
 -/
@@ -253,7 +253,7 @@ def extendWithExtraState (C : CoreModel)
 /-- Extra-state extension is Compatible with base.
 
     The extended model preserves all core operations.
-    This is the key binding that makes scope-irrelevance paper-facing.
+    This is the key binding that makes scope-irrelevance revision-gate-compatible.
 
     The projections are identity (types are shared).
     The commuting laws are all Iff.refl because extendWithExtraState
@@ -283,41 +283,41 @@ theorem extra_state_compatible (C : CoreModel)
   hasRevision_comm := fun _ => Iff.refl _
   selfCorrects_comm := fun _ => Iff.refl _
 
-/-- **Main Theorem**: Extra-state extensions preserve paper-facing properties.
+/-- **Main Theorem**: Extra-state extensions preserve the revision gate.
 
-    If C is paper-facing, and we add arbitrary extra state (consciousness, qualia,
-    psychology, embodiment, neural architecture, etc.), the extended model is
-    still paper-facing via forgetful projection.
+    If C satisfies RevisionGate, and we add arbitrary extra state (consciousness, qualia,
+    psychology, embodiment, neural architecture, etc.), the extended model still
+    satisfies RevisionGate via forgetful projection.
 
     This is the machine-checkable version of "consciousness/psychology/etc don't
-    affect core architectural theorems — this is a binding to PaperFacing. -/
-theorem extra_state_paper_facing_transport (C : CoreModel)
+    affect core architectural theorems — this is a binding to RevisionGate. -/
+theorem extra_state_revision_gate_transport (C : CoreModel)
     (AgentExtra : Type) [Inhabited AgentExtra]
     (WorldExtra : Type) [Inhabited WorldExtra] :
-    PaperFacing C → PaperFacing (forget (extendWithExtraState C AgentExtra WorldExtra)) :=
+    RevisionGate C → RevisionGate (forget (extendWithExtraState C AgentExtra WorldExtra)) :=
   transport_core _ C (extra_state_compatible C AgentExtra WorldExtra)
 
-/-- **Named plug-in point.** Delegates to `extra_state_paper_facing_transport`.
+/-- **Named plug-in point.** Delegates to `extra_state_revision_gate_transport`.
     Instantiates X = ConsciousnessState so citation sites are self-documenting.
     ConsciousnessState can be any inhabited type (Unit for trivial consciousness). -/
-theorem consciousness_irrelevant_paper_facing (C : CoreModel)
+theorem consciousness_irrelevant_revision_gate (C : CoreModel)
     (ConsciousnessState : Type) [Inhabited ConsciousnessState] :
-    PaperFacing C → PaperFacing (forget (extendWithExtraState C ConsciousnessState Unit)) :=
-  extra_state_paper_facing_transport C ConsciousnessState Unit
+    RevisionGate C → RevisionGate (forget (extendWithExtraState C ConsciousnessState Unit)) :=
+  extra_state_revision_gate_transport C ConsciousnessState Unit
 
-/-- **Named plug-in point.** Delegates to `extra_state_paper_facing_transport`.
+/-- **Named plug-in point.** Delegates to `extra_state_revision_gate_transport`.
     Instantiates X = PsychologyState so citation sites are self-documenting. -/
-theorem psychology_irrelevant_paper_facing (C : CoreModel)
+theorem psychology_irrelevant_revision_gate (C : CoreModel)
     (PsychologyState : Type) [Inhabited PsychologyState] :
-    PaperFacing C → PaperFacing (forget (extendWithExtraState C PsychologyState Unit)) :=
-  extra_state_paper_facing_transport C PsychologyState Unit
+    RevisionGate C → RevisionGate (forget (extendWithExtraState C PsychologyState Unit)) :=
+  extra_state_revision_gate_transport C PsychologyState Unit
 
-/-- **Named plug-in point.** Delegates to `extra_state_paper_facing_transport`.
+/-- **Named plug-in point.** Delegates to `extra_state_revision_gate_transport`.
     Instantiates X = QualiaState so citation sites are self-documenting. -/
-theorem qualia_irrelevant_paper_facing (C : CoreModel)
+theorem qualia_irrelevant_revision_gate (C : CoreModel)
     (QualiaState : Type) [Inhabited QualiaState] :
-    PaperFacing C → PaperFacing (forget (extendWithExtraState C QualiaState Unit)) :=
-  extra_state_paper_facing_transport C QualiaState Unit
+    RevisionGate C → RevisionGate (forget (extendWithExtraState C QualiaState Unit)) :=
+  extra_state_revision_gate_transport C QualiaState Unit
 
 
 end EpArch.ScopeIrrelevance

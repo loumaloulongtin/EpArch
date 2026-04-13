@@ -163,7 +163,7 @@ theorem allRestricted_implies_no_revision
     This extends `frozen_canon_no_revocation` (single restricted step) to
     full traces of arbitrary length. If every action in the trace is
     non-contestation, then ¬Revoked at the start implies ¬Revoked
-    after any number of steps. The paper claim "contestation-blocking causes
+    after any number of steps. The claim “contestation-blocking causes
     deposits to persist" holds for traces of arbitrary length. -/
 theorem frozen_canon_no_revocation_trace
     (s s' : SystemState PropLike Standard ErrorModel Provenance)

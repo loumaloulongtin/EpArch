@@ -369,11 +369,11 @@ This means they are already halfway to being transport-safe — the predicate mo
 | `SoundDepositsGoal` | `verifyWithin`, `effectiveTime` | Health.lean | Not requiring it |
 | `SelfCorrectionGoal` | `selfCorrects`, `hasRevision` | Health.lean | Not requiring it |
 
-**`PaperFacing`** (the competition gate) references only `selfCorrects`, `hasRevision` — the minimal slice needed for the revision gate.
+**`RevisionGate`** (the competition gate) references only `selfCorrects`, `hasRevision` — the minimal slice needed for the revision gate.
 
-**Transport:** `transport_core` (RevisionSafety.lean) transports `PaperFacing` exactly.
-`sub_revision_safety` (Modularity.lean) transports `PaperFacing` at sub-bundle level.
-`graceful_degradation` (Modularity.lean) shows dropping `SelfCorrectionGoal` → `PaperFacing` holds vacuously.
+**Transport:** `transport_core` (RevisionSafety.lean) transports `RevisionGate` exactly.
+`sub_revision_safety` (Modularity.lean) transports `RevisionGate` at sub-bundle level.
+`graceful_degradation` (Modularity.lean) shows dropping `SelfCorrectionGoal` → `RevisionGate` holds vacuously.
 
 **Gap:** ~~None~~ Closed. `transport_safe_withdrawal`, `transport_reliable_export`, `transport_sound_deposits`, `transport_self_correction` (and the full `transport_corrigible_ledger` via `SurjectiveCompatible`) are proved in `Meta/TheoremTransport.lean`. The `health_goal_transport_pack` headline theorem packages all five.
 
@@ -536,7 +536,7 @@ This is the real Cluster C result — not just the competition gate but the full
   - `SafeWithdrawalGoal (forget E)`
   - `ReliableExportGoal (forget E)`
   - `SoundDepositsGoal (forget E)`
-  - `SelfCorrectionGoal / PaperFacing (forget E)`
+  - `SelfCorrectionGoal / RevisionGate (forget E)`
   - Universal `CorrigibleLedgerGoal (forget E)` (the ∃ component requires `SurjectiveCompatible`)
 - `tier4_full_pack`: headline theorem — Clusters B + C only (structural + LTS-universal + all
   five health goals); Cluster A (`commitments_pack`) is certified separately.
@@ -554,7 +554,7 @@ This is the real Cluster C result — not just the competition gate but the full
 |---|---|---|---|
 | World bundles (`W_*`) | Explicit hypothesis — not providing proof disables | ✅ Complete | `WorldCtx.lean`, `AdversarialObligations.lean` |
 | Constraints (6 forcing results) | Independent conjuncts + `PartialWellFormed`/`modular` meta-theorem | ✅ Complete | `Minimality.lean`, `Convergence.lean`, `Meta/Modular.lean` |
-| `PaperFacing` / competition gate | `transport_core` + `sub_revision_safety` | ✅ Complete | `RevisionSafety.lean`, `Modularity.lean` |
+| `RevisionGate` / competition gate | `transport_core` + `sub_revision_safety` | ✅ Complete | `RevisionSafety.lean`, `Modularity.lean` |
 | Health goals (5 predicates) | `CoreModel`-parameterized + individual transport theorems | ✅ Complete | `Health.lean`, `Meta/TheoremTransport.lean` |
 | Main theorem library (109+) | Four-part schema: standalone commitments, structural unconditional, LTS-universal operational, all-five-health-goals bank bridge | ✅ Complete | `Meta/Tier4Transport.lean` |
 | Certified cluster surface (29 clusters) | `EpArchConfig → ClusterTag → Bool` routing + indexed witness carriers; all 6 cluster families are proof-carrying; constraint/goal/world families are config-selectable; Tier 4/meta-modular/lattice families are always-on | ✅ Complete | `Meta/ClusterRegistry.lean`, `Meta/Config.lean` |
@@ -568,7 +568,7 @@ This is the real Cluster C result — not just the competition gate but the full
 
 **"I want to disable health goal G for my product."**
 → Go to Tier 3. Find G in the health goal table. Note which `CoreOps` fields it references.
-→ Go to Tier 4, operation dependency map. Every theorem cluster that does *not* reference those fields survives. `PaperFacing` specifically is handled by Tier 3 (transport_core).
+→ Go to Tier 4, operation dependency map. Every theorem cluster that does *not* reference those fields survives. `RevisionGate` specifically is handled by Tier 3 (transport_core).
 
 **"I want to disable world assumption W for my product."**
 → Go to Tier 1. Find W. Every theorem listed in that row becomes inapplicable. Everything else is unaffected — mechanically, by the type system.

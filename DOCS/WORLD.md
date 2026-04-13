@@ -183,7 +183,7 @@ theorem WorldCtx.kernel_redundant_without_lies (C : WorldCtx)
 | `lies_scale` | `lies_scale_of_W` | `W_lies_scale` |
 | `rolex_ddos_structural_equivalence` | `rolex_ddos_structural_equivalence_of_W` | `W_rolex_ddos` |
 
-The `ddos_to_centralization_of_W` theorem composes the DDoS and centralization results into the full paper chain: "DDoS vectors → verification collapse → trust centralization."
+The `ddos_to_centralization_of_W` theorem composes the DDoS and centralization results into the full argument chain: "DDoS vectors → verification collapse → trust centralization."
 
 ```lean
 theorem ddos_to_centralization_of_W (W : W_ddos_full)

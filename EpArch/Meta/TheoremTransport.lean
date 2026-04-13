@@ -21,7 +21,7 @@ lattice-stability for the full health-goal layer.
 
 | Predicate | Operations used | Transport theorem |
 |---|---|---|
-| `PaperFacing` / `SelfCorrectionGoal` | `selfCorrects`, `hasRevision` | `transport_self_correction` (= `transport_core`) |
+| `RevisionGate` / `SelfCorrectionGoal` | `selfCorrects`, `hasRevision` | `transport_self_correction` (= `transport_core`) |
 | `SafeWithdrawalGoal` | `submit`, `hasRevision` | `transport_safe_withdrawal` |
 | `ReliableExportGoal` | `truth`, `hasRevision` | `transport_reliable_export` |
 | `SoundDepositsGoal` | `truth`, `verifyWithin`, `effectiveTime` | `transport_sound_deposits` |
@@ -80,7 +80,7 @@ structure OperationMask where
   uses_hasRevision    : Bool := false
   uses_selfCorrects   : Bool := false
 
-/-- Mask for PaperFacing / SelfCorrectionGoal -/
+/-- Mask for RevisionGate / SelfCorrectionGoal -/
 def mask_selfCorrection : OperationMask where
   uses_hasRevision  := true
   uses_selfCorrects := true
@@ -111,7 +111,7 @@ def mask_corrigibleLedger : OperationMask where
 /-! ## 2. Surjective Compatible
 
 `Compatible` requires commuting laws but not surjectivity of the projection maps.
-For ∀-predicates (like PaperFacing, SafeWithdrawalGoal, etc.), this is enough.
+For ∀-predicates (like RevisionGate, SafeWithdrawalGoal, etc.), this is enough.
 For ∃-predicates (like the existence component of CorrigibleLedgerGoal), we need
 to pull back a witness from C to E, which requires surjectivity of `πBubble`.
 -/
@@ -178,7 +178,7 @@ theorem transport_sound_deposits (E : ExtModel) (C : CoreModel) (h : Compatible 
 
 /-- Transport: `SelfCorrectionGoal` is preserved by compatible extensions.
 
-    `SelfCorrectionGoal` is definitionally equal to `PaperFacing`, so
+    `SelfCorrectionGoal` is definitionally equal to `RevisionGate`, so
     `transport_core` from `RevisionSafety` applies directly.
 
     Uses: `selfCorrects_comm`, `hasRevision_comm`. -/
@@ -252,10 +252,10 @@ def VacuousTruth (M : CoreModel) : Prop :=
 
 /-! ## 6. Consequences of Disabling Operations -/
 
-/-- Disabling self-correction → PaperFacing holds vacuously.
+/-- Disabling self-correction → RevisionGate holds vacuously.
     (Refactored reference to graceful_degradation in Modularity.lean.) -/
-theorem vacuous_selfCorrects_paper_facing (M : CoreModel)
-    (h : VacuousSelfCorrects M) : PaperFacing M :=
+theorem vacuous_selfCorrects_revision_gate (M : CoreModel)
+    (h : VacuousSelfCorrects M) : RevisionGate M :=
   graceful_degradation M h
 
 /-- Disabling revise + hasRevision → universal part of CorrigibleLedgerGoal holds vacuously. -/
@@ -297,7 +297,7 @@ The two key claims:
     for any CoreModel C satisfying a health goal, any compatible extension
     E of C still satisfies that goal (via the forgetful projection). -/
 theorem health_goal_transport_pack :
-    -- (1) SelfCorrectionGoal / PaperFacing
+    -- (1) SelfCorrectionGoal / RevisionGate
     (∀ (E : ExtModel) (C : CoreModel), Compatible E C →
         SelfCorrectionGoal C → SelfCorrectionGoal (forget E)) ∧
     -- (2) SafeWithdrawalGoal

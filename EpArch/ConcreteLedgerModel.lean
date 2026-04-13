@@ -40,7 +40,6 @@ This is a consistency proof, not a uniqueness claim.
 
 - **Realizer.lean** packages this witness into a `ConcreteRealizer` type.
 - **Feasibility.lean** uses it to prove `existence_under_constraints_structural`.
-- **PaperFacing.lean** re-exports it as a paper-facing result.
 -/
 
 namespace EpArch.ConcreteModel

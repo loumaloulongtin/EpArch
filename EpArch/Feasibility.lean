@@ -120,7 +120,7 @@ theorem joint_feasible :
 
 /-! ## Structural Convergence -/
 
-/-- Paper-facing name (structural version): success forces Bank primitives
+/-- Structural alias: success forces Bank primitives
     without depending on WellFormed biconditionals. -/
 theorem structural_goals_force_bank_primitives :
     ∀ W : WorkingSystem,

@@ -120,7 +120,7 @@ def KOfNIndependentAcceptance {Source Statement : Type}
     If single-source attacks are possible, then single-source acceptance
     can lead to accepting false statements.
 
-    **Paper Role:** This is the "mandatory feature" theorem — corroboration is
+    **Role:** This is the "mandatory feature" theorem — corroboration is
     required (not optional) if you want resilience to single-source compromise.
 
     **Proof Pattern:** Direct counterexample using the attack scenario. -/
@@ -205,7 +205,7 @@ theorem length_take_ge {α : Type} (k : Nat) (L : List α) (h : k ≤ L.length) 
     (without independence requirements) can accept false statements,
     for any k up to the size of the compromised set.
 
-    **Paper Role:** Explains "bubble infection" — why counting sources
+    **Role:** Explains "bubble infection" — why counting sources
     is not sufficient when sources share failure modes.
 
     **Proof Pattern:** Direct counterexample using the attack scenario.
@@ -292,7 +292,7 @@ theorem common_mode_fails_regardless_of_k {Source Statement : Type}
     the common-mode size, naive k-of-n fails. Only independence-aware
     corroboration can provide guarantees.
 
-    **Paper Role:** Keeps prose honest — corroboration is not magic;
+    **Role:** Keeps prose honest — corroboration is not magic;
     its value depends on a diversity assumption. -/
 theorem common_mode_requires_diversity {Source Statement : Type}
     (attack : CommonModeAttack Source Statement) :
@@ -377,7 +377,7 @@ def HonestImpliesTrue {Source Statement : Type}
     honest attestation implies truth, and we require k > t independent attestations,
     then accepted statements are true.
 
-    **Paper Role:** Formal reason "why 2-3 independent attestations beats one."
+    **Role:** Formal reason "why 2-3 independent attestations beats one."
     The key is the independence interface — without it, the guarantee vanishes.
 
     **Proof:** Uses pigeonhole argument via `pigeonhole_filter` helper lemma.
@@ -433,7 +433,7 @@ theorem k_of_n_suffices_under_independence {Source Statement : Type}
 /-! ## 7. Headline Packaging -/
 
 /-- **Corroboration Necessity Package:**
-    Bundles the key results for paper citation.
+    Bundles the key results.
 
     1. Single-source acceptance is vulnerable (T1)
     2. Common-mode breaks naive corroboration (T3)

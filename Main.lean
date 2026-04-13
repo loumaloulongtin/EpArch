@@ -3,10 +3,9 @@ Main.lean — Full Build Surface for EpArch
 
 ## What This Project Is
 
-EpArch formalizes the paper "Epistemic Architecture: A Constraints-and-
-Objectives Framework for Bounded Agents Under Adversarial Pressure."
-The paper argues that knowledge
-management in the real world (science, law, journalism, etc.) converges on
+EpArch is a machine-checked constraints-and-objectives framework for
+bounded epistemic systems under adversarial pressure.
+Knowledge management in the real world (science, law, journalism, etc.) converges on
 a common architecture — not because anyone designed it, but because the
 constraints of imperfect agents under permanent challenge pressure force
 a specific set of structural features.
@@ -41,7 +40,7 @@ The formalization proves these claims:
 
 - **Ladder**: An agent's internal certainty progression
   (Denial → Doubt → Ignorance → Belief → Certainty). This is private
-  mental state, NOT the Bank. The paper's key claim: "traction" (feeling
+  mental state, NOT the Bank. Key claim: "traction" (feeling
   sure, Ladder) is distinct from "authorization" (having a valid deposit,
   Bank).
 
@@ -92,8 +91,6 @@ The formalization proves these claims:
     - **Corners.lean** — Corner theorems 1, 2, 6, 7, 8, 9; lottery gate; entrenchment
 11. **ConcreteLedgerModel.lean** — A constructive zero-axiom concrete model that
     witnesses satisfiability of all commitments. This proves non-vacuity.
-12. **PaperFacing.lean** — The stable public API: re-exports all paper-facing
-    theorems in one place.
 
 ## Architecture (Dependency Layers)
 
@@ -110,16 +107,12 @@ Layer 5 (Agent):      Mechanisms, Agent/{Constraints, Imposition, Resilience, Co
 Layer 6 (Witness):    WorldWitness, ConcreteLedgerModel, Realizer, Feasibility
 Layer 7 (Adversarial): AdversarialBase, AdversarialObligations
 Layer 8 (Meta):       Meta/*
-Layer 9 (Surface):    PaperFacing
-Layer 10 (Modularity): Modularity
+Layer 9 (Modularity): Modularity
 ```
 
-## Build Surfaces
+## Build Surface
 
-| Surface | Import | Description |
-|---------|--------|-------------|
-| **Paper-Facing** | `MainPaper.lean` | Core-facing theorems only |
-| **Full** | `Main.lean` | Full build |
+`lake build` (via `Main.lean`) is the single build target.
 
 ## Axiom Declarations
 
@@ -165,7 +158,6 @@ import EpArch.RevisionSafety  -- Revision safety meta-theorems
 import EpArch.Health  -- Health predicates and necessity theorems
 import EpArch.Mechanisms  -- Canonical mechanism predicates
 import EpArch.ScopeIrrelevance  -- Scope/irrelevance theorems
-import EpArch.PaperFacing  -- Paper-facing surface exports
 import EpArch.Agent  -- Agent constraints interface (PRP, design-imposition)
 import EpArch.Realizer  -- Feasibility: System realizer interface
 import EpArch.Feasibility  -- Feasibility: Joint non-vacuity theorem

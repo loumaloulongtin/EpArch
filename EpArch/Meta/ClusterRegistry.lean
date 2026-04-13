@@ -16,7 +16,7 @@ namespace EpArch.Meta.Config
 
 /-! ## §1  Configuration Language -/
 
-/-- The six constraints the paper analyses.  Each tag maps to one forcing theorem
+/-- The six architectural constraints.  Each tag maps to one forcing theorem
     in `EpArch.Minimality`. -/
 inductive ConstraintTag where
   | distributed_agents
@@ -36,7 +36,7 @@ inductive GoalTag where
   | selfCorrection
   deriving DecidableEq, BEq, Repr
 
-/-- The eight named world bundles from the paper. -/
+/-- The eight named world bundles. -/
 inductive WorldTag where
   | lies_possible
   | bounded_verification
@@ -94,7 +94,7 @@ inductive ClusterTag where
   -- Meta-modularity clusters (from EpArch.Meta.Modular — constraint-subset independence)
   | meta_modular              -- modular: ∀ S W, PartialWellFormed W S → projection_valid S W
   -- Lattice-stability clusters (from EpArch.Modularity — floor not a cage)
-  | lattice_graceful          -- graceful_degradation: NoSelfCorrection → PaperFacing
+  | lattice_graceful          -- graceful_degradation: NoSelfCorrection → RevisionGate
   | lattice_sub_safety        -- sub_revision_safety: Compatible sub-bundle extension is safe
   | lattice_pack              -- modularity_pack: full bidirectional lattice-stability
   deriving DecidableEq, BEq, Repr
@@ -397,9 +397,9 @@ def clusterDescription : ClusterTag → String
   | .meta_modular =>
       "[Meta] Constraint-subset modularity: ∀ S W, PartialWellFormed W S → projection_valid S W  (Meta.Modular.modular)"
   | .lattice_graceful =>
-      "[Lattice] Graceful degradation: NoSelfCorrection M → PaperFacing M  (Modularity.graceful_degradation)"
+      "[Lattice] Graceful degradation: NoSelfCorrection M → RevisionGate M  (Modularity.graceful_degradation)"
   | .lattice_sub_safety =>
-      "[Lattice] Sub-level revision safety: Compatible extension of any sub-bundle with PaperFacing preserves PaperFacing  (Modularity.sub_revision_safety)"
+      "[Lattice] Sub-level revision safety: Compatible extension of any sub-bundle with RevisionGate preserves RevisionGate  (Modularity.sub_revision_safety)"
   | .lattice_pack =>
       "[Lattice] EpArch is a floor, not a cage: full bidirectional lattice-stability  (Modularity.modularity_pack)"
   -- Tier 2: only forcing tags reach this arm; dispatch through constraintMeta

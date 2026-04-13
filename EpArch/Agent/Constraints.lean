@@ -292,7 +292,7 @@ Therefore, extensions can be projected away by simply ignoring the predicates.
 
 /-- Core Agent signature: the minimal structure for agent constraints.
 
-    This captures what paper-facing theorems depend on. -/
+    This captures what revision-gate theorems depend on. -/
 structure AgentCoreSig where
   /-- Agent type (from core model) -/
   Agent : Type u
@@ -393,7 +393,7 @@ is invisible to the transport machinery.
 
 This is exactly what "conservative extension" means:
 - Adding agent predicates doesn't break existing theorems
-- PaperFacing results transfer unchanged
+- RevisionGate results transfer unchanged
 - RevisionSafety.transport_core works as-is
 
 No additional Agent-specific transport is needed beyond what's in RevisionSafety.

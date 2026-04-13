@@ -453,7 +453,7 @@ def cross_axis_dispute_about (B : Bubble)
     signatures where those types are not yet in scope.
 
     The structurally grounded `dispute_about B d` and `cross_axis_dispute_about B d`
-    are the new primary predicates; `dispute B P` is retained for paper-facing
+    are the new primary predicates; `dispute B P` is retained for
     theorem signatures that state "in a dispute over P" as context. -/
 def dispute (B : Bubble) (P : PropLike) : Prop :=
   ∃ (Std Em Prov : Type u) (B2 : Bubble) (d1 d2 : Deposit PropLike Std Em Prov),
@@ -909,7 +909,7 @@ theorem commitments_pack :
 /-- Certainty does not entail Bank authorization.
     Given an innovation-scenario witness (`w : PreAuthTractionWitness`), an agent
     holds Certainty for a claim with no Bank deposit in the bubble.
-    This is the paper's central architectural asymmetry: private traction can
+    This is the central architectural asymmetry: private traction can
     outrun public authorization.  Named alias for
     `innovation_allows_traction_without_authorization`. -/
 theorem certainty_insufficient_for_authorization (w : PreAuthTractionWitness) :

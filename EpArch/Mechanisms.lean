@@ -127,17 +127,17 @@ theorem self_correction_iff_capability (M : CoreModel) :
   constructor <;> intro h <;> exact h
 
 
-/-! ## Paper-Facing Mechanism Claims
+/-! ## Mechanism Claims
 
 These are the mechanism claims stated in terms of CoreModel
-to ensure paper-facing status.
+to ensure revision-gate alignment.
 -/
 
 /-- Self-correction requires revision.
 
-    This is exactly PaperFacing M from RevisionSafety.lean. -/
-theorem self_correction_requires_revision_paper (M : CoreModel) :
-    (∀ B, M.ops.selfCorrects B → M.ops.hasRevision B) ↔ PaperFacing M := by
+    This is exactly RevisionGate M from RevisionSafety.lean. -/
+theorem self_correction_requires_revision_gate (M : CoreModel) :
+    (∀ B, M.ops.selfCorrects B → M.ops.hasRevision B) ↔ RevisionGate M := by
   constructor <;> intro h <;> exact h
 
 
