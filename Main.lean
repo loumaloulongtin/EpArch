@@ -65,7 +65,7 @@ The formalization proves these claims:
    Repair, Revoke, etc.) as concrete guarded definitions.
 4. **LTS.lean** — Generic labeled transition systems, traces, invariants,
    refinement, and safety preservation.
-5. **StepSemantics.lean** — The constructive operational semantics: SystemState,
+5. **Semantics/StepSemantics.lean** — The constructive operational semantics: SystemState,
    Action, Step relation, competition gate theorem.
 6. **Commitments.lean** — Eight architectural commitments (all proved as standalone
    theorems; `commitments_pack` bundles the unconditional ones).
@@ -74,7 +74,7 @@ The formalization proves these claims:
 8. **WorldCtx.lean** — Parametric world semantics: the interface through which
    world-level assumptions (lies possible, bounded verification, partial
    observability) enter the formalization.
-9. **RevisionSafety.lean** — Safe extensions: adding constraints doesn't break
+9. **Semantics/RevisionSafety.lean** — Safe extensions: adding constraints doesn't break
    existing theorems (the Compatible/transport_core machinery).
 10. **Theorems/** — Derived theorems, split into eight focused modules:
     - **Withdrawal.lean** — Withdrawal gates, repair lifecycle, diagnosis infrastructure

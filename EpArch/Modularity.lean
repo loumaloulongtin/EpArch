@@ -7,7 +7,7 @@ directions under bundle perturbation.
 
 ## The Two Directions
 
-**Upward (already in RevisionSafety.lean):**
+**Upward (already in Semantics/RevisionSafety.lean):**
   Compatible extension → RevisionGate preserved
   `safe_extension_preserves : RevisionGate C → RevisionGate (forget E)`
 
@@ -24,7 +24,7 @@ directions under bundle perturbation.
 ## Lattice Picture
 
   Full EpArch bundle
-        ↑  ↑              ← safe_extension_preserves (RevisionSafety.lean)
+        ↑  ↑              ← safe_extension_preserves (Semantics/RevisionSafety.lean)
      ┌──┴──┴──┐
      │ SubModel │          ← any valid sub-bundle (CoreModel with fewer active goals)
      └──┬──┬──┘
@@ -222,7 +222,7 @@ Extend compatibly at any level — what's already proved is still true.
     Component 2 — Sub-level RevisionSafety (downward then upward):
       Compatible extension of any sub-bundle with RevisionGate → RevisionGate preserved.
 
-    Component 3 — Full-level RevisionSafety (upward, from RevisionSafety.lean):
+    Component 3 — Full-level RevisionSafety (upward, from Semantics/RevisionSafety.lean):
       Compatible extension of the full bundle → RevisionGate preserved.
       (Packaged here by reference for completeness.) -/
 theorem modularity_pack :
@@ -231,7 +231,7 @@ theorem modularity_pack :
     -- (2) Sub-level revision safety
     (∀ (S : SubBundle) (E : ExtModel),
         Compatible E S.model → RevisionGate S.model → RevisionGate (forget E)) ∧
-    -- (3) Full-level revision safety (reference to RevisionSafety.lean)
+    -- (3) Full-level revision safety (reference to Semantics/RevisionSafety.lean)
     (∀ (C : CoreModel) (R : RevisionSafeExtension C),
         RevisionGate C → RevisionGate (forget R.ext)) :=
   ⟨graceful_degradation, sub_revision_safety, safe_extension_preserves⟩

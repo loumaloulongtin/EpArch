@@ -242,7 +242,7 @@ theorem agent_containment {Agent Claim : Type u}
 /-! ## Simulation Relation to Operational Semantics
 
 The AgentLTS above is a SIMPLIFIED model for proving containment invariants.
-StepSemantics.lean defines the CANONICAL operational semantics;
+Semantics/StepSemantics.lean defines the CANONICAL operational semantics;
 AgentLTS is a derived abstraction for proving containment invariants.
 The relationship is: StepSemantics ⊆ AgentLTS (simulation).
 

@@ -498,12 +498,12 @@ def pathologyTable : List PathologyDiagnosis := [
     Theorem Grounding Summary
 
     All items below are proved theorems in the Theorems.* module shown.
-    Operational groundings live in StepSemantics.lean.
+    Operational groundings live in Semantics/StepSemantics.lean.
     ======================================================================== -/
 
 /-! ## Key Grounding Relationships
 
-| Theorem                        | Module (Theorems.*)   | Operational Basis (StepSemantics.lean)     |
+| Theorem                        | Module (Theorems.*)   | Operational Basis (Semantics/StepSemantics.lean)     |
 |-------------------------------|----------------------|-------------------------------------------|
 | `withdrawal_gates`            | `Withdrawal`         | `withdrawal_requires_three_gates`         |
 | `repair_enforces_revalidation`| `Withdrawal`         | `repair_produces_candidate`               |

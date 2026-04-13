@@ -20,7 +20,7 @@ Pipeline composition theorems (`validate_accept_pipeline`,
 precondition/postcondition chains are internally consistent.
 
 The constructive and operational groundings live in:
-- **StepSemantics.lean**: Concrete `Step` LTS.
+- **Semantics/StepSemantics.lean**: Concrete `Step` LTS.
 - **EpArch/Concrete/**: Zero-axiom concrete model split (Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity).
 
 Runtime behavioral profiling (`DepositDynamics`, `reliance_level`, `blast_radius`,
@@ -31,7 +31,7 @@ Runtime behavioral profiling (`DepositDynamics`, `reliance_level`, `blast_radius
 
 - **Basic.lean** provides the types (Deposit, Bubble, Agent, etc.)
 - **Header.lean** provides Header and the S/E/V structure
-- **StepSemantics.lean** provides the operational semantics
+- **Semantics/StepSemantics.lean** provides the operational semantics
 - **Commitments.lean** uses Bank predicates to define architectural commitments
 - **Minimality.lean** uses Bank features to prove convergence/impossibility
 -/

@@ -168,7 +168,7 @@ structure Bisimulation
 
 /-! ## Core Semantics = StepSemantics
 
-The canonical LTS for EpArch is defined in StepSemantics.lean.
+The canonical LTS for EpArch is defined in Semantics/StepSemantics.lean.
 RevisionSafety uses these definitions to establish revision safety
 for the revision-gate architecture.
 -/

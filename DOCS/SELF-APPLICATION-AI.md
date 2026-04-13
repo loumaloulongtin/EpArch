@@ -431,7 +431,7 @@ provenance chain I provide does not actually track the truth-maker.
 
 ### 5.3 Self-Correction
 
-`no_revision_no_correction` (from `StepSemantics.lean`) states: without revision
+`no_revision_no_correction` (from `Semantics/StepSemantics.lean`) states: without revision
 capability, there is no self-correction. The question is whether my within-
 conversation revision constitutes real revision or is merely a new output that
 happens to differ from the old one.

@@ -20,7 +20,7 @@ axiom declarations, zero sorries. Build: `lake build`.
 ### Naming conventions (stable patterns, not exhaustive lists)
 
 - Core types live in `Basic.lean`. If you need `Deposit`, `Bubble`, `Header`, `Agent`, start there.
-- Operational semantics (step transitions) live in `StepSemantics.lean`.
+- Operational semantics (step transitions) live in `Semantics/StepSemantics.lean`.
 - Forcing / necessity theorems ("constraint X forces feature Y") live in `Minimality.lean`.
 - Health goal definitions live in `Health.lean`.
 - Commitments (C1–C8) live in `Commitments.lean`.

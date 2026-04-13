@@ -42,7 +42,7 @@ design requirements.
 - **Constructive witness:** EpArch/Concrete/ provides a concrete
   model satisfying ALL 8 commitments — proving they are consistent and
   non-vacuous.
-- **Operational HOW:** StepSemantics.lean gives the constructive
+- **Operational HOW:** Semantics/StepSemantics.lean gives the constructive
   lifecycle that grounds the proved commitments.
 
 ## Commitment List
@@ -192,7 +192,7 @@ theorem ladder_bank_split_from_innovation_and_headers
 
     Follows directly from the Deposit record structure (witness is d.h.S, d.h.E, d.h.V).
     The stronger architectural commitment — that validation failures localize to exactly
-    one of S, E, V — is expressed by `has_strong_SEV_factorization` in StepSemantics.lean. -/
+    one of S, E, V — is expressed by `has_strong_SEV_factorization` in Semantics/StepSemantics.lean. -/
 theorem SEVFactorization (d : Deposit PropLike Standard ErrorModel Provenance) :
   ∃ (s : Standard) (e : ErrorModel) (v : Provenance),
     d.h.S = s ∧ d.h.E = e ∧ d.h.V = v :=

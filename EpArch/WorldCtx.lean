@@ -395,7 +395,7 @@ structure WorldCtxCompatible (E : ExtWorldCtx) (C : WorldCtx) where
     remove relevant worlds/claims from the domain. The embedding provides
     surjectivity-like properties needed to lift existential statements.
 
-    See RevisionSafety.lean for the full transport infrastructure. -/
+    See Semantics/RevisionSafety.lean for the full transport infrastructure. -/
 structure WorldCtxEmbedding (E : ExtWorldCtx) (C : WorldCtx) (h : WorldCtxCompatible E C) where
   /-- Embed core world into extended world -/
   embedWorld : C.World → E.World

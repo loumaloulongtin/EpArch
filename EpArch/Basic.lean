@@ -196,7 +196,7 @@ Candidate → Validated → Deposited → (Quarantined → Revoked or Repaired).
 Repaired deposits loop back to Candidate for revalidation, not to Deposited.
 These statuses control what operations are available. For example, only
 Deposited claims can be withdrawn (relied upon), and only Quarantined
-claims can be repaired or revoked. See StepSemantics.lean for the
+claims can be repaired or revoked. See Semantics/StepSemantics.lean for the
 operational transition system that enforces these rules.
 
 Note: Some descriptions list only four statuses (Candidate, Deposited,

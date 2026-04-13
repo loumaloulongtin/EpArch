@@ -18,7 +18,7 @@ No `axiom` declarations are present.
 
 ## Constructive Groundings
 
-- **StepSemantics.lean** provides the operational semantics for the grounded theorems.
+- **Semantics/StepSemantics.lean** provides the operational semantics for the grounded theorems.
 - **EpArch/Concrete/** provides a concrete model satisfying all invariants.
 - **Health.lean** uses these theorems for health-goal necessity proofs.
 -/

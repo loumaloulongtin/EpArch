@@ -90,7 +90,7 @@ That judgment belongs to the domain instantiator.
 ## Dependencies
 
 - **Minimality.lean:** WorkingSystem, SatisfiesAllProperties, GroundedBehavior
-- **StepSemantics.lean:** Step, Action, SystemState, precondition predicates
+- **Semantics/StepSemantics.lean:** Step, Action, SystemState, precondition predicates
 -/
 
 import EpArch.Minimality
@@ -193,7 +193,7 @@ theorem satisfies_all_fixes_flags (W : WorkingSystem) (h : SatisfiesAllPropertie
 /-! ## StepSemantics Bridge
 
 This section ties `Behavior` to the operational `Step` relation from
-`StepSemantics.lean`.  The key claim is stronger than definitional consistency:
+`Semantics/StepSemantics.lean`.  The key claim is stronger than definitional consistency:
 for every `Input i` and `GroundedBehavior B`, a *concrete ready state* exists
 from which `Step s (input_to_action i) s'` fires, and the step's observable
 output equals `Behavior B i`.

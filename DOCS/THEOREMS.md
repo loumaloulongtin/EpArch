@@ -54,9 +54,9 @@ $$\text{canWithdraw}(d) \Rightarrow \text{Deposited}(d) \land \text{ACL}(a,d) \l
 
 | Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
-| `no_revision_no_correction` | StepSemantics.lean | No revision → no self-correction | Competition gate |
-| `self_correction_requires_revision` | StepSemantics.lean | Self-correction → revision occurred | Forward direction |
-| `self_correcting_domain_permits_revision` | StepSemantics.lean | Self-correcting domain → permits revision | Domain level |
+| `no_revision_no_correction` | Semantics/StepSemantics.lean | No revision → no self-correction | Competition gate |
+| `self_correction_requires_revision` | Semantics/StepSemantics.lean | Self-correction → revision occurred | Forward direction |
+| `self_correcting_domain_permits_revision` | Semantics/StepSemantics.lean | Self-correcting domain → permits revision | Domain level |
 | `repair_requires_prior_challenge` | Theorems/Withdrawal.lean | Repair presupposes challenge | Repair loop |
 | `repair_enforces_revalidation` | Theorems/Withdrawal.lean | Repair requires fresh validation | No silent fix |
 | `frozen_canon_no_revocation` | Theorems/Corners.lean | Single restricted step: ¬Revoked before → ¬Revoked after | Corner 6: Frozen canon |
@@ -141,7 +141,7 @@ $$\text{diagnosability}(\text{full}) = 6 > 0 = \text{diagnosability}(\text{strip
 
 $$f \notin \text{ObservableFields}(d) \Rightarrow \neg\text{canTargetRepair}(f, d)$$
 
-### Field-Localization Bridge (StepSemantics.lean)
+### Field-Localization Bridge (Semantics/StepSemantics.lean)
 
 | Theorem | Statement | Claim |
 |---------|-----------|-------------|
@@ -189,7 +189,7 @@ Bridge theorems coupling the Theorems/Diagnosability.lean and Theorems/Strip.lea
 | `stale_blocks_withdrawal` | Theorems/Corners.lean | Stale deposits can't withdraw | Hygiene |
 | `tick_can_cause_staleness` | Theorems/Corners.lean | Clock tick → may become stale | Time pressure |
 | `withdrawal_requires_fresh` | Theorems/Corners.lean | Withdrawal needs τ-valid | Freshness gate |
-| `τ_valid_mono` | StepSemantics.lean | τ validity is monotonic in clock | Temporal ordering |
+| `τ_valid_mono` | Semantics/StepSemantics.lean | τ validity is monotonic in clock | Temporal ordering |
 | `current_from_clock` | Theorems/Withdrawal.lean | current(clock, τ) iff τ ≤ clock | Temporal predicate |
 | `current_stable` | Theorems/Withdrawal.lean | every deposit is current w.r.t. its own timestamp (no external hypothesis required) | Deposit-intrinsic currency |
 
@@ -288,19 +288,19 @@ certify that S is vacuous regardless of consumer). Both repair by targeting Fiel
 
 | Theorem | File | Statement |
 |---------|------|-----------|
-| `step_preserves_valid_status` | StepSemantics.lean | Steps preserve valid statuses |
-| `trace_preserves_valid_status` | StepSemantics.lean | Traces preserve valid statuses |
-| `step_preserves_separation` | StepSemantics.lean | Steps preserve type separation |
-| `step_preserves_auditability` | StepSemantics.lean | Steps preserve auditability |
-| `step_no_revision_preserves_deposited` | StepSemantics.lean | Revision-free step preserves `isDeposited` for all deposits |
-| `trace_no_revision_preserves_deposited` | StepSemantics.lean | Revision-free trace preserves `isDeposited` (induction over steps) |
+| `step_preserves_valid_status` | Semantics/StepSemantics.lean | Steps preserve valid statuses |
+| `trace_preserves_valid_status` | Semantics/StepSemantics.lean | Traces preserve valid statuses |
+| `step_preserves_separation` | Semantics/StepSemantics.lean | Steps preserve type separation |
+| `step_preserves_auditability` | Semantics/StepSemantics.lean | Steps preserve auditability |
+| `step_no_revision_preserves_deposited` | Semantics/StepSemantics.lean | Revision-free step preserves `isDeposited` for all deposits |
+| `trace_no_revision_preserves_deposited` | Semantics/StepSemantics.lean | Revision-free trace preserves `isDeposited` (induction over steps) |
 | `deposits_survive_revision_free_trace` | Theorems/Pathologies.lean | LTS corollary: deposits survive any revision-free trace |
-| `step_preserves_ladder_map` | StepSemantics.lean | `ladder_map` is invariant under every Step (all constructors use `{ s with … }`) |
-| `closure_ladder_invariant` | StepSemantics.lean | Contextual alias of `step_preserves_ladder_map` for the closure puzzle |
-| `trace_preserves_ladder_map` | StepSemantics.lean | `ladder_map` is invariant under any Trace (induction over steps) |
-| `no_bank_trace_generates_ladder_content` | StepSemantics.lean | Point-wise: no Trace changes `ladder_map f P` for any (agent, claim) pair |
-| `trace_cannot_elevate_ladder` | StepSemantics.lean | A trace starting with Ignorance for (f, P) ends with Ignorance |
-| `bank_trace_cannot_discharge_closure` | StepSemantics.lean | A trace that starts with Certainty for (f, P) cannot remove it |
+| `step_preserves_ladder_map` | Semantics/StepSemantics.lean | `ladder_map` is invariant under every Step (all constructors use `{ s with … }`) |
+| `closure_ladder_invariant` | Semantics/StepSemantics.lean | Contextual alias of `step_preserves_ladder_map` for the closure puzzle |
+| `trace_preserves_ladder_map` | Semantics/StepSemantics.lean | `ladder_map` is invariant under any Trace (induction over steps) |
+| `no_bank_trace_generates_ladder_content` | Semantics/StepSemantics.lean | Point-wise: no Trace changes `ladder_map f P` for any (agent, claim) pair |
+| `trace_cannot_elevate_ladder` | Semantics/StepSemantics.lean | A trace starting with Ignorance for (f, P) ends with Ignorance |
+| `bank_trace_cannot_discharge_closure` | Semantics/StepSemantics.lean | A trace that starts with Certainty for (f, P) cannot remove it |
 
 ---
 
@@ -312,14 +312,14 @@ certify that S is vacuous regardless of consumer). Both repair by targeting Fiel
 
 | Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
-| `safety_V_link` | StepSemantics.lean | Unsafe → ¬V_independent | Safety = V |
-| `sensitivity_E_link` | StepSemantics.lean | Insensitive → ¬E_covers | Sensitivity = E |
-| `safety_iff_V_independence` | StepSemantics.lean | Safe ↔ V_independent | Biconditional |
-| `sensitivity_iff_E_coverage` | StepSemantics.lean | Sensitive ↔ E_covers | Biconditional |
-| `headers_provide_modal_properties` | StepSemantics.lean | header_preserved → Safe ∧ Sensitive | Headers matter |
-| `stripped_headers_lose_modal_properties` | StepSemantics.lean | ¬header_preserved → Unsafe ∧ Insensitive | Stripping hurts |
-| `safety_sensitivity_coincide` | StepSemantics.lean | Safe ↔ Sensitive | Coincidence |
-| `modal_robustness_is_header_preservation` | StepSemantics.lean | (Safe ∧ Sensitive) ↔ header_preserved | Unified |
+| `safety_V_link` | Semantics/StepSemantics.lean | Unsafe → ¬V_independent | Safety = V |
+| `sensitivity_E_link` | Semantics/StepSemantics.lean | Insensitive → ¬E_covers | Sensitivity = E |
+| `safety_iff_V_independence` | Semantics/StepSemantics.lean | Safe ↔ V_independent | Biconditional |
+| `sensitivity_iff_E_coverage` | Semantics/StepSemantics.lean | Sensitive ↔ E_covers | Biconditional |
+| `headers_provide_modal_properties` | Semantics/StepSemantics.lean | header_preserved → Safe ∧ Sensitive | Headers matter |
+| `stripped_headers_lose_modal_properties` | Semantics/StepSemantics.lean | ¬header_preserved → Unsafe ∧ Insensitive | Stripping hurts |
+| `safety_sensitivity_coincide` | Semantics/StepSemantics.lean | Safe ↔ Sensitive | Coincidence |
+| `modal_robustness_is_header_preservation` | Semantics/StepSemantics.lean | (Safe ∧ Sensitive) ↔ header_preserved | Unified |
 
 ### Math Form
 
@@ -343,19 +343,19 @@ have been retired in favour of these structural forms.
 
 ---
 
-## Bucket 9: Grounded Minimality (StepSemantics.lean)
+## Bucket 9: Grounded Minimality (Semantics/StepSemantics.lean)
 
 **Role:** Each architectural feature is necessary for specific capabilities.
 
 | Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
-| `grounded_coordination_requires_bank` | StepSemantics.lean | Coordination → Bank | Bank necessity |
-| `grounded_export_requires_headers` | StepSemantics.lean | Export → Headers | Header necessity |
-| `grounded_bounded_audit_requires_bridges` | StepSemantics.lean | Bounded audit → Bridges | Bridge necessity |
-| `grounded_no_bridge_forces_revalidation` | StepSemantics.lean | No bridge → revalidate | Export cost |
-| `grounded_revocation_requires_quarantine` | StepSemantics.lean | Revocation → Quarantine | Quarantine necessity |
-| `grounded_distributed_agents_require_bubbles` | StepSemantics.lean | Distributed → Bubbles | Bubble necessity |
-| `grounded_truth_pressure_requires_redeemability` | StepSemantics.lean | Truth pressure → Redeemability | Redeemability necessity |
+| `grounded_coordination_requires_bank` | Semantics/StepSemantics.lean | Coordination → Bank | Bank necessity |
+| `grounded_export_requires_headers` | Semantics/StepSemantics.lean | Export → Headers | Header necessity |
+| `grounded_bounded_audit_requires_bridges` | Semantics/StepSemantics.lean | Bounded audit → Bridges | Bridge necessity |
+| `grounded_no_bridge_forces_revalidation` | Semantics/StepSemantics.lean | No bridge → revalidate | Export cost |
+| `grounded_revocation_requires_quarantine` | Semantics/StepSemantics.lean | Revocation → Quarantine | Quarantine necessity |
+| `grounded_distributed_agents_require_bubbles` | Semantics/StepSemantics.lean | Distributed → Bubbles | Bubble necessity |
+| `grounded_truth_pressure_requires_redeemability` | Semantics/StepSemantics.lean | Truth pressure → Redeemability | Redeemability necessity |
 
 ---
 
@@ -618,11 +618,11 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 | `repair_enforces_revalidation` | Theorems/Withdrawal.lean | Repair → revalidate | No silent fix |
 | `submit_enforces_revalidation` | Theorems/Withdrawal.lean | Submit → validate | Validation on entry |
 | `repair_requires_prior_challenge` | Theorems/Withdrawal.lean | Repair requires quarantine | Challenge first |
-| `challenge_has_field_localization` | StepSemantics.lean | Challenge targets field | Field-specific |
-| `repair_requires_quarantine` | StepSemantics.lean | Repair needs quarantine | State gate |
-| `repair_targets_field` | StepSemantics.lean | Repair addresses field | Surgical |
-| `repair_produces_candidate` | StepSemantics.lean | Repair → Candidate | Back to start |
-| `repair_resets_to_candidate` | StepSemantics.lean | Full cycle reset | Lifecycle |
+| `challenge_has_field_localization` | Semantics/StepSemantics.lean | Challenge targets field | Field-specific |
+| `repair_requires_quarantine` | Semantics/StepSemantics.lean | Repair needs quarantine | State gate |
+| `repair_targets_field` | Semantics/StepSemantics.lean | Repair addresses field | Surgical |
+| `repair_produces_candidate` | Semantics/StepSemantics.lean | Repair → Candidate | Back to start |
+| `repair_resets_to_candidate` | Semantics/StepSemantics.lean | Full cycle reset | Lifecycle |
 
 ---
 
@@ -632,7 +632,7 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 
 | Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
-| `withdrawal_requires_three_gates` | StepSemantics.lean | Status ∧ ACL ∧ τ | Three gates |
+| `withdrawal_requires_three_gates` | Semantics/StepSemantics.lean | Status ∧ ACL ∧ τ | Three gates |
 | `withdrawal_gates` | Theorems/Withdrawal.lean | Withdrawal preconditions | Gate theorem |
 | `canWithdrawAt_iff_gates` | Theorems/Withdrawal.lean | CanWithdraw ↔ gates | Equivalence |
 | `withdrawal_requires_canWithdrawAt` | Theorems/Withdrawal.lean | Step requires predicate | Enforcement |
@@ -843,7 +843,7 @@ Each linking axiom is discharged by making an opaque predicate concrete — repl
 
 **Role:** Guarantee that extending/strengthening the model doesn't break existing results.
 
-**File:** `RevisionSafety.lean`
+**File:** `Semantics/RevisionSafety.lean`
 
 Three levels of safety are formalized: premise strengthening (adding premises preserves implications), compatible extensions (commuting laws preserve revision-gate properties), and LTS refinement safety (refinements preserve invariants).
 
@@ -1298,7 +1298,7 @@ $$\text{ModularityPack} := \text{GracefulDegradation} \land \text{SubRevisionSaf
 
 | Definition | File | Purpose |
 |------------|------|---------|
-| `RevisionGate` | RevisionSafety.lean | `∀ B, selfCorrects B → hasRevision B` — competition gate predicate |
+| `RevisionGate` | Semantics/RevisionSafety.lean | `∀ B, selfCorrects B → hasRevision B` — competition gate predicate |
 | `NoSelfCorrection` | Modularity.lean | Sub-bundle predicate: no bubble self-corrects |
 | `SubBundle` | Modularity.lean | CoreModel + active SubGoal predicate + satisfaction witness |
 | `OdometerModel` | Modularity.lean | Concrete sub-bundle: one bubble, append-only, SoundDepositsGoal only |
