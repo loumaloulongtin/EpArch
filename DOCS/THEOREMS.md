@@ -1570,6 +1570,3 @@ $$\text{LeanKernelCtx.W\_bounded\_verification} \;\Leftrightarrow\; \text{heartb
 $$\text{LeanKernelCtx.W\_partial\_observability} \;\Leftrightarrow\; \text{proof irrelevance}$$
 
 $$\text{containsBankPrimitives}(\text{LeanWorkingSystem}) \quad \text{(directly and via } \text{convergence\_structural}\text{)}$$
-
-
-**Total: 712 proved theorems, 0 axiom declarations, 0 sorries.**
