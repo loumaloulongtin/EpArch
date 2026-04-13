@@ -169,6 +169,7 @@ import EpArch.Agent.Resilience    -- Fault events, LTS, containment proofs
 import EpArch.Agent.Corroboration -- Multi-agent corroboration theorems
 import EpArch.Realizer  -- Feasibility: System realizer interface
 import EpArch.Feasibility  -- Feasibility: Joint non-vacuity theorem
+import EpArch.WorldBridges  -- World-to-structural bridges + headline convergence
 import EpArch.Meta.FalsifiableNotAuthorizable  -- Meta-status proof pack
 import EpArch.Meta.TheoryCoreClaim  -- Optional stretch: theory_core claim token
 import EpArch.Meta.TheoremTransport  -- Generic theorem transport schema (Tier 3 closure)
