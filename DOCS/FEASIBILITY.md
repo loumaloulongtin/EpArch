@@ -1,13 +1,13 @@
 # Feasibility / Non-Vacuity Documentation
 
-This document describes the feasibility theorems that establish the paper's
+This document describes the feasibility theorems that establish EpArch's
 constraint bundles are consistent and, crucially, that **success forces Bank primitives**.
 
 ---
 
 ## Overview
 
-The paper makes 8 structural commitments (§1.1). Natural objections:
+EpArch makes 8 structural commitments. Natural objections:
 1. "Are these constraints even consistent? Maybe they're vacuous."
 2. "Does a system satisfying these properties actually exist?"
 3. "Are Bank primitives merely sufficient, or actually necessary?"
@@ -26,7 +26,7 @@ The feasibility theorems answer:
 
 **File:** `EpArch/Feasibility.lean`  
 **Tier:** A (proved theorem)  
-**Paper Role:** Headline convergence — structural path, any world
+**Role:** Headline convergence — structural path, any world
 
 ```lean
 theorem bundled_structure_forces_bank_primitives
@@ -48,7 +48,7 @@ citable form of the main convergence result.
 
 **File:** `EpArch/Feasibility.lean`  
 **Tier:** A  
-**Paper Role:** Appendix existence claim (structural path)
+**Role:** Appendix existence claim (structural path)
 
 ```lean
 theorem existence_under_constraints_structural :
@@ -64,7 +64,7 @@ Bank primitives, with forcing witnessed by `StructurallyForced`. Witnessed by
 
 **File:** `EpArch/Feasibility.lean`  
 **Tier:** A  
-**Paper Role:** Zero-hypothesis corollary — strongest closed form
+**Role:** Zero-hypothesis corollary — strongest closed form
 
 ```lean
 theorem kernel_world_forces_bank_primitives :
@@ -216,7 +216,7 @@ the per-dimension obligations.
 |---------|-----------|------|
 | `world_bundles_feasible` | `∃ C : WorldCtx, Nonempty C.W_lies_possible ∧ Nonempty C.W_bounded_verification ∧ Nonempty C.W_partial_observability` | W_* bundles jointly satisfiable; witnessed by `WitnessCtx` |
 | `constraints_feasible` | (alias for `world_bundles_feasible`) | Backward-compatible name |
-| `commitments_feasible` | All 8 paper commitments simultaneously satisfiable | Re-exports `ConcreteLedgerModel.all_commitments_satisfiable` |
+| `commitments_feasible` | All 8 commitments simultaneously satisfiable | Re-exports `ConcreteLedgerModel.all_commitments_satisfiable` |
 | `objectives_feasible` | `∃ _ : EpArch.Realizer, True` | `Realizer` (commitment conjunction) is non-empty |
 | `joint_feasible` | World constraints + objectives both nonempty | Combines the two; kept for backward compat |
 

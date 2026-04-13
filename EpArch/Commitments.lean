@@ -909,7 +909,7 @@ theorem commitments_pack :
 /-- Certainty does not entail Bank authorization.
     Given an innovation-scenario witness (`w : PreAuthTractionWitness`), an agent
     holds Certainty for a claim with no Bank deposit in the bubble.
-    This is the paper's central architectural asymmetry: private traction can
+    This is the central architectural asymmetry: private traction can
     outrun public authorization.  Named alias for
     `innovation_allows_traction_without_authorization`. -/
 theorem certainty_insufficient_for_authorization (w : PreAuthTractionWitness) :

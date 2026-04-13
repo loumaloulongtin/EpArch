@@ -4,7 +4,7 @@ This document catalogs **712** proved theorems in the formalization, organized b
 
 **What the architecture claims:** Decentralized epistemic authorization requires specific structural mechanisms — a lifecycle with type-separated stages, header-preserving export, a revision loop, temporal validity, and a Bank substrate. These aren't design preferences; they are forced by the combination of agent constraints and system health goals.
 
-**What this document is:** A bucketed theorem index (Buckets 1–29), grouped by the claim each cluster supports. Each bucket names the Lean file, the key theorems, and the paper claim they underwrite. This is broader than Appendix A of the paper, which covers only paper-cited theorems with full math notation; this file covers the full proof burden distribution across the repo. For deeper exposition of any area, the standalone DOCS files are the right place. For the modularity story — what survives disabling a constraint, health goal, or world bundle, and by what formal mechanism — see [MODULARITY.md](MODULARITY.md).
+**What this document is:** A bucketed theorem index (Buckets 1–29), grouped by the architectural claim each cluster supports. Each bucket names the Lean file, the key theorems, and the claim each cluster establishes. This file covers the full proof burden distribution across the repo. For deeper exposition of any area, the standalone DOCS files are the right place. For the modularity story — what survives disabling a constraint, health goal, or world bundle, and by what formal mechanism — see [MODULARITY.md](MODULARITY.md).
 
 **Tier labels:** **A** = proved unconditionally, **B** = conditional on a W-bundle premise, **C** = design commitment (context-bundled structural assumption).
 
@@ -26,11 +26,11 @@ This document catalogs **712** proved theorems in the formalization, organized b
 
 ## Bucket 1: Lifecycle & Type-Separation
 
-**Paper Role:** Establishes that different deposit statuses create different operational affordances.
+**Role:** Establishes that different deposit statuses create different operational affordances.
 
 ### Core Theorems
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `candidate_blocks_withdrawal` | Theorems/Corners.lean | Candidate status blocks withdrawal | §5: Lottery dissolution |
 | `withdrawal_requires_deposited` | Theorems/Corners.lean | Must be Deposited to withdraw | §6: Bank gates |
@@ -48,11 +48,11 @@ $$\text{canWithdraw}(d) \Rightarrow \text{Deposited}(d) \land \text{ACL}(a,d) \l
 
 ## Bucket 2: Competition Gate Cluster (Revision ⇔ Self-Correction)
 
-**Paper Role:** The central forcing constraint — self-correction requires revision capability.
+**Role:** The central forcing constraint — self-correction requires revision capability.
 
 ### Core Theorems
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `no_revision_no_correction` | StepSemantics.lean | No revision → no self-correction | §12: Competition gate |
 | `self_correction_requires_revision` | StepSemantics.lean | Self-correction → revision occurred | §12: Forward direction |
@@ -72,11 +72,11 @@ $$\text{SelfCorrecting}(D) \Rightarrow \text{permitsRevision}(D)$$
 
 ## Bucket 3: Export/Strip Asymmetry
 
-**Paper Role:** Header stripping is information-destroying; import cannot reconstruct.
+**Role:** Header stripping is information-destroying; import cannot reconstruct.
 
 ### Core Theorems
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `no_strip_left_inverse` | Theorems/Strip.lean | ¬∃ f. f âˆ˜ strip = id | §10: Irreversibility |
 | `strip_not_injective_if` | Theorems/Strip.lean | (d₁ ≠ d₂) ∧ (strip d₁ = strip d₂) → ¬∀ x y, strip x = strip y → x = y (negated injectivity, not just existential re-wrap) | §10: Non-injectivity |
@@ -89,7 +89,7 @@ $$\text{SelfCorrecting}(D) \Rightarrow \text{permitsRevision}(D)$$
 
 ### stripV Properties
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `stripV_irreversible` | Theorems/Strip.lean | ∃ p1 ≠ p2 in Provenance → ¬∃ f. f âˆ˜ stripV = id (requires non-trivial Provenance type) | §10: V-strip irreversibility |
 | `stripV_idempotent` | Theorems/Strip.lean | stripV(stripV(x)) = stripV(x) | §10: Idempotency |
@@ -97,7 +97,7 @@ $$\text{SelfCorrecting}(D) \Rightarrow \text{permitsRevision}(D)$$
 
 ### Export Visibility (Corner 9)
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `export_creates_visibility` | Theorems/Corners.lean | Export step → deposit visible in target bubble | §10: Export semantics |
 | `export_creates_B2_deposit` | Theorems/Corners.lean | Export step → concrete deposit record in target ledger (single premise) | §10: Deposit creation |
@@ -113,11 +113,11 @@ $$h_1 \neq h_2 \land \text{claim}(h_1) = \text{claim}(h_2) \Rightarrow \text{str
 
 ## Bucket 4: Diagnosability (Observability Monotonicity)
 
-**Paper Role:** Header stripping reduces diagnosability; fewer observable fields → coarser repair.
+**Role:** Header stripping reduces diagnosability; fewer observable fields → coarser repair.
 
 ### Core Theorems (Diagnosability.lean)
 
-| Theorem | Statement | Paper Claim |
+| Theorem | Statement | Claim |
 |---------|-----------|-------------|
 | `diagnosability_full` | Full deposits: diagnosability = 6 | §15: Full observability |
 | `diagnosability_stripped` | Stripped deposits: diagnosability = 0 | §15: Zero observability |
@@ -128,7 +128,7 @@ $$h_1 \neq h_2 \land \text{claim}(h_1) = \text{claim}(h_2) \Rightarrow \text{str
 
 ### Bridge Theorems (Theorems/Headers.lean)
 
-| Theorem | Statement | Paper Claim |
+| Theorem | Statement | Claim |
 |---------|-----------|-------------|
 | `strip_reduces_field_count` | FieldCount stripped < full | §7: Field count |
 | `fewer_fields_coarser_repair` | Fewer fields → coarser repair | §15: Repair quality |
@@ -143,7 +143,7 @@ $$f \notin \text{ObservableFields}(d) \Rightarrow \neg\text{canTargetRepair}(f, 
 
 ### Field-Localization Bridge (StepSemantics.lean)
 
-| Theorem | Statement | Paper Claim |
+| Theorem | Statement | Claim |
 |---------|-----------|-------------|
 | `factorization_enables_field_identification` | Broken field is contained in the 6-field enum {S,E,V,τ,red,acl} | §7: Field enum completeness |
 | `factorization_enables_legibility` | Deposited deposit with a broken field → Legible | §7: Legibility |
@@ -155,7 +155,7 @@ $$f \notin \text{ObservableFields}(d) \Rightarrow \neg\text{canTargetRepair}(f, 
 
 ### Diagnosability Metric Theorems (Theorems/Headers.lean)
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `field_checkable_iff_header` | Theorems/Headers.lean | field_checkable s d_idx f ↔ depositHasHeader s d_idx (Field param is universally free) | §7: Checkability ≡ header presence |
 | `harder_without_headers` | Theorems/Headers.lean | ¬depositHasHeader → ¬field_checkable (structural; any field) | §7: Stripped strictly harder |
@@ -168,7 +168,7 @@ $$f \notin \text{ObservableFields}(d) \Rightarrow \neg\text{canTargetRepair}(f, 
 
 Bridge theorems coupling the Diagnosability.lean and Theorems/Strip.lean metric systems:
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `fieldcount_full_eq_diagnosability` | Theorems/Strip.lean | FieldCount_Full = diagnosability true | Bridge: field-count ↔ score |
 | `stripped_diagnosability_is_zero` | Theorems/Strip.lean | diagnosability false = 0 | Bridge: stripped score = 0 |
@@ -180,11 +180,11 @@ Bridge theorems coupling the Diagnosability.lean and Theorems/Strip.lean metric 
 
 ## Bucket 5: τ (Temporal Validity)
 
-**Paper Role:** Time creates pressure for maintenance; staleness blocks operations.
+**Role:** Time creates pressure for maintenance; staleness blocks operations.
 
 ### Core Theorems
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `stale_blocks_withdrawal` | Theorems/Corners.lean | Stale deposits can't withdraw | §14: Hygiene |
 | `tick_can_cause_staleness` | Theorems/Corners.lean | Clock tick → may become stale | §14: Time pressure |
@@ -203,7 +203,7 @@ $$\tau\text{-valid}(\text{clock}, \tau) \land \text{clock}' > \text{clock} \Righ
 
 ## Bucket 6: Case Bindings (Illustrative)
 
-**Paper Role:** Map epistemological puzzles to architectural diagnoses. These are *illustrative*, not claimed as philosophical theorems.
+**Role:** Map epistemological puzzles to architectural diagnoses. These are *illustrative*, not claimed as philosophical theorems.
 
 ### Gettier Cases
 
@@ -284,7 +284,7 @@ certify that S is vacuous regardless of consumer). Both repair by targeting Fiel
 
 ## Bucket 7: Invariant Preservation
 
-**Paper Role:** System maintains well-formedness across transitions.
+**Role:** System maintains well-formedness across transitions.
 
 | Theorem | File | Statement |
 |---------|------|-----------|
@@ -306,11 +306,11 @@ certify that S is vacuous regardless of consumer). Both repair by targeting Fiel
 
 ## Bucket 8: Modal Properties (Safety/Sensitivity ↔ S/E/V)
 
-**Paper Role:** Connect modal epistemology to architectural fields.
+**Role:** Connect modal epistemology to architectural fields.
 
 ### Core Theorems
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `safety_V_link` | StepSemantics.lean | Unsafe → ¬V_independent | §7: Safety = V |
 | `sensitivity_E_link` | StepSemantics.lean | Insensitive → ¬E_covers | §7: Sensitivity = E |
@@ -345,9 +345,9 @@ have been retired in favour of these structural forms.
 
 ## Bucket 9: Grounded Minimality (StepSemantics.lean)
 
-**Paper Role:** Each architectural feature is necessary for specific capabilities.
+**Role:** Each architectural feature is necessary for specific capabilities.
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `grounded_coordination_requires_bank` | StepSemantics.lean | Coordination → Bank | §6: Bank necessity |
 | `grounded_export_requires_headers` | StepSemantics.lean | Export → Headers | §10: Header necessity |
@@ -361,7 +361,7 @@ have been retired in favour of these structural forms.
 
 ## Bucket 9b: Abstract Structural Forcing Layer (Minimality.lean + Convergence.lean)
 
-**Paper Role:** Provide structurally-grounded proofs that each constraint forces its feature. The six structural impossibility models in Minimality.lean independently justify each `handles_X → HasY` implication. The §1b–§6b alternative-dismissal theorems cover the completeness side: each evaluated alternative either reproduces the same impossibility or satisfies the forced-primitive definition.
+**Role:** Provide structurally-grounded proofs that each constraint forces its feature. The six structural impossibility models in Minimality.lean independently justify each `handles_X → HasY` implication. The §1b–§6b alternative-dismissal theorems cover the completeness side: each evaluated alternative either reproduces the same impossibility or satisfies the forced-primitive definition.
 
 **Strongest result:** Six per-dimension `*_forces_*` theorems (Convergence.lean) each take a single `Represents*` witness and directly force the `Has*` feature — no `handles_X W`, no biconditionals, no `WellFormed`. These are orthogonal: each fires independently of the other five. Bundled into `SystemOperationalBundle` / `WorldBridgeBundle`, they feed the headline `bundled_structure_forces_bank_primitives` theorem in Feasibility.lean.
 
@@ -521,7 +521,7 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 
 ## Bucket 9c: Observation-Boundary Equivalence (BehavioralEquivalence.lean)
 
-**Paper Role:** Proves that any two `GroundedBehavior` certificates produce identical observations on all inputs. `Behavior B i` is determined solely by the input constructor — not by the structural content of `B`. The step-bridge section operationally grounds this: for withdraw, challenge, and tick inputs, a concrete `Step` is constructed from `B`'s evidence (`bank`, `trust_bridges`, `revocation`) and structurally consumed via `cases h`, so the equality is derived *through* an actual firing. Export falls back to definitional equality because `header_preserved` is opaque and cannot be reflected into a concrete `depositHasHeader` for the unit-type instantiation.
+**Role:** Proves that any two `GroundedBehavior` certificates produce identical observations on all inputs. `Behavior B i` is determined solely by the input constructor — not by the structural content of `B`. The step-bridge section operationally grounds this: for withdraw, challenge, and tick inputs, a concrete `Step` is constructed from `B`'s evidence (`bank`, `trust_bridges`, `revocation`) and structurally consumed via `cases h`, so the equality is derived *through* an actual firing. Export falls back to definitional equality because `header_preserved` is opaque and cannot be reflected into a concrete `depositHasHeader` for the unit-type instantiation.
 
 ### Definitions
 
@@ -551,7 +551,7 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 
 ## Bucket 9d: Kernel Verification Depth (VerificationDepth.lean)
 
-**Paper Role:** Provides a *constructive* kernel-level witness that `W_bounded_verification` is not an empirical world assumption but follows from the structural properties of the verification relation itself. `DepthClaim n` is a depth-indexed proposition family with exactly n constructors; a budget-d verifier traverses only d constructors and therefore cannot decide `DepthClaim (d+1)`, which is genuinely true. This justifies the §2 bounded-audit forcing argument for trust bridges by construction rather than supposition.
+**Role:** Provides a *constructive* kernel-level witness that `W_bounded_verification` is not an empirical world assumption but follows from the structural properties of the verification relation itself. `DepthClaim n` is a depth-indexed proposition family with exactly n constructors; a budget-d verifier traverses only d constructors and therefore cannot decide `DepthClaim (d+1)`, which is genuinely true. This justifies the §2 bounded-audit forcing argument for trust bridges by construction rather than supposition.
 
 ### Definitions
 
@@ -580,11 +580,11 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 
 ## Bucket 10: Adversarial Model (AdversarialBase.lean)
 
-**Paper Role:** Formalize attack patterns and boundary conditions.
+**Role:** Formalize attack patterns and boundary conditions.
 
 ### Attack Structures
 
-| Definition | Description | Paper Source |
+| Definition | Description | Source |
 |------------|-------------|--------------|
 | `FullStackAttack` | Coordinated multi-primitive attack | Appendix E |
 | `PseudoDeposit` | Deposit with spoofed V | Appendix E |
@@ -596,7 +596,7 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 
 ### Core Theorems in AdversarialBase.lean (Proved)
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `sophistication_monotonic` | AdversarialBase.lean | Attack levels form monotonic hierarchy | §15.10 |
 | `sincerity_norms_irrelevant` | AdversarialBase.lean | Lies don't require violating sincerity norms | §15.10 |
@@ -607,9 +607,9 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 
 ## Bucket 11: Repair Loop Semantics
 
-**Paper Role:** Challenge-repair-revalidation cycle.
+**Role:** Challenge-repair-revalidation cycle.
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `repair_enforces_revalidation` | Theorems/Withdrawal.lean | Repair → revalidate | §14: No silent fix |
 | `submit_enforces_revalidation` | Theorems/Withdrawal.lean | Submit → validate | §6: Validation on entry |
@@ -624,9 +624,9 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 
 ## Bucket 12: Withdrawal Gates (Three-Gate Model)
 
-**Paper Role:** Withdrawal requires Status + ACL + τ.
+**Role:** Withdrawal requires Status + ACL + τ.
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `withdrawal_requires_three_gates` | StepSemantics.lean | Status ∧ ACL ∧ τ | §6: Three gates |
 | `withdrawal_gates` | Theorems/Withdrawal.lean | Withdrawal preconditions | §6: Gate theorem |
@@ -638,13 +638,13 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 
 ## Bucket 13: Obligation Theorems (World ⇒ Mechanism)
 
-**Paper Role:** Convert implicit mechanism axioms into explicit conditional theorems.
+**Role:** Convert implicit mechanism axioms into explicit conditional theorems.
 
 **Files:** `World.lean`, `AdversarialObligations.lean`
 
 ### Core Theorems (World.lean)
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `lie_possible_of_W` | WorldCtx.lean | W_lies_possible → ∃ w a P, Lie w a P | Adversarial: lies exist |
 | `all_agents_can_lie_of_W` | WorldCtx.lean | W_lies_possible → ∀ a, can_lie a | Adversarial: universal capability |
@@ -696,7 +696,7 @@ Each architectural constraint creates both a capability and an exploitable surfa
 
 ## Bucket 14: Health → Necessity Theorems
 
-**Paper Role:** Connect health goals to mechanism requirements (invariants).
+**Role:** Connect health goals to mechanism requirements (invariants).
 
 **File:** `Health.lean`, `Agent/Imposition.lean`
 
@@ -739,7 +739,7 @@ $$\text{SelfCorrectingSystem}(M) \Rightarrow \text{HasRevisionCapability}(M)$$
 
 ## Bucket 15: Scope/Irrelevance Theorems
 
-**Paper Role:** Turn "out of scope" prose into machine-checkable scope boundaries.
+**Role:** Turn "out of scope" prose into machine-checkable scope boundaries.
 
 **File:** `ScopeIrrelevance.lean`
 
@@ -793,7 +793,7 @@ These theorems prove that out-of-scope fundamentals (physics, consciousness, psy
 
 ## Bucket 16: Discharged Linking Axioms
 
-**Paper Role:** Convert philosophical "linking axioms" from axioms to definitional theorems.
+**Role:** Convert philosophical "linking axioms" from axioms to definitional theorems.
 
 **Files:** `Theorems/Dissolutions.lean`, `Theorems/Pathologies.lean`
 
@@ -837,7 +837,7 @@ Each linking axiom is discharged by making an opaque predicate concrete — repl
 
 ## Bucket 17: Revision Safety
 
-**Paper Role:** Guarantee that extending/strengthening the model doesn't break existing results.
+**Role:** Guarantee that extending/strengthening the model doesn't break existing results.
 
 **File:** `RevisionSafety.lean`
 
@@ -881,7 +881,7 @@ $$\text{Compatible} := \forall B.\, E.\text{selfCorrects}(B) \Leftrightarrow C.\
 
 ## Bucket 18: Agent Constraints & PRP
 
-**Paper Role:** Mechanize "the system is designed for imperfect agents" via structural constraints.
+**Role:** Mechanize "the system is designed for imperfect agents" via structural constraints.
 
 **File:** `Agent.lean`
 
@@ -889,7 +889,7 @@ $$\text{Compatible} := \forall B.\, E.\text{selfCorrects}(B) \Leftrightarrow C.\
 
 ### PRP Consequence Theorems (Tier A — Fully Proved)
 
-| Theorem | Statement | Paper Claim |
+| Theorem | Statement | Claim |
 |---------|-----------|-------------|
 | `no_global_closure_of_PRP` | ¬∃ t_final, ∀ t ≥ t_final, ∀ c, cost ≤ budget | No terminal epistemic closure |
 | `needs_revision_of_PRP` | ∀ t, ∃ t' > t, challenge exceeds budget | Revision hooks mandatory |
@@ -905,7 +905,7 @@ $$\text{PRP} \Rightarrow \neg\exists t_{\text{final}}.\, \forall t \geq t_{\text
 
 ## Bucket 25: Theorem Transport — Health Goal Layer (Tier 3 Closure)
 
-**Paper Role:** Machine-certifies that every health-goal predicate is transport-safe under compatible model extensions. Forms the lattice-stability guarantee for the health goal layer.
+**Role:** Machine-certifies that every health-goal predicate is transport-safe under compatible model extensions. Forms the lattice-stability guarantee for the health goal layer.
 
 **File:** `Meta/TheoremTransport.lean`
 
@@ -953,7 +953,7 @@ $$\text{PRP} \Rightarrow \neg\exists t_{\text{final}}.\, \forall t \geq t_{\text
 
 ## Bucket 26: Theorem Transport — Main Library Layer (Tier 4 Closure)
 
-**Paper Role:** Machine-certifies that all four theorem clusters in the main library are transport-safe. Closes the Tier 4 gap in DOCS/MODULARITY.md: not just the competition gate but all operational LTS theorems and all five health goals are machine-certified as transport-safe.
+**Role:** Machine-certifies that all four theorem clusters in the main library are transport-safe. Closes the Tier 4 gap in DOCS/MODULARITY.md: not just the competition gate but all operational LTS theorems and all five health goals are machine-certified as transport-safe.
 
 **File:** `Meta/Tier4Transport.lean`
 
@@ -1035,7 +1035,7 @@ File: `Agent/Imposition.lean`
 
 ### Budget Forcing (Corner 8)
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `finite_budget_forces_triage` | Theorems/Corners.lean | ledger.length > budget → ∃ d_idx not revalidated | Corner 8: Budget overflow forces triage |
 
@@ -1043,7 +1043,7 @@ File: `Agent/Imposition.lean`
 
 **File:** `Agent/Resilience.lean`
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `lie_containment_principle` | Agent/Resilience.lean | Lies create untrusted deposits, don't flip truth | Epistemic sandbox |
 | `no_gate_bypass` | Agent/Resilience.lean | Gate enforcement is architectural, not agent-dependent | Gate invariance |
@@ -1054,7 +1054,7 @@ File: `Agent/Imposition.lean`
 
 `AgentLTS` is a proof-oriented abstraction of `StepSemantics` that packages containment invariants as an LTS with a simulation relation. Theorems here prove that StepSemantics preserves these invariants via the simulation.
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `truth_invariant_preserved` | Agent/Resilience.lean | Single step preserves truth invariant | Containment: truth is stable |
 | `truth_preserved_along_trace` | Agent/Resilience.lean | Full trace preserves truth invariant | Containment: trace-level truth |
@@ -1068,11 +1068,11 @@ File: `Agent/Imposition.lean`
 
 ## Bucket 19: Feasibility / Existence Under Constraints (Tier A)
 
-**Paper Role:** Establishes that the constraint+objective package is consistent AND that success forces Bank primitives.
+**Role:** Establishes that the constraint+objective package is consistent AND that success forces Bank primitives.
 
 ### Headline Theorems
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `structural_goals_force_bank_primitives` | Feasibility.lean | ∀ W. StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W | Minimality: forced primitives (structural path) |
 | `existence_under_constraints_structural` | Feasibility.lean | ∃ W. StructurallyForced W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W | Existence via structural path |
@@ -1099,17 +1099,17 @@ File: `Agent/Imposition.lean`
 
 ## Bucket 20: Meta-Status Proof Pack (Tier A)
 
-**Paper Role:** Establishes the theory's epistemic status: falsifiable, not fully authorizable, safe on credit.
+**Role:** Establishes the theory's epistemic status: falsifiable, not fully authorizable, safe on credit.
 
 ### Headline Theorem
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `meta_status_proof_pack` | Meta/FalsifiableNotAuthorizable.lean | P1 ∧ P2 ∧ P3 packaged | Appendix: Meta-status |
 
 ### Core Theorems
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `theory_floor_satisfiable` | Meta/FalsifiableNotAuthorizable.lean | TheoryFloor WitnessCtx | Floor is consistent |
 | `theory_floor_falsifiable` | Meta/FalsifiableNotAuthorizable.lean | ∃ C, ¬ TheoryFloor C | Countercontext exists |
@@ -1123,7 +1123,7 @@ File: `Agent/Imposition.lean`
 
 ### Optional Stretch: Theory Core Claim (Witness-Specific)
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `lift_notDeterminedByObs_theory_core` | Meta/TheoryCoreClaim.lean | Underdetermination transfers | Transfer lemma |
 | `witness_theory_core_not_determined` | Meta/TheoryCoreClaim.lean | `NotDeterminedByObs theory_core` | Headline stretch |
@@ -1138,7 +1138,7 @@ File: `Agent/Imposition.lean`
 
 ### Universal Schema (No Witness Dependence)
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `theory_core_token_not_determined` | Meta/TheoryCoreClaim.lean | Universal: any C with bundle | Schema theorem |
 | `witness_theory_core_not_determined'` | Meta/TheoryCoreClaim.lean | Witness as instance of schema | Instance corollary |
@@ -1166,11 +1166,11 @@ File: `Agent/Imposition.lean`
 
 ## Bucket 21: Multi-Agent Corroboration (Appendix)
 
-**Paper Role:** Formal machinery for when multi-agent corroboration is required (conditional minimality) and when it fails (common-mode / bubble infection).
+**Role:** Formal machinery for when multi-agent corroboration is required (conditional minimality) and when it fails (common-mode / bubble infection).
 
 ### Core Theorems
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `single_source_can_accept_false` | Agent/Corroboration.lean | Single-source attack → can accept false | T1: Vulnerability |
 | `no_spof_requires_multi_source` | Agent/Corroboration.lean | NoSPoF goal + attack → contradiction | T1: Necessity |
@@ -1196,13 +1196,13 @@ File: `Agent/Imposition.lean`
 
 ## Bucket 22: Entrenchment (Pathological Ladder State)
 
-**Paper Role:** Entrenchment (Certainty + structural refusal to revise) breaks safe withdrawal — the deposit becomes inactive but the agent cannot acknowledge this.
+**Role:** Entrenchment (Certainty + structural refusal to revise) breaks safe withdrawal — the deposit becomes inactive but the agent cannot acknowledge this.
 
-**Paper References:** A.S7, B1.10, B1.11
+**References:** A.S7, B1.10, B1.11
 
 ### Core Theorems
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `entrenchment_breaks_safe_withdrawal` | Theorems/Corners.lean | Entrenched + inactive deposit → ¬isDeposited | A.S7: Entrenchment blocks withdrawal |
 | `entrenched_cannot_withdraw` | Theorems/Corners.lean | Entrenched + inactive → no Step.withdraw fires | B1.10/B1.11: Full withdrawal failure |
@@ -1223,13 +1223,13 @@ $$\text{Entrenched}(a, P) \land \text{deposit-no-longer-active}(s, d) \Rightarro
 
 ## Bucket 23: Observational Completeness (Header/Deposit Extensionality)
 
-**Paper Role:** Proves deposit identity is exhausted by named fields — no hidden degrees of freedom. Forces adversaries onto constraint enumeration rather than field discovery.
+**Role:** Proves deposit identity is exhausted by named fields — no hidden degrees of freedom. Forces adversaries onto constraint enumeration rather than field discovery.
 
-**Paper References:** A.OC1, A.OC2, B16b.1–B16b.4
+**References:** A.OC1, A.OC2, B16b.1–B16b.4
 
 ### Core Theorems
 
-| Theorem | File | Statement | Paper Claim |
+| Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `header_ext` | Header.lean:149 | Headers agreeing on 6 fields are equal | B16b.1: Header extensionality |
 | `deposit_ext` | Header.lean:166 | Deposits agreeing on 4 fields are equal | A.OC2: Deposit extensionality |
@@ -1246,7 +1246,7 @@ $$\forall\, \text{Pred},\ d_1 = d_2 \implies \text{Pred}(d_1) \implies \text{Pre
 
 ## Bucket 24: Lattice-Stability / Graceful Scale-Down
 
-**Paper Role:** Proves EpArch is bidirectionally modular at the `RevisionGate` / competition-gate layer: the `RevisionGate` predicate is preserved in both directions under bundle perturbation. Removing the self-correction health goal leaves a valid sub-architecture where `RevisionGate` holds vacuously; compatible extensions at any level preserve `RevisionGate` through the existing transport machinery.
+**Role:** Proves EpArch is bidirectionally modular at the `RevisionGate` / competition-gate layer: the `RevisionGate` predicate is preserved in both directions under bundle perturbation. Removing the self-correction health goal leaves a valid sub-architecture where `RevisionGate` holds vacuously; compatible extensions at any level preserve `RevisionGate` through the existing transport machinery.
 
 **File:** `Modularity.lean`
 
@@ -1303,7 +1303,7 @@ $$\text{ModularityPack} := \text{GracefulDegradation} \land \text{SubRevisionSaf
 
 ## Bucket 27: Modularity Meta-Theorem — ∀ S âŠ† Constraints, projection_valid S
 
-**Paper Role:** Machine-certifies that EpArch is fully modular: there exists a single
+**Role:** Machine-certifies that EpArch is fully modular: there exists a single
 universally-quantified theorem over all subsets of the six constraints, and a
 `PartialWellFormed` type that lets users opt into exactly k ≤ 6 constraints.
 
@@ -1341,7 +1341,7 @@ other selected constraints remain live implications backed by the required bicon
 
 ## Bucket 28: Configurable Certification Engine — `EpArchConfig → ClusterTag → certified proof`
 
-**Paper Role:** Closes the claim that all 29 theorem clusters are individually certified:
+**Role:** Closes the claim that all 29 theorem clusters are individually certified:
 25 clusters (constraint, goal, Tier 4, world) are user-selectable via `EpArchConfig`;
 the remaining 4 (1 constraint-modularity meta-theorem cluster + 3 lattice-stability
 clusters) are always enabled because they depend on no config gate. Given any
@@ -1499,7 +1499,7 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 
 ## Bucket 29: Lean Kernel Instantiation (Meta/LeanKernelModel.lean)
 
-**Paper Role:** Self-referential demonstration that Lean's own type-checking kernel is a valid, fully-grounded EpArch instantiation. Two layers are proved: (1) `LeanKernelCtx : WorldCtx` satisfies three W_* world-assumption bundles with kernel-specific interpretations (`sorry` ↔ lies, heartbeat ↔ bounded verification, proof irrelevance ↔ partial observability); (2) `LeanWorkingSystem : WorkingSystem` satisfies all six architectural features, `PartialWellFormed allConstraints`, and `containsBankPrimitives` — both by direct construction and by the structural convergence path. Self-referential note: this file is type-checked by the same kernel it models.
+**Role:** Self-referential demonstration that Lean's own type-checking kernel is a valid, fully-grounded EpArch instantiation. Two layers are proved: (1) `LeanKernelCtx : WorldCtx` satisfies three W_* world-assumption bundles with kernel-specific interpretations (`sorry` ↔ lies, heartbeat ↔ bounded verification, proof irrelevance ↔ partial observability); (2) `LeanWorkingSystem : WorkingSystem` satisfies all six architectural features, `PartialWellFormed allConstraints`, and `containsBankPrimitives` — both by direct construction and by the structural convergence path. Self-referential note: this file is type-checked by the same kernel it models.
 
 **File:** `Meta/LeanKernelModel.lean`
 

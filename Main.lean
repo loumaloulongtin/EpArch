@@ -3,10 +3,9 @@ Main.lean — Full Build Surface for EpArch
 
 ## What This Project Is
 
-EpArch formalizes the paper "Epistemic Architecture: A Constraints-and-
-Objectives Framework for Bounded Agents Under Adversarial Pressure."
-The paper argues that knowledge
-management in the real world (science, law, journalism, etc.) converges on
+EpArch is a machine-checked constraints-and-objectives framework for
+bounded epistemic systems under adversarial pressure.
+Knowledge management in the real world (science, law, journalism, etc.) converges on
 a common architecture — not because anyone designed it, but because the
 constraints of imperfect agents under permanent challenge pressure force
 a specific set of structural features.
@@ -41,7 +40,7 @@ The formalization proves these claims:
 
 - **Ladder**: An agent's internal certainty progression
   (Denial → Doubt → Ignorance → Belief → Certainty). This is private
-  mental state, NOT the Bank. The paper's key claim: "traction" (feeling
+  mental state, NOT the Bank. Key claim: "traction" (feeling
   sure, Ladder) is distinct from "authorization" (having a valid deposit,
   Bank).
 

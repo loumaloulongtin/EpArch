@@ -12,7 +12,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 
 | File | Description |
 |------|-------------|
-| [THEOREMS.md](THEOREMS.md) | Complete theorem inventory organized by paper role |
+| [THEOREMS.md](THEOREMS.md) | Complete theorem inventory organized by architectural role |
 | [AXIOMS.md](AXIOMS.md) | Axiom inventory with categories and justifications |
 | [WORLD.md](WORLD.md) | Explicit world assumptions (W-bundles) and obligation theorem structure |
 | [FEASIBILITY.md](FEASIBILITY.md) | Non-vacuity / joint feasibility theorems |
@@ -89,7 +89,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | `RevisionSafety.lean` | Premise strengthening + compatible extensions | 0 |
 | `ScopeIrrelevance.lean` | Scope irrelevance theorems | 0 |
 | `Bank.lean` | Bank substrate, lifecycle operators | 0 |
-| `Commitments.lean` | Paper's 8 commitments (all proved as standalone theorems; `commitments_pack` bundles C3/C4b/C7b/C8) | 0 |
+| `Commitments.lean` | 8 structural commitments; all proved as standalone theorems; `commitments_pack` bundles the unconditional ones (C3/C4b/C7b/C8) | 0 |
 | `Meta/ClusterRegistry.lean` | 29-cluster tag registry, routing, per-family canonical lists | 0 |
 | `Meta/Config.lean` | Certification engine: `certify`, proof witnesses, completeness theorems | 0 |
 | `Health.lean` | Health predicates + necessity theorems | 0 |

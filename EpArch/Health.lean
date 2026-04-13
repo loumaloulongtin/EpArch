@@ -11,7 +11,7 @@ rather than axioms.
 
 The key insight: health goals ARE predicates over traces and operations.
 - `SafeWithdrawalGoal`: submission of a deposit implies some authorization
-  witness exists — operationalizes the paper's "safe withdrawal" property
+  witness exists — operationalizes the “safe withdrawal” property
 - `ReliableExportGoal`: false deposits do not appear true across bubble
   boundaries (unless the target bubble has revision capability)
 - `CorrigibleLedgerGoal`: when revision capability exists, revisions

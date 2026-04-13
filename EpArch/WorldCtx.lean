@@ -10,7 +10,7 @@ fields that can be instantiated differently for different purposes:
 
 ## Why Parametric?
 
-Many of the paper's claims are CONDITIONAL: "IF lies are possible AND
+Many EpArch claims are CONDITIONAL: "IF lies are possible AND
 verification is bounded AND observation is partial, THEN mechanism M
 follows." These conditions are formalized as W_* bundles (W_lies_possible,
 W_bounded_verification, W_partial_observability, W_asymmetric_costs).

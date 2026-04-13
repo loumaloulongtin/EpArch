@@ -25,7 +25,7 @@ The "Ladder vs Bank" distinction is central:
   (Denial → Doubt → Ignorance → Belief → Certainty). This is private.
 - **Bank** (system-side): The shared ledger of validated deposits.
   This is public, challengeable, and redeemable.
-The paper's key claim: being CERTAIN (Ladder) is not the same as KNOWING
+The key claim: being CERTAIN (Ladder) is not the same as KNOWING
 (having a valid Bank deposit). Certainty is private traction;
 knowledge is public authorization.
 

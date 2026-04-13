@@ -16,7 +16,7 @@ namespace EpArch.Meta.Config
 
 /-! ## §1  Configuration Language -/
 
-/-- The six constraints the paper analyses.  Each tag maps to one forcing theorem
+/-- The six architectural constraints.  Each tag maps to one forcing theorem
     in `EpArch.Minimality`. -/
 inductive ConstraintTag where
   | distributed_agents
@@ -36,7 +36,7 @@ inductive GoalTag where
   | selfCorrection
   deriving DecidableEq, BEq, Repr
 
-/-- The eight named world bundles from the paper. -/
+/-- The eight named world bundles. -/
 inductive WorldTag where
   | lies_possible
   | bounded_verification
