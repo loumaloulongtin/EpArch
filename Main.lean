@@ -158,7 +158,10 @@ import EpArch.RevisionSafety  -- Revision safety meta-theorems
 import EpArch.Health  -- Health predicates and necessity theorems
 import EpArch.Mechanisms  -- Canonical mechanism predicates
 import EpArch.ScopeIrrelevance  -- Scope/irrelevance theorems
-import EpArch.Agent  -- Agent constraints interface (PRP, design-imposition)
+import EpArch.Agent.Constraints   -- AgentConstraints, PRP, PRP theorems
+import EpArch.Agent.Imposition    -- Design-forcing theorems
+import EpArch.Agent.Resilience    -- Fault events, LTS, containment proofs
+import EpArch.Agent.Corroboration -- Multi-agent corroboration theorems
 import EpArch.Realizer  -- Feasibility: System realizer interface
 import EpArch.Feasibility  -- Feasibility: Joint non-vacuity theorem
 import EpArch.Meta.FalsifiableNotAuthorizable  -- Meta-status proof pack

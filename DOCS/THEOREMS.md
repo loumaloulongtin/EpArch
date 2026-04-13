@@ -883,7 +883,7 @@ $$\text{Compatible} := \forall B.\, E.\text{selfCorrects}(B) \Leftrightarrow C.\
 
 **Role:** Mechanize "the system is designed for imperfect agents" via structural constraints.
 
-**File:** `Agent.lean`
+**Files:** `Agent/Constraints.lean`, `Agent/Imposition.lean`, `Agent/Resilience.lean`, `Agent/Corroboration.lean`
 
 **Permanent Redeemability Pressure (PRP):** agents face an infinite stream of challenges exceeding their verification budget — terminal epistemic closure is unreachable. The theorems in `Agent/Imposition.lean` derive that `AgentConstraints + HealthGoal + ¬Mechanism → False`.
 
