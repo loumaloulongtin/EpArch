@@ -6,7 +6,7 @@ Type-separation makes the puzzle dissolve: certainty (Ladder) != knowledge (Bank
 Includes trace-level ladder impossibility theorems, progress metrics, and
 dissolution criteria.
 -/
-import EpArch.StepSemantics
+import EpArch.Semantics.StepSemantics
 
 namespace EpArch
 

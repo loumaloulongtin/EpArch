@@ -7,7 +7,7 @@ Derived theorems for the operational withdrawal lifecycle:
 - Diagnosis infrastructure: DiagnosableDeposit, DiagnoseField
 -/
 import EpArch.Basic
-import EpArch.StepSemantics
+import EpArch.Semantics.StepSemantics
 import EpArch.Minimality
 
 namespace EpArch

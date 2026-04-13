@@ -23,7 +23,7 @@ WorldCtx, WorldWitness, and RevisionSafety — no new axioms.
 
 import EpArch.WorldCtx
 import EpArch.WorldWitness
-import EpArch.RevisionSafety
+import EpArch.Semantics.RevisionSafety
 import EpArch.Basic
 
 namespace EpArch.Meta

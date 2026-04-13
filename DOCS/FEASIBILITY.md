@@ -24,7 +24,7 @@ The feasibility theorems answer:
 
 ### `bundled_structure_forces_bank_primitives`
 
-**File:** `EpArch/Feasibility.lean`  
+**File:** `EpArch/WorldBridges.lean`  
 **Tier:** A (proved theorem)  
 **Role:** Headline convergence — structural path, any world
 
@@ -62,7 +62,7 @@ Bank primitives, with forcing witnessed by `StructurallyForced`. Witnessed by
 
 ### `kernel_world_forces_bank_primitives`
 
-**File:** `EpArch/Feasibility.lean`  
+**File:** `EpArch/WorldBridges.lean`  
 **Tier:** A  
 **Role:** Zero-hypothesis corollary — strongest closed form
 
@@ -85,7 +85,7 @@ independently forces its corresponding structural conclusion.
 
 ### `w_bounded_forces_incompleteness`
 
-**File:** `EpArch/Feasibility.lean`
+**File:** `EpArch/WorldBridges.lean`
 
 ```lean
 theorem w_bounded_forces_incompleteness (C : WorldCtx)
@@ -101,7 +101,7 @@ forcing argument in the world's own hard claim.
 
 ### `w_lies_forces_revocation_need`
 
-**File:** `EpArch/Feasibility.lean`
+**File:** `EpArch/WorldBridges.lean`
 
 ```lean
 theorem w_lies_forces_revocation_need (C : WorldCtx)
@@ -118,7 +118,7 @@ via `monotonic_no_exit`.
 
 ### `w_partial_obs_forces_redeemability`
 
-**File:** `EpArch/Feasibility.lean`
+**File:** `EpArch/WorldBridges.lean`
 
 ```lean
 theorem w_partial_obs_forces_redeemability (C : WorldCtx)

@@ -20,8 +20,8 @@ These are PROVED theorems (Tier A), not axioms.
 
 import EpArch.Agent.Constraints
 import EpArch.Agent.Imposition
-import EpArch.LTS
-import EpArch.StepSemantics
+import EpArch.Semantics.LTS
+import EpArch.Semantics.StepSemantics
 
 namespace EpArch.Agent
 

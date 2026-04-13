@@ -22,7 +22,7 @@ Bridge theorems prove equivalence (↔) between these predicates and Health.lean
 -/
 
 import EpArch.Basic
-import EpArch.RevisionSafety
+import EpArch.Semantics.RevisionSafety
 import EpArch.Health
 
 namespace EpArch.Mechanisms

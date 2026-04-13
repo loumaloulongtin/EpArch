@@ -30,7 +30,7 @@ lake build   # Lean 4.3.0, no Mathlib
 |---|---|
 | **Certify a system configuration** — proof-carrying record for the applicable theorem clusters | `EpArch.Meta.Config.certify myConfig` |
 | **Inspect which theorems apply** — human-readable routing report per constraint/goal/world | `#eval EpArch.Meta.Config.showConfig myConfig` |
-| **See why primitives are structurally forced** — constraint-to-feature necessity proofs | `EpArch/Minimality.lean`, `EpArch/Convergence.lean`, `EpArch/Agent/Imposition.lean`, `EpArch/Feasibility.lean` (`bundled_structure_forces_bank_primitives` — world-assumption-free; `world_assumptions_force_bank_primitives` — W_* bundle path) |
+| **See why primitives are structurally forced** — constraint-to-feature necessity proofs | `EpArch/Minimality.lean`, `EpArch/Convergence.lean`, `EpArch/Agent/Imposition.lean`, `EpArch/WorldBridges.lean` (`bundled_structure_forces_bank_primitives` — world-assumption-free; `world_assumptions_force_bank_primitives` — W_* bundle path) |
 | **Transport theorems through compatible extensions** — Tier 3–4 closure | `EpArch/Meta/TheoremTransport.lean`, `EpArch/Meta/Tier4Transport.lean` |
 | **Extend or adapt the framework** — 29-cluster registry + contributor recipes | [`DOCS/MODULARITY.md`](DOCS/MODULARITY.md) |
 | **Verify a constructive witness** — zero-axiom trace from initial state to revoked | `EpArch/Concrete/NonVacuity.lean` |
@@ -83,7 +83,7 @@ The framework has three layers:
 | Header stripping has no left inverse | `EpArch/Theorems/Strip.lean` — `no_strip_left_inverse` |
 | Non-vacuity witnesses (all constraints satisfiable) | `EpArch/WorldWitness.lean`, `EpArch/Concrete/` |
 | Adversarial obligation theorems | `EpArch/Adversarial/Obligations.lean` |
-| Revision safety (extensions can't break existing results) | `EpArch/RevisionSafety.lean` |
+| Revision safety (extensions can't break existing results) | `EpArch/Semantics/RevisionSafety.lean` |
 
 **Notable derived interpretations:** The notation-invariance theorems (`notation_invariance_of_redeemability`, `math_practice_is_bubble_distinct`) show that mathematical practice is itself a bubble in the architecture's terms, with Lean's kernel as the constraint surface — and these claims are discharged by that same kernel.
 
@@ -93,16 +93,16 @@ The framework has three layers:
 
 | Claim | Key Theorem | File |
 |---|---|---|
-| Self-correction requires revision capability | `no_revision_no_correction` | StepSemantics.lean |
+| Self-correction requires revision capability | `no_revision_no_correction` | Semantics/StepSemantics.lean |
 | Traction is broader than authorization | `traction_broader_than_authorization` | Theorems/Corners.lean |
 | Header stripping has no left inverse | `no_strip_left_inverse` | Theorems/Strip.lean |
 | Stripping reduces diagnosability | `strip_reduces_diagnosability` | Theorems/Diagnosability.lean |
 | Lottery paradox is a type error | `lottery_paradox_dissolved_architecturally` | Theorems/Corners.lean |
 | Staleness blocks withdrawal | `stale_blocks_withdrawal` | Theorems/Corners.lean |
 | All world constraint bundles are satisfiable (non-vacuity) | `holds_W_lies_possible`, `holds_W_bounded_verification`, `holds_W_partial_observability` | WorldWitness.lean |
-| Each W_* bundle independently forces its architectural primitive | `w_lies_forces_revocation_need`, `w_bounded_forces_incompleteness`, `w_partial_obs_forces_redeemability` | Feasibility.lean |
-| In any world satisfying all three bundles, Bank primitives are necessary | `world_assumptions_force_bank_primitives` | Feasibility.lean |
-| Bank primitives necessary — no free assumptions (W_* discharged by WitnessCtx) | `kernel_world_forces_bank_primitives` | Feasibility.lean |
+| Each W_* bundle independently forces its architectural primitive | `w_lies_forces_revocation_need`, `w_bounded_forces_incompleteness`, `w_partial_obs_forces_redeemability` | WorldBridges.lean |
+| In any world satisfying all three bundles, Bank primitives are necessary | `world_assumptions_force_bank_primitives` | WorldBridges.lean |
+| Bank primitives necessary — no free assumptions (W_* discharged by WitnessCtx) | `kernel_world_forces_bank_primitives` | WorldBridges.lean |
 | Concrete model satisfies all commitments | `all_commitments_satisfiable` | Concrete/Commitments.lean |
 
 ---
@@ -117,8 +117,8 @@ The framework has three layers:
 | `Header.lean` | S/E/V header structure and factorization |
 | `Bank.lean` | Bank substrate, lifecycle operators, and bubble hygiene |
 | `Bank/Dynamics.lean` | Runtime behavioral profiling: `DepositDynamics`, reliance/blast-radius theorems |
-| `LTS.lean` | Generic labeled transition systems |
-| `StepSemantics.lean` | Concrete step semantics for all lifecycle operators |
+| `Semantics/LTS.lean` | Generic labeled transition systems |
+| `Semantics/StepSemantics.lean` | Concrete step semantics for all lifecycle operators |
 
 ### World and Agent Layers
 
@@ -145,7 +145,8 @@ The framework has three layers:
 | `Convergence.lean` | `StructurallyForced`, `ForcingEmbedding`, `convergence_structural`, bridge predicates; six per-dimension `*_forces_*` theorems; `SystemOperationalBundle`, `WorldBridgeBundle` |
 | `VerificationDepth.lean` | Kernel-grounded verification depth: `DepthClaim` constructive witness; `bounded_verify` budget decision procedure; `DepthWorldCtx` instantiates `W_bounded_verification` by construction |
 | `Theorems/BehavioralEquivalence.lean` | Observation-boundary equivalence; `working_systems_equivalent` — any two `GroundedBehavior` certificates are behaviorally equivalent (unconditional; no `SatisfiesAllProperties` premise); step-bridge section grounds withdraw/challenge/tick via `ReadyState` witnesses |
-| `Feasibility.lean` | Feasibility witnesses; structural and world-to-structural bridge theorems; `bundled_structure_forces_bank_primitives` (headline: `SystemOperationalBundle` + `WorldBridgeBundle` → `containsBankPrimitives`); `world_assumptions_force_bank_primitives` (W_* bundle path); `kernel_world_forces_bank_primitives` (zero-assumption corollary) |
+| `Feasibility.lean` | Existence/non-vacuity witnesses: `world_bundles_feasible`, `commitments_feasible`, `existence_under_constraints_structural`, `existence_under_constraints_embedding` |
+| `WorldBridges.lean` | World-to-structural bridge theorems: `w_bounded_forces_incompleteness`, `w_lies_forces_revocation_need`, `w_partial_obs_forces_redeemability`; `WorldAwareSystem` def; `world_assumptions_force_bank_primitives` (W_* bundle path); `bundled_structure_forces_bank_primitives` (headline: `SystemOperationalBundle` + `WorldBridgeBundle` → `containsBankPrimitives`); `kernel_world_forces_bank_primitives` (zero-assumption corollary) |
 | `Health.lean` | Health goal predicates and necessity theorems |
 | `Invariants.lean` | System invariants (grounded operational theorems, 0 axiom declarations) |
 | `Modularity.lean` | Lattice-stability: graceful scale-down and sub-level RevisionSafety (9 theorems) |
@@ -161,7 +162,7 @@ The framework has three layers:
 
 | Module | Purpose |
 |---|---|
-| `RevisionSafety.lean` | Compatible extension preserves all existing implications |
+| `Semantics/RevisionSafety.lean` | Compatible extension preserves all existing implications |
 | `ScopeIrrelevance.lean` | Extra substrate state is irrelevant to core properties |
 | `Meta/FalsifiableNotAuthorizable.lean` | Falsifiability ≠ authorizability |
 | `Meta/TheoryCoreClaim.lean` | Core theory claim formalization |

@@ -7,7 +7,7 @@ connection between header presence and dispute convergence speed.
 import EpArch.Basic
 import EpArch.Header
 import EpArch.Commitments
-import EpArch.StepSemantics
+import EpArch.Semantics.StepSemantics
 import EpArch.Theorems.Diagnosability
 
 namespace EpArch

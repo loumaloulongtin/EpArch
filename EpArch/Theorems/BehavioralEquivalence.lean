@@ -94,7 +94,7 @@ That judgment belongs to the domain instantiator.
 -/
 
 import EpArch.Minimality
-import EpArch.StepSemantics
+import EpArch.Semantics.StepSemantics
 
 namespace EpArch
 
@@ -230,7 +230,7 @@ private def canonDeposit : Deposit Unit Unit Unit Unit :=
   { P      := ()
   , h      := { S := (), E := (), V := (), τ := 0
               , acl    := .mk 0
-              , redeem := { cs := .mk 0 } }
+              , redeem := .mk 0 }
   , bubble := .mk 0
   , status := .Deposited }
 

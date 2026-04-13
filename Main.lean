@@ -148,7 +148,7 @@ import EpArch.Adversarial.Base  -- Base types/structures (no axioms)
 import EpArch.Invariants
 import EpArch.WorkedTraces
 import EpArch.Predictions
-import EpArch.StepSemantics
+import EpArch.Semantics.StepSemantics
 import EpArch.Theorems.Diagnosability  -- principled observability
 import EpArch.Concrete.Types
 import EpArch.Concrete.Commitments
@@ -158,8 +158,8 @@ import EpArch.Concrete.NonVacuity
 import EpArch.World  -- World layer for obligation theorems
 import EpArch.WorldWitness  -- Non-vacuity witness for world bundles
 import EpArch.Adversarial.Obligations  -- Adversarial axioms → obligation theorems
-import EpArch.LTS  -- Generic LTS for revision safety
-import EpArch.RevisionSafety  -- Revision safety meta-theorems
+import EpArch.Semantics.LTS  -- Generic LTS for revision safety
+import EpArch.Semantics.RevisionSafety  -- Revision safety meta-theorems
 import EpArch.Health  -- Health predicates and necessity theorems
 import EpArch.Mechanisms  -- Canonical mechanism predicates
 import EpArch.ScopeIrrelevance  -- Scope/irrelevance theorems

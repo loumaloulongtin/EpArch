@@ -26,7 +26,7 @@ No `axiom` declarations are present.
 import EpArch.Basic
 import EpArch.Header
 import EpArch.Bank
-import EpArch.StepSemantics
+import EpArch.Semantics.StepSemantics
 
 namespace EpArch
 
@@ -67,7 +67,7 @@ theorem grounded_no_export_without_gate
   StepSemantics.export_requires_header s s' B1 B2 d_idx h_step
 
 
-/-! ## Invariant 4: Challenge must specify suspected field -/
+/-! ## Invariant 3: Challenge must specify suspected field -/
 
 /-- Challenges must localize to a specific field.
 
@@ -95,7 +95,7 @@ theorem challenge_requires_field_localization
   cases c.suspected_field <;> decide
 
 
-/-! ## Invariant 5: τ (TTL) finite for world-state deposits -/
+/-! ## Invariant 4: τ (TTL) finite for world-state deposits -/
 
 /-- Maximum TTL for world-state (empirical / schedule / position) deposits.
     365 time units corresponds to one year; empirical facts not refreshed

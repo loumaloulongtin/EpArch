@@ -8,7 +8,7 @@ Structural case types and theorems for the three SEV failure modes:
 - Lottery / Confabulation: type errors (Ladder ≠ Bank)
 -/
 import EpArch.Basic
-import EpArch.StepSemantics
+import EpArch.Semantics.StepSemantics
 
 namespace EpArch
 

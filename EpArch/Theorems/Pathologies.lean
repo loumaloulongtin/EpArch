@@ -6,7 +6,7 @@ Each pathology is shown to reduce to a structural feature of the Ladder/Bank/
 Bubble architecture. Bridge theorems connect the header-stripping results back
 to diagnosability metrics.
 -/
-import EpArch.StepSemantics
+import EpArch.Semantics.StepSemantics
 import EpArch.Theorems.Headers
 
 namespace EpArch

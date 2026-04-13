@@ -15,7 +15,7 @@ and thus the revision gate transports via `transport_core`.
 
 import EpArch.Basic
 import EpArch.WorldCtx
-import EpArch.RevisionSafety
+import EpArch.Semantics.RevisionSafety
 
 open EpArch
 

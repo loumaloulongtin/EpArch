@@ -1,8 +1,8 @@
 /-
-EpArch/LTS.lean — Labeled Transition System Semantics
+EpArch/Semantics/LTS.lean — Labeled Transition System Semantics
 
 Generic LTS definitions used for revision safety proofs.
-The EpArch-specific instantiation is in StepSemantics.lean.
+The EpArch-specific instantiation is in Semantics/StepSemantics.lean.
 
 ## Purpose
 

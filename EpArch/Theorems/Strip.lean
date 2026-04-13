@@ -7,7 +7,7 @@ All stripping results live here:
 - Competition gate corners 3, 4, 10
 -/
 import EpArch.Basic
-import EpArch.StepSemantics
+import EpArch.Semantics.StepSemantics
 import EpArch.Theorems.Diagnosability
 
 namespace EpArch

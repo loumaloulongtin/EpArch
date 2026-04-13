@@ -41,8 +41,7 @@ universe u
 /-- RedeemabilityRef: a pointer to a constraint surface.
     Grounds the deposit in an external reality check that is
     independent of consensus within the bubble. -/
-structure RedeemabilityRef where
-  cs : ConstraintSurface
+abbrev RedeemabilityRef := ConstraintSurface
 
 
 /-! ## Header Structure -/

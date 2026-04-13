@@ -6,7 +6,7 @@ This document describes the canonical operational semantics for the EpArch forma
 
 ## StepSemantics as Canonical LTS
 
-**File:** `EpArch/StepSemantics.lean`
+**File:** `EpArch/Semantics/StepSemantics.lean`
 
 StepSemantics defines the canonical labeled transition system (LTS) for the epistemic architecture.
 
@@ -135,4 +135,4 @@ Because preconditions are structural rather than checked post-hoc, the encoding 
 
 ## Reading This File
 
-This file specifies the canonical operational semantics: transition structure, precondition encoding, and the trace-level safety pattern. It is about structural preconditions and preservation, not runtime implementation details or empirical systems. Core proofs live in `StepSemantics.lean`; containment arguments live in `Agent/Resilience.lean` and transport back via simulation.
+This file specifies the canonical operational semantics: transition structure, precondition encoding, and the trace-level safety pattern. It is about structural preconditions and preservation, not runtime implementation details or empirical systems. Core proofs live in `Semantics/StepSemantics.lean`; containment arguments live in `Agent/Resilience.lean` and transport back via simulation.

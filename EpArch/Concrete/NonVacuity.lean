@@ -12,7 +12,7 @@ Part of: EpArch/Concrete/ split of ConcreteLedgerModel.lean
 -/
 
 import EpArch.Concrete.WorkingSystem
-import EpArch.StepSemantics
+import EpArch.Semantics.StepSemantics
 
 namespace EpArch.ConcreteInstance
 
@@ -63,7 +63,7 @@ def concreteHeader : Header CStandard String String := {
   V := "peer reviewed source"
   τ := 1000
   acl := concreteACL
-  redeem := { cs := concreteCS }
+  redeem := concreteCS
 }
 
 /-! ## Concrete Deposit (Abstract Type) -/
@@ -88,7 +88,7 @@ def toConcreteDep (cd : CDeposit) : Deposit String CStandard String String := {
     V := cd.V.head?.getD ""
     τ := cd.τ
     acl := concreteACL
-    redeem := { cs := concreteCS }
+    redeem := concreteCS
   }
   bubble := concreteBubble
   status := .Deposited

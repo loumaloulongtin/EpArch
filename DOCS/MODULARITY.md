@@ -371,7 +371,7 @@ This means they are already halfway to being transport-safe — the predicate mo
 
 **`RevisionGate`** (the competition gate) references only `selfCorrects`, `hasRevision` — the minimal slice needed for the revision gate.
 
-**Transport:** `transport_core` (RevisionSafety.lean) transports `RevisionGate` exactly.
+**Transport:** `transport_core` (Semantics/RevisionSafety.lean) transports `RevisionGate` exactly.
 `sub_revision_safety` (Modularity.lean) transports `RevisionGate` at sub-bundle level.
 `graceful_degradation` (Modularity.lean) shows dropping `SelfCorrectionGoal` → `RevisionGate` holds vacuously.
 
@@ -555,7 +555,7 @@ This is the real Cluster C result — not just the competition gate but the full
 |---|---|---|---|
 | World bundles (`W_*`) | Explicit hypothesis — not providing proof disables | ✅ Complete | `WorldCtx.lean`, `Adversarial/Obligations.lean` |
 | Constraints (6 forcing results) | Independent conjuncts + `PartialWellFormed`/`modular` meta-theorem | ✅ Complete | `Minimality.lean`, `Convergence.lean`, `Meta/Modular.lean` |
-| `RevisionGate` / competition gate | `transport_core` + `sub_revision_safety` | ✅ Complete | `RevisionSafety.lean`, `Modularity.lean` |
+| `RevisionGate` / competition gate | `transport_core` + `sub_revision_safety` | ✅ Complete | `Semantics/RevisionSafety.lean`, `Modularity.lean` |
 | Health goals (5 predicates) | `CoreModel`-parameterized + individual transport theorems | ✅ Complete | `Health.lean`, `Meta/TheoremTransport.lean` |
 | Main theorem library (109+) | Four-part schema: standalone commitments, structural unconditional, LTS-universal operational, all-five-health-goals bank bridge | ✅ Complete | `Meta/Tier4Transport.lean` |
 | Certified cluster surface (29 clusters) | `EpArchConfig → ClusterTag → Bool` routing + indexed witness carriers; all 6 cluster families are proof-carrying; constraint/goal/world families are config-selectable; Tier 4/meta-modular/lattice families are always-on | ✅ Complete | `Meta/ClusterRegistry.lean`, `Meta/Config.lean` |
@@ -577,4 +577,4 @@ This is the real Cluster C result — not just the competition gate but the full
 **"I want to add my own constraint/goal on top."**
 → Tier 2: add a new `Pressure` constructor (e.g., `.myConstraint`) and supply the `handles_pressure`/`forced_feature` dispatch arms, plus the impossibility model; then prove the `StructurallyForced.forcing` obligation for that new constructor.
 → Tier 3: add a new `CoreModel`-parameterized predicate and its necessity theorem.
-→ `RevisionSafety.lean` `premise_strengthening` guarantees adding constraints can't invalidate existing implications.
+→ `Semantics/RevisionSafety.lean` `premise_strengthening` guarantees adding constraints can't invalidate existing implications.

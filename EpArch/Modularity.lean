@@ -50,7 +50,7 @@ a general theorem-transport schema over arbitrary theorem families.
 -/
 
 import EpArch.Health
-import EpArch.RevisionSafety
+import EpArch.Semantics.RevisionSafety
 
 namespace EpArch.Modularity
 

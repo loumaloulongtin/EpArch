@@ -35,7 +35,7 @@ import EpArch.Basic
 import EpArch.Header
 import EpArch.Bank
 import EpArch.Invariants
-import EpArch.RevisionSafety
+import EpArch.Semantics.RevisionSafety
 
 namespace EpArch
 
@@ -179,20 +179,14 @@ structure FullSystemHealth (M : CoreModel) where
   sound_deposits : SoundDepositsGoal M
   self_correction : SelfCorrectionGoal M
 
-/-- Full system health is equivalent to RevisionGate + other goals.
-
-    **Key observation:** SelfCorrectionGoal M ↔ RevisionGate M -/
-theorem self_correction_is_revision_gate (M : CoreModel) :
-    SelfCorrectionGoal M ↔ RevisionGate M := by
-  constructor
-  · intro h; exact h
-  · intro h; exact h
-
 
 /-! ## Design Note
 
 All necessity theorems (corrigible_needs_revision, self_correction_needs_revision,
-sound_deposits_needs_verification) are proved from definitions, not axioms. -/
+sound_deposits_needs_verification) are proved from definitions, not axioms.
+
+Note: SelfCorrectionGoal is definitionally identical to RevisionSafety.RevisionGate —
+the two names refer to the same predicate; no bridge theorem is needed. -/
 
 
 /-! ## Health Goals Summary

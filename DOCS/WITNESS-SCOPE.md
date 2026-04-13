@@ -24,7 +24,7 @@ What it does **not** buy by itself:
 - uniqueness
 - empirical truth
 - completeness — handled in `EpArch/Header.lean`
-- safe-extension / no-hidden-degrees-of-freedom — handled in `EpArch/RevisionSafety.lean`
+- safe-extension / no-hidden-degrees-of-freedom — handled in `EpArch/Semantics/RevisionSafety.lean`
 - existence-under-constraints packaging — handled in `EpArch/Feasibility.lean`
 
 ---
@@ -119,7 +119,7 @@ The architecture is **not vacuous**: there is at least one concrete successful i
 |-----------------|-----|
 | "All premises are concretely witnessed here" | Some results live in other modules |
 | "Completeness is established by the witness file alone" | Completeness is in `Header.lean` |
-| "Safe extension is established by the witness file alone" | Preservation is in `RevisionSafety.lean` |
+| "Safe extension is established by the witness file alone" | Preservation is in `Semantics/RevisionSafety.lean` |
 | "The real world literally instantiates this model" | Formal witness ≠ empirical claim |
 | "This realization is unique" | Only existence is shown |
 
@@ -138,7 +138,7 @@ Do **not** use this file alone to answer:
 For those, consult:
 
 - `EpArch/Header.lean`
-- `EpArch/RevisionSafety.lean`
+- `EpArch/Semantics/RevisionSafety.lean`
 - `EpArch/Feasibility.lean`
 - `README.md`
 
@@ -159,5 +159,5 @@ Select-String -Path "EpArch/Feasibility.lean" -Pattern "existence_under_constrai
 Select-String -Path "EpArch/Header.lean" -Pattern "observational_completeness_full"
 
 # Check revision-safety entry points
-Select-String -Path "EpArch/RevisionSafety.lean" -Pattern "preserve|compatible|revision"
+Select-String -Path "EpArch/Semantics/RevisionSafety.lean" -Pattern "preserve|compatible|revision"
 ```

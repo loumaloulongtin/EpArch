@@ -61,7 +61,7 @@ import EpArch.Basic
 import EpArch.WorldCtx
 import EpArch.Header
 import EpArch.Bank
-import EpArch.StepSemantics
+import EpArch.Semantics.StepSemantics
 
 namespace EpArch
 
@@ -229,11 +229,11 @@ structure VerificationPath where
 def redeemable (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
   ∃ (vp : VerificationPath (PropLike := PropLike) (Standard := Standard)
       (ErrorModel := ErrorModel) (Provenance := Provenance)),
-    vp.deposit = d ∧ vp.surface = d.h.redeem.cs
+    vp.deposit = d ∧ vp.surface = d.h.redeem
 
 /-- path_exists_for_deposit: a deposit has a route to some constraint surface.
     Strictly WEAKER than redeemable: redeemable additionally requires the surface
-    to be d.h.redeem.cs and all evidence fields to be instantiated. -/
+    to be d.h.redeem and all evidence fields to be instantiated. -/
 def path_exists_for_deposit (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
   ∃ cs, path_route_exists (PropLike := PropLike) (Standard := Standard)
       (ErrorModel := ErrorModel) (Provenance := Provenance) d cs
@@ -250,7 +250,7 @@ theorem redeemable_implies_path (d : Deposit PropLike Standard ErrorModel Proven
 theorem redeemable_implies_surface_aligned (d : Deposit PropLike Standard ErrorModel Provenance) :
     redeemable d → ∃ (vp : VerificationPath (PropLike := PropLike) (Standard := Standard)
         (ErrorModel := ErrorModel) (Provenance := Provenance)),
-      vp.deposit = d ∧ vp.surface = d.h.redeem.cs := by
+      vp.deposit = d ∧ vp.surface = d.h.redeem := by
   intro ⟨vp, h_dep, h_surf⟩
   exact ⟨vp, h_dep, h_surf⟩
 

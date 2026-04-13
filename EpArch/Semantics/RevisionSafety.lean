@@ -1,5 +1,5 @@
 /-
-EpArch/RevisionSafety.lean — Revision Safety Meta-Theorems
+EpArch/Semantics/RevisionSafety.lean — Revision Safety Meta-Theorems
 
 This module provides meta-theorems guaranteeing that:
 1. Adding constraints doesn't invalidate existing implications
@@ -22,7 +22,7 @@ revision-gate results, as long as extensions preserve the core interface.
 
 import EpArch.Basic
 import EpArch.WorldCtx
-import EpArch.LTS
+import EpArch.Semantics.LTS
 
 namespace EpArch.RevisionSafety
 
