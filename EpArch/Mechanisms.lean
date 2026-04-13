@@ -136,7 +136,7 @@ to ensure revision-gate alignment.
 /-- Self-correction requires revision.
 
     This is exactly RevisionGate M from RevisionSafety.lean. -/
-theorem self_correction_requires_revision_paper (M : CoreModel) :
+theorem self_correction_requires_revision_gate (M : CoreModel) :
     (∀ B, M.ops.selfCorrects B → M.ops.hasRevision B) ↔ RevisionGate M := by
   constructor <;> intro h <;> exact h
 

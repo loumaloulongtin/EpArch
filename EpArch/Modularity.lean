@@ -184,9 +184,9 @@ structure SubBundle where
     then extend compatibly — RevisionGate is preserved through both moves. -/
 theorem sub_revision_safety (S : SubBundle) (E : ExtModel)
     (h_compat : Compatible E S.model)
-    (h_pf : RevisionGate S.model) :
+    (h_gate : RevisionGate S.model) :
     RevisionGate (forget E) :=
-  transport_core E S.model h_compat h_pf
+  transport_core E S.model h_compat h_gate
 
 /-- SubRevisionSafety for OdometerModel: any compatible extension of the
     odometer still satisfies RevisionGate.

@@ -815,9 +815,9 @@ theorem cluster_lattice_graceful (M : CoreModel) (h : NoSelfCorrection M) :
 /-- Cluster `.lattice_sub_safety`: compatible extension of any sub-bundle that
     already satisfies RevisionGate preserves RevisionGate. -/
 theorem cluster_lattice_sub_safety (S : SubBundle) (E : ExtModel)
-    (h_compat : Compatible E S.model) (h_pf : RevisionGate S.model) :
+    (h_compat : Compatible E S.model) (h_gate : RevisionGate S.model) :
     RevisionGate (forget E) :=
-  sub_revision_safety S E h_compat h_pf
+  sub_revision_safety S E h_compat h_gate
 
 /-- Cluster `.lattice_pack`: EpArch is a floor, not a cage — the full
     bidirectional lattice-stability result (graceful degradation + sub-level

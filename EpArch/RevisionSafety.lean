@@ -308,7 +308,7 @@ The proof uses the commuting laws to transfer the competition gate property.
     transfer these to C, apply C's revision gate property, and transfer back. -/
 theorem transport_core (E : ExtModel) (C : CoreModel) (h : Compatible E C) :
     RevisionGate C → RevisionGate (forget E) := by
-  intro h_pf_C
+  intro h_gate_C
   -- RevisionGate (forget E) means: ∀ B, (forget E).ops.selfCorrects B → (forget E).ops.hasRevision B
   -- By definition of forget: (forget E).ops.selfCorrects = E.ops.selfCorrects
   unfold RevisionGate
@@ -320,7 +320,7 @@ theorem transport_core (E : ExtModel) (C : CoreModel) (h : Compatible E C) :
   have h_sc_C : C.ops.selfCorrects (h.πBubble B_E) := h.selfCorrects_comm B_E |>.mp h_sc_E
 
   -- Step 2: Apply revision-gate property of C
-  have h_hr_C : C.ops.hasRevision (h.πBubble B_E) := h_pf_C (h.πBubble B_E) h_sc_C
+  have h_hr_C : C.ops.hasRevision (h.πBubble B_E) := h_gate_C (h.πBubble B_E) h_sc_C
 
   -- Step 3: Transfer back using hasRevision_comm
   exact h.hasRevision_comm B_E |>.mpr h_hr_C

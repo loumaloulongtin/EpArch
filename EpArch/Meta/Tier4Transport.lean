@@ -148,7 +148,7 @@ noncomputable def ConcreteBankModel
 
 /-- `ConcreteBankModel` with `selfCorrects := fun _ => False` satisfies RevisionGate.
     The competition gate holds vacuously since the premise is always False. -/
-theorem concrete_bank_vacuous_pf
+theorem concrete_bank_vacuous_gate
     (ops : ConcreteBankOps PropLike Standard ErrorModel Provenance) :
     RevisionGate (ConcreteBankModel { ops with selfCorr_pred := fun _ => False }) :=
   fun _B h_sc => h_sc.elim
@@ -159,9 +159,9 @@ theorem concrete_bank_transport
     (ops : ConcreteBankOps PropLike Standard ErrorModel Provenance)
     (E : ExtModel)
     (h_compat : Compatible E (ConcreteBankModel ops))
-    (h_pf : RevisionGate (ConcreteBankModel ops)) :
+    (h_gate : RevisionGate (ConcreteBankModel ops)) :
     RevisionGate (forget E) :=
-  transport_self_correction E _ h_compat h_pf
+  transport_self_correction E _ h_compat h_gate
 
 /-- Vacuous concrete bank extension: specialises `concrete_bank_transport` to
     the base case where `selfCorrects` is always False. -/
@@ -172,7 +172,7 @@ theorem concrete_bank_vacuous_transport
     RevisionGate (forget E) :=
   transport_self_correction E _
     h_compat
-    (concrete_bank_vacuous_pf ops)
+    (concrete_bank_vacuous_gate ops)
 
 
 /-! ## §3b  LTS-Universal Theorems (Operational Layer)

@@ -983,7 +983,7 @@ C1, C2, C4b, C5, C6b are proved as named theorems in `Commitments.lean`
 
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
-| `concrete_bank_vacuous_pf` | Meta/Tier4Transport.lean | `ConcreteBankModel` with `selfCorrects := False` satisfies RevisionGate | Base case |
+| `concrete_bank_vacuous_gate` | Meta/Tier4Transport.lean | `ConcreteBankModel` with `selfCorrects := False` satisfies RevisionGate | Base case |
 | `concrete_bank_transport` | Meta/Tier4Transport.lean | `Compatible E ConcreteBankModel → RevisionGate base → RevisionGate (forget E)` | Extension safety |
 | `concrete_bank_vacuous_transport` | Meta/Tier4Transport.lean | Combines base + transport for the vacuous case | Convenience theorem |
 
