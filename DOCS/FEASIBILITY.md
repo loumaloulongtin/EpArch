@@ -48,7 +48,7 @@ citable form of the main convergence result.
 
 **File:** `EpArch/Feasibility.lean`  
 **Tier:** A  
-**Role:** Appendix existence claim (structural path)
+**Role:** Non-vacuity existence proof (structural path)
 
 ```lean
 theorem existence_under_constraints_structural :
