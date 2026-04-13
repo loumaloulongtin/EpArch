@@ -1564,3 +1564,12 @@ $$\text{LeanKernelCtx.W\_bounded\_verification} \;\Leftrightarrow\; \text{heartb
 $$\text{LeanKernelCtx.W\_partial\_observability} \;\Leftrightarrow\; \text{proof irrelevance}$$
 
 $$\text{containsBankPrimitives}(\text{LeanWorkingSystem}) \quad \text{(directly and via } \text{convergence\_structural}\text{)}$$
+
+### .olean Cache as Deposit Lifecycle (OleanStaleness)
+
+`OleanRecord` maps a compiled object-file artifact to a `CDeposit` by setting τ = `compiled_at` (the source epoch at build time).  Two theorems close the bank-primitive loop for the build cache.
+
+| Name | Statement | Interpretation |
+|------|-----------|---------------|
+| `olean_stale_when_source_changed` | `0 < r.compiled_at → source_changed epoch r → compute_status (olean_as_deposit r path) epoch = .Stale` | A changed source makes the `.olean` deposit stale; τ = compiled_at falls below the current epoch |
+| `stale_olean_blocks_withdrawal` | `0 < r.compiled_at → source_changed epoch r → ¬ c_can_withdraw … (olean_as_deposit r path) epoch` | Stale `.olean` cannot be withdrawn; `c_can_withdraw` requires `compute_status = .Deposited` |
