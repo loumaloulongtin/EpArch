@@ -9,10 +9,14 @@ routes that apply to different input constructors:
 
   **Step-witness route** (withdraw, challenge, tick):
     `withdraw_ready_state` / `challenge_ready_state` construct a concrete `CState`
-    from `B`'s evidence (bank, trust_bridges, revocation) and prove the matching
-    `Step` fires from it.  `working_systems_equivalent` then dispatches per input
-    constructor and calls these witnesses directly — so for those three cases the
-    main equivalence theorem *uses* actual `Step` firings, not mere unfolding.
+    at Unit types and prove the matching `Step` fires from it.
+    `B : GroundedBehavior` is the type-level certificate that the caller's feature
+    set typechecks against EpArch's mechanism signatures — its presence authorizes
+    the call, but the CState is independently constructed; `B`'s evidence fields
+    are not the structural source of the state.
+    `working_systems_equivalent` dispatches per input constructor and calls these
+    witnesses directly — so for those three cases the main equivalence theorem
+    *uses* actual `Step` firings, not mere unfolding.
 
   **Definitional route** (export):
     `ExportRequest` falls back to `behavior_step_consistent`, which is a pure
@@ -23,8 +27,10 @@ routes that apply to different input constructors:
 `Behavior` is observationally constant over `GroundedBehavior`: outcome depends
 only on input shape, not witness content.  This is a design property of EpArch —
 at the kernel boundary all fully grounded realizers expose the same observable
-success behavior.  The step witnesses ground *why* that state can exist, not a
-richer computational dependence on witness fields.
+success behavior.  `GroundedBehavior` certifies that the required features
+typecheck against EpArch's mechanism signatures; it does not guarantee the
+design is good or that the implementation performs correctly beyond what the
+type checker enforces.
 
 ## Definitions
 
@@ -35,8 +41,8 @@ richer computational dependence on witness fields.
 - `input_to_action`     — maps `Input` to the matching concrete `StepSemantics.Action`
 - `observe_step_action` — extracts an `Observation` from a concrete action
 - `ReadyState i`        — a `CState` + proof that `Step` fires for `input_to_action i`
-- `withdraw_ready_state B a b d` — constructs `ReadyState` from `B.bank`/`B.trust_bridges`
-- `challenge_ready_state B c f` — constructs `ReadyState` from `B.revocation`
+- `withdraw_ready_state B a b d` — constructs `ReadyState` at Unit types; `B` is the type-level certificate
+- `challenge_ready_state B c f` — constructs `ReadyState` at Unit types; `B` is the type-level certificate
 
 ## Theorems
 
@@ -164,10 +170,11 @@ for every `Input i` and `GroundedBehavior B`, a *concrete ready state* exists
 from which `Step s (input_to_action i) s'` fires, and the step's observable
 output equals `Behavior B i`.
 
-`GroundedBehavior` is the justification — its evidence (bank, trust_bridges,
-revocation) grounds the assertion that the machinery to fire the step exists.
-The concrete states are constructed here using those witnesses as the
-structural reason why the state can exist.
+`GroundedBehavior` is the type-level certificate that the caller's features
+typecheck against EpArch's mechanism signatures.  The concrete states are
+independently constructed at Unit types to witness that the Step relation is
+non-vacuous.  `B`'s evidence fields confirm the feature signatures typecheck;
+they are not the structural source of the constructed states.
 
 Type parameters `Unit` are used for `PropLike`, `Standard`, `ErrorModel`,
 `Provenance`, `Reason`, and `Evidence` — the minimal constructive instantiation. -/
@@ -264,9 +271,10 @@ def observe_step_action : CAction → Observation
 /-- A `ReadyState` for input `i` packages a concrete `CState` together with a
     proof that the Step corresponding to `input_to_action i` fires from it.
 
-    This is the operational grounding: `GroundedBehavior` evidence justifies the
-    claim that a firing-capable state exists.  The witness here is the *structural
-    reason* — bank/trust_bridges/revocation — not just a syntactic unfolding. -/
+    `B : GroundedBehavior` is the type-level certificate passed by the caller —
+    its presence confirms the feature signatures typecheck against EpArch's
+    mechanism requirements.  The state is independently constructed at Unit
+    types; `B`'s evidence fields are not the structural source of `state`. -/
 structure ReadyState (i : Input) where
   /-- A concrete system state from which the step can fire. -/
   state : CState
@@ -278,11 +286,9 @@ structure ReadyState (i : Input) where
 
 /-- Build a `ReadyState` for a `WithdrawRequest`.
 
-    Justification from `B`:
-    - `B.bank` evidences that a shared ledger with entries exists.
-    - `B.trust_bridges` evidences the import chain enabling cross-bubble reliance.
-    Together they ground the claim that a state with a deposited, ACL-permitted,
-    current-timestamp entry can exist.
+    `B : GroundedBehavior` is the type-level certificate — its `bank` and
+    `trust_bridges` fields are accessed only to confirm they typecheck against
+    EpArch's mechanism signatures; they are not the structural source of the CState.
 
     The concrete state has:
     - `ledger`      : canonical deposits at positions 0..d_idx (all `.Deposited`, τ = 0)
@@ -297,8 +303,8 @@ def withdraw_ready_state (B : GroundedBehavior) (a_n b_n d_idx : Nat) :
     , clock        := 0
     , acl_table    := [{ agent := .mk a_n, bubble := .mk b_n, deposit_id := d_idx }]
     , trust_bridges := [] }
-  let _ := B.bank.produced        -- shared ledger entry exists
-  let _ := B.trust_bridges.downstream_via_bridge  -- import chain is present
+  let _ := B.bank.produced        -- certificate field present: bank typechecks
+  let _ := B.trust_bridges.downstream_via_bridge  -- certificate field present: trust_bridges typechecks
   have h_acl : hasACLPermission s (.mk a_n) (.mk b_n) d_idx :=
     ⟨_, List.Mem.head _, rfl, rfl, rfl⟩
   have h_current : isCurrentDeposit s d_idx :=
@@ -313,10 +319,9 @@ def withdraw_ready_state (B : GroundedBehavior) (a_n b_n d_idx : Nat) :
 
 /-- Build a `ReadyState` for a `ChallengeRequest`.
 
-    Justification from `B`:
-    - `B.revocation` evidences that an invalid–revocable claim exists, so the
-      challenge → quarantine path is non-vacuous.
-    - `B.revocation.can_revoke` witnesses that the revocation machinery is present.
+    `B : GroundedBehavior` is the type-level certificate — its `revocation` field
+    is accessed only to confirm it typechecks against EpArch's mechanism signatures;
+    it is not the structural source of the CState.
 
     The concrete state has a single `.Deposited` entry at index 0.
     The challenge action uses `.S` as the suspected field (lossless mapping is
@@ -330,8 +335,8 @@ def challenge_ready_state (B : GroundedBehavior) (claim_id : Nat) (field : Strin
     , clock        := 0
     , acl_table    := []
     , trust_bridges := [] }
-  let _ := B.revocation.can_revoke        -- revocation capability exists
-  let _ := B.revocation.witness_is_invalid  -- the challenged claim is genuinely invalid
+  let _ := B.revocation.can_revoke        -- certificate field present: revocation typechecks
+  let _ := B.revocation.witness_is_invalid  -- certificate field present: witness_is_invalid typechecks
   have h_deposited : isDeposited s 0 :=
     ⟨canonDeposit, rfl, rfl⟩
   { state := s
@@ -406,12 +411,13 @@ end StepBridge
 
 /-- **Any two grounded systems are behaviorally equivalent.**
 
-    For withdraw, challenge, and tick inputs the equivalence is grounded in the
-    operational step machinery: `B.bank`, `B.trust_bridges`, and `B.revocation`
-    each supply the evidence that a live Step can be constructed, and that step
-    witness is what licenses the observation.  Both systems produce the same
-    output because both have the capability to fire the step — the equality
-    follows from the shared action-to-observation mapping.
+    For withdraw, challenge, and tick inputs the equivalence is witnessed through
+    the operational step machinery: concrete `CState`s are constructed at Unit
+    types and the matching `Step` is proved to fire from each.  Both systems
+    produce the same output because `Behavior` is determined by input shape alone
+    — the equality follows from the shared action-to-observation mapping.
+    `B1` and `B2` are type-level certificates confirming each caller's feature
+    set typechecks; they do not differentiate at the observation boundary.
 
     For export, `header_preserved` is opaque and cannot be reflected into a
     concrete `depositHasHeader` for the unit-type instantiation, so that case
