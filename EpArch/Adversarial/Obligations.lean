@@ -34,7 +34,7 @@ import EpArch.Basic
 import EpArch.Header
 import EpArch.Bank
 import EpArch.WorldCtx
-import EpArch.AdversarialBase
+import EpArch.Adversarial.Base
 
 namespace EpArch.AdversarialObligations
 

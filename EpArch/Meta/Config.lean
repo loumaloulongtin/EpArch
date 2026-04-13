@@ -67,7 +67,7 @@ import EpArch.Meta.Tier4Transport
 import EpArch.Meta.Modular
 import EpArch.Modularity
 import EpArch.WorldCtx
-import EpArch.AdversarialObligations
+import EpArch.Adversarial.Obligations
 
 namespace EpArch.Meta.Config
 

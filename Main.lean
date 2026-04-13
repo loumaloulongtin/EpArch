@@ -105,7 +105,7 @@ Layer 3 (Theory):     Commitments, SystemSpec, Invariants, Minimality
 Layer 4 (Derived):    Theorems/{Withdrawal,Cases,Headers,Modal,Dissolutions,Pathologies,Strip,Corners}, Diagnosability, Health, ScopeIrrelevance
 Layer 5 (Agent):      Mechanisms, Agent/{Constraints, Imposition, Resilience, Corroboration}
 Layer 6 (Witness):    WorldWitness, ConcreteLedgerModel, Realizer, Feasibility
-Layer 7 (Adversarial): AdversarialBase, AdversarialObligations
+Layer 7 (Adversarial): Adversarial/{Base, Obligations}
 Layer 8 (Meta):       Meta/*
 Layer 9 (Modularity): Modularity
 ```
@@ -143,7 +143,7 @@ import EpArch.Theorems.Corners
 import EpArch.Minimality
 import EpArch.BehavioralEquivalence
 import EpArch.Convergence
-import EpArch.AdversarialBase  -- Base types/structures (no axioms)
+import EpArch.Adversarial.Base  -- Base types/structures (no axioms)
 import EpArch.Invariants
 import EpArch.WorkedTraces
 import EpArch.Predictions
@@ -152,7 +152,7 @@ import EpArch.Diagnosability  -- principled observability
 import EpArch.ConcreteLedgerModel  -- Full model now compiles
 import EpArch.World  -- World layer for obligation theorems
 import EpArch.WorldWitness  -- Non-vacuity witness for world bundles
-import EpArch.AdversarialObligations  -- Adversarial axioms → obligation theorems
+import EpArch.Adversarial.Obligations  -- Adversarial axioms → obligation theorems
 import EpArch.LTS  -- Generic LTS for revision safety
 import EpArch.RevisionSafety  -- Revision safety meta-theorems
 import EpArch.Health  -- Health predicates and necessity theorems
