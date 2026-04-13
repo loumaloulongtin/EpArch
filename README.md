@@ -213,6 +213,14 @@ These are not missing features. They are excluded to preserve agent-agnostic app
 | Domain-level correlated adversaries (graded independence) | Binary independent/common-mode is formalized; graded refinement belongs to an overlay |
 | Richer deposit recovery transitions | Application-layer state tracking; not a kernel requirement |
 
+### Domain instantiation
+
+The kernel boundary is also an **instantiation surface**. `GroundedBehavior` carries abstract type parameters — `Entry`, `Claim`, `Clause`, etc. — that a domain fills in with its own types. Any instantiation that satisfies the mechanism signatures immediately inherits `working_systems_equivalent` (proved in `Theorems/BehavioralEquivalence.lean`): any two implementations holding the certificate agree at the observation boundary, without knowing anything about each other's internals.
+
+The kernel enforces the observation boundary contract and the mechanism signatures. It does not enforce whether a domain's design is good — that judgment belongs to the instantiator. The `let _ :=` lines in the ready-state builders are the explicit extension hooks: at the kernel layer they confirm certificate field presence only; a domain taking correctness seriously replaces them with substantive obligations over its own types. This is the upgrade path from "typechecks against EpArch's signatures" to "mechanically grounded in domain evidence," taken per domain rather than in the abstract kernel.
+
+`Meta/LeanKernel/World.lean` (`LeanGroundedBehavior`) is the reference instantiation: the Lean type-checker itself modeled as an EpArch coordination participant.
+
 ---
 
 ## Documentation
