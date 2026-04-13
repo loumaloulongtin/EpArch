@@ -1,5 +1,5 @@
 /-
-EpArch.Theorems.Dissolutions -- Type-Separation Dissolutions
+EpArch.Theorems.Dissolutions — Type-Separation Dissolutions
 
 Classic epistemology puzzles dissolved via the Ladder/Bank type distinction.
 Type-separation makes the puzzle dissolve: certainty (Ladder) != knowledge (Bank).
@@ -425,6 +425,7 @@ theorem moorean_export_contradiction (m : moorean_case (PropLike := PropLike))
   have h := wf.no_export_without_deposit ha
   simp_all
 
+/-- Ergonomic alias for `moorean_export_contradiction`. -/
 theorem moorean_is_export_contradiction (m : moorean_case (PropLike := PropLike))
     (wf : ExportRequiresDeposit m) :
     asserts_P m → denies_knowledge_P m → False :=
@@ -510,7 +511,7 @@ opaque system_improved : ProgressMetrics → ProgressMetrics → Prop
 
 /-- A puzzle is dissolved (not relocated) if the reformulation satisfies: -/
 structure DissolutionCriteria where
-  type_separates : Bool    -- traction vs authorization distinguished
+  type_separates : Bool    -- certainty (Ladder) vs knowledge (Bank) distinguished
   parameterizes : Bool     -- dispute converted to explicit parameters
   admits_metric : Bool     -- improvement measurable without redefining terms
 

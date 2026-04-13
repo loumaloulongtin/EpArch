@@ -1,5 +1,5 @@
 /-
-EpArch.Theorems.Pathologies -- Literature Pathology Diagnoses
+EpArch.Theorems.Pathologies — Literature Pathology Diagnoses
 
 Model diagnoses for classic epistemology puzzles and their bridge theorems.
 Each pathology is shown to reduce to a structural feature of the Ladder/Bank/
@@ -422,11 +422,9 @@ theorem artifact_bubble_membership (e : extended_case) :
 
 /-! ## Bridge Theorems
 
-These theorems were moved from StepSemantics.lean to restore the clean
-semantics layer.  Now proved via structural definitions.
-
-StepSemantics.lean is the discharge layer where forced conditions become theorems.
-Both bridge theorems follow from structural analysis. -/
+Structural theorems connecting header-stripping results to diagnosability:
+when a deposit has no header, challenges against it are guesses rather than
+diagnoses.  Both are proved directly from `¬depositHasHeader` (StepSemantics). -/
 
 /-- A bridge import that strips the header cannot localise failures.
 
@@ -535,8 +533,8 @@ They say "this is how the architecture interprets this puzzle."
 - `bridge_monolithic_opaque` — Monolithic systems can't localize failures
 - `bridge_stripped_ungrounded` — Stripped challenges lack diagnostic grounding
 
-Both are discharged via structural definitions: `has_SEV_factorization`
-is `True` by construction, so the antecedent is vacuously `False`. -/
+Both follow from `¬depositHasHeader`: `bridge_monolithic_opaque` via
+`harder_without_headers`; `bridge_stripped_ungrounded` by direct unfolding. -/
 
 
 end EpArch
