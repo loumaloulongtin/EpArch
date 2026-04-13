@@ -1,4 +1,4 @@
-﻿# Axiom Declarations
+# Axiom Declarations
 
 The formalization contains **zero `axiom` declarations**.
 
@@ -174,6 +174,6 @@ only theorems, definitions, and opaque constants.
 | `Commitments.lean` | Structural commitments (all 8 proved as standalone theorems) |
 | `Invariants.lean` | Grounded operational invariants |
 | `StepSemantics.lean` | Concrete step semantics |
-| `Theorems.lean` | Derived theorems |
+| `Theorems/` | Derived theorems (8 sub-modules) |
 | `ConcreteLedgerModel.lean` | Constructive concrete model |
 | All others | Theorem-bearing or definitional surfaces only |

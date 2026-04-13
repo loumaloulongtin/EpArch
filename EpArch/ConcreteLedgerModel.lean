@@ -3,7 +3,14 @@ import EpArch.SystemSpec
 import EpArch.Minimality
 import EpArch.Convergence
 import EpArch.StepSemantics
-import EpArch.Theorems
+import EpArch.Theorems.Withdrawal
+import EpArch.Theorems.Cases
+import EpArch.Theorems.Headers
+import EpArch.Theorems.Modal
+import EpArch.Theorems.Dissolutions
+import EpArch.Theorems.Pathologies
+import EpArch.Theorems.Strip
+import EpArch.Theorems.Corners
 
 /-!
 # ConcreteLedgerModel.lean — Zero-Axiom Constructive Witness

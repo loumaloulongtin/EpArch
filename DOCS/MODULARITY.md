@@ -83,7 +83,7 @@ does what prevents confusion about where to look and where to edit.
 - `Feasibility.lean` — `grounded_world_and_structure_force_bank_primitives` (explicit `Represents*` witnesses, no `WorldCtx`); `bundled_structure_forces_bank_primitives` (headline 4-argument form).
 - `BehavioralEquivalence.lean` — `GroundedBehavior`-indexed behavioral-equivalence results; step-bridge section grounds withdraw/challenge/tick via `ReadyState` witnesses and `behavior_from_step`.
 - `Health.lean`, `Meta/TheoremTransport.lean` — Tier 3 goal predicates and transport.
-- `Commitments.lean`, `Theorems.lean`, `Diagnosability.lean`, `Agent/*.lean`,
+- `Commitments.lean`, `Theorems/` (8 sub-modules), `Diagnosability.lean`, `Agent/*.lean`,
   `Invariants.lean`, `ScopeIrrelevance.lean`, `Predictions.lean`, `WorkedTraces.lean` — Tier 4.
 - `WorldCtx.lean`, `AdversarialObligations.lean`, `WorldWitness.lean` — Tier 1 / world.
 - `Meta/Modular.lean` — meta-modularity; `Modularity.lean` — lattice-stability.
@@ -381,7 +381,7 @@ This means they are already halfway to being transport-safe — the predicate mo
 
 ## Tier 4 — Main Theorem Library (transport schema complete)
 
-**Files:** `Theorems.lean` (117 theorems), `Diagnosability.lean`, `Agent/Corroboration.lean`, `Agent/Resilience.lean`, `Invariants.lean`, `ScopeIrrelevance.lean`, `Predictions.lean`, `WorkedTraces.lean`
+**Files:** `Theorems/` (8 sub-modules: Withdrawal, Cases, Headers, Modal, Strip, Corners, Dissolutions, Pathologies), `Diagnosability.lean`, `Agent/Corroboration.lean`, `Agent/Resilience.lean`, `Invariants.lean`, `ScopeIrrelevance.lean`, `Predictions.lean`, `WorkedTraces.lean`
 
 **Status:** ✅ Closed by `Meta/Tier4Transport.lean`.
 
@@ -516,7 +516,7 @@ Shape: over `SystemState PropLike Standard ErrorModel Provenance` and `Step`.
 Two sub-results fill this cluster:
 
 **§3b — LTS-Universal Operational Theorems**  
-The withdrawal/repair/submit theorems from `Theorems.lean` are structurally identical to Cluster B:
+The withdrawal/repair/submit theorems from `Theorems/Withdrawal.lean` are structurally identical to Cluster B:
 they hold for **every** `SystemState`/`Step` instance by virtue of `Step` constructor preconditions.
 No model parameter varies, so no transport mechanism is needed.
 

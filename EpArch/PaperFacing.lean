@@ -35,7 +35,14 @@ import EpArch.WorldCtx
 import EpArch.AdversarialObligations
 import EpArch.Health
 import EpArch.RevisionSafety
-import EpArch.Theorems
+import EpArch.Theorems.Withdrawal
+import EpArch.Theorems.Cases
+import EpArch.Theorems.Headers
+import EpArch.Theorems.Modal
+import EpArch.Theorems.Dissolutions
+import EpArch.Theorems.Pathologies
+import EpArch.Theorems.Strip
+import EpArch.Theorems.Corners
 import EpArch.Invariants
 import EpArch.ScopeIrrelevance
 import EpArch.Agent
@@ -174,10 +181,10 @@ Fully proved, no axiom dependencies.
 -/
 
 -- Withdrawal requires three gates
--- See: Theorems.lean withdrawal_gates
+-- See: Theorems.Withdrawal withdrawal_gates
 
 -- Repair requires prior challenge
--- See: Theorems.lean repair_requires_prior_challenge
+-- See: Theorems.Withdrawal repair_requires_prior_challenge
 
 /-! ## 6. Invariants (Spec)
 
@@ -482,7 +489,7 @@ export EpArch.Agent.Corroboration (
 |---------|---------------|
 | SEV structure | Header, SEVFactorization |
 | Withdrawal gates | withdrawal_gates, canWithdrawAt_* |
-| Gettier analysis | V-independence proxies in Theorems.lean |
+| Gettier analysis | V-independence proxies in Theorems.Cases |
 | Export gating | grounded_no_export_without_gate |
 | Bounded audit | bounded_audit_fails |
 | Adversarial obligations | Obligation theorems |

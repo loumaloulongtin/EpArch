@@ -40,20 +40,20 @@ All paper claims should reference these definitions.
 | § | Title | Primary File(s) | Tier | Coverage | Key Artifacts |
 |---|-------|-----------------|------|----------|---------------|
 | 1 | Introduction | Commitments.lean | A | ✅ Full | 8 commitments (all proved) |
-| 2 | Core Split | Basic.lean, Theorems.lean | A | ✅ Full | `traction_broader_than_authorization` |
-| 3 | JTB Underspecified | Theorems.lean | A | ✅ Diagnoses | `gettier_is_V_failure` |
+| 2 | Core Split | Basic.lean, Theorems/Corners.lean | A | ✅ Full | `traction_broader_than_authorization` |
+| 3 | JTB Underspecified | Theorems/Cases.lean | A | ✅ Diagnoses | `gettier_is_V_failure` |
 | 4 | The Ladder | Basic.lean | C | ✅ Full | `LadderStage` (5-stage), `Entrenched` |
 | 5 | Bubbles | Basic.lean, StepSemantics.lean | A | ✅ Full | `export_requires_header` |
 | 6 | The Bank | Bank.lean, StepSemantics.lean | A | ✅ Full | `withdrawal_requires_three_gates` |
 | 7 | Validation (S,E,V) | Header.lean, StepSemantics.lean | A | ✅ Full | `has_SEV_factorization` |
 | 8 | Redeemability | Commitments.lean | A | ✅ Full | `redeemability_requires_more_than_consensus` |
 | 9 | Operating Modes | Basic.lean | C | ✅ Type | `OperatingMode` enum |
-| 10 | Export | StepSemantics.lean, Theorems.lean | A | ✅ Full | `no_strip_left_inverse` |
+| 10 | Export | StepSemantics.lean, Theorems/Strip.lean | A | ✅ Full | `no_strip_left_inverse` |
 | 11 | Availability/Consultation | Bank.lean | D | ⚠️ Partial | Bank structure only |
-| 12 | Failure Modes | Theorems.lean | A | ✅ Diagnoses | `no_revision_no_correction` |
+| 12 | Failure Modes | Theorems/Withdrawal.lean, Theorems/Corners.lean | A | ✅ Diagnoses | `no_revision_no_correction` |
 | 13 | Access/Orphaning | — | D | 📝 Downstream | Kernel-external by design |
-| 14 | Bubble Hygiene | StepSemantics.lean, Theorems.lean | A | ✅ Full | `tick_can_cause_staleness` |
-| 15 | Explanatory Recipe | Diagnosability.lean, Theorems.lean | A | ✅ Full | `strip_reduces_diagnosability` |
+| 14 | Bubble Hygiene | StepSemantics.lean, Theorems/Corners.lean | A | ✅ Full | `tick_can_cause_staleness` |
+| 15 | Explanatory Recipe | Diagnosability.lean, Theorems/Headers.lean, Theorems/Strip.lean | A | ✅ Full | `strip_reduces_diagnosability` |
 | 16 | Corroboration | Agent/Corroboration.lean | A | ✅ Full | `corroboration_package` |
 | 17 | Institutional | — | D | 📝 Paper-only | Not formalized |
 | 18 | Domain Self-Correction | StepSemantics.lean | A | ✅ Theorem | `self_correcting_domain_permits_revision` |
@@ -99,8 +99,8 @@ All paper claims should reference these definitions.
 |----------|------|-----------|------|
 | `Traction` | `structure` | Basic.lean | C |
 | `Authorization` | `structure` | Basic.lean | C |
-| `traction_broader_than_authorization` | `theorem` | Theorems.lean:3473 | A |
-| `authorization_implies_traction` | `theorem` | Theorems.lean:3492 | A |
+| `traction_broader_than_authorization` | `theorem` | Theorems/Corners.lean | A |
+| `authorization_implies_traction` | `theorem` | Theorems/Corners.lean | A |
 
 **Math:** $\text{Authorization}(x) \Rightarrow \text{Traction}(x)$ but $\neg(\text{Traction}(x) \Rightarrow \text{Authorization}(x))$
 
@@ -116,11 +116,11 @@ All paper claims should reference these definitions.
 
 | Artifact | Type | File:Line | Tier |
 |----------|------|-----------|------|
-| `GettierCase` | `structure` | Theorems.lean:339 | C |
-| `gettier_is_V_failure` | `theorem` | Theorems.lean:409 | A |
-| `canonical_gettier_is_gettier` | `theorem` | Theorems.lean:414 | A |
-| `FakeBarnCase` | `structure` | Theorems.lean:476 | C |
-| `fake_barn_is_E_failure` | `theorem` | Theorems.lean:526 | A |
+| `GettierCase` | `structure` | Theorems/Cases.lean | C |
+| `gettier_is_V_failure` | `theorem` | Theorems/Cases.lean | A |
+| `canonical_gettier_is_gettier` | `theorem` | Theorems/Cases.lean | A |
+| `FakeBarnCase` | `structure` | Theorems/Cases.lean | C |
+| `fake_barn_is_E_failure` | `theorem` | Theorems/Cases.lean | A |
 
 ---
 
@@ -141,10 +141,10 @@ All paper claims should reference these definitions.
 | `LadderStage.Belief` | `constructor` | Basic.lean:125 | C |
 | `LadderStage.Certainty` | `constructor` | Basic.lean:126 | C |
 | `Entrenched` | `def` | Basic.lean:189 | C |
-| `EntrenchedAgent` | `structure` | Theorems.lean:3582 | C |
-| `deposit_no_longer_active` | `def` | Theorems.lean:3591 | C |
-| `entrenchment_breaks_safe_withdrawal` | `theorem` | Theorems.lean:3617 | A |
-| `entrenched_cannot_withdraw` | `theorem` | Theorems.lean:3639 | A |
+| `EntrenchedAgent` | `structure` | Theorems/Corners.lean | C |
+| `deposit_no_longer_active` | `def` | Theorems/Corners.lean | C |
+| `entrenchment_breaks_safe_withdrawal` | `theorem` | Theorems/Corners.lean | A |
+| `entrenched_cannot_withdraw` | `theorem` | Theorems/Corners.lean | A |
 
 > **Kernel note:** EpArch formalizes the ladder as a typed interface and boundary surface (`LadderStage`, `Entrenched`). Rich internal ladder dynamics — belief update rules, graded modulation, epistemic path-dependence — are intentionally outside the kernel to preserve agent agnosticism. Agents that do not operate on the full five-stage model remain first-class coordination participants.
 
@@ -180,7 +180,7 @@ All paper claims should reference these definitions.
 | `Validate_B`, `Accept_B`, `Challenge_B`, `Repair_B`, `Revoke_B`, `Restore_B`, `Export_B_C`, `Import_C` | `def` | Bank.lean | C |
 | `canWithdrawAt` | `def` | StepSemantics.lean | A |
 | `withdrawal_requires_three_gates` | `theorem` | StepSemantics.lean:1465 | A |
-| `canWithdrawAt_iff_gates` | `theorem` | Theorems.lean:168 | A |
+| `canWithdrawAt_iff_gates` | `theorem` | Theorems/Withdrawal.lean | A |
 
 ---
 
@@ -249,11 +249,11 @@ All paper claims should reference these definitions.
 
 | Artifact | Type | File:Line | Tier |
 |----------|------|-----------|------|
-| `strip` | `def` | Header.lean/Theorems.lean | A |
-| `no_strip_left_inverse` | `theorem` | Theorems.lean:2706 | A |
-| `import_cannot_reconstruct` | `theorem` | Theorems.lean:2732 | A |
-| `different_headers_same_strip` | `theorem` | Theorems.lean:2675 | A |
-| `stripV_not_injective` | `theorem` | Theorems.lean:2027 | A |
+| `strip` | `def` | Header.lean/Theorems/Strip.lean | A |
+| `no_strip_left_inverse` | `theorem` | Theorems/Strip.lean | A |
+| `import_cannot_reconstruct` | `theorem` | Theorems/Strip.lean | A |
+| `different_headers_same_strip` | `theorem` | Theorems/Strip.lean | A |
+| `stripV_not_injective` | `theorem` | Theorems/Strip.lean | A |
 
 **Math:** $\nexists f.\, f \circ \text{strip} = \text{id}$
 
@@ -309,10 +309,10 @@ All paper claims should reference these definitions.
 | Artifact | Type | File:Line | Tier |
 |----------|------|-----------|------|
 | `τ_valid` | `def` | StepSemantics.lean:152 | A |
-| `Stale` | `def` | Theorems.lean:3155 | A |
-| `stale_blocks_withdrawal` | `theorem` | Theorems.lean:3174 | A |
-| `tick_can_cause_staleness` | `theorem` | Theorems.lean:3193 | A |
-| `withdrawal_requires_fresh` | `theorem` | Theorems.lean:3162 | A |
+| `Stale` | `def` | Theorems/Corners.lean | A |
+| `stale_blocks_withdrawal` | `theorem` | Theorems/Corners.lean | A |
+| `tick_can_cause_staleness` | `theorem` | Theorems/Corners.lean | A |
+| `withdrawal_requires_fresh` | `theorem` | Theorems/Corners.lean | A |
 
 ---
 
@@ -340,10 +340,10 @@ All paper claims should reference these definitions.
 
 | Artifact | Type | File:Line | Tier |
 |----------|------|-----------|------|
-| `FieldCount_Full` | `def` | Theorems.lean | A |
-| `FieldCount_Stripped` | `def` | Theorems.lean | A |
-| `strip_reduces_field_count` | `theorem` | Theorems.lean:2844 | A |
-| `fewer_fields_coarser_repair` | `theorem` | Theorems.lean:2857 | A |
+| `FieldCount_Full` | `def` | Theorems/Strip.lean | A |
+| `FieldCount_Stripped` | `def` | Theorems/Strip.lean | A |
+| `strip_reduces_field_count` | `theorem` | Theorems/Strip.lean | A |
+| `fewer_fields_coarser_repair` | `theorem` | Theorems/Strip.lean | A |
 
 ---
 
@@ -393,14 +393,14 @@ All paper claims should reference these definitions.
 
 | Artifact | Type | File:Line | Tier |
 |----------|------|-----------|------|
-| `LotterySituation` | `structure` | Theorems.lean:1044 | C |
-| `LotteryIsTypeError` | `theorem` | Theorems.lean:1086 | A |
-| `ConfabulationCase` | `structure` | Theorems.lean:1112 | C |
-| `confabulation_is_type_error` | `theorem` | Theorems.lean:1131 | A |
-| `credence_does_not_auto_close` | `theorem` | Theorems.lean:3388 | A |
-| `status_distinction_blocks_lottery` | `theorem` | Theorems.lean:3417 | A |
-| `lottery_paradox_dissolved_architecturally` | `theorem` | Theorems.lean:3518 | A |
-| `candidate_blocks_withdrawal` | `theorem` | Theorems.lean:3353 | A |
+| `LotterySituation` | `structure` | Theorems/Cases.lean | C |
+| `LotteryIsTypeError` | `theorem` | Theorems/Cases.lean | A |
+| `ConfabulationCase` | `structure` | Theorems/Cases.lean | C |
+| `confabulation_is_type_error` | `theorem` | Theorems/Cases.lean | A |
+| `credence_does_not_auto_close` | `theorem` | Theorems/Corners.lean | A |
+| `status_distinction_blocks_lottery` | `theorem` | Theorems/Corners.lean | A |
+| `lottery_paradox_dissolved_architecturally` | `theorem` | Theorems/Corners.lean | A |
+| `candidate_blocks_withdrawal` | `theorem` | Theorems/Corners.lean | A |
 
 ---
 
@@ -687,13 +687,13 @@ This closes the argument: given realistic agents and desired properties, you **c
 | Existence under constraints | `existence_under_constraints_structural` | Feasibility.lean | A |
 | Bank primitives forced (structural) | `bundled_structure_forces_bank_primitives` | Feasibility.lean | A |
 | Self-correction requires revision | `no_revision_no_correction` | StepSemantics.lean:807 | A |
-| Strip has no left inverse | `no_strip_left_inverse` | Theorems.lean:2706 | A |
-| Lottery dissolved | `lottery_paradox_dissolved_architecturally` | Theorems.lean:3518 | A |
-| Stale blocks withdrawal | `stale_blocks_withdrawal` | Theorems.lean:3174 | A |
-| Gettier is V-failure | `gettier_is_V_failure` | Theorems.lean:409 | A |
+| Strip has no left inverse | `no_strip_left_inverse` | Theorems/Strip.lean | A |
+| Lottery dissolved | `lottery_paradox_dissolved_architecturally` | Theorems/Corners.lean | A |
+| Stale blocks withdrawal | `stale_blocks_withdrawal` | Theorems/Corners.lean | A |
+| Gettier is V-failure | `gettier_is_V_failure` | Theorems/Cases.lean | A |
 | Diagnosability monotonic | `strip_reduces_diagnosability` | Diagnosability.lean | A |
 | Model is satisfiable | `all_commitments_satisfiable` | ConcreteLedgerModel.lean:559 | A |
-| Entrenchment breaks withdrawal | `entrenchment_breaks_safe_withdrawal` | Theorems.lean:3617 | A |
+| Entrenchment breaks withdrawal | `entrenchment_breaks_safe_withdrawal` | Theorems/Corners.lean | A |
 | Deposit observational completeness | `observational_completeness_full` | Header.lean:199 | A |
 | Deposit extensionality | `deposit_ext` | Header.lean:166 | A |
 

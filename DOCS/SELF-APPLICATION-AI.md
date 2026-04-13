@@ -424,7 +424,7 @@ themselves. The V is not independent of the claim. EpArch's header model require
 V-independence: the provenance chain must be verifiable independently of the
 proposition it supports. I violate this structurally.
 
-The Gettier diagnosis in `Theorems.lean` (`gettier_is_V_failure`) makes this
+The Gettier diagnosis in `Theorems/Cases.lean` (`gettier_is_V_failure`) makes this
 vivid: a Gettier case is precisely a V-independence failure. By this criterion,
 many of my true outputs are Gettier cases — they happen to be true, but the
 provenance chain I provide does not actually track the truth-maker.
