@@ -35,7 +35,7 @@ lake build   # Lean 4.3.0, no Mathlib
 | **Transport theorems through compatible extensions** — Tier 3–4 closure | `EpArch/Meta/TheoremTransport.lean`, `EpArch/Meta/Tier4Transport.lean` |
 | **Extend or adapt the framework** — 29-cluster registry + contributor recipes | [`DOCS/MODULARITY.md`](DOCS/MODULARITY.md) |
 | **Verify a constructive witness** — zero-axiom trace from initial state to revoked | `EpArch/ConcreteLedgerModel.lean` |
-| **Localize an epistemic puzzle** (Gettier, Lottery, Fake Barn, confabulation) | `EpArch/Theorems.lean` — `gettier_is_V_failure`, `lottery_paradox_dissolved_architecturally`, `confabulation_is_type_error` |
+| **Localize an epistemic puzzle** (Gettier, Lottery, Fake Barn, confabulation) | `EpArch/Theorems/Cases.lean` — `gettier_is_V_failure`, `confabulation_is_type_error`; `EpArch/Theorems/Corners.lean` — `lottery_paradox_dissolved_architecturally` |
 
 ---
 
@@ -77,11 +77,11 @@ The framework has three layers:
 | What you want | Where to look |
 |---|---|
 | Core types (`Deposit`, `Bubble`, `Header`, `DepositStatus`) | `EpArch/Basic.lean`, `EpArch/Header.lean` |
-| Lifecycle gate theorems (withdrawal, export, challenge) | `EpArch/Theorems.lean` |
-| Type-separation: traction ≠ authorization | `EpArch/Theorems.lean` — `traction_broader_than_authorization` |
-| Gettier → V-field failure | `EpArch/Theorems.lean` — `gettier_is_V_failure` |
-| Lottery → type error | `EpArch/Theorems.lean` — `lottery_paradox_dissolved_architecturally` |
-| Header stripping has no left inverse | `EpArch/Theorems.lean` — `no_strip_left_inverse` |
+| Lifecycle gate theorems (withdrawal, export, challenge) | `EpArch/Theorems/Withdrawal.lean`, `EpArch/Theorems/Corners.lean` |
+| Type-separation: traction ≠ authorization | `EpArch/Theorems/Corners.lean` — `traction_broader_than_authorization` |
+| Gettier → V-field failure | `EpArch/Theorems/Cases.lean` — `gettier_is_V_failure` |
+| Lottery → type error | `EpArch/Theorems/Corners.lean` — `lottery_paradox_dissolved_architecturally` |
+| Header stripping has no left inverse | `EpArch/Theorems/Strip.lean` — `no_strip_left_inverse` |
 | Non-vacuity witnesses (all constraints satisfiable) | `EpArch/WorldWitness.lean`, `EpArch/ConcreteLedgerModel.lean` |
 | Adversarial obligation theorems | `EpArch/AdversarialObligations.lean` |
 | Revision safety (extensions can't break existing results) | `EpArch/RevisionSafety.lean` |
@@ -95,11 +95,11 @@ The framework has three layers:
 | Claim | Key Theorem | File |
 |---|---|---|
 | Self-correction requires revision capability | `no_revision_no_correction` | StepSemantics.lean |
-| Traction is broader than authorization | `traction_broader_than_authorization` | Theorems.lean |
-| Header stripping has no left inverse | `no_strip_left_inverse` | Theorems.lean |
+| Traction is broader than authorization | `traction_broader_than_authorization` | Theorems/Corners.lean |
+| Header stripping has no left inverse | `no_strip_left_inverse` | Theorems/Strip.lean |
 | Stripping reduces diagnosability | `strip_reduces_diagnosability` | Diagnosability.lean |
-| Lottery paradox is a type error | `lottery_paradox_dissolved_architecturally` | Theorems.lean |
-| Staleness blocks withdrawal | `stale_blocks_withdrawal` | Theorems.lean |
+| Lottery paradox is a type error | `lottery_paradox_dissolved_architecturally` | Theorems/Corners.lean |
+| Staleness blocks withdrawal | `stale_blocks_withdrawal` | Theorems/Corners.lean |
 | All world constraint bundles are satisfiable (non-vacuity) | `holds_W_lies_possible`, `holds_W_bounded_verification`, `holds_W_partial_observability` | WorldWitness.lean |
 | Each W_* bundle independently forces its architectural primitive | `w_lies_forces_revocation_need`, `w_bounded_forces_incompleteness`, `w_partial_obs_forces_redeemability` | Feasibility.lean |
 | In any world satisfying all three bundles, Bank primitives are necessary | `world_assumptions_force_bank_primitives` | Feasibility.lean |
@@ -135,7 +135,7 @@ The framework has three layers:
 
 | Module | Purpose |
 |---|---|
-| `Theorems.lean` | Main theorem library (117 theorems) — lifecycle gates, case bindings, epistemic puzzle localizations |
+| `Theorems/` | Primary theorem library — 8 focused sub-modules: `Withdrawal`, `Cases`, `Headers`, `Modal`, `Strip`, `Corners`, `Dissolutions`, `Pathologies` |
 | `Diagnosability.lean` | Observability-based diagnosability ordering |
 | `AdversarialBase.lean` | Adversarial type definitions |
 | `AdversarialObligations.lean` | Attack/defense obligation theorems under world bundles |

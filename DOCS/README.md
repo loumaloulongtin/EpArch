@@ -89,7 +89,7 @@ For the full paper-section-to-Lean-artifact mapping (with math notation, A.# lab
 | `Basic.lean` | Core types (Claim, Agent, Bubble, Field, etc.) | 0 |
 | `Header.lean` | S/E/V header structure + Deposit records | 0 |
 | `StepSemantics.lean` | Labeled transition system (Step, Trace, Action) | 0 |
-| `Theorems.lean` | Derived theorems, corner gates, case diagnoses | 0 |
+| `Theorems/` | Primary theorem library split into 8 focused sub-modules (Withdrawal, Cases, Headers, Modal, Strip, Corners, Dissolutions, Pathologies) | 0 |
 | `World.lean` | World layer for obligation theorems | 0 |
 | `AdversarialObligations.lean` | Adversarial axioms → obligation theorems | 0 |
 | `RevisionSafety.lean` | Premise strengthening + compatible extensions | 0 |

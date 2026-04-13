@@ -32,11 +32,11 @@ This document catalogs **712** proved theorems in the formalization, organized b
 
 | Theorem | File | Statement | Paper Claim |
 |---------|------|-----------|-------------|
-| `candidate_blocks_withdrawal` | Theorems.lean | Candidate status blocks withdrawal | §5: Lottery dissolution |
-| `withdrawal_requires_deposited` | Theorems.lean | Must be Deposited to withdraw | §6: Bank gates |
-| `submit_produces_candidate` | Theorems.lean | Submit creates Candidate status | §6: Lifecycle |
-| `traction_broader_than_authorization` | Theorems.lean | Traction ⊃ Authorization | §2: Core split |
-| `authorization_implies_traction` | Theorems.lean | Authorization → Traction | §2: One direction |
+| `candidate_blocks_withdrawal` | Theorems/Corners.lean | Candidate status blocks withdrawal | §5: Lottery dissolution |
+| `withdrawal_requires_deposited` | Theorems/Corners.lean | Must be Deposited to withdraw | §6: Bank gates |
+| `submit_produces_candidate` | Theorems/Corners.lean | Submit creates Candidate status | §6: Lifecycle |
+| `traction_broader_than_authorization` | Theorems/Corners.lean | Traction ⊃ Authorization | §2: Core split |
+| `authorization_implies_traction` | Theorems/Corners.lean | Authorization → Traction | §2: One direction |
 
 ### Math Form
 
@@ -57,10 +57,10 @@ $$\text{canWithdraw}(d) \Rightarrow \text{Deposited}(d) \land \text{ACL}(a,d) \l
 | `no_revision_no_correction` | StepSemantics.lean | No revision → no self-correction | §12: Competition gate |
 | `self_correction_requires_revision` | StepSemantics.lean | Self-correction → revision occurred | §12: Forward direction |
 | `self_correcting_domain_permits_revision` | StepSemantics.lean | Self-correcting domain → permits revision | §12: Domain level |
-| `repair_requires_prior_challenge` | Theorems.lean | Repair presupposes challenge | §14: Repair loop |
-| `repair_enforces_revalidation` | Theorems.lean | Repair requires fresh validation | §14: No silent fix |
-| `frozen_canon_no_revocation` | Theorems.lean | Single restricted step: ¬Revoked before → ¬Revoked after | Corner 6: Frozen canon |
-| `frozen_canon_no_revocation_trace` | Theorems.lean | allRestrictedTrace t → ¬Revoked at start → ¬Revoked after full trace (trace induction over all steps) | Corner 6: Frozen canon (full trace) |
+| `repair_requires_prior_challenge` | Theorems/Withdrawal.lean | Repair presupposes challenge | §14: Repair loop |
+| `repair_enforces_revalidation` | Theorems/Withdrawal.lean | Repair requires fresh validation | §14: No silent fix |
+| `frozen_canon_no_revocation` | Theorems/Corners.lean | Single restricted step: ¬Revoked before → ¬Revoked after | Corner 6: Frozen canon |
+| `frozen_canon_no_revocation_trace` | Theorems/Corners.lean | allRestrictedTrace t → ¬Revoked at start → ¬Revoked after full trace (trace induction over all steps) | Corner 6: Frozen canon (full trace) |
 
 ### Math Form
 
@@ -78,30 +78,30 @@ $$\text{SelfCorrecting}(D) \Rightarrow \text{permitsRevision}(D)$$
 
 | Theorem | File | Statement | Paper Claim |
 |---------|------|-----------|-------------|
-| `no_strip_left_inverse` | Theorems.lean | ¬∃ f. f ∘ strip = id | §10: Irreversibility |
-| `strip_not_injective_if` | Theorems.lean | (d₁ ≠ d₂) ∧ (strip d₁ = strip d₂) → ¬∀ x y, strip x = strip y → x = y (negated injectivity, not just existential re-wrap) | §10: Non-injectivity |
-| `import_cannot_reconstruct` | Theorems.lean | Import doesn't restore header | §10: No reconstruction |
-| `different_headers_same_strip` | Theorems.lean | h₁ ≠ h₂ → strip(h₁) = strip(h₂) | §10: Non-injectivity |
-| `different_headers_different_deposits` | Theorems.lean | Different headers → different deposits | §10: Provenance identity |
-| `strip_loses_header_info` | Theorems.lean | Strip removes V field | §10: Information loss |
-| `content_eq_not_implies_deposit_eq` | Theorems.lean | Same content ≠ same deposit | §10: Provenance matters |
-| `provenance_matters` | Theorems.lean | Different provenance → different deposits | §10: Identity |
+| `no_strip_left_inverse` | Theorems/Strip.lean | ¬∃ f. f ∘ strip = id | §10: Irreversibility |
+| `strip_not_injective_if` | Theorems/Strip.lean | (d₁ ≠ d₂) ∧ (strip d₁ = strip d₂) → ¬∀ x y, strip x = strip y → x = y (negated injectivity, not just existential re-wrap) | §10: Non-injectivity |
+| `import_cannot_reconstruct` | Theorems/Strip.lean | Import doesn't restore header | §10: No reconstruction |
+| `different_headers_same_strip` | Theorems/Strip.lean | h₁ ≠ h₂ → strip(h₁) = strip(h₂) | §10: Non-injectivity |
+| `different_headers_different_deposits` | Theorems/Strip.lean | Different headers → different deposits | §10: Provenance identity |
+| `strip_loses_header_info` | Theorems/Strip.lean | Strip removes V field | §10: Information loss |
+| `content_eq_not_implies_deposit_eq` | Theorems/Strip.lean | Same content ≠ same deposit | §10: Provenance matters |
+| `provenance_matters` | Theorems/Strip.lean | Different provenance → different deposits | §10: Identity |
 
 ### stripV Properties
 
 | Theorem | File | Statement | Paper Claim |
 |---------|------|-----------|-------------|
-| `stripV_irreversible` | Theorems.lean | ∃ p1 ≠ p2 in Provenance → ¬∃ f. f ∘ stripV = id (requires non-trivial Provenance type) | §10: V-strip irreversibility |
-| `stripV_idempotent` | Theorems.lean | stripV(stripV(x)) = stripV(x) | §10: Idempotency |
-| `stripV_preserves_claim` | Theorems.lean | stripV preserves the claim | §10: Content preserved |
+| `stripV_irreversible` | Theorems/Strip.lean | ∃ p1 ≠ p2 in Provenance → ¬∃ f. f ∘ stripV = id (requires non-trivial Provenance type) | §10: V-strip irreversibility |
+| `stripV_idempotent` | Theorems/Strip.lean | stripV(stripV(x)) = stripV(x) | §10: Idempotency |
+| `stripV_preserves_claim` | Theorems/Strip.lean | stripV preserves the claim | §10: Content preserved |
 
 ### Export Visibility (Corner 9)
 
 | Theorem | File | Statement | Paper Claim |
 |---------|------|-----------|-------------|
-| `export_creates_visibility` | Theorems.lean | Export step → deposit visible in target bubble | §10: Export semantics |
-| `export_creates_B2_deposit` | Theorems.lean | Export step → concrete deposit record in target ledger (single premise) | §10: Deposit creation |
-| `export_ignores_target_acl` | Theorems.lean | Export fires without ACL check on target | §10: ACL gap at boundary |
+| `export_creates_visibility` | Theorems/Corners.lean | Export step → deposit visible in target bubble | §10: Export semantics |
+| `export_creates_B2_deposit` | Theorems/Corners.lean | Export step → concrete deposit record in target ledger (single premise) | §10: Deposit creation |
+| `export_ignores_target_acl` | Theorems/Corners.lean | Export fires without ACL check on target | §10: ACL gap at boundary |
 
 ### Math Form
 
@@ -126,7 +126,7 @@ $$h_1 \neq h_2 \land \text{claim}(h_1) = \text{claim}(h_2) \Rightarrow \text{str
 | `full_can_repair_any` | Full can target any field | §15: Surgical repair |
 | `repair_requires_observability` | Repair granularity = observable fields | §15: Equivalence |
 
-### Bridge Theorems (Theorems.lean)
+### Bridge Theorems (Theorems/Headers.lean)
 
 | Theorem | Statement | Paper Claim |
 |---------|-----------|-------------|
@@ -153,28 +153,28 @@ $$f \notin \text{ObservableFields}(d) \Rightarrow \neg\text{canTargetRepair}(f, 
 | `header_enables_efficient_resolution` | depositHasHeader → efficient resolution via field targeting | §14: Header efficiency |
 | `headers_improve_localization` | depositHasHeader → localization_score = 1 | §14: Optimal localization |
 
-### Diagnosability Metric Theorems (Theorems.lean)
+### Diagnosability Metric Theorems (Theorems/Headers.lean)
 
 | Theorem | File | Statement | Paper Claim |
 |---------|------|-----------|-------------|
-| `field_checkable_iff_header` | Theorems.lean | field_checkable s d_idx f ↔ depositHasHeader s d_idx (Field param is universally free) | §7: Checkability ≡ header presence |
-| `harder_without_headers` | Theorems.lean | ¬depositHasHeader → ¬field_checkable (structural; any field) | §7: Stripped strictly harder |
-| `header_stripped_harder` | Theorems.lean | header_stripped → systematically_harder | §7: Header effect (dispute level) |
-| `header_improves_diagnosability` | Theorems.lean | depositHasHeader → field_checkable (positive direction, dual to harder_without_headers) | §7: Header → field checkable |
-| `header_localization_link` | Theorems.lean | depositHasHeader → challenge_is_field_specific ∧ field_checkable | §7/§15: Header → localization |
-| `diagnose_finds_broken` | Theorems.lean | Sound diagnosis oracle finds broken field | §15: Diagnostic completeness |
+| `field_checkable_iff_header` | Theorems/Headers.lean | field_checkable s d_idx f ↔ depositHasHeader s d_idx (Field param is universally free) | §7: Checkability ≡ header presence |
+| `harder_without_headers` | Theorems/Headers.lean | ¬depositHasHeader → ¬field_checkable (structural; any field) | §7: Stripped strictly harder |
+| `header_stripped_harder` | Theorems/Headers.lean | header_stripped → systematically_harder | §7: Header effect (dispute level) |
+| `header_improves_diagnosability` | Theorems/Headers.lean | depositHasHeader → field_checkable (positive direction, dual to harder_without_headers) | §7: Header → field checkable |
+| `header_localization_link` | Theorems/Headers.lean | depositHasHeader → challenge_is_field_specific ∧ field_checkable | §7/§15: Header → localization |
+| `diagnose_finds_broken` | Theorems/Withdrawal.lean | Sound diagnosis oracle finds broken field | §15: Diagnostic completeness |
 
-### Diagnosability Coupling Theorems (Theorems.lean)
+### Diagnosability Coupling Theorems (Theorems/Strip.lean)
 
-Bridge theorems coupling the Diagnosability.lean and Theorems.lean metric systems:
+Bridge theorems coupling the Diagnosability.lean and Theorems/Strip.lean metric systems:
 
 | Theorem | File | Statement | Paper Claim |
 |---------|------|-----------|-------------|
-| `fieldcount_full_eq_diagnosability` | Theorems.lean | FieldCount_Full = diagnosability true | Bridge: field-count ↔ score |
-| `stripped_diagnosability_is_zero` | Theorems.lean | diagnosability false = 0 | Bridge: stripped score = 0 |
-| `v8_implies_v7_strip_reduces` | Theorems.lean | v8 hard → v7 field-count reduction | Bridge: v8 ⇒ v7 |
-| `stripped_repair_must_be_coarse` | Theorems.lean | ∀ f, ¬canTargetRepair false f | Bridge: coarse repair (alias stripped_no_field_repair) |
-| `full_repair_can_be_surgical` | Theorems.lean | ∀ f, canTargetRepair true f | Bridge: surgical repair (alias full_can_repair_any) |
+| `fieldcount_full_eq_diagnosability` | Theorems/Strip.lean | FieldCount_Full = diagnosability true | Bridge: field-count ↔ score |
+| `stripped_diagnosability_is_zero` | Theorems/Strip.lean | diagnosability false = 0 | Bridge: stripped score = 0 |
+| `v8_implies_v7_strip_reduces` | Theorems/Strip.lean | v8 hard → v7 field-count reduction | Bridge: v8 ⇒ v7 |
+| `stripped_repair_must_be_coarse` | Theorems/Strip.lean | ∀ f, ¬canTargetRepair false f | Bridge: coarse repair (alias stripped_no_field_repair) |
+| `full_repair_can_be_surgical` | Theorems/Strip.lean | ∀ f, canTargetRepair true f | Bridge: surgical repair (alias full_can_repair_any) |
 
 ---
 
@@ -186,12 +186,12 @@ Bridge theorems coupling the Diagnosability.lean and Theorems.lean metric system
 
 | Theorem | File | Statement | Paper Claim |
 |---------|------|-----------|-------------|
-| `stale_blocks_withdrawal` | Theorems.lean | Stale deposits can't withdraw | §14: Hygiene |
-| `tick_can_cause_staleness` | Theorems.lean | Clock tick → may become stale | §14: Time pressure |
-| `withdrawal_requires_fresh` | Theorems.lean | Withdrawal needs τ-valid | §14: Freshness gate |
+| `stale_blocks_withdrawal` | Theorems/Corners.lean | Stale deposits can't withdraw | §14: Hygiene |
+| `tick_can_cause_staleness` | Theorems/Corners.lean | Clock tick → may become stale | §14: Time pressure |
+| `withdrawal_requires_fresh` | Theorems/Corners.lean | Withdrawal needs τ-valid | §14: Freshness gate |
 | `τ_valid_mono` | StepSemantics.lean | τ validity is monotonic in clock | §14: Temporal ordering |
-| `current_from_clock` | Theorems.lean | current(clock, τ) iff τ ≤ clock | §14: Temporal predicate |
-| `current_stable` | Theorems.lean | every deposit is current w.r.t. its own timestamp (no external hypothesis required) | §14: Deposit-intrinsic currency |
+| `current_from_clock` | Theorems/Withdrawal.lean | current(clock, τ) iff τ ≤ clock | §14: Temporal predicate |
+| `current_stable` | Theorems/Withdrawal.lean | every deposit is current w.r.t. its own timestamp (no external hypothesis required) | §14: Deposit-intrinsic currency |
 
 ### Math Form
 
@@ -209,10 +209,10 @@ $$\tau\text{-valid}(\text{clock}, \tau) \land \text{clock}' > \text{clock} \Righ
 
 | Theorem | File | Diagnosis |
 |---------|------|-----------|
-| `gettier_is_V_failure` | Theorems.lean | Gettier = V-field failure (unconditional; `tracks_false_certified` structural field) |
-| `gettier_ground_disconnected` | Theorems.lean | Truth-maker and provenance are structurally distinct grounds (`ground_distinct` field) |
-| `canonical_gettier_is_gettier` | Theorems.lean | Canonical Gettier satisfies `IsGettierCase` |
-| `canonical_gettier_conditions` | Theorems.lean | Canonical Gettier satisfies all GettierCase conditions |
+| `gettier_is_V_failure` | Theorems/Cases.lean | Gettier = V-field failure (unconditional; `tracks_false_certified` structural field) |
+| `gettier_ground_disconnected` | Theorems/Cases.lean | Truth-maker and provenance are structurally distinct grounds (`ground_distinct` field) |
+| `canonical_gettier_is_gettier` | Theorems/Cases.lean | Canonical Gettier satisfies `IsGettierCase` |
+| `canonical_gettier_conditions` | Theorems/Cases.lean | Canonical Gettier satisfies all GettierCase conditions |
 
 ### Fake Barn Cases
 
@@ -294,7 +294,7 @@ certify that S is vacuous regardless of consumer). Both repair by targeting Fiel
 | `step_preserves_auditability` | StepSemantics.lean | Steps preserve auditability |
 | `step_no_revision_preserves_deposited` | StepSemantics.lean | Revision-free step preserves `isDeposited` for all deposits |
 | `trace_no_revision_preserves_deposited` | StepSemantics.lean | Revision-free trace preserves `isDeposited` (induction over steps) |
-| `deposits_survive_revision_free_trace` | Theorems.lean | LTS corollary: deposits survive any revision-free trace |
+| `deposits_survive_revision_free_trace` | Theorems/Pathologies.lean | LTS corollary: deposits survive any revision-free trace |
 | `step_preserves_ladder_map` | StepSemantics.lean | `ladder_map` is invariant under every Step (all constructors use `{ s with … }`) |
 | `closure_ladder_invariant` | StepSemantics.lean | Contextual alias of `step_preserves_ladder_map` for the closure puzzle |
 | `trace_preserves_ladder_map` | StepSemantics.lean | `ladder_map` is invariant under any Trace (induction over steps) |
@@ -327,7 +327,7 @@ $$\text{Safe}(d) \Leftrightarrow \text{V-independent}(d) \Leftrightarrow \text{h
 
 $$\text{Sensitive}(d) \Leftrightarrow \text{E-covers}(d) \Leftrightarrow \text{header-preserved}(d)$$
 
-### Modal Case Theorems (Theorems.lean)
+### Modal Case Theorems (Theorems/Modal.lean)
 
 WorldCtx-parameterized forms: `SafetyCaseCtx` and `SensitivityCaseCtx` carry universally-quantified
 obs-bounded predicates; their theorems do genuine modus-tollens reasoning over worlds.
@@ -336,10 +336,10 @@ have been retired in favour of these structural forms.
 
 | Theorem | File | Statement |
 |---------|------|-----------|
-| `safety_ctx_V_link` | Theorems.lean | ¬SafetyCtx → ¬V_indepCtx (instantiates `v_independent` at `sc.world` via `obs_aligned`) |
-| `sensitivity_ctx_E_link` | Theorems.lean | ¬SensitivityCtx → ¬E_counterfactualCtx (instantiates `e_covers` at `sc.world` via `cf_obs_aligned`) |
-| `gettier_profile_yields_V_failure` | Theorems.lean | GettierCaseCtx profile → provenance-gap witness (WorldCtx level) |
-| `gettier_ctx_exhibits_provenance_gap` | Theorems.lean | IsGettierCtx → ∃ w’ s.t. Truth w’ P ∧ obs w’ = obs world ∧ w’ ≠ world |
+| `safety_ctx_V_link` | Theorems/Modal.lean | ¬SafetyCtx → ¬V_indepCtx (instantiates `v_independent` at `sc.world` via `obs_aligned`) |
+| `sensitivity_ctx_E_link` | Theorems/Modal.lean | ¬SensitivityCtx → ¬E_counterfactualCtx (instantiates `e_covers` at `sc.world` via `cf_obs_aligned`) |
+| `gettier_profile_yields_V_failure` | Theorems/Modal.lean | GettierCaseCtx profile → provenance-gap witness (WorldCtx level) |
+| `gettier_ctx_exhibits_provenance_gap` | Theorems/Modal.lean | IsGettierCtx → ∃ w’ s.t. Truth w’ P ∧ obs w’ = obs world ∧ w’ ≠ world |
 
 ---
 
@@ -611,9 +611,9 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 
 | Theorem | File | Statement | Paper Claim |
 |---------|------|-----------|-------------|
-| `repair_enforces_revalidation` | Theorems.lean | Repair → revalidate | §14: No silent fix |
-| `submit_enforces_revalidation` | Theorems.lean | Submit → validate | §6: Validation on entry |
-| `repair_requires_prior_challenge` | Theorems.lean | Repair requires quarantine | §14: Challenge first |
+| `repair_enforces_revalidation` | Theorems/Withdrawal.lean | Repair → revalidate | §14: No silent fix |
+| `submit_enforces_revalidation` | Theorems/Withdrawal.lean | Submit → validate | §6: Validation on entry |
+| `repair_requires_prior_challenge` | Theorems/Withdrawal.lean | Repair requires quarantine | §14: Challenge first |
 | `challenge_has_field_localization` | StepSemantics.lean | Challenge targets field | §14: Field-specific |
 | `repair_requires_quarantine` | StepSemantics.lean | Repair needs quarantine | §14: State gate |
 | `repair_targets_field` | StepSemantics.lean | Repair addresses field | §14: Surgical |
@@ -629,10 +629,10 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 | Theorem | File | Statement | Paper Claim |
 |---------|------|-----------|-------------|
 | `withdrawal_requires_three_gates` | StepSemantics.lean | Status ∧ ACL ∧ τ | §6: Three gates |
-| `withdrawal_gates` | Theorems.lean | Withdrawal preconditions | §6: Gate theorem |
-| `canWithdrawAt_iff_gates` | Theorems.lean | CanWithdraw ↔ gates | §6: Equivalence |
-| `withdrawal_requires_canWithdrawAt` | Theorems.lean | Step requires predicate | §6: Enforcement |
-| `canWithdrawAt_enables_step` | Theorems.lean | Predicate enables step | §6: Sufficiency |
+| `withdrawal_gates` | Theorems/Withdrawal.lean | Withdrawal preconditions | §6: Gate theorem |
+| `canWithdrawAt_iff_gates` | Theorems/Withdrawal.lean | CanWithdraw ↔ gates | §6: Equivalence |
+| `withdrawal_requires_canWithdrawAt` | Theorems/Withdrawal.lean | Step requires predicate | §6: Enforcement |
+| `canWithdrawAt_enables_step` | Theorems/Withdrawal.lean | Predicate enables step | §6: Sufficiency |
 
 ---
 
@@ -795,7 +795,7 @@ These theorems prove that out-of-scope fundamentals (physics, consciousness, psy
 
 **Paper Role:** Convert philosophical "linking axioms" from axioms to definitional theorems.
 
-**File:** `Theorems.lean`
+**Files:** `Theorems/Dissolutions.lean`, `Theorems/Pathologies.lean`
 
 Each of the 20 original linking axioms is discharged by making an opaque predicate concrete — replacing an assumed philosophical connection with explicit typed fields and well-formedness constraints.
 
@@ -1037,7 +1037,7 @@ File: `Agent/Imposition.lean`
 
 | Theorem | File | Statement | Paper Claim |
 |---------|------|-----------|-------------|
-| `finite_budget_forces_triage` | Theorems.lean | ledger.length > budget → ∃ d_idx not revalidated | Corner 8: Budget overflow forces triage |
+| `finite_budget_forces_triage` | Theorems/Corners.lean | ledger.length > budget → ∃ d_idx not revalidated | Corner 8: Budget overflow forces triage |
 
 ### Fault Containment Theorems (Tier A)
 
@@ -1204,16 +1204,16 @@ File: `Agent/Imposition.lean`
 
 | Theorem | File | Statement | Paper Claim |
 |---------|------|-----------|-------------|
-| `entrenchment_breaks_safe_withdrawal` | Theorems.lean:3617 | Entrenched + inactive deposit → ¬isDeposited | A.S7: Entrenchment blocks withdrawal |
-| `entrenched_cannot_withdraw` | Theorems.lean:3639 | Entrenched + inactive → no Step.withdraw fires | B1.10/B1.11: Full withdrawal failure |
+| `entrenchment_breaks_safe_withdrawal` | Theorems/Corners.lean | Entrenched + inactive deposit → ¬isDeposited | A.S7: Entrenchment blocks withdrawal |
+| `entrenched_cannot_withdraw` | Theorems/Corners.lean | Entrenched + inactive → no Step.withdraw fires | B1.10/B1.11: Full withdrawal failure |
 
 ### Supporting Definitions
 
 | Definition | File | Description |
 |------------|------|-------------|
 | `Entrenched` | Basic.lean:189 | `certainty_L a P ∧ ignores_bank_signal a P` — Certainty + closed review channel |
-| `EntrenchedAgent` | Theorems.lean:3582 | Structure bundling agent, claim, and entrenchment proof |
-| `deposit_no_longer_active` | Theorems.lean:3591 | Deposit is Quarantined or Revoked |
+| `EntrenchedAgent` | Theorems/Corners.lean | Structure bundling agent, claim, and entrenchment proof |
+| `deposit_no_longer_active` | Theorems/Corners.lean | Deposit is Quarantined or Revoked |
 
 ### Math Form
 
@@ -1647,7 +1647,7 @@ $$\text{containsBankPrimitives}(\text{LeanWorkingSystem}) \quad \text{(directly 
 
 ### non-definitional-cases branch additions (+19 → **712** total)
 
-**Theorems.lean (net +6):**
+**Theorems/Cases.lean, Theorems/Corners.lean, Theorems/Modal.lean, Theorems/Headers.lean (net +6):**
 
 **New structures and key definitions:** `StandardClearance`, `ProvenanceMode`, `VProvenance`, `EAdequacy`, `StandardCase`, `VacuousStandardCase`, `SourceReliability`, `TestimonyMode`, `RelationalClearanceSplit`, `SafetyCaseCtx`, `SensitivityCaseCtx`, `GettierCaseCtx`, `field_checkable`, `toyCtx` (4-world concrete WorldCtx instantiation)
 
