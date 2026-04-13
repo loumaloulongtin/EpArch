@@ -96,7 +96,7 @@ The framework has three layers:
 | Self-correction requires revision capability | `no_revision_no_correction` | StepSemantics.lean |
 | Traction is broader than authorization | `traction_broader_than_authorization` | Theorems/Corners.lean |
 | Header stripping has no left inverse | `no_strip_left_inverse` | Theorems/Strip.lean |
-| Stripping reduces diagnosability | `strip_reduces_diagnosability` | Diagnosability.lean |
+| Stripping reduces diagnosability | `strip_reduces_diagnosability` | Theorems/Diagnosability.lean |
 | Lottery paradox is a type error | `lottery_paradox_dissolved_architecturally` | Theorems/Corners.lean |
 | Staleness blocks withdrawal | `stale_blocks_withdrawal` | Theorems/Corners.lean |
 | All world constraint bundles are satisfiable (non-vacuity) | `holds_W_lies_possible`, `holds_W_bounded_verification`, `holds_W_partial_observability` | WorldWitness.lean |
@@ -136,7 +136,7 @@ The framework has three layers:
 | Module | Purpose |
 |---|---|
 | `Theorems/` | Primary theorem library — 8 focused sub-modules: `Withdrawal`, `Cases`, `Headers`, `Modal`, `Strip`, `Corners`, `Dissolutions`, `Pathologies` |
-| `Diagnosability.lean` | Observability-based diagnosability ordering |
+| `Theorems/Diagnosability.lean` | Observability-based diagnosability ordering |
 | `Adversarial/Base.lean` | Adversarial type definitions |
 | `Adversarial/Obligations.lean` | Attack/defense obligation theorems under world bundles |
 | `Agent/Corroboration.lean` | k-of-n corroboration guarantees and independence conditions |

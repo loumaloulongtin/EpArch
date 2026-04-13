@@ -8,7 +8,7 @@ All stripping results live here:
 -/
 import EpArch.Basic
 import EpArch.StepSemantics
-import EpArch.Diagnosability
+import EpArch.Theorems.Diagnosability
 
 namespace EpArch
 
@@ -297,7 +297,7 @@ theorem fewer_fields_coarser_repair :
 /-! ## Bridge to Diagnosability Module
 
     The `FieldCount_*` constants are superseded by the principled
-    approach in `EpArch.Diagnosability`. This section bridges the two.
+    approach in `EpArch.Theorems.Diagnosability`. This section bridges the two.
 
     Key improvements:
     - `AllFields` and `StrippedFields` are actual lists, not magic numbers

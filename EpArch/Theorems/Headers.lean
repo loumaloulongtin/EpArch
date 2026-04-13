@@ -8,7 +8,7 @@ import EpArch.Basic
 import EpArch.Header
 import EpArch.Commitments
 import EpArch.StepSemantics
-import EpArch.Diagnosability
+import EpArch.Theorems.Diagnosability
 
 namespace EpArch
 

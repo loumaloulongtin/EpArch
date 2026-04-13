@@ -115,7 +115,7 @@ $$h_1 \neq h_2 \land \text{claim}(h_1) = \text{claim}(h_2) \Rightarrow \text{str
 
 **Role:** Header stripping reduces diagnosability; fewer observable fields → coarser repair.
 
-### Core Theorems (Diagnosability.lean)
+### Core Theorems (Theorems/Diagnosability.lean)
 
 | Theorem | Statement | Claim |
 |---------|-----------|-------------|
@@ -166,7 +166,7 @@ $$f \notin \text{ObservableFields}(d) \Rightarrow \neg\text{canTargetRepair}(f, 
 
 ### Diagnosability Coupling Theorems (Theorems/Strip.lean)
 
-Bridge theorems coupling the Diagnosability.lean and Theorems/Strip.lean metric systems:
+Bridge theorems coupling the Theorems/Diagnosability.lean and Theorems/Strip.lean metric systems:
 
 | Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|

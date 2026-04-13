@@ -2,7 +2,7 @@ import EpArch.Basic
 import EpArch.Header
 
 /-!
-# Diagnosability.lean
+# Theorems/Diagnosability.lean
 
 This module defines observability and diagnosability in terms of field sets,
 replacing hardcoded constants with a principled approach.
