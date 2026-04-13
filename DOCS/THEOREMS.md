@@ -1,4 +1,4 @@
-# Theorem Inventory
+﻿# Theorem Inventory
 
 This document catalogs **712** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
 
@@ -797,9 +797,9 @@ These theorems prove that out-of-scope fundamentals (physics, consciousness, psy
 
 **Files:** `Theorems/Dissolutions.lean`, `Theorems/Pathologies.lean`
 
-Each of the 20 original linking axioms is discharged by making an opaque predicate concrete â€” replacing an assumed philosophical connection with explicit typed fields and well-formedness constraints.
+Each linking axiom is discharged by making an opaque predicate concrete â€” replacing an assumed philosophical connection with explicit typed fields and well-formedness constraints.
 
-### Batch 1: Discharged Axioms (10) â€” Explicit Fields
+### Batch 1: Discharged Axioms â€” Explicit Fields
 
 | Original Axiom | Now Theorem | Mechanism |
 |----------------|-------------|-----------|
@@ -808,14 +808,14 @@ Each of the 20 original linking axioms is discharged by making an opaque predica
 | `disagreement_is_routing` | âœ… theorem | `MismatchType` enum exhausts cases |
 | `group_bubble_separation` | âœ… theorem | Tautological (`â‰ ` = `bubbles_differ`) |
 | `deposit_exportability` | âœ… theorem | `KnowledgeState` distinguishes deposit/certainty |
-| `certainty_not_exportable_link` | âœ… theorem | Pattern matching on `KnowledgeState` |
+| `certainty_not_exportable` | âœ… theorem | Pattern matching on `KnowledgeState` |
 | `local_redeemability_survives` | âœ… theorem | `severs_constraint_contact s â†’ local_redeemability_holds s B` via required `global_implies_local` structural field; not a definitional identity |
 | `context_is_policy` | âœ… theorem | Fields make policy variation explicit; uses `high_stakes_implies_policy` structural invariant |
 | `no_semantic_shift` | âœ… theorem | `is_semantic_shift` is vacuously false (`PropLike â‰  PropLike` is `False`) |
 | `injustice_is_import_corruption` | âœ… theorem | Fields encode deflation/downgrade |
 | `artifact_bubble_membership` | âœ… theorem | Tautological (inclusion = membership) |
 
-### Batch 2: Discharged Axioms (10) â€” Concrete Definitions
+### Batch 2: Discharged Axioms â€” Concrete Definitions
 
 | Original Axiom | Now Theorem | Mechanism |
 |----------------|-------------|-----------|
@@ -823,7 +823,7 @@ Each of the 20 original linking axioms is discharged by making an opaque predica
 | `safety_V_link` | âœ… theorem | `Unsafe d â†’ Â¬V_independent d`; uses `V_spoofable_iff_not_independent`; Safety and V-independence are the same `Deposit`-level predicate |
 | `sensitivity_E_link` | âœ… theorem | `Insensitive d â†’ Â¬E_covers_counterfactual d`; analogous to `safety_V_link`; discharged via `E_has_gap_iff_not_covers` |
 | `closure_type_separation` | âœ… theorem | `closure_puzzle` with boolean fields + explicit hypotheses |
-| `luminosity_type_separation` | âœ… theorem | `luminosity_puzzle` with boolean fields + disjunction hypothesis |
+| `luminosity_type_separation` | âœ… theorem | `luminosity_puzzle` where the `either_available` structural invariant directly supplies the disjunction; no caller hypothesis needed (contrast `closure_type_separation` which takes explicit `h_ladder`) |
 | `higher_order_relocation` | âœ… theorem | `higher_order_case` + `WellFormedHigherOrder` constraint |
 | `apriori_domain_parameterization` | âœ… theorem | `apriori_case` + `WellFormedApriori` constraint |
 | `moorean_export_contradiction` | âœ… theorem | `moorean_case` + `ExportRequiresDeposit` constraint |
