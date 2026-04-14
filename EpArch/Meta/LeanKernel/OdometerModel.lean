@@ -163,10 +163,19 @@ source of falsity is a broken measurement mechanism — a sensor failure that
 submits a reading that was never actually reached.  That error cannot be
 recovered without revision capability (see `odometer_not_safe_withdrawal`).
 
-The war analogy maps cleanly: "my friend died" is a permanent deposit — true
-forever, never revised.  "Where I am now" is the current deposit — it advances.
-The two are not in the same ledger slot; only the current slot needs to be
-"withdrawable" in the EpArch sense. -/
+Consider any ledger where a fact is permanent but the stance toward it evolves.
+The fact of a threshold crossed, a measurement taken, an event logged — these
+are immutable entries; their truth value does not decay.  What *responds* to
+that fact — the current assessment, the live authoritative claim built on top
+of the historical record — is different in kind: it advances, may be revised,
+and is the slot that requires revision capability if submitted incorrectly.
+
+Both layers inhabit the same ledger; only the live claim is the target of safe
+withdrawal.  Revision does not reach back into history — it corrects the
+present stance.  This is exactly what the odometer makes precise: `truth B d`
+is permanent once true; `isCurrentOdometerReading B d` is transient; and
+`¬SafeWithdrawalGoal` names the risk that arises when the present claim has
+no correction mechanism behind it. -/
 
 /-- A deposit equals the present bubble count: the live, authoritative reading. -/
 def isCurrentOdometerReading (B d : Nat) : Prop := d = B
