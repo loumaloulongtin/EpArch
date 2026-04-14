@@ -78,13 +78,9 @@ structure FakeBarnCase where
   /-- Structural certification: the error model coverage definitionally fails -/
   e_certified : E_coverage_fails e_coverage = true
 
-/-- E-field fails when error model has unmodeled nearby threats. -/
-def E_fails (fb : FakeBarnCase (PropLike := PropLike)) : Bool :=
-  E_coverage_fails fb.e_coverage
-
 /-- E-field is inadequate when error model has unmodeled nearby threats. -/
 def barn_case_E_inadequate (fb : FakeBarnCase (PropLike := PropLike)) : Prop :=
-  E_fails fb = true
+  E_coverage_fails fb.e_coverage = true
 
 /-- CANONICAL Fake Barn case: S and V pass, but nearby threat unmodeled.
 
@@ -113,9 +109,10 @@ def IsFakeBarnCase (fb : FakeBarnCase (PropLike := PropLike)) : Prop :=
 
 /-- Fake Barn cases route to E-failure.
 
-    Unconditional: `IsFakeBarnCase fb` is not needed — the conclusion follows
-    directly from the structural `e_certified` field.  The field is certified
-    at construction time; `fake_barn_profile_yields_E_failure` is its alias. -/
+    Unconditional: the conclusion follows directly from the structural
+    `e_certified` field, which is certified at construction time.
+    Also known as `fake_barn_profile_yields_E_failure` (former alias,
+    consolidated here). -/
 theorem fake_barn_is_E_failure (fb : FakeBarnCase (PropLike := PropLike)) :
     barn_case_E_inadequate fb :=
   fb.e_certified
@@ -124,11 +121,5 @@ theorem fake_barn_is_E_failure (fb : FakeBarnCase (PropLike := PropLike)) :
 theorem canonical_fake_barn_is_fake_barn (P : PropLike) :
     IsFakeBarnCase (canonical_fake_barn P) :=
   ⟨rfl, rfl, rfl⟩
-
-/-- Fake Barn profile: the structural `e_certified` field directly certifies
-    E-coverage failure. The field is proved at construction time. -/
-theorem fake_barn_profile_yields_E_failure (fb : FakeBarnCase (PropLike := PropLike)) :
-    barn_case_E_inadequate fb :=
-  fb.e_certified
 
 end EpArch
