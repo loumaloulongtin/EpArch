@@ -9,7 +9,6 @@ Concrete witnesses: toyCtx four-world model.
 -/
 import EpArch.Basic
 import EpArch.WorldCtx
-import EpArch.Theorems.Headers
 
 namespace EpArch
 
@@ -71,15 +70,6 @@ theorem gettier_ctx_exhibits_provenance_gap (C : WorldCtx) (g : GettierCaseCtx C
     ∃ w', C.Truth w' g.P ∧ C.obs w' = C.obs g.world ∧ w' ≠ g.world := by
   let ⟨_, w', h_truth, h_obs⟩ := h
   exact ⟨w', h_truth, h_obs, g.provenance_disconnected w' h_truth h_obs⟩
-
-/-- Gettier profile (WorldCtx level) yields V-failure: the provenance gap witnesses
-    a world where truth and observation come apart.
-    This is the canonical statement of the Gettier result using the structural
-    WorldCtx-parameterized infrastructure defined above. -/
-theorem gettier_profile_yields_V_failure (C : WorldCtx) (g : GettierCaseCtx C)
-    (h : IsGettierCtx C g) :
-    ∃ w', C.Truth w' g.P ∧ C.obs w' = C.obs g.world ∧ w' ≠ g.world :=
-  gettier_ctx_exhibits_provenance_gap C g h
 
 /-- Safety case parameterized over a WorldCtx.
     `obs_aligned` says the actual world and the deposit world are observationally
