@@ -47,7 +47,6 @@ type checker enforces.
 ## Theorems
 
 - `behavioral_equiv_{refl,symm,trans}`  — equivalence is an equivalence relation
-- `satisfies_all_fixes_flags`           — utility: SatisfiesAllProperties → all *_ev.isSome = true
 - `behavior_step_consistent`   — Behavior B i = observe_step_action (input_to_action i) (definitional)
 - `behavior_from_step`         — same equality for systems with a live Step: the step witness
                                  confirms the state machine can reach the action, and the
@@ -56,8 +55,6 @@ type checker enforces.
 - `working_systems_equivalent` — grounded systems are equivalent; for withdraw, challenge, and
                                  tick the equivalence is grounded in the existence of a live
                                  Step from B's evidence; export falls back to definitional
-- `grounded_behaviors_equivalent` — same result, no Step witnesses; shows the equivalence is
-                                 input-determined regardless of which evidence route is taken
 
 ## Extension Model
 
@@ -174,21 +171,6 @@ theorem behavioral_equiv_trans (B1 B2 B3 : GroundedBehavior) :
     BehaviorallyEquivalent B1 B2 → BehaviorallyEquivalent B2 B3 →
     BehaviorallyEquivalent B1 B3 :=
   fun h12 h23 i => (h12 i).trans (h23 i)
-
-/-! ### Utility: WorkingSystem Evidence Presence -/
-
-/-- `SatisfiesAllProperties` determines the presence of all six proof-carrying fields.
-    Standalone bridge between the `WorkingSystem` API and evidence presence;
-    independent of the main behavioral equivalence proof chain. -/
-theorem satisfies_all_fixes_flags (W : WorkingSystem) (h : SatisfiesAllProperties W) :
-    W.bubbles_ev.isSome       = true ∧
-    W.bridges_ev.isSome       = true ∧
-    W.headers_ev.isSome       = true ∧
-    W.revocation_ev.isSome    = true ∧
-    W.bank_ev.isSome          = true ∧
-    W.redeemability_ev.isSome = true :=
-  ⟨h .scope, h .trust, h .headers, h .revocation, h .bank, h .redeemability⟩
-
 
 /-! ## StepSemantics Bridge
 
@@ -476,22 +458,5 @@ theorem working_systems_equivalent (B1 B2 : GroundedBehavior) :
         s₀ (input_to_action (.TimeAdvance ticks)) { s₀ with clock := 1 } :=
       EpArch.StepSemantics.Step.tick s₀ 1
     exact (behavior_from_step B1 _ _ _ ht).symm.trans (behavior_from_step B2 _ _ _ ht)
-
-/-- **All grounded behaviors are equivalent; direct definitional proof.**
-
-    This proof does not use any Step witnesses — it reduces directly on each
-    `Input` constructor.  The fast proof is possible precisely *because* `Behavior`
-    is observationally constant over `GroundedBehavior`: outcome is fully
-    determined by the input shape, so two certificates with different evidence
-    content still produce the same output.
-
-    `working_systems_equivalent` and this theorem say the same thing.  The
-    difference is architectural: `working_systems_equivalent` additionally
-    witnesses that the matching Step is live — the operational machinery exists,
-    not just the observation label.  This theorem states the observation fact
-    without that operational grounding. -/
-theorem grounded_behaviors_equivalent (B1 B2 : GroundedBehavior) :
-    BehaviorallyEquivalent B1 B2 :=
-  fun i => by cases i <;> rfl
 
 end EpArch

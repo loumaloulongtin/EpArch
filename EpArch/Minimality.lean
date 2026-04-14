@@ -284,6 +284,17 @@ theorem grounded_behavior_satisfies_all (B : GroundedBehavior) (W : WorkingSyste
         handles_export, handles_adversarial, handles_coordination,
         handles_truth_pressure, WorkingSystem.withGroundedBehavior, Option.isSome]
 
+/-- `SatisfiesAllProperties` implies all six evidence option fields are present.
+    Extracts the six `isSome = true` facts from the property predicate. -/
+theorem satisfies_all_fixes_flags (W : WorkingSystem) (h : SatisfiesAllProperties W) :
+    W.bubbles_ev.isSome       = true ∧
+    W.bridges_ev.isSome       = true ∧
+    W.headers_ev.isSome       = true ∧
+    W.revocation_ev.isSome    = true ∧
+    W.bank_ev.isSome          = true ∧
+    W.redeemability_ev.isSome = true :=
+  ⟨h .scope, h .trust, h .headers, h .revocation, h .bank, h .redeemability⟩
+
 /-- A `WorkingSystem` built from both `GroundedBehavior` and `GroundedSystemSpec`
     satisfies `PartialWellFormed W allConstraints`.
 
