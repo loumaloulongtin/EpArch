@@ -227,17 +227,6 @@ inductive DepositStatus where
   deriving DecidableEq, Repr
 
 
-/-! ## Acceptance Results -/
-
-/-- Result of the Accept_B function (bubble governance decision). -/
-inductive AcceptResult where
-  | Rejected     -- does not meet bubble standards
-  | Candidate    -- admitted for further validation
-  | Deposited    -- fully accepted
-  | Provisional  -- accepted with caveats / limited TTL
-  deriving DecidableEq, Repr
-
-
 /-! ## Field Identifiers
 
 The S/E/V factorization is central to the architecture. Every deposit's
@@ -305,55 +294,5 @@ def ttl_required : DepositKind → Bool
   | .Adversarial => true
   | .Institutional => true
 
-
-/-! ## Operating Modes -/
-
-/-- Two operating modes for acting under uncertainty.
-
-    - Cash: validate before acting — the Bank deposit exists before withdrawal
-    - Credit: act on Ladder traction, validate retroactively
-
-    Cash mode is safer but slower; Credit mode enables exploration before
-    validation infrastructure exists. The architecture supports both; the
-    choice affects which failure modes are accessible. -/
-inductive OperatingMode where
-  | Cash   -- validated before action; Bank-consulted
-  | Credit -- act on traction; validate later
-  deriving DecidableEq, Repr
-
-
-/-! ## Triage Categories -/
-
-/-- Problem classification for intervention strategy.
-
-    Three categories with different remediation paths:
-    - InherentTradeoff: structural tension that cannot be eliminated (e.g., certainty
-      outrunning validation under time pressure) — manage the tradeoff, don't fix it
-    - ProtocolCorruption: a legitimate mechanism misbinding (e.g., echo chambers
-      as export without revalidation) — fixable via repair operators
-    - DesignGap: absent friction that prevents contamination (e.g., no provenance
-      on export) — addressable by adding tooling or protocol steps -/
-inductive TriageCategory where
-  | InherentTradeoff    -- manage, don't fix
-  | ProtocolCorruption  -- fixable via repair
-  | DesignGap           -- addressable via tooling
-  deriving DecidableEq, Repr
-
-
-/-! ## Verdict Rubric -/
-
-/-- Verdicts for falsification attempts against architectural commitments.
-
-    - Absorbed: the challenge is structurally equivalent to the commitment under
-      different labels — not a genuine falsifier
-    - Deflected: the challenge targets a different claim than the one made
-    - Holds: the commitment survives direct pressure
-    - Broken: a genuine falsifier has been constructed -/
-inductive FalsificationVerdict where
-  | Absorbed   -- rival has the split under different names
-  | Deflected  -- challenge attacks different claim
-  | Holds      -- commitment survives pressure
-  | Broken     -- clean falsifier found
-  deriving DecidableEq, Repr
 
 end EpArch
