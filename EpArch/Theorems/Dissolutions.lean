@@ -3,8 +3,8 @@ EpArch.Theorems.Dissolutions — Type-Separation Dissolutions
 
 Classic epistemology puzzles dissolved via the Ladder/Bank type distinction.
 Type-separation makes the puzzle dissolve: certainty (Ladder) != knowledge (Bank).
-Includes trace-level ladder impossibility theorems, progress metrics, and
-dissolution criteria.
+Includes the closure, luminosity, higher-order, a priori, Moorean, and preface
+puzzles; trace-level ladder impossibility; and notation-invariance of redeemability.
 -/
 import EpArch.Semantics.StepSemantics
 
@@ -425,12 +425,6 @@ theorem moorean_export_contradiction (m : moorean_case (PropLike := PropLike))
   have h := wf.no_export_without_deposit ha
   simp_all
 
-/-- Ergonomic alias for `moorean_export_contradiction`. -/
-theorem moorean_is_export_contradiction (m : moorean_case (PropLike := PropLike))
-    (wf : ExportRequiresDeposit m) :
-    asserts_P m → denies_knowledge_P m → False :=
-  moorean_export_contradiction m wf
-
 /-- Preface paradox: individual claims and meta-claim about the collection coexist.
 
     "I believe each claim in my book, but also believe the book contains
@@ -470,54 +464,6 @@ def meta_deposit_about_collection (p : preface_case (PropLike := PropLike) (Stan
 theorem preface_dissolution (p : preface_case (PropLike := PropLike) (Standard := Standard)) :
     meta_deposit_about_collection p :=
   p.standards_differ
-
-
-/-! ## Progress Metrics
-
-Measurable properties for epistemic system improvement. -/
-
-/-- Redeemability performance: deposits survive constraint-surface contact. -/
-opaque redeemability_performance : Bubble → Nat  -- survival rate
-
-/-- Export reliability: transfer succeeds without contamination. -/
-opaque export_reliability : Bubble → Bubble → Nat  -- success rate
-
-/-- Hygiene stability: stale deposits deprecated before causing failure. -/
-opaque hygiene_stability : Bubble → Nat  -- timely deprecation rate
-
-/-- Counterfeit resistance: spoofed deposits detected and contained. -/
-opaque counterfeit_resistance : Bubble → Nat  -- detection rate
-
-/-- Coordination efficiency: reliance without duplicating validation. -/
-opaque coordination_efficiency : Bubble → Nat  -- reuse rate
-
-/-- Recovery rate: challenge → repair loops succeed. -/
-opaque recovery_rate : Bubble → Nat  -- successful repair rate
-
-/-- Progress means improvement without redefining terms. -/
-structure ProgressMetrics where
-  redeemability : Nat
-  export_rel : Nat
-  hygiene : Nat
-  counterfeit : Nat
-  coordination : Nat
-  recovery : Nat
-
-/-- System improved if metrics increase without semantic drift. -/
-opaque system_improved : ProgressMetrics → ProgressMetrics → Prop
-
-
-/-! ## Dissolution Criteria -/
-
-/-- A puzzle is dissolved (not relocated) if the reformulation satisfies: -/
-structure DissolutionCriteria where
-  type_separates : Bool    -- certainty (Ladder) vs knowledge (Bank) distinguished
-  parameterizes : Bool     -- dispute converted to explicit parameters
-  admits_metric : Bool     -- improvement measurable without redefining terms
-
-/-- Valid dissolution requires all three. -/
-def valid_dissolution (d : DissolutionCriteria) : Bool :=
-  d.type_separates && d.parameterizes && d.admits_metric
 
 
 end EpArch
