@@ -76,7 +76,7 @@ The formalization proves these claims:
    observability) enter the formalization.
 9. **EpArch.Semantics.RevisionSafety** — Safe extensions: adding constraints doesn't break
    existing theorems (the Compatible/transport_core machinery).
-10. **Theorems/** — Derived theorems, split into eight focused modules:
+10. **Theorems/** — Derived theorems, split into ten focused modules:
     - **Withdrawal** — Withdrawal gates, repair lifecycle, diagnosis infrastructure
     - **Cases/** — Classic epistemology case types, one file per case (open for contributions):
       `Gettier`, `FakeBarn`, `Standard`, `VacuousStandard`, `TypeErrors` (Lottery, Confabulation)
@@ -91,8 +91,11 @@ The formalization proves these claims:
     - **Corners** — Corner theorems 1, 2, 6, 7, 8, 9; entrenchment;
       lottery *gate* (operational: `lottery_no_deposit_blocks_withdraw`, `lottery_paradox_dissolved_architecturally`);
       cf. `EpArch.Theorems.Cases.TypeErrors` for the type-error *diagnosis* side
-11. **EpArch/Concrete/** — Zero-axiom constructive witnesses split into five focused
-    modules (Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity).
+    - **Diagnosability** — Observability-based diagnosability ordering
+    - **BehavioralEquivalence** — Observation-boundary equivalence; `working_systems_equivalent`
+11. **EpArch/Concrete/** — Zero-axiom constructive witnesses split into eight focused
+    modules (Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity,
+    Realizer, VerificationDepth, WorkedTraces).
     Together they prove non-vacuity for all commitments.
 
 ## Architecture (Dependency Layers)
