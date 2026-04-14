@@ -25,10 +25,6 @@ the conditional premises be derived rather than supplied.
 - Conditional Prediction 3 (Sharing ≠ Belief): export (sharing) and certainty (belief)
   are structurally independent. Proved bundling of `testimony_is_export` and
   `certainty_not_exportable`; this one has minimal conditioning — it generalizes well.
-
-Prediction 4 (audited entities / blast radius scaling) requires multi-agent reliance
-semantics outside the current kernel scope. Its mechanism and falsifier are preserved
-in DOCS/THEOREMS.md under "Deferred predictions".
 -/
 
 import EpArch.Basic
