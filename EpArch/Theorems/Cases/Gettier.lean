@@ -9,8 +9,6 @@ Structures and theorems for the Gettier SEV failure mode:
 
 Proxy interpretation: `VIndependence.tracks = false` means provenance does not
 connect to the truth-maker.  Theorem: GettierInstance → ¬Tracks.
-
-Future work: Richer semantics via causal graphs or modal structures.
 -/
 import EpArch.Basic
 import EpArch.Semantics.StepSemantics
@@ -37,8 +35,6 @@ variable {PropLike Standard ErrorModel Provenance Reason Evidence : Type u}
 
     Future work: Richer semantics via causal graphs or modal structures.
 -/
-
-/-- Truth-maker: the fact in the world that makes P true. -/
 structure TruthMaker where
   /-- The actual ground of truth (e.g., "Smith has 10 coins") -/
   ground : PropLike
@@ -79,23 +75,11 @@ structure GettierCase where
       genuine Gettier case.  Required at construction time. -/
   tracks_false_certified : v_independence.tracks = false
 
-/-- V fails when provenance doesn't track truth-maker. -/
-def V_fails (g : GettierCase (PropLike := PropLike)) : Bool :=
-  !g.v_independence.tracks
-
-/-- The claim is true (in the proxy encoding, S passing represents truth). -/
-def case_is_true (g : GettierCase (PropLike := PropLike)) : Prop :=
-  g.S_passes = true
-
-/-- The header looks valid when S and E both pass. -/
-def case_header_valid (g : GettierCase (PropLike := PropLike)) : Prop :=
-  g.S_passes = true ∧ g.E_passes = true
-
 /-- V-independence fails when provenance doesn't track truth-maker.
 
     Structurally encoded via VIndependence.tracks = false. -/
 def case_V_independence_fails (g : GettierCase (PropLike := PropLike)) : Prop :=
-  V_fails g = true
+  g.v_independence.tracks = false
 
 /-- CANONICAL Gettier case: S and E pass, but provenance doesn't track truth.
 
@@ -139,7 +123,7 @@ def IsGettierCase (g : GettierCase (PropLike := PropLike)) : Prop :=
     The structural invariant is certified at construction time. -/
 theorem gettier_is_V_failure (g : GettierCase (PropLike := PropLike)) :
     case_V_independence_fails g :=
-  by simp only [case_V_independence_fails, V_fails, g.tracks_false_certified, Bool.not_false]
+  g.tracks_false_certified
 
 /-- Canonical Gettier case satisfies IsGettierCase. -/
 theorem canonical_gettier_is_gettier (P truth_ground evidence_basis : PropLike)
@@ -148,15 +132,7 @@ theorem canonical_gettier_is_gettier (P truth_ground evidence_basis : PropLike)
   unfold IsGettierCase canonical_gettier
   exact ⟨rfl, rfl, rfl⟩
 
-/-- Canonical Gettier case also satisfies the legacy conditions. -/
-theorem canonical_gettier_conditions (P truth_ground evidence_basis : PropLike)
-    (h_ground : truth_ground ≠ evidence_basis) :
-    let g := canonical_gettier P truth_ground evidence_basis h_ground
-    case_is_true g ∧ case_header_valid g ∧ case_V_independence_fails g := by
-  simp [canonical_gettier, case_is_true, case_header_valid, case_V_independence_fails, V_fails]
-
-/-- Gettier case: truth-maker and provenance are structurally distinct grounds.
-    Directly accesses the `ground_distinct` structural field added in Pass 6. -/
+/-- Gettier case: truth-maker and provenance are structurally distinct grounds. -/
 theorem gettier_ground_disconnected (g : GettierCase (PropLike := PropLike)) :
     g.v_independence.truth_maker.ground ≠ g.v_independence.provenance.basis :=
   g.ground_distinct
