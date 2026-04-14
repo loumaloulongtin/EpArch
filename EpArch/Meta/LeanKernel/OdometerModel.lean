@@ -223,6 +223,26 @@ theorem odometer_truth_strictly_weaker_than_currency (B : Nat) (hB : 0 < B) :
     rw [h] at hB
     exact Nat.lt_irrefl B hB
 
+/-! ## Goal Absence as Deliberate Tradeoff
+
+EpArch identifies the mechanisms that health goals require.  A missing goal
+can always be read as a deficiency — but the converse reading is equally
+valid: the absence may be a deliberate architectural choice, with the health
+goal traded away in exchange for a property that the mechanism would undermine.
+
+The odometer illustrates this directly.  `¬SafeWithdrawalGoal` means: no
+revision capability.  Read as a failure, this is a gap — post-breakage
+readings cannot be corrected.  Read as a tradeoff, it is a guarantee: because
+the ledger cannot be revised, it also cannot be tampered with.  An odometer
+accepted as evidence in a legal or commercial dispute derives part of its
+authority *from* the absence of revision.  The same property that prevents
+correction prevents forgery.
+
+EpArch does not adjudicate the tradeoff.  It names it precisely.
+`¬SafeWithdrawalGoal` is the exact statement of what is given up; the
+designer holds the justification for why it was worth giving up.  The
+framework surfaces the cost; the architecture makes the choice. -/
+
 /-! ## Typed Goal-Stance Bundle -/
 
 /-- `odometer_is_minimal_goal_witness`: the complete typed goal-stance profile.
