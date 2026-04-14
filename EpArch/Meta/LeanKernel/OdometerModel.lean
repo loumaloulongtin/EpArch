@@ -225,23 +225,23 @@ theorem odometer_truth_strictly_weaker_than_currency (B : Nat) (hB : 0 < B) :
 
 /-! ## Goal Absence as Deliberate Tradeoff
 
-EpArch identifies the mechanisms that health goals require.  A missing goal
-can always be read as a deficiency — but the converse reading is equally
-valid: the absence may be a deliberate architectural choice, with the health
-goal traded away in exchange for a property that the mechanism would undermine.
+EpArch identifies the mechanisms that health goals require.  A missing goal can
+be read as a deficiency, but it can also reflect a deliberate architectural
+choice: the system gives up one form of health in order to preserve some other
+property.
 
-The odometer illustrates this directly.  `¬SafeWithdrawalGoal` means: no
-revision capability.  Read as a failure, this is a gap — post-breakage
-readings cannot be corrected.  Read as a tradeoff, it is a guarantee: because
-the ledger cannot be revised, it also cannot be tampered with.  An odometer
-accepted as evidence in a legal or commercial dispute derives part of its
-authority *from* the absence of revision.  The same property that prevents
-correction prevents forgery.
+The odometer-inspired witness illustrates this directly.  `¬SafeWithdrawalGoal`
+means that submitted readings are not backed by revision capability.  Read as a
+failure, this is a gap: if the measurement process breaks, false readings cannot
+be corrected within the model.  Read as a tradeoff, it reflects a design that
+keeps the base ledger simple, monotone, and free of in-model amendment
+machinery.  The same absence that blocks correction also avoids treating the
+system as corrigible when it is not.
 
-EpArch does not adjudicate the tradeoff.  It names it precisely.
-`¬SafeWithdrawalGoal` is the exact statement of what is given up; the
-designer holds the justification for why it was worth giving up.  The
-framework surfaces the cost; the architecture makes the choice. -/
+EpArch does not adjudicate whether that tradeoff is acceptable.  It names the
+cost precisely.  `¬SafeWithdrawalGoal` states what is unavailable; the external
+design rationale explains why that absence may be acceptable in a given setting.
+The framework surfaces the loss; the architecture chooses whether to bear it. -/
 
 /-! ## Typed Goal-Stance Bundle -/
 
