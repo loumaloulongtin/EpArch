@@ -162,9 +162,9 @@ structure StandardCase (Standard : Type u) where
   /-- S fails: the threshold relation is not met (Prop-level, not Bool) -/
   clearance_fails : ¬s_clearance.threshold_met
 
-/-- Boolean mirror: S clearance fails (for executable use). -/
-def S_fails (sc : StandardCase Standard (PropLike := PropLike)) : Bool :=
-  !sc.s_clearance.clears
+/-- S-field inadequacy: the threshold relation is not met (Prop-level). -/
+def case_S_inadequate (sc : StandardCase Standard (PropLike := PropLike)) : Prop :=
+  ¬sc.s_clearance.threshold_met
 
 /-- IsStandardCase: a genuine S-failure case iff:
     1. V passes (genuine provenance: tracks_genuine = true)
@@ -178,20 +178,7 @@ def IsStandardCase (sc : StandardCase Standard (PropLike := PropLike)) : Prop :=
   sc.e_adequacy.no_relevant_gap ∧
   ¬sc.s_clearance.threshold_met
 
-/-- S-field inadequacy: the threshold relation is not met (Prop-level). -/
-def case_S_inadequate (sc : StandardCase Standard (PropLike := PropLike)) : Prop :=
-  ¬sc.s_clearance.threshold_met
-
 /-- Standard cases route to S-failure.
-
-    When V and E are both sound, a withdrawal block localises to Field.S.
-    Proof: extracts `¬threshold_met` from the IsStandardCase bundle via pattern
-    matching — a genuine Prop negation, not Bool.not_false. -/
-theorem standard_case_is_S_failure (sc : StandardCase Standard (PropLike := PropLike)) :
-    IsStandardCase sc → case_S_inadequate sc :=
-  fun ⟨_, _, h_fails⟩ => h_fails
-
-/-- CANONICAL Standard case: peanut allergy / ingredient-check vs cross-contamination.
 
     - `v_provenance`: the cook genuinely certified it (tracks_genuine = true)
     - `e_adequacy`: ingredient contamination is modeled, no nearby gap
@@ -237,9 +224,8 @@ theorem canonical_standard_case_is_standard (P : PropLike)
     Proof: Bool case-split on `s_clearance.clears`, then the `clears_sound`
     bridge connects the Bool outcome to the Prop `¬threshold_met`. -/
 theorem standard_failure_targets_S (sc : StandardCase Standard (PropLike := PropLike)) :
-    IsStandardCase sc → S_fails sc = true := by
+    IsStandardCase sc → sc.s_clearance.clears = false := by
   intro ⟨_, _, h_fails⟩
-  simp only [S_fails]
   cases h_eq : sc.s_clearance.clears with
   | false => rfl
   | true => exact absurd (sc.s_clearance.clears_sound.mp h_eq) h_fails
@@ -331,31 +317,5 @@ theorem s_failure_e_is_sound (sc : StandardCase Standard (PropLike := PropLike))
     (h : IsStandardCase sc) :
     sc.e_adequacy.no_relevant_gap :=
   h.2.1
-
-/-- Data-backed form of `s_failure_v_is_sound` + `s_failure_e_is_sound`.
-    Surfaces the concrete evidence: `mode = .direct_inspection` (not `True`)
-    and `relevant_threat ∈ modeled_threats` (a real `List.Mem` witness, not `True`).
-    These are stronger conclusions because the evidence structure is identified. -/
-theorem s_failure_v_mode_and_e_threat
-    (sc : StandardCase Standard (PropLike := PropLike))
-    (h : IsStandardCase sc) :
-    sc.v_provenance.mode = .direct_inspection ∧
-    sc.e_adequacy.relevant_threat ∈ sc.e_adequacy.modeled_threats :=
-  ⟨h.1, h.2.1⟩
-
-/-- In a relational S-failure, V and E data are symmetric across both consumers;
-    only the threshold differs.  Data-backed form: conclusions are concrete
-    (`mode = .direct_inspection`, `threat ∈ modeled_threats`), not `True`. -/
-theorem relational_S_requires_matching_VE_data
-    (sc : StandardCase Standard (PropLike := PropLike))
-    (lenient_clearance : StandardClearance Standard)
-    (h : IsStandardCase sc)
-    (h_same   : sc.s_clearance.deposit_standard = lenient_clearance.deposit_standard)
-    (h_lenient : lenient_clearance.threshold_met) :
-    sc.v_provenance.mode = .direct_inspection ∧
-    sc.e_adequacy.relevant_threat ∈ sc.e_adequacy.modeled_threats ∧
-    sc.s_clearance.deposit_standard = lenient_clearance.deposit_standard ∧
-    ¬sc.s_clearance.threshold_met ∧ lenient_clearance.threshold_met :=
-  ⟨h.1, h.2.1, h_same, h.2.2, h_lenient⟩
 
 end EpArch
