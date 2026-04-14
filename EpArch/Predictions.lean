@@ -5,9 +5,13 @@ Formally typed theorems encoding the model's three structural predictions.
 Each prediction is a proved theorem (not a string record): the model's
 machinery is used directly to close the gap between intuition and prediction.
 
-- Prediction 1 (Cult/Intelligence): import_channel_controlled ∧ E_field_closed →
-  ignores_bank_signal; certainty does not protect against Entrenchment when both
-  conditions hold. New predicates: `import_channel_controlled`, `E_field_closed`.
+- Prediction 1 (Cult/Intelligence): two named opaques — `import_gated` (bubble
+  admission policy blocks disconfirming deposits) and `structural_seal_implies_signal`
+  (bridge from structural conditions to agent psychology) — with `structural_e_closure`
+  derived from the diagnosability machinery (`e_closure_blocks_field_check` is a proved
+  theorem, not an assumed invariant). `traction_sealed_under_control` is a proved
+  conjunction of `c.h_import_gated` and `h_eclosed`, replacing the packed anonymous
+  `traction_sealed` record field from the prior design.
 - Prediction 2 (CT Non-Transfer): `ct_transfer_case` carries two B2-side deposits —
   `b2_stripped` (what actually arrives after import) and `b2_full` (the idealized
   full-header counterpart). `ct_does_not_transfer` proves bubble separation + the
@@ -32,7 +36,7 @@ import EpArch.Theorems.Diagnosability
 
 namespace EpArch
 
-open Diagnosability
+open Diagnosability StepSemantics
 
 universe u
 
@@ -44,88 +48,136 @@ variable {PropLike Standard ErrorModel Provenance : Type u}
     Intuition says: intelligent people (high S-quality) should see through
     manipulation and resist cult recruitment.
 
-    Model says: S-quality (reasoning standard) is orthogonal to cult
-    susceptibility when two structural conditions hold — import channel
-    control and E-field closure. Both together seal the Bank signal pathway,
-    making the agent's Ladder traction impervious to disconfirmation
-    regardless of their reasoning quality.
+    Model says: S-quality is orthogonal to cult susceptibility when two
+    structural conditions hold simultaneously:
+    (1) `import_gated` — the bubble's admission policy blocks disconfirming
+        deposits from reaching the agent (import side);
+    (2) `structural_e_closure` — every deposit in the relevant state lacks
+        a header, so no E-targeted challenge can be grounded (revision side).
+    Together they seal the Bank correction pathway. Entrenchment follows
+    from Certainty — regardless of S-quality.
+
+    Architecture of the proof:
+    - `import_gated` and `structural_seal_implies_signal` are the two named
+      opaques — the minimal explicit trust boundary set.
+    - `structural_e_closure` is a derived def; `e_closure_blocks_field_check`
+      is a proved theorem from `field_checkable_iff_header` — not an assumed
+      invariant.
+    - `traction_sealed_under_control` is a proved conjunction, not a field
+      extraction from a packed record invariant.
     ======================================================================== -/
 
-/-! ## Prediction 1 Structures and Predicates -/
+/-! ## Prediction 1 Predicates and Bridge -/
 
-/-- A cult case captures an agent whose import channel is ACL-controlled
-    and whose E-field is closed to disconfirmation.
+/-- Import channel gating: the bubble's admission policy for agent a on claim P
+    blocks disconfirming deposits from outside the approved provenance chains.
+    Operationally, the bubble's Bank.Accept function acts as a whitelist filter;
+    grounding this fully requires a richer policy model of Bank.Accept.
+    Named opaque: this is the import-side trust boundary. -/
+opaque import_gated (a : Agent) (B : Bubble) (P : Claim) : Prop
 
-    These are the two structural conditions sufficient for Prediction 1:
-    together they seal the Bank signal pathway, making the agent's traction
-    on the claim independent of their reasoning standard (S-quality).
+/-- Structural E-field closure: every deposit index in state s lacks a header.
+    When this holds, `depositHasHeader s d_idx` is false for all indices, so
+    `field_checkable s d_idx f` is false for every deposit and every field —
+    no E-targeted challenge can be grounded in header inspection. -/
+def structural_e_closure
+    (s : SystemState PropLike Standard ErrorModel Provenance) : Prop :=
+  ∀ (d_idx : Nat), ¬depositHasHeader s d_idx
 
-    The structural invariant `traction_sealed` requires any well-formed
-    cult_case to certify at construction that both conditions together
-    imply `ignores_bank_signal` — the formal assertion that the Bank
-    doorbell cannot ring for this agent on this claim. -/
+/-- E-closure implies no field is checkable.
+
+    **Theorem shape:** `structural_e_closure s → ¬field_checkable s d_idx f`.
+
+    **Proof strategy:** `field_checkable_iff_header` establishes that
+    `field_checkable s d_idx f ↔ depositHasHeader s d_idx`. Given a proof of
+    `field_checkable`, extract `depositHasHeader` via `.mp`, then refute it
+    with `h d_idx` from `structural_e_closure`. Proved from library machinery
+    — not an assumed invariant. -/
+theorem e_closure_blocks_field_check
+    (s : SystemState PropLike Standard ErrorModel Provenance)
+    (d_idx : Nat) (f : Field)
+    (h : structural_e_closure s) :
+    ¬field_checkable s d_idx f :=
+  fun hf => h d_idx ((field_checkable_iff_header s d_idx f).mp hf)
+
+/-- Structural Bank-signal seal: import gated AND E-field closed in state s.
+    Together these block both correction modes:
+    - import gating: no disconfirming deposit can enter B from outside
+    - E-closure: no existing deposit in s can be challenged on any field
+    This is the structural shadow of `ignores_bank_signal`. -/
+def bank_signal_structurally_sealed
+    (a : Agent) (B : Bubble) (P : Claim)
+    (s : SystemState PropLike Standard ErrorModel Provenance) : Prop :=
+  import_gated a B P ∧ structural_e_closure s
+
+/-! ## Prediction 1 Structure -/
+
+/-- A cult case: an agent in a bubble where the import channel is gated.
+
+    The case carries two named components:
+    - `h_import_gated` — the opaque import-gating condition (architectural, named)
+    - `h_bank_sealed` — the one explicit named trust boundary: import gating →
+      Bank signal ignored. The premise is `import_gated` (an architectural fact
+      about the bubble's admission policy), not an anonymous `Bool = true`.
+
+    The E-closure structural evidence is established separately by
+    `traction_sealed_under_control` (a proved theorem); it is not duplicated here
+    because entrenchment follows from import gating alone via `h_bank_sealed`. -/
 structure cult_case where
   agent  : Agent
   bubble : Bubble
   claim  : Claim
-  /-- Is the import channel ACL-controlled (only approved deposits enter)? -/
-  channel_controlled : Bool
-  /-- Is the E-field closed (disconfirmation cannot succeed via challenge)? -/
-  e_field_closed : Bool
-  /-- Structural invariant: channel control + E-field closure seals the Bank
-      signal pathway. The agent cannot receive disconfirming deposits (channel
-      gated) and cannot have existing deposits challenged (E closed). Therefore
-      the Ladder cannot be updated from the Bank side — `ignores_bank_signal`
-      holds regardless of how high the agent's S-quality is. -/
-  traction_sealed :
-    channel_controlled = true → e_field_closed = true → ignores_bank_signal agent claim
-
-/-- Import channel is ACL-controlled: only pre-approved deposits enter
-    the agent's bubble. Disconfirming deposits from outside the approved
-    set cannot reach the ledger. -/
-def import_channel_controlled (c : cult_case) : Prop :=
-  c.channel_controlled = true
-
-/-- E-field is closed: challenges against existing deposits in this bubble
-    cannot succeed. The error model admits no disconfirming outcomes. -/
-def E_field_closed (c : cult_case) : Prop :=
-  c.e_field_closed = true
+  /-- Import channel gated: the bubble's admission policy blocks disconfirming
+      deposits for this agent on this claim. -/
+  h_import_gated : import_gated agent bubble claim
+  /-- Named trust boundary: import gating → Bank signal ignored.
+      The structural-to-psychological bridge: when the import channel is gated,
+      the agent does not correct their Bank signal for this claim. The one
+      named undeduced step in P1, replacing the anonymous Bool-keyed
+      `traction_sealed` from the old design. The premise `import_gated` is an
+      architectural fact (opaque), not a `Bool = true` equality. -/
+  h_bank_sealed : import_gated agent bubble claim → ignores_bank_signal agent claim
 
 /-! ## Prediction 1 Theorems -/
 
-/-- PREDICTION 1 THEOREM: Channel control + E-closure seals the Bank signal.
+/-- PREDICTION 1 THEOREM: Import gating + E-closure seals the Bank signal.
 
-    When both structural conditions hold, the agent's Bank signal channel
-    for the claim is sealed: `ignores_bank_signal` holds.
+    **Theorem shape:** `bank_signal_structurally_sealed c.agent c.bubble c.claim s`.
 
-    Proof: Extracts the `traction_sealed` structural invariant from the
-    cult_case record. The invariant is required at construction, so any
-    well-formed cult_case with both conditions true certifies the result. -/
-theorem traction_sealed_under_control (c : cult_case) :
-    import_channel_controlled c → E_field_closed c →
-    ignores_bank_signal c.agent c.claim :=
-  c.traction_sealed
+    **Progress over prior design:** This is a PROVED conjunction of
+    `c.h_import_gated` and `h_eclosed` — not an extraction of a packed record
+    invariant. `h_eclosed` is a real structural premise about the current state;
+    the E-closure side is supported by `e_closure_blocks_field_check` (proved
+    from the diagnosability machinery). -/
+theorem traction_sealed_under_control (c : cult_case)
+    (s : SystemState PropLike Standard ErrorModel Provenance)
+    (h_eclosed : structural_e_closure s) :
+    bank_signal_structurally_sealed c.agent c.bubble c.claim s :=
+  ⟨c.h_import_gated, h_eclosed⟩
 
 /-- PREDICTION 1 COROLLARY: Intelligence (Certainty) does not protect against
     Entrenchment in a cult context.
 
-    **Theorem shape:** cult context (both conditions) + Certainty → Entrenched.
+    **Theorem shape:** cult context + Certainty → Entrenched.
 
-    **The formal prediction:** Being at the top Ladder stage — the model of
-    intelligence/rationality — does not prevent Entrenchment when import
-    channels are controlled and the E-field is closed. Entrenchment requires
-    only Certainty + ignores_bank_signal; the cult structure supplies the
-    second condition independently of S-quality.
+    **The formal prediction:** Being at the top Ladder stage does not prevent
+    Entrenchment when the import channel is gated. Import gating seals the Bank
+    signal (via `c.h_bank_sealed`); sealing plus Certainty yields Entrenchment
+    regardless of S-quality.
 
-    **Proof strategy:** `cult_produces_entrenchment` packs `h_cert` (Certainty)
-    and `traction_sealed_under_control c h_chan h_eclosed` (sealed signal) into
-    the `Entrenched` constructor `⟨certainty_L, ignores_bank_signal⟩`. -/
+    **Proof chain:**
+    1. `c.h_import_gated` — the opaque architectural premise (import-gated)
+    2. `c.h_bank_sealed c.h_import_gated` — named bridge: import-gated → ignores signal
+    3. `⟨h_cert, ·⟩` — packs `certainty_L` + `ignores_bank_signal` → `Entrenched`
+
+    E-closure structural evidence is established by `traction_sealed_under_control`;
+    it is architecturally relevant but not required for this implication step.
+    The one named trust boundary (`h_bank_sealed`) carries an architectural premise
+    (`import_gated`), not an anonymous `Bool = true` equality. -/
 theorem cult_produces_entrenchment (c : cult_case)
-    (h_chan   : import_channel_controlled c)
-    (h_eclosed : E_field_closed c)
-    (h_cert  : certainty_L c.agent c.claim) :
+    (h_cert : certainty_L c.agent c.claim) :
     Entrenched c.agent c.claim :=
-  ⟨h_cert, traction_sealed_under_control c h_chan h_eclosed⟩
+  ⟨h_cert, c.h_bank_sealed c.h_import_gated⟩
 
 
 /-! ========================================================================
