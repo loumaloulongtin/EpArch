@@ -322,27 +322,6 @@ inductive OperatingMode where
   deriving DecidableEq, Repr
 
 
-/-! ## Defense Dynamics -/
-
-/-- Defense postures: distinct mechanisms for responding to challenge.
-
-    - Doubt: demote traction on the claim itself (Ladder adjustment)
-    - Denial: block the challenging source at the ACL level (boundary hardening)
-
-    These target different layers — Doubt is content-level, Denial is source-level.
-    The cost structures differ: Denial is cheap but coarse; Doubt is precise but
-    requires re-evaluation. -/
-inductive DefensePosture where
-  | Doubt  -- demote traction on claim
-  | Denial -- block source at ACL level
-  deriving DecidableEq, Repr
-
-/-- Doubt targets the claim; Denial targets the source. -/
-def defense_target : DefensePosture → String
-  | .Doubt => "claim (traction demotion)"
-  | .Denial => "source (ACL hardening)"
-
-
 /-! ## Triage Categories -/
 
 /-- Problem classification for intervention strategy.
