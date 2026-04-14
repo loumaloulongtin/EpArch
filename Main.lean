@@ -63,7 +63,7 @@ The formalization proves these claims:
    completeness theorems.
 3. **Bank.lean** — Bank substrate: lifecycle operators (Validate, Challenge,
    Repair, Revoke, etc.) as concrete guarded definitions.
-4. **LTS.lean** — Generic labeled transition systems, traces, invariants,
+4. **Semantics/LTS.lean** — Generic labeled transition systems, traces, invariants,
    refinement, and safety preservation.
 5. **Semantics/StepSemantics.lean** — The constructive operational semantics: SystemState,
    Action, Step relation, competition gate theorem.
@@ -89,8 +89,9 @@ The formalization proves these claims:
     - **Strip.lean** — All stripping results: provenance loss (`stripV`/`Payload`) and
       header loss (`strip`/`PayloadStripped`); competition gate corners 3, 4, 10
     - **Corners.lean** — Corner theorems 1, 2, 6, 7, 8, 9; lottery gate; entrenchment
-11. **ConcreteLedgerModel.lean** — A constructive zero-axiom concrete model that
-    witnesses satisfiability of all commitments. This proves non-vacuity.
+11. **EpArch/Concrete/** — Zero-axiom constructive witnesses split into five focused
+    modules (Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity).
+    Together they prove non-vacuity for all commitments.
 
 ## Architecture (Dependency Layers)
 
@@ -99,15 +100,14 @@ No file imports from a layer above its own.
 
 ```
 Layer 0 (Types):      Basic, Header
-Layer 1 (Substrate):  Bank, LTS, WorldCtx
-Layer 2 (Semantics):  StepSemantics, RevisionSafety, Predictions, WorkedTraces
+Layer 1 (Substrate):  Bank, Semantics/LTS, WorldCtx
+Layer 2 (Semantics):  Semantics/StepSemantics, Semantics/RevisionSafety, Predictions, Concrete/WorkedTraces
 Layer 3 (Theory):     Commitments, SystemSpec, Invariants, Minimality
 Layer 4 (Derived):    Theorems/{Withdrawal,Cases,Headers,Modal,Dissolutions,Pathologies,Strip,Corners,Diagnosability}, Health, Semantics/ScopeIrrelevance
 Layer 5 (Agent):      Mechanisms, Agent/{Constraints, Imposition, Resilience, Corroboration}
-Layer 6 (Witness):    WorldWitness, ConcreteLedgerModel, Realizer, Feasibility
+Layer 6 (Witness):    WorldWitness, Concrete/{Types,Commitments,WorkingSystem,DeficientSystems,NonVacuity}, Concrete/Realizer, Feasibility
 Layer 7 (Adversarial): Adversarial/{Base, Obligations}
-Layer 8 (Meta):       Meta/*
-Layer 9 (Modularity): Modularity
+Layer 8 (Meta):       Meta/* (incl. Meta/Modular, Meta/Config, Meta/TheoremTransport, Meta/LeanKernel/*)
 ```
 
 ## Build Surface

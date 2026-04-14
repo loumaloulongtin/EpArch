@@ -124,7 +124,6 @@ The framework has three layers:
 
 | Module | Purpose |
 |---|---|
-| `World.lean` | World-bundle predicates (`W_lies_possible`, etc.) |
 | `WorldCtx.lean` | Semantic signature for obligation theorems |
 | `WorldWitness.lean` | Non-vacuity proofs: concrete worlds satisfying each bundle |
 | `Agent/Constraints.lean` | Agent constraint predicates (PRP, bounded audit, fallibility) |
@@ -143,13 +142,12 @@ The framework has three layers:
 | `Commitments.lean` | The 8 structural commitments; all proved as standalone theorems; `commitments_pack` bundles the unconditional ones (C3/C4b/C7b/C8) |
 | `Minimality.lean` | Structural impossibility models + alternative-architecture dismissals; `Pressure` inductive as canonical dimension index |
 | `Convergence.lean` | `StructurallyForced`, `ForcingEmbedding`, `convergence_structural`, bridge predicates; six per-dimension `*_forces_*` theorems; `SystemOperationalBundle`, `WorldBridgeBundle` |
-| `VerificationDepth.lean` | Kernel-grounded verification depth: `DepthClaim` constructive witness; `bounded_verify` budget decision procedure; `DepthWorldCtx` instantiates `W_bounded_verification` by construction |
+| `Concrete/VerificationDepth.lean` | Kernel-grounded verification depth: `DepthClaim` constructive witness; `bounded_verify` budget decision procedure; `DepthWorldCtx` instantiates `W_bounded_verification` by construction |
 | `Theorems/BehavioralEquivalence.lean` | Observation-boundary equivalence; `working_systems_equivalent` — any two `GroundedBehavior` certificates are behaviorally equivalent (unconditional; no `SatisfiesAllProperties` premise); step-bridge section grounds withdraw/challenge/tick via `ReadyState` witnesses |
 | `Feasibility.lean` | Existence/non-vacuity witnesses: `world_bundles_feasible`, `commitments_feasible`, `existence_under_constraints_structural`, `existence_under_constraints_embedding` |
 | `WorldBridges.lean` | World-to-structural bridge theorems: `w_bounded_forces_incompleteness`, `w_lies_forces_revocation_need`, `w_partial_obs_forces_redeemability`; `WorldAwareSystem` def; `world_assumptions_force_bank_primitives` (W_* bundle path); `bundled_structure_forces_bank_primitives` (headline: `SystemOperationalBundle` + `WorldBridgeBundle` → `containsBankPrimitives`); `kernel_world_forces_bank_primitives` (zero-assumption corollary) |
 | `Health.lean` | Health goal predicates and necessity theorems |
 | `Invariants.lean` | System invariants (grounded operational theorems, 0 axiom declarations) |
-| `Modularity.lean` | Lattice-stability: graceful scale-down and sub-level RevisionSafety (9 theorems) |
 | `Meta/TheoremTransport.lean` | Health-goal transport schema: all 5 health goals are transport-safe under Compatible extensions (Tier 3 closure) |
 | `Meta/Tier4Transport.lean` | Main theorem library transport: standalone commitments, structural, and ConcreteBankModel clusters (Tier 4 closure) |
 | `Meta/Modular.lean` | Constraint-subset modularity: `PartialWellFormed`, `modular` (∀ S ⊆ constraints, biconditional fragment → forcing projection), `allConstraints`/`noConstraints` |
@@ -163,7 +161,7 @@ The framework has three layers:
 | Module | Purpose |
 |---|---|
 | `Semantics/RevisionSafety.lean` | Compatible extension preserves all existing implications |
-| `ScopeIrrelevance.lean` | Extra substrate state is irrelevant to core properties |
+| `Semantics/ScopeIrrelevance.lean` | Extra substrate state is irrelevant to core properties |
 | `Meta/FalsifiableNotAuthorizable.lean` | Falsifiability ≠ authorizability |
 | `Meta/TheoryCoreClaim.lean` | Core theory claim formalization |
 

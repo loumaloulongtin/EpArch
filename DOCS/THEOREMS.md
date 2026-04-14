@@ -626,9 +626,9 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 
 **Role:** Convert implicit mechanism axioms into explicit conditional theorems.
 
-**Files:** `World.lean`, `Adversarial/Obligations.lean`
+**Files:** `WorldCtx.lean`, `Adversarial/Obligations.lean`
 
-### Core Theorems (World.lean)
+### Core Theorems (WorldCtx.lean)
 
 | Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
@@ -727,7 +727,7 @@ $$\text{SelfCorrectingSystem}(M) \Rightarrow \text{HasRevisionCapability}(M)$$
 
 **Role:** Turn "out of scope" prose into machine-checkable scope boundaries.
 
-**File:** `ScopeIrrelevance.lean`
+**File:** `Semantics/ScopeIrrelevance.lean`
 
 These theorems prove that out-of-scope fundamentals (physics, consciousness, psychology, embodiment) are irrelevant by design — no architectural theorem depends on them.
 

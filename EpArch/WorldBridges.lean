@@ -27,7 +27,7 @@ import EpArch.WorldWitness
 import EpArch.Concrete.Realizer
 import EpArch.Scenarios
 
-namespace EpArch.Feasibility
+namespace EpArch.WorldBridges
 
 /-! ## World-to-Structural Bridges
 
@@ -332,4 +332,4 @@ theorem bundled_structure_forces_bank_primitives
     B.c_re B.h_endorsed B.h_fals
     h_sat
 
-end EpArch.Feasibility
+end EpArch.WorldBridges

@@ -1,6 +1,6 @@
 # World Layer Documentation
 
-This document explains the **World layer** (`EpArch/WorldCtx.lean` and `EpArch/World.lean`) as the semantic substrate used to convert world-side assumptions into **conditional obligation theorems**.
+This document explains the **World layer** (`EpArch/WorldCtx.lean`) as the semantic substrate used to convert world-side assumptions into **conditional obligation theorems**.
 
 Its job is narrow:
 
@@ -220,16 +220,16 @@ The one overclaim to avoid: existence/capability results (`lie_possible_of_W`, `
 Basic.lean
     ↓
 WorldCtx.lean
-    ↓                             ↓                          ↓
-World.lean (re-exports)    Adversarial/Obligations.lean    Feasibility.lean
-                           (W-bundles → obligations)      (W-bundles → containsBankPrimitives)
-                                  ↑
-                            Adversarial/Base.lean (attack patterns)
+    ↓                                          ↓
+Adversarial/Obligations.lean             Feasibility.lean
+(W-bundles → obligations)           (W-bundles → containsBankPrimitives)
+       ↑
+Adversarial/Base.lean (attack patterns)
 ```
 
-`WorldCtx.lean` provides the semantic interface for truth, observation, and bounded verification. `World.lean` is a compatibility/re-export layer, not the conceptual center. `Adversarial/Base.lean` imports `Basic`, `Header`, `Bank`, and `Commitments` (not `World.lean`); `Adversarial/Obligations.lean` imports `WorldCtx` plus `Adversarial/Base`. `Feasibility.lean` imports `WorldCtx` directly and uses all three W_* bundles as antecedents in `world_assumptions_force_bank_primitives`, closing the loop from world assumptions to architectural convergence.
+`WorldCtx.lean` provides the semantic interface for truth, observation, and bounded verification. `Adversarial/Base.lean` imports `Basic`, `Header`, `Bank`, and `Commitments`; `Adversarial/Obligations.lean` imports `WorldCtx` plus `Adversarial/Base`. `Feasibility.lean` imports `WorldCtx` directly and uses all three W_* bundles as antecedents in `world_assumptions_force_bank_primitives`, closing the loop from world assumptions to architectural convergence.
 
 ---
 
-`EpArch.Claim` (defined in `Basic.lean`) is the canonical claim type across the codebase. `WorldCtx.Claim` is a type parameter instantiated to `EpArch.Claim`. The deprecated `PropLike` alias in `World.lean` equals `EpArch.Claim` and exists only for backward compatibility. New world-side claims should follow the `W_*` / `_of_W` pattern.
+`EpArch.Claim` (defined in `Basic.lean`) is the canonical claim type across the codebase. `WorldCtx.Claim` is a type parameter instantiated to `EpArch.Claim`. New world-side claims should follow the `W_*` / `_of_W` pattern.
 
