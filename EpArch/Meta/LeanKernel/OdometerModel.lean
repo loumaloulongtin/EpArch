@@ -1,15 +1,22 @@
 /-
-EpArch/Meta/LeanKernel/OdometerModel.lean — Odometer Sub-bundle
+EpArch/Meta/LeanKernel/OdometerModel.lean — Odometer-Inspired Minimal Witness
 
-A concrete minimal EpArch sub-bundle witness.  An odometer satisfies only
-`SoundDepositsGoal` (readings must be verifiable) and none of the
-revision/export/adversarial goals.  The competition gate (`RevisionGate`)
-applies vacuously — a non-self-correcting system trivially satisfies
-`selfCorrects B → hasRevision B`.
+A concrete minimal EpArch witness inspired by the picture of an odometer as a
+monotone local readout.  This is a stylized abstraction, not a literal model of
+real odometer hardware or all odometer-relevant behaviors.
 
-This module establishes that `RevisionGate` and sub-level `RevisionSafety`
-are preserved for such sub-bundles; it does not claim a general
-theorem-transport schema over arbitrary theorem families.
+The purpose of the module is narrow: it exhibits a sub-bundle in which only
+`SoundDepositsGoal` is active, while revision/export/adversarial goals are absent.
+The competition gate (`RevisionGate`) therefore holds vacuously, since the model
+has no self-correction and no revision capability.
+
+This module establishes:
+- The exact goal-stance profile (which goals hold, which fail, and why)
+- A typed bundle theorem (`odometer_is_minimal_goal_witness`) naming that profile
+- Preservation of `RevisionGate` and sub-level `RevisionSafety` under compatible extensions
+
+It does not claim a general theorem-transport schema over arbitrary theorem families,
+and it does not claim to capture the full mechanics of real odometers.
 -/
 
 import EpArch.Meta.TheoremTransport
@@ -21,17 +28,27 @@ open EpArch.Meta.TheoremTransport
 
 /-! ## OdometerModel — Concrete Minimal Sub-bundle
 
-An odometer demonstrates that EpArch applies to systems with only one active
-health goal (`SoundDepositsGoal`). All revision/export/adversarial goals are absent.
-`OdometerModel` is a concrete `CoreModel` instance.
+`OdometerModel` is a concrete minimal witness for the case where only
+`SoundDepositsGoal` is active.  It is motivated by the picture of an odometer as
+a monotone readable counter, but it should be read as a toy abstraction rather
+than as a literal device model.
 
-The model:
-- One bubble (Nat representing cumulative count)
-- One deposit type (Nat representing a reading)
-- verification: reading ≤ current value is instantly verifiable (time = Unit)
-- No self-correction: an odometer reading is not revisable
-- No export: readings are local
-- truth: reading does not exceed current count (`reading ≤ count`)
+The model keeps only the structure needed for the targeted witness:
+- one bubble (`Nat`) representing a cumulative local state
+- one deposit type (`Nat`) representing a displayed reading
+- trivial verification within effective time
+- no revision capability
+- no export structure
+- truth: the simple monotonic condition `reading ≤ count`
+
+Goal-stance profile:
+| Goal                | Holds? | Reason                                               |
+|---------------------|--------|------------------------------------------------------|
+| SoundDepositsGoal   | yes    | every true reading is instantly verifiable           |
+| SelfCorrectionGoal  | yes    | vacuously (selfCorrects = False, premise never true) |
+| CorrigibleLedgerGoal| NO     | no bubble has hasRevision                            |
+| SafeWithdrawalGoal  | NO     | submit always True but hasRevision always False      |
+| ReliableExportGoal  | NO     | truth is local (reading ≤ B); cross-bubble not held  |
 
 -/
 
@@ -85,11 +102,57 @@ theorem odometer_sound_deposits : SoundDepositsGoal OdometerModel :=
 theorem odometer_not_corrigible : ¬CorrigibleLedgerGoal OdometerModel :=
   fun ⟨⟨_, h_rev⟩, _⟩ => h_rev
 
+/-- OdometerModel does NOT satisfy SafeWithdrawalGoal:
+    `submit` always succeeds (True) but `hasRevision` is always False,
+    so the implication `submit → hasRevision` fails for every reading. -/
+theorem odometer_not_safe_withdrawal : ¬SafeWithdrawalGoal OdometerModel :=
+  fun h => h () Nat.zero Nat.zero True.intro
+
+/-- OdometerModel does NOT satisfy ReliableExportGoal:
+    truth is local (`reading ≤ count`); there is no cross-bubble guarantee.
+    Counterexample: B = 5, B' = 10, d = 7.
+    d > B (not true in B) but d ≤ B' (true in B'), and hasRevision B' = False. -/
+theorem odometer_not_reliable_export : ¬ReliableExportGoal OdometerModel := by
+  -- Expose concrete Nat types so that `decide` can reduce the inequalities.
+  show (∀ (B B' d : Nat), ¬(d ≤ B) → ¬(d ≤ B') ∨ False) → False
+  intro h
+  have h5 := h 5 10 7 (by decide)
+  cases h5 with
+  | inl h1 => exact h1 (by decide)
+  | inr h2 => exact h2
+
+/-- OdometerModel satisfies SelfCorrectionGoal vacuously:
+    `selfCorrects = False` so the premise `selfCorrects B` is never true. -/
+theorem odometer_self_correction_vacuous : SelfCorrectionGoal OdometerModel :=
+  fun _ h_sc => h_sc.elim
+
+/-! ## Typed Goal-Stance Bundle -/
+
+/-- `odometer_is_minimal_goal_witness`: the complete typed goal-stance profile.
+
+    This is the "EpArch profile" for the odometer-inspired minimal witness:
+    exactly `SoundDepositsGoal` and (vacuous) `SelfCorrectionGoal` hold;
+    the three revision/export/corrigibility goals are explicitly absent.
+
+    This bundles all five goal stances into a single named theorem so the
+    profile is machine-checked as a unit rather than just narrated. -/
+theorem odometer_is_minimal_goal_witness :
+    SoundDepositsGoal OdometerModel ∧
+    SelfCorrectionGoal OdometerModel ∧
+    ¬CorrigibleLedgerGoal OdometerModel ∧
+    ¬SafeWithdrawalGoal OdometerModel ∧
+    ¬ReliableExportGoal OdometerModel :=
+  ⟨odometer_sound_deposits,
+   odometer_self_correction_vacuous,
+   odometer_not_corrigible,
+   odometer_not_safe_withdrawal,
+   odometer_not_reliable_export⟩
+
 /-- Any compatible extension of the odometer still satisfies RevisionGate.
 
-    This shows EpArch applies to odometer-based systems AND to any compatible
-    extension of an odometer (e.g., one that adds logging, encryption, or
-    network sync) without breaking the core architectural guarantee. -/
+    This shows that the minimal witness remains safe under compatible extensions
+    of the same abstract pattern (for example, extensions that add bookkeeping or
+    additional local structure) without changing the core no-revision profile. -/
 theorem odometer_extension_safe (E : ExtModel)
     (h_compat : Compatible E OdometerModel) :
     RevisionGate (forget E) :=
