@@ -1,8 +1,10 @@
 /-
-EpArch.Theorems.Headers — Diagnosability Metrics and Header Theorems
+EpArch.Theorems.Headers — Field Checkability and Header Diagnosability Theorems
 
-System-state–level diagnosability scoring, field checkability, and the
-connection between header presence and dispute convergence speed.
+System-state–level field checkability: `field_checkable`, `harder_without_headers`,
+`header_improves_diagnosability`, and `header_localization_link`.
+Grounded by the `Diagnosability` module (observable field sets) and Commitments.lean
+(`header_stripping_harder`, `DiagnosabilityScore`).
 -/
 import EpArch.Basic
 import EpArch.Header
@@ -19,19 +21,7 @@ universe u
 
 variable {PropLike Standard ErrorModel Provenance Reason Evidence : Type u}
 
-/-! ## Diagnosability Metrics -/
-
-/-- Diagnosability type and scoring function.
-    Score-based ordering measure.  For structural reasoning about field accessibility,
-    use `field_checkable`. -/
-structure Diagnosability where
-  score : Nat
-
-def diagScore (withHeader : Bool) : Diagnosability :=
-  if withHeader then ⟨100⟩ else ⟨10⟩
-
-/-- Ordering on diagnosability (for "harder" comparison). -/
-def diagLE (d1 d2 : Diagnosability) : Prop := d1.score ≤ d2.score
+/-! ## Field Checkability -/
 
 /-- A deposit's suspected field is structurally checkable iff the deposit header is present.
     The `Field` parameter is free because all SEV fields live in the header: once the
@@ -62,37 +52,6 @@ theorem harder_without_headers
     ¬field_checkable s d_idx c.suspected :=
   fun hf => h ((field_checkable_iff_header s d_idx c.suspected).mp hf)
 
-
-/-! ## Dispute Convergence -/
-
-/-- Convergence time bound.
-    With headers, convergence takes at most k steps for some fixed k.
-    Without headers, the bound is unbounded (or much larger). -/
-def ConvergenceTimeBound : Nat := 3  -- placeholder bound for header-preserving resolution
-
-/-- Localization score: 1 = perfectly localized, 0 = not localized.
-    With headers, score = 1 (field-specific).
-    Without headers, score = 0 (can only say "something is wrong"). -/
-def LocalizationScoreValue (has_header : Bool) : Nat :=
-  if has_header then 1 else 0
-
--- Note: Diagnosability and localization are now defined in Commitments.lean
--- using DiagnosabilityScore (capacity measure, not time measure).
-
-/-- Header-stripped disputes are systematically harder.
-
-    Headerless claims produce systematically harder disputes.
-    "Harder" means lower diagnosability (fewer fields to inspect), not
-    necessarily slower in wall-clock time.
-
-    Proof: Header-preserved has diagnosability 3, header-stripped has 0.
-    By definition, 0 < 3, so stripped is harder. -/
-theorem header_stripped_harder (B : Bubble) (P : PropLike)
-    (d : Deposit PropLike Standard ErrorModel Provenance) :
-    dispute B P → header_stripped d →
-    systematically_harder header_preserved_diagnosability header_stripped_diagnosability := by
-  intro _ _
-  exact header_stripping_harder
 
 /-- Theorem: With headers, every challenge field is structurally checkable.
     Structural form of Commitment 7 (positive direction):
