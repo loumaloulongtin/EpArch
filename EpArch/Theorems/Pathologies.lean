@@ -65,7 +65,7 @@ theorem testimony_is_export (t : testimony_case (PropLike := PropLike)) :
     Structural invariant: `deposit_survives_access_loss` encodes
     the key claim — access loss does not invalidate the deposit.  The theorem uses
     the `agent_lost_access` premise, routing it through this invariant.
-    LTS grounding: `deposits_survive_revision_free_trace` (StepSemantics) proves
+    LTS grounding: `StepSemantics.trace_no_revision_preserves_deposited` proves
     that any revision-free trace preserves `isDeposited`; access loss corresponds
     to no revision action being issued against the deposit. -/
 structure forgotten_evidence_case where
@@ -78,7 +78,7 @@ structure forgotten_evidence_case where
   deposit_in_bubble : Bool
   /-- Structural invariant: access loss does not invalidate the deposit.
       Even when the agent loses access to their original evidence, the bubble's
-      deposit persists — grounded by `deposits_survive_revision_free_trace`:
+      deposit persists — grounded by `StepSemantics.trace_no_revision_preserves_deposited`:
       without an explicit revision action, deposits are immutable in the bubble. -/
   deposit_survives_access_loss : agent_has_access = false → deposit_in_bubble = true
 
@@ -270,25 +270,6 @@ theorem local_redeemability_survives (s : skeptical_scenario (PropLike := PropLi
     severs_constraint_contact s → local_redeemability_holds s B :=
   s.global_implies_local
 
-/-- LTS-grounded corollary: deposits in a bubble survive any revision-free trace.
-
-    This is the deep structural result underlying `local_redeemability_survives`:
-    a global adversarial action that does not issue Challenge or Revoke on local
-    deposits corresponds to a revision-free trace, and
-    `trace_no_revision_preserves_deposited` shows such a trace cannot change
-    any deposit from Deposited to anything else.
-
-    To invalidate a local deposit an adversary must EXPLICITLY target it
-    with a revision action — global severing alone is insufficient. -/
-theorem deposits_survive_revision_free_trace
-    (s s' : SystemState PropLike Standard ErrorModel Provenance)
-    (t : Trace (Reason := Reason) (Evidence := Evidence) s s')
-    (h_no_rev : t.hasRevision = false)
-    (_B : Bubble) (d_idx : Nat)
-    (h_dep : isDeposited s d_idx) :
-    isDeposited s' d_idx :=
-  StepSemantics.trace_no_revision_preserves_deposited s s' t h_no_rev d_idx h_dep
-
 /-- Contextualism → Judgment-layer policy phenomenon.
 
     Stakes sensitivity is a Judgment-layer policy phenomenon, not semantic shift.
@@ -315,19 +296,6 @@ def stakes_level (c : context_case (PropLike := PropLike)) : Nat := c.stakes
 /-- S-threshold for context. -/
 def S_threshold (c : context_case (PropLike := PropLike)) : Nat := c.threshold
 
-/-- A semantic shift would mean the claim-type (PropLike) changes between contexts.
-    Since `PropLike` is the same fixed type in all context_cases,
-    this never occurs.  What varies is the THRESHOLD policy parameter, not
-    the type of claims that can be made.  We encode: semantic shift =
-    PropLike ≠ PropLike, which is always refutable by reflexivity. -/
-def is_semantic_shift (_c : context_case (PropLike := PropLike)) : Prop :=
-  PropLike ≠ PropLike
-
-/-- No semantic shift occurs in EpArch.
-    Proof: `Deposit` equals itself by reflexivity. -/
-theorem no_semantic_shift (c : context_case (PropLike := PropLike)) : ¬is_semantic_shift c :=
-  fun h => h rfl
-
 /-- Is this policy variation? -/
 def is_policy_variation (c : context_case (PropLike := PropLike)) : Prop := c.is_policy = true
 
@@ -335,14 +303,13 @@ def is_policy_variation (c : context_case (PropLike := PropLike)) : Prop := c.is
 
     Two-premise theorem: high stakes + threshold constraint.
     `is_policy_variation` is DERIVED from `h_stakes` via the structural
-    invariant `c.high_stakes_implies_policy`.  `¬is_semantic_shift c` follows
-    from `no_semantic_shift` (a genuine theorem about the fixed Deposit type). -/
+    invariant `c.high_stakes_implies_policy`. -/
 theorem context_is_policy (c : context_case (PropLike := PropLike))
     (h_stakes : c.stakes > 100)
     (h_threshold : c.threshold > 50) :
-    stakes_level c > 100 → S_threshold c > 50 ∧ is_policy_variation c ∧ ¬is_semantic_shift c := by
+    stakes_level c > 100 → S_threshold c > 50 ∧ is_policy_variation c := by
   intro _
-  exact ⟨h_threshold, c.high_stakes_implies_policy h_stakes, no_semantic_shift c⟩
+  exact ⟨h_threshold, c.high_stakes_implies_policy h_stakes⟩
 
 /-- Epistemic injustice → Import corruption.
 
@@ -470,31 +437,7 @@ theorem bridge_stripped_ungrounded
   exact h_stripped
 
 
-/-! ## Pathology Summary Table -/
-
-/-- Literature pathology with model diagnosis. -/
-structure PathologyDiagnosis where
-  pathology : String
-  model_explanation : String
-  reference : String
-
-def pathologyTable : List PathologyDiagnosis := [
-  ⟨"Gettier cases", "Header-valid, ground-invalid; V lacked independence", "Gettier 1963"⟩,
-  ⟨"Lottery problem", "Credence ≠ deposit; type error", "Kyburg 1961"⟩,
-  ⟨"Fake barns", "E failed to include nearby failure modes", "Goldman 1976"⟩,
-  ⟨"Testimony puzzles", "Export protocol: trust-import vs revalidation", "Coady 1992"⟩,
-  ⟨"Forgotten evidence", "Access vs truth-maker; bubble deposit persists", "Harman 1973"⟩,
-  ⟨"Peer disagreement", "Routing problem: bubble mismatch", "Christensen 2007"⟩,
-  ⟨"Group knowledge", "Different bubbles, different deposits", "Goldman 1999"⟩,
-  ⟨"Value of knowledge", "Exportability premium", "Kvanvig 2003"⟩,
-  ⟨"Skepticism", "Redeemability attack; local redeemability reply", "Dretske 1970"⟩,
-  ⟨"Contextualism", "Judgment-layer policy, not semantic shift", "DeRose 1995"⟩,
-  ⟨"Epistemic injustice", "Import corruption; ACL distortion", "Fricker 2007"⟩,
-  ⟨"Extended cognition", "Bubble boundary question", "Clark & Chalmers 1998"⟩
-]
-
-
-/-! ========================================================================
+/-! ==========================================================================
     Theorem Grounding Summary
 
     All items below are proved theorems in the Theorems.* module shown.
