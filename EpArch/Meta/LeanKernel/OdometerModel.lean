@@ -231,17 +231,26 @@ choice: the system gives up one form of health in order to preserve some other
 property.
 
 The odometer-inspired witness illustrates this directly.  `¬SafeWithdrawalGoal`
-means that submitted readings are not backed by revision capability.  Read as a
-failure, this is a gap: if the measurement process breaks, false readings cannot
-be corrected within the model.  Read as a tradeoff, it reflects a design that
-keeps the base ledger simple, monotone, and free of in-model amendment
-machinery.  The same absence that blocks correction also avoids treating the
-system as corrigible when it is not.
+means that submitted readings are not backed by revision capability.  This has
+two separable consequences that pull in opposite directions:
 
-EpArch does not adjudicate whether that tradeoff is acceptable.  It names the
-cost precisely.  `¬SafeWithdrawalGoal` states what is unavailable; the external
-design rationale explains why that absence may be acceptable in a given setting.
-The framework surfaces the loss; the architecture chooses whether to bear it. -/
+*As a cost*: if the measurement process breaks, false readings cannot be
+corrected.  Whatever enters the ledger via `submit` stays.  That is exactly
+the failure mode named by `¬SafeWithdrawalGoal`.
+
+*As a design intent*: in many systems, the irrevocability of the ledger is
+the point.  A record that cannot be amended from within the model is also a
+record that cannot be quietly corrected after the fact by an interested party.
+The absence of a revision pathway removes an attack surface.  In this model,
+`submit` is unconditional — so the submission gateway itself is not guarded,
+and the anti-tampering property does not follow.  But in a hardened design
+that adds submission guards while keeping `hasRevision = False`, irrevocability
+becomes the positive guarantee: entries are final once admitted.
+
+`¬SafeWithdrawalGoal` is precisely what you need to add a revision mechanism
+to in order to make safe withdrawal possible.  Whether that cost is worth
+bearing — or whether the irrevocability is the feature you want — is a
+decision EpArch does not make.  It names the fork; the architecture takes it. -/
 
 /-! ## Typed Goal-Stance Bundle -/
 
