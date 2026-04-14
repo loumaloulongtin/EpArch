@@ -21,8 +21,12 @@ The EpArch model treats knowledge management as a banking system:
 - **Banks** (defined in Bank.lean) are shared ledgers of deposits within a bubble.
 
 The "Ladder vs Bank" distinction is central:
-- **Ladder** (agent-side): An agent's internal certainty progression
-  (Denial → Doubt → Ignorance → Belief → Certainty). This is private.
+- **Ladder** (agent-side): An agent's internal traction state for a claim.
+  Ignorance is the entry condition (no stance yet); Doubt, Belief, Certainty,
+  and Denial are engaged stances reachable from Ignorance in any order —
+  no traversal of intermediate steps is assumed or required.  This is private.
+  The Ladder does not prescribe a universal update path; agent-specific overlays
+  (human cognition, LLM confidence, institutional policy) fill in the dynamics.
 - **Bank** (system-side): The shared ledger of validated deposits.
   This is public, challengeable, and redeemable.
 The key claim: being CERTAIN (Ladder) is not the same as KNOWING
@@ -114,9 +118,18 @@ about whether the claim is validated in the Bank. This separation between
 /-- Ladder stages: the agent's internal traction axis.
 
     Tracks what the agent currently treats as settled for inference and action.
-    Ordered from active rejection to full commitment:
-    Denial < Doubt < Ignorance < Belief < Certainty.
-    Denial and Doubt are active negative states, not mere absence of traction. -/
+    Ignorance is the entry condition: no engaged stance yet.
+    The other four stages are reachable from Ignorance in any order —
+    EpArch does not prescribe a universal update sequence.
+
+    Kernel usage:
+    - Ignorance and Certainty are theorem-active: `trace_cannot_elevate_ladder`
+      and `bank_trace_cannot_discharge_closure` use them directly.
+    - Entrenched = Certainty + closed review channel (see `Entrenched`).
+    - Doubt, Belief, and Denial are reserved vocabulary for agent-specific
+      overlays.  Their internal dynamics (update rules, ordering, transitions)
+      are intentionally left open; the kernel only requires that any agent has
+      exactly one stage per claim at any time (totality, via `agentTraction`). -/
 inductive LadderStage where
   | Denial     -- active rejection; boundary hardened against import
   | Doubt      -- claim on radar but traction actively demoted
