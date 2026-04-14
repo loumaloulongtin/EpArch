@@ -89,7 +89,9 @@ The formalization proves these claims:
       cognition), bridge theorems, pathology summary table
     - **Strip.lean** — All stripping results: provenance loss (`stripV`/`Payload`) and
       header loss (`strip`/`PayloadStripped`); competition gate corners 3, 4, 10
-    - **Corners.lean** — Corner theorems 1, 2, 6, 7, 8, 9; lottery gate; entrenchment
+    - **Corners.lean** — Corner theorems 1, 2, 6, 7, 8, 9; entrenchment;
+      lottery *gate* (operational: `lottery_no_deposit_blocks_withdraw`, `lottery_paradox_dissolved_architecturally`);
+      cf. `Cases/TypeErrors.lean` for the type-error *diagnosis* side
 11. **EpArch/Concrete/** — Zero-axiom constructive witnesses split into five focused
     modules (Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity).
     Together they prove non-vacuity for all commitments.

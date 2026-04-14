@@ -79,7 +79,8 @@ The framework has three layers:
 | Lifecycle gate theorems (withdrawal, export, challenge) | `EpArch/Theorems/Withdrawal.lean`, `EpArch/Theorems/Corners.lean` |
 | Type-separation: traction ≠ authorization | `EpArch/Theorems/Corners.lean` — `traction_broader_than_authorization` |
 | Gettier → V-field failure | `EpArch/Theorems/Cases/Gettier.lean` — `gettier_is_V_failure` |
-| Lottery → type error | `EpArch/Theorems/Corners.lean` — `lottery_paradox_dissolved_architecturally` |
+| Lottery → type error (diagnosis) | `EpArch/Theorems/Cases/TypeErrors.lean` — `LotteryIsTypeError` |
+| Lottery → dissolved operationally | `EpArch/Theorems/Corners.lean` — `lottery_paradox_dissolved_architecturally` |
 | Header stripping has no left inverse | `EpArch/Theorems/Strip.lean` — `no_strip_left_inverse` |
 | Non-vacuity witnesses (all constraints satisfiable) | `EpArch/WorldWitness.lean`, `EpArch/Concrete/` |
 | Adversarial obligation theorems | `EpArch/Adversarial/Obligations.lean` |
