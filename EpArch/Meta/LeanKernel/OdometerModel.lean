@@ -6,7 +6,8 @@ monotone local readout.  This is a stylized abstraction, not a literal model of
 real odometer hardware or all odometer-relevant behaviors.
 
 The purpose of the module is narrow: it exhibits a sub-bundle in which only
-`SoundDepositsGoal` is active, while revision/export/adversarial goals are absent.
+`SoundDepositsGoal` is substantively satisfied, while revision/export/adversarial
+goals are absent.
 The competition gate (`RevisionGate`) therefore holds vacuously, since the model
 has no self-correction and no revision capability.
 
@@ -31,9 +32,10 @@ open EpArch.Meta.TheoremTransport
 /-! ## OdometerModel — Concrete Minimal Sub-bundle
 
 `OdometerModel` is a concrete minimal witness for the case where only
-`SoundDepositsGoal` is active.  It is motivated by the picture of an odometer as
-a monotone readable counter, but it should be read as a toy abstraction rather
-than as a literal device model.
+`SoundDepositsGoal` is substantively satisfied (`SelfCorrectionGoal` also holds,
+but vacuously — the premise is never true).  It is motivated by the picture of an
+odometer as a monotone readable counter, but it should be read as a toy abstraction
+rather than as a literal device model.
 
 The model keeps only the structure needed for the targeted witness:
 - one bubble (`Nat`) representing a cumulative local state
