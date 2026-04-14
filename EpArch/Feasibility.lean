@@ -1,38 +1,35 @@
 /-
 EpArch/Feasibility.lean — Existence Under Constraints / Non-Vacuity Theorems
 
-This module packages existing witnesses into "system class is nonempty"
-statements, providing non-vacuity and existence proofs for
-the existence-under-constraints claim.
+This module answers the existence question: are the constraint and commitment
+bundles satisfiable, and does a working system exist that meets them?  It does
+not carry the forcing story — that lives in WorldBridges.lean.
 
-## Purpose
+## Division of Labor
 
-Natural objections to an epistemic systems framework:
-- "Are these constraints even consistent? Maybe they're vacuous."
-- "Does a system satisfying these properties actually exist?"
-
-This module answers: Yes. The constraint bundles are satisfiable,
-working systems exist, and success forces Bank primitives.
+| File              | Job                                                              |
+|-------------------|------------------------------------------------------------------|
+| WorldBridges.lean | Forcing theorems: W_* bundles → containsBankPrimitives           |
+| Feasibility.lean  | Existence witnesses: ∃ W satisfying constraints + primitives    |
 
 ## Headline Theorems
 
-- `structural_goals_force_bank_primitives`: StructurallyForced ∧ SatisfiesAllProperties → containsBankPrimitives
+- `world_bundles_feasible`: the three W_* bundles are jointly satisfiable
+- `commitments_feasible`: the 8 architectural commitments are jointly satisfiable
 - `existence_under_constraints_structural`: ∃ W, StructurallyForced W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W
-- `bundled_structure_forces_bank_primitives`: uses SystemOperationalBundle + WorldBridgeBundle
-
-These package non-vacuity + forced primitives into citable results.
+- `existence_under_constraints_embedding`: same, via ForcingEmbedding path
 
 ## Claim Budget
 
 **Buys:**
 - "The constraint+objective package is consistent (nonempty)"
 - "There exists at least one working system meeting the success bundle"
-- "Success forces Bank primitives" (via Minimality)
+- Non-vacuity for world bundles, commitments, and existence
 
 **Does NOT buy:**
+- The forcing direction (W_* → containsBankPrimitives) — see WorldBridges.lean
 - "The real world literally is this model"
 - "Uniqueness" (many realizations can exist)
-- "Abduction/inference from observed O to existence of S"
 
 -/
 
@@ -118,15 +115,12 @@ theorem joint_feasible :
   exact ⟨constraints_feasible, objectives_feasible⟩
 
 
-/-! ## Structural Convergence -/
+/-! ## Structural Convergence (Existence)
 
-/-- Structural alias: success forces Bank primitives
-    without depending on WellFormed biconditionals. -/
-theorem structural_goals_force_bank_primitives :
-    ∀ W : WorkingSystem,
-      StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W :=
-  convergence_structural
-
+    These theorems prove existence: there is at least one concrete working system
+    that is structurally forced, satisfies all properties, and contains Bank
+    primitives.  For the forcing direction (W_* bundles → primitives), see
+    WorldBridges.lean. -/
 /-- Headline theorem (structural version): the concrete model is
     structurally forced, satisfies all properties, and contains Bank
     primitives — without going through WellFormed. -/
