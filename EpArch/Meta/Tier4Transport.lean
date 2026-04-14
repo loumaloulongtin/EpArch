@@ -54,7 +54,11 @@ Key theorem: `concrete_bank_all_goals_transport`.
 
 import EpArch.Commitments
 import EpArch.Theorems.Withdrawal
-import EpArch.Theorems.Cases
+import EpArch.Theorems.Cases.Gettier
+import EpArch.Theorems.Cases.FakeBarn
+import EpArch.Theorems.Cases.Standard
+import EpArch.Theorems.Cases.VacuousStandard
+import EpArch.Theorems.Cases.TypeErrors
 import EpArch.Theorems.Headers
 import EpArch.Theorems.Dissolutions
 import EpArch.Theorems.Pathologies

@@ -137,7 +137,11 @@ import EpArch.Bank.Dynamics    -- Runtime behavioral profiling: DepositDynamics,
 import EpArch.Commitments
 import EpArch.SystemSpec
 import EpArch.Theorems.Withdrawal
-import EpArch.Theorems.Cases
+import EpArch.Theorems.Cases.Gettier
+import EpArch.Theorems.Cases.FakeBarn
+import EpArch.Theorems.Cases.Standard
+import EpArch.Theorems.Cases.VacuousStandard
+import EpArch.Theorems.Cases.TypeErrors
 import EpArch.Theorems.Headers
 import EpArch.Theorems.Modal
 import EpArch.Theorems.Dissolutions
