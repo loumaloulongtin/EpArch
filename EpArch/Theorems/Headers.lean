@@ -3,8 +3,8 @@ EpArch.Theorems.Headers — Field Checkability and Header Diagnosability Theorem
 
 System-state–level field checkability: `field_checkable`, `harder_without_headers`,
 `header_improves_diagnosability`, and `header_localization_link`.
-Grounded by the `Diagnosability` module (observable field sets) and Commitments.lean
-(`header_stripping_harder`, `DiagnosabilityScore`).
+Grounded by the Diagnosability module (observable field sets) and the
+Commitments module (`header_stripping_harder`, `DiagnosabilityScore`).
 -/
 import EpArch.Basic
 import EpArch.Header

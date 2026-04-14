@@ -1,5 +1,5 @@
 /-
-EpArch/Meta/LeanKernel/OdometerModel.lean — Odometer-Inspired Minimal Witness
+EpArch.Meta.LeanKernel.OdometerModel — Odometer-Inspired Minimal Witness
 
 A concrete minimal EpArch witness inspired by the picture of an odometer as a
 monotone local readout.  This is a stylized abstraction, not a literal model of

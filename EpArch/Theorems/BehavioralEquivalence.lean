@@ -1,5 +1,5 @@
 /-
-EpArch/Theorems/BehavioralEquivalence.lean — Observation-Boundary Equivalence
+EpArch.Theorems.BehavioralEquivalence — Observation-Boundary Equivalence
 
 Defines the abstract input/observation interface for WorkingSystems and
 proves that any two grounded systems produce identical observations on all inputs.
@@ -64,7 +64,7 @@ type checker enforces.
 
     EV charging    → GroundedBank.Entry = ChargingSession
     Finance        → GroundedBank.Entry = SettlementRecord
-    Lean kernel    → GroundedBank.Entry = LeanEnvEntry   (see Meta/LeanKernel/World.lean)
+    Lean kernel    → GroundedBank.Entry = LeanEnvEntry   (see EpArch.Meta.LeanKernel.World)
 
 Any domain that instantiates `GroundedBehavior` with its own types immediately
 inherits `working_systems_equivalent`: any two implementations holding the
@@ -86,8 +86,8 @@ That judgment belongs to the domain instantiator.
 
 ## Dependencies
 
-- **Minimality.lean:** WorkingSystem, SatisfiesAllProperties, GroundedBehavior
-- **Semantics/StepSemantics.lean:** Step, Action, SystemState, precondition predicates
+- **EpArch.Minimality:** WorkingSystem, SatisfiesAllProperties, GroundedBehavior
+- **EpArch.Semantics.StepSemantics:** Step, Action, SystemState, precondition predicates
 -/
 
 import EpArch.Minimality
@@ -100,7 +100,7 @@ namespace EpArch
 /-! ### Input Events -/
 
 /-- Abstract input events a WorkingSystem can receive.
-    Analogues of CInputEvent in EpArch/Concrete/WorkingSystem.lean. -/
+    Analogues of CInputEvent in EpArch.Concrete.WorkingSystem. -/
 inductive Input where
   /-- Request to withdraw/rely on a deposit. -/
   | WithdrawRequest (agent_id : Nat) (bubble_id : Nat) (claim_id : Nat)
@@ -115,7 +115,7 @@ inductive Input where
 /-! ### Observable Outcomes -/
 
 /-- Observable outcomes from processing inputs.
-    Analogues of COutcome in EpArch/Concrete/WorkingSystem.lean. -/
+    Analogues of COutcome in EpArch.Concrete.WorkingSystem. -/
 inductive Observation where
   /-- Withdrawal succeeded. -/
   | WithdrawSuccess (claim_id : Nat)
@@ -175,7 +175,7 @@ theorem behavioral_equiv_trans (B1 B2 B3 : GroundedBehavior) :
 /-! ## StepSemantics Bridge
 
 This section ties `Behavior` to the operational `Step` relation from
-`Semantics/StepSemantics.lean`.  The key claim is stronger than definitional consistency:
+EpArch.Semantics.StepSemantics.  The key claim is stronger than definitional consistency:
 for every `Input i` and `GroundedBehavior B`, a *concrete ready state* exists
 from which `Step s (input_to_action i) s'` fires, and the step's observable
 output equals `Behavior B i`.

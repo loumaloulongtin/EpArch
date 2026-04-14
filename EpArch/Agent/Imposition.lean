@@ -1,5 +1,5 @@
 /-
-EpArch/Agent/Imposition.lean — Design-Imposition Theorems
+EpArch.Agent.Imposition — Design-Imposition Theorems
 
 This module captures design-necessity results: architectural forcing constraints
 that state certain combinations (goal + constraints + no mechanism) are impossible.
@@ -322,7 +322,7 @@ structure Mechanisms where
 
 **Relationship:**
 - This module proves: AgentConstraints + scenario-goal → mechanism needed
-- Health.lean proves: CoreModel + definitional-goal → capability exists
+- EpArch.Health proves: CoreModel + definitional-goal → capability exists
 - Both are valid; scenario proofs are more direct, model proofs are more general.
 -/
 

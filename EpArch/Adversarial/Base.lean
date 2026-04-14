@@ -1,12 +1,12 @@
 /-
-EpArch Adversarial Base Types and Structures
+EpArch.Adversarial.Base — Adversarial Base Types and Structures
 
 This module contains the TYPE-LEVEL definitions for adversarial modeling:
 - Attack primitives (opaques)
 - Attack structures
 - Domain configurations
 
-NO AXIOMS HERE. Obligation theorems live in AdversarialObligations.lean;
+NO AXIOMS HERE. Obligation theorems live in EpArch.Adversarial.Obligations;
 structural theorems (identity/unfolding proofs) are co-located here.
 
 ## What is "Adversarial" in EpArch?
@@ -16,7 +16,7 @@ for ANY source of epistemic failure: lies, omissions, misobservations,
 forgeries.  Attack structures formalize the SPACE of possible failures
 so that obligation theorems can prove which mechanisms are forced.
 
-See AdversarialObligations.lean for the conditional obligation theorems
+See EpArch.Adversarial.Obligations for the conditional obligation theorems
 that use these types.
 -/
 

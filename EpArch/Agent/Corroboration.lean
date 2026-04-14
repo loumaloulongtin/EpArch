@@ -1,5 +1,5 @@
 /-
-EpArch/Agent/Corroboration.lean — Multi-Agent Corroboration and Common-Mode Compromise
+EpArch.Agent.Corroboration — Multi-Agent Corroboration and Common-Mode Compromise
 
 This module provides formal machinery for reasoning about when multi-agent
 corroboration is required (conditional minimality) and when it fails

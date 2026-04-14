@@ -1,14 +1,11 @@
 /-
-EpArch/Concrete/NonVacuity.lean — Advanced Non-Vacuity Proofs
+EpArch.Concrete.NonVacuity — Advanced Non-Vacuity Proofs
 
-Concrete witnesses and proofs for:
-  - Competition gate (RevisionSafety non-vacuity)
-  - Legibility and repair paths
-  - Convergence metrics
-  - Step-preserved invariants (WellFormedState)
-  - Modal links (Safe, Sensitive, V_independent, E_covers)
+Concrete witnesses and proofs for competition gates, legibility,
+repair paths, convergence metrics, step-preserved invariants,
+and modal links.
 
-Part of: EpArch/Concrete/ split of ConcreteLedgerModel.lean
+Part of the EpArch.Concrete module family.
 -/
 
 import EpArch.Concrete.WorkingSystem
@@ -23,7 +20,7 @@ open EpArch
 These sections demonstrate non-vacuity for the StepSemantics module by
 constructing concrete traces and showing revision is genuinely possible.
 
-Since Basic.lean now uses concrete inductives (Nat-indexed) rather than
+Since EpArch.Basic now uses concrete inductives (Nat-indexed) rather than
 opaque types, we can provide actual witness values without axioms. -/
 
 open EpArch.StepSemantics
@@ -33,7 +30,7 @@ open ConcreteModel
 
 These definitions provide canonical inhabitants for the base types.
 No axioms needed because Bubble/Agent/ACL/ConstraintSurface are now
-concrete inductives in Basic.lean. -/
+concrete inductives in EpArch.Basic. -/
 
 /-- Witness bubble for concrete model. -/
 def concreteBubble : Bubble := Bubble.mk 0
@@ -68,7 +65,7 @@ def concreteHeader : Header CStandard String String := {
 
 /-! ## Concrete Deposit (Abstract Type) -/
 
-/-- A concrete deposit using the abstract Deposit type from Header.lean.
+/-- A concrete deposit using the abstract Deposit type from EpArch.Header.
     Bridges the concrete model to the abstract StepSemantics. CProp = String. -/
 def witness_deposit : Deposit String CStandard String String := {
   P := "test_claim"

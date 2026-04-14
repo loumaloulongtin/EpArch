@@ -1,5 +1,5 @@
 /-
-EpArch/WorldWitness.lean — Nontrivial Witness Model for WorldCtx
+EpArch.WorldWitness — Nontrivial Witness Model for WorldCtx
 
 This module provides a concrete instantiation of WorldCtx with nontrivial
 semantics, proving that the W_* bundles are satisfiable (not vacuous).

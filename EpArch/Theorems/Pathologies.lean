@@ -441,12 +441,12 @@ theorem bridge_stripped_ungrounded
     Theorem Grounding Summary
 
     All items below are proved theorems in the Theorems.* module shown.
-    Operational groundings live in Semantics/StepSemantics.lean.
+    Operational groundings live in EpArch.Semantics.StepSemantics.
     ======================================================================== -/
 
 /-! ## Key Grounding Relationships
 
-| Theorem                        | Module (Theorems.*)   | Operational Basis (Semantics/StepSemantics.lean)     |
+| Theorem                        | Module (Theorems.*)   | Operational Basis (EpArch.Semantics.StepSemantics)   |
 |-------------------------------|----------------------|-------------------------------------------|
 | `withdrawal_gates`            | `Withdrawal`         | `withdrawal_requires_three_gates`         |
 | `repair_enforces_revalidation`| `Withdrawal`         | `repair_produces_candidate`               |

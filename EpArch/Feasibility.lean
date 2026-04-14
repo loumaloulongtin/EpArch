@@ -1,16 +1,16 @@
 /-
-EpArch/Feasibility.lean — Existence Under Constraints / Non-Vacuity Theorems
+EpArch.Feasibility — Existence Under Constraints / Non-Vacuity Theorems
 
 This module answers the existence question: are the constraint and commitment
 bundles satisfiable, and does a working system exist that meets them?  It does
-not carry the forcing story — that lives in WorldBridges.lean.
+not carry the forcing story — that lives in EpArch.WorldBridges.
 
 ## Division of Labor
 
-| File              | Job                                                              |
-|-------------------|------------------------------------------------------------------|
-| WorldBridges.lean | Forcing theorems: W_* bundles → containsBankPrimitives           |
-| Feasibility.lean  | Existence witnesses: ∃ W satisfying constraints + primitives    |
+| Module              | Job                                                            |
+|---------------------|----------------------------------------------------------------|
+| EpArch.WorldBridges | Forcing theorems: W_* bundles → containsBankPrimitives         |
+| EpArch.Feasibility  | Existence witnesses: ∃ W satisfying constraints + primitives   |
 
 ## Headline Theorems
 
@@ -27,7 +27,7 @@ not carry the forcing story — that lives in WorldBridges.lean.
 - Non-vacuity for world bundles, commitments, and existence
 
 **Does NOT buy:**
-- The forcing direction (W_* → containsBankPrimitives) — see WorldBridges.lean
+- The forcing direction (W_* → containsBankPrimitives) — see EpArch.WorldBridges
 - "The real world literally is this model"
 - "Uniqueness" (many realizations can exist)
 
@@ -44,7 +44,7 @@ namespace EpArch.Feasibility
 
 /-- World constraint bundles are satisfiable (non-vacuity).
 
-    Uses the WitnessCtx from WorldWitness.lean to show that the
+    Uses the WitnessCtx from EpArch.WorldWitness to show that the
     W_* bundles are jointly satisfiable.
 
     Note: We use `@WorldCtx.{0}` to fix the universe level to match WitnessCtx. -/
@@ -120,7 +120,7 @@ theorem joint_feasible :
     These theorems prove existence: there is at least one concrete working system
     that is structurally forced, satisfies all properties, and contains Bank
     primitives.  For the forcing direction (W_* bundles → primitives), see
-    WorldBridges.lean. -/
+    EpArch.WorldBridges. -/
 /-- Headline theorem (structural version): the concrete model is
     structurally forced, satisfies all properties, and contains Bank
     primitives — without going through WellFormed. -/

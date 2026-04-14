@@ -1,5 +1,5 @@
 /-
-EpArch/Agent/Constraints.lean — Agent Constraints Interface
+EpArch.Agent.Constraints — Agent Constraints Interface
 
 This module captures "the system is designed for imperfect agents"
 WITHOUT implementing a full Agent OS or making sociological claims.

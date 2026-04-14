@@ -359,7 +359,7 @@ theorem export_ignores_target_acl
     merely mislabelled.
 
     This is the step-grounded bridge between the case-type taxonomy
-    (Cases/TypeErrors.lean: LotteryIsTypeError) and the architectural dissolution
+    (EpArch.Theorems.Cases.TypeErrors: LotteryIsTypeError) and the architectural dissolution
     below (Corner 2: lottery_paradox_dissolved_architecturally,
     candidate_blocks_withdrawal). -/
 

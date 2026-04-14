@@ -1,12 +1,12 @@
 /-
-EpArch/SystemSpec.lean — System Specification
+EpArch.SystemSpec — System Specification
 
 `SystemSpec` structure (six Bool capability flags), `spec_has_X` predicates,
 `DecidablePred` instances, `containsAllFeatures`, `fullBankSpec`, and the six
 minimal specs missing exactly one feature each (for impossibility witnesses).
 
 Grounded evidence types (`GroundedX`, `GroundedXStrict`, `GroundedSystemSpec`)
-live in `GroundedEvidence.lean` which imports this file.
+live in `GroundedEvidence` which imports this file.
 -/
 
 import EpArch.Basic
@@ -21,7 +21,7 @@ This is what we inspect to determine Has* predicates structurally. -/
 /-- System specification: captures what operations and features a system provides.
 
     Each field corresponds to an architectural capability. The Has* predicates
-    in Minimality.lean are now defined by inspecting these fields. -/
+    in EpArch.Minimality are now defined by inspecting these fields. -/
 structure SystemSpec where
   /-- System has bubble separation (scoped trust zones, not global ledger).
       Forced by: Distributed agents constraint. -/
@@ -52,7 +52,7 @@ structure SystemSpec where
 /-! ## Feature Predicates on SystemSpec
 
 These are helper predicates that check if a SystemSpec has a feature.
-The main Has* predicates in Minimality.lean will use these via W.spec. -/
+The main Has* predicates in EpArch.Minimality will use these via W.spec. -/
 
 /-- Predicate: spec has bubble separation. -/
 def spec_has_bubbles (spec : SystemSpec) : Prop := spec.has_bubble_separation = true

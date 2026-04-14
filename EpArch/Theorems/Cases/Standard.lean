@@ -16,7 +16,7 @@ The key asymmetry with Gettier and FakeBarn:
 - FakeBarn (E-failure): deposit defective regardless of who reads it
 - Standard (S-failure): deposit is accurate; fails only relative to THIS agent's threshold
 
-For the absolute (non-relational) S-failure variant, see VacuousStandard.lean.
+For the absolute (non-relational) S-failure variant, see EpArch.Theorems.Cases.VacuousStandard.
 -/
 import EpArch.Basic
 import EpArch.Semantics.StepSemantics

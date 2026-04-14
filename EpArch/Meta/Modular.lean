@@ -1,12 +1,12 @@
 /-
-EpArch/Meta/Modular.lean — Machine-Certified Modularity Meta-Theorem
+EpArch.Meta.Modular — Machine-Certified Modularity Meta-Theorem
 
 Answers the question: "Is EpArch modular on its six operational constraints —
 can you drop any constraint and have the remaining forcing theorems still hold?"
 
-Scope: this file covers the six constraints in `Minimality.lean` only.
+Scope: this file covers the six constraints in EpArch.Minimality only.
 Health-goal modularity (∀-transport of SafeWithdrawal, ReliableExport, etc.)
-is proved separately in `Meta/TheoremTransport.lean` and `Meta/Tier4Transport.lean`.
+is proved separately in EpArch.Meta.TheoremTransport and EpArch.Meta.Tier4Transport.
 
 This file provides two pieces:
 

@@ -1,5 +1,5 @@
 /-
-EpArch/Meta/TheoremTransport.lean — Generic Theorem Transport Schema
+EpArch.Meta.TheoremTransport — Generic Theorem Transport Schema
 
 This module formalizes the modularity story from DOCS/MODULARITY.md Tier 3 and
 closes the gap described there: it proves that every `CoreModel`-level health goal
@@ -261,7 +261,7 @@ theorem graceful_degradation (M : CoreModel) (h : NoSelfCorrection M) : Revision
 /-! ## 6. Consequences of Disabling Operations -/
 
 /-- Disabling self-correction → RevisionGate holds vacuously.
-    (Refactored reference to graceful_degradation in Modularity.lean.) -/
+    (Refactored reference to graceful_degradation in EpArch.Modularity.) -/
 theorem vacuous_selfCorrects_revision_gate (M : CoreModel)
     (h : VacuousSelfCorrects M) : RevisionGate M :=
   graceful_degradation M h

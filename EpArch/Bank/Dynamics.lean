@@ -5,11 +5,11 @@ Defines the runtime behavioral profiling layer for deposits: `DepositDynamics`,
 `reliance_level`, `challenge_frequency`, `blast_radius`, and the two behavioral
 theorems (`success_driven_bypass`, `blast_radius_scales_with_reliance`).
 
-Separated from Bank.lean because the deposit substrate (structure, lifecycle
+Separated from the Bank module because the deposit substrate (structure, lifecycle
 operators, status transitions) and the runtime behavioral profiler sit at
 different abstraction levels:
-- **Bank.lean** — static architecture: what a deposit is, how it transitions.
-- **Bank/Dynamics.lean** — emergent runtime measurement: how many agents rely on
+- **EpArch.Bank** — static architecture: what a deposit is, how it transitions.
+- **EpArch.Bank.Dynamics** — emergent runtime measurement: how many agents rely on
   a deposit, how failure cascades, how challenge pressure varies with entrenchment.
 
 ## Behavioral Claims
@@ -22,8 +22,7 @@ different abstraction levels:
 
 ## Relationship to Other Files
 
-- **Bank.lean** provides the static substrate this file profiles.
-- **Predictions.lean** references these dynamics in behavioral predictions.
+- **EpArch.Bank** provides the static substrate this file profiles.
 -/
 
 import EpArch.Bank

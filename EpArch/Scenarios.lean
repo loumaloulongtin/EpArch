@@ -1,8 +1,8 @@
 /-
-EpArch/Scenarios.lean — Scenario Enrichment Predicates for Structural Convergence
+EpArch.Scenarios — Scenario Enrichment Predicates for Structural Convergence
 
 Six Represents* structures that enrich a WorkingSystem with concrete scenario data,
-enabling the abstract structural impossibility models from Minimality.lean to fire
+enabling the abstract structural impossibility models from EpArch.Minimality to fire
 on specific systems.  Also defines the bundled witness packages used by Feasibility.
 
 Six scenarios:
@@ -17,8 +17,8 @@ Bundled packages:
   SystemOperationalBundle -- scope + headers + bank dimensions
   WorldBridgeBundle       -- revocation + trust + redeemability dimensions
 
-Consumers: Feasibility.lean, Concrete/DeficientSystems.lean.
-Core convergence machinery lives in Convergence.lean (imported here).
+Consumers: EpArch.Feasibility, EpArch.Concrete.DeficientSystems.
+Core convergence machinery lives in EpArch.Convergence (imported here).
 -/
 
 import EpArch.Convergence

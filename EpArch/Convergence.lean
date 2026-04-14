@@ -1,44 +1,22 @@
 /-
-Convergence
+EpArch.Convergence — Convergence Theorem and Structural Proof Machinery
 
-The central convergence theorem and the full structural proof machinery:
-any WorkingSystem that is StructurallyForced and satisfies all six
-operational properties necessarily contains Bank primitives.
+The central convergence theorem: any WorkingSystem that is StructurallyForced
+and satisfies all six operational properties necessarily contains Bank primitives.
 
-## Structure
+Key exports:
+- StructurallyForced (forward-only forcing implications, capability → feature)
+- ForcingEmbedding (auditable disjunction connecting WorkingSystems to
+  structural models; embedding_to_structurally_forced derives
+  StructurallyForced constructively)
+- Bridge predicates (BridgeBubbles … BridgeRedeemability) and
+  bridge_*_impossible theorems (system-independent impossibility)
+- convergence_structural (the central theorem)
+- structural_impossibility (missing any feature blocks all-property satisfaction)
 
-1. `StructurallyForced` — forward-only forcing implications (capability → feature),
-   each field independently justified by a structural model in Minimality.lean.
-2. `ForcingEmbedding` — auditable disjunction connecting WorkingSystems to the abstract
-   structural models; `embedding_to_structurally_forced` derives StructurallyForced
-   constructively (no Classical reasoning).
-3. Bridge predicates (`BridgeBubbles` … `BridgeRedeemability`) and
-   `bridge_*_impossible` theorems — system-independent impossibility: committing to
-   the impossible scenario for any dimension is universally False.
-4. Six Scenario predicates (RepresentsDisagreement, RepresentsPrivateCoordination,
-   RepresentsMonotonicLifecycle, RepresentsDiscriminatingImport,
-   RepresentsBoundedVerification, RepresentsClosedEndorsement) — enriched
-   WorkingSystem instantiations that let the abstract structural models fire
-   on concrete systems.
-5. `convergence_structural` — the central theorem:
-   StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W.
-6. `structural_impossibility` — missing any feature blocks all-property satisfaction.
-
-## Proof Chain
-
-    ForcingEmbedding ──┐
-                       ├── StructurallyForced ──► convergence_structural
-    Structural models ─┘
-
-## Dependencies
-
-- **Minimality.lean:** WorkingSystem, SatisfiesAllProperties,
-  containsBankPrimitives, Has*, handles_*, all six structural models and their
-  impossibility theorems (AgentDisagreement, BoundedVerification,
-  DiscriminatingImport, MonotonicLifecycle, PrivateOnlyStorage, ClosedEndorsement,
-  flat_scope_impossible, verification_only_import_incomplete,
-  no_sound_complete_uniform_import, monotonic_no_exit, private_storage_no_sharing,
-  closed_system_unfalsifiable, iter).
+Depends on EpArch.Minimality for WorkingSystem, structural models, and
+impossibility theorems. Scenario predicates (Represents*) live in
+EpArch.Scenarios.
 -/
 
 import EpArch.Minimality
@@ -53,7 +31,7 @@ on `Pressure` is machine-exhaustive: if a new dimension is added, every `cases P
 proof requires a new case.
 
 Each `handles_pressure W P → forced_feature W P` instance is independently
-justified by a structural impossibility model in `Minimality.lean`. -/
+justified by a structural impossibility model in EpArch.Minimality. -/
 
 /-- The six structural impossibility consequences readable from a `WorkingSystem`'s
     stored `GroundedXStrict` evidence.
@@ -98,7 +76,7 @@ structure EvidenceConsequences (W : WorkingSystem) : Prop where
     `evidence` is about what the stored proof objects already carry. -/
 structure StructurallyForced (W : WorkingSystem) : Prop where
   /-- For every pressure dimension P, handling capability P forces feature P.
-      Justified per-dimension by the structural models in Minimality.lean. -/
+      Justified per-dimension by the structural models in EpArch.Minimality. -/
   forcing : ∀ P : Pressure, handles_pressure W P → forced_feature W P
   /-- Structural consequence bundle: the six impossibility results read from
       the stored `GroundedXStrict` evidence. -/

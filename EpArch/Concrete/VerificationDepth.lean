@@ -1,40 +1,12 @@
 /-
-EpArch/Concrete/VerificationDepth.lean — Kernel-grounded verification depth
+EpArch.Concrete.VerificationDepth — Kernel-grounded verification depth
 
-## What this file shows
-
-`W_bounded_verification` is not an empirical assumption about the world.
-It follows from the structural properties of the verification relation
-itself, as witnessed by the `DepthClaim` proposition family.
-
-`DepthClaim n` is a depth-indexed proposition family — one `step` constructor
-per level.  `bounded_verify`, the budget-d checker defined here, traverses
-exactly n recursive steps to decide a claim of depth n.  A budget-d verifier
-rejects `DepthClaim (d+1)`, which is true — making any fixed budget incomplete.
-
-## Architecture connection
-
-1. The bounded verify story (§2 of Minimality.lean): ABSTRACT.
-   "Some claims exceed the budget" is a structural scenario.
-
-2. This file: CONSTRUCTIVE.
-   The `DepthClaim` family witnesses that such claims exist within the
-   kernel itself, not just as a hypothetical scenario.  `BoundedVerification`
-   is not merely well-typed — it has a canonical kernel inhabitant for every
-   budget d.
-
-3. `DepthWorldCtx`: a `WorldCtx` instantiation where `VerifyWithin` is
-   grounded in structural depth.  Within this context, `W_bounded_verification`
-   is provable by construction — no world assumption needed beyond faithfully
-   modelling the depth relation.
-
-## The endorsement cycle
-
-An endorsement of `DepthClaim n` — a claim asserting that `DepthClaim n`
-has been validated — has structural depth n+1 (it wraps the original).
-Budget-n verifiers cannot check their own endorsements:
-`bounded_verify n (n+1) = false`.  This is the kernel-level shadow of the
-forcing argument for trust bridges and redeemability.
+DepthClaim is a depth-indexed proposition family witnessing that
+W_bounded_verification follows from structural properties of the
+verification relation, not from empirical world assumptions.
+bounded_verify rejects claims exceeding budget, making any fixed
+budget incomplete. DepthWorldCtx provides a WorldCtx instantiation
+where W_bounded_verification is provable by construction.
 -/
 
 import EpArch.WorldCtx
@@ -94,13 +66,13 @@ theorem no_budget_is_sufficient (d : Nat) :
 
 /-! ### Connection to BoundedVerification
 
-`BoundedVerification` in Minimality.lean is the structural scenario abstraction
+`BoundedVerification` in EpArch.Minimality is the structural scenario abstraction
 that sits above this layer.  The `DepthClaim` family witnesses it: for any
 budget d, `depth_bounded_verification d` supplies the required instance with
 `Claim := Nat`, `verify_cost := id`, `budget := d`, `hard_claim := d+1`.
 `depth_claim_provable` confirms `DepthClaim (d+1)` is genuinely true, so the
 rejection by `bounded_verify_incomplete` is a real incompleteness, not a
-vacuous one.  That bridge lives in Minimality.lean's direction, not here. -/
+vacuous one.  That bridge lives in EpArch.Minimality's direction, not here. -/
 /-- An endorsement of a depth-n claim has depth n+1 — one more constructor
     wrapping the original.  Budget-n verifiers cannot verify their own
     endorsements: `bounded_verify n (n+1) = false`. -/

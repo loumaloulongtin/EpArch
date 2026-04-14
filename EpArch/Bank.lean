@@ -7,33 +7,10 @@ withdrawal and export operators, the full lifecycle operator suite
 (Validate, Accept, Challenge, Repair, Revoke, Restore, Export, Import),
 status-transition theorems, and bubble hygiene structures.
 
-## Lifecycle Operators
-
-The lifecycle operators (`Validate_B`, `Accept_B`, `Challenge_B`, `Repair_B`,
-`Revoke_B`, `Restore_B`, `Export_B_C`, `Import_C`, `repair`, `τ_refresh`,
-`deprecate`) are guarded struct-update definitions: each takes a precondition
-on the deposit's current status and produces the expected next status.
-Status postconditions are proved as theorems from the guard conditions.
-
-Pipeline composition theorems (`validate_accept_pipeline`,
-`challenge_repair_pipeline`, `full_lifecycle_pipeline`) confirm that
+Lifecycle operators are guarded struct-update definitions: each takes a
+precondition on the deposit's current status and produces the expected
+next status. Pipeline composition theorems confirm that
 precondition/postcondition chains are internally consistent.
-
-The constructive and operational groundings live in:
-- **Semantics/StepSemantics.lean**: Concrete `Step` LTS.
-- **EpArch/Concrete/**: Zero-axiom concrete model split (Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity).
-
-Runtime behavioral profiling (`DepositDynamics`, `reliance_level`, `blast_radius`,
-`success_driven_bypass`, `blast_radius_scales_with_reliance`) lives in:
-- **Bank/Dynamics.lean**: Emergent runtime measurement layer.
-
-## Relationship to Other Files
-
-- **Basic.lean** provides the types (Deposit, Bubble, Agent, etc.)
-- **Header.lean** provides Header and the S/E/V structure
-- **Semantics/StepSemantics.lean** provides the operational semantics
-- **Commitments.lean** uses Bank predicates to define architectural commitments
-- **Minimality.lean** uses Bank features to prove convergence/impossibility
 -/
 
 import EpArch.Basic

@@ -1,8 +1,8 @@
 /-
-EpArch/Semantics/LTS.lean — Labeled Transition System Semantics
+EpArch.Semantics.LTS — Labeled Transition System Semantics
 
 Generic LTS definitions used for revision safety proofs.
-The EpArch-specific instantiation is in Semantics/StepSemantics.lean.
+The EpArch-specific instantiation is in EpArch.Semantics.StepSemantics.
 
 ## Purpose
 
@@ -136,7 +136,7 @@ theorem safety_preserved_under_refinement
 
 /-! ## Core Semantics = Semantics/StepSemantics
 
-The canonical LTS for EpArch is defined in Semantics/StepSemantics.lean.
+The canonical LTS for EpArch is defined in EpArch.Semantics.StepSemantics.
 RevisionSafety uses these definitions to establish revision safety
 for the revision-gate architecture.
 -/

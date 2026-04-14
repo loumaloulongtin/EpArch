@@ -1,34 +1,15 @@
 /-
-Health Predicates and Necessity Theorems
+EpArch.Health — Health Predicates and Necessity Theorems
 
-## Health Goals are Definitional
+Health predicates defined over CoreModel/CoreOps, making necessity theorems
+derivable from definitions rather than axioms.
 
-Health predicates are NOW defined over the core semantics (CoreOps), not as
-abstract boolean flags. This makes necessity theorems derivable from definitions
-rather than axioms.
-
-**Pattern:** HealthGoal(CoreOps) → NecessityTheorem (proved, not asserted)
-
-The key insight: health goals ARE predicates over traces and operations.
-- `SafeWithdrawalGoal`: submission of a deposit implies some authorization
-  witness exists — operationalizes the “safe withdrawal” property
-- `ReliableExportGoal`: false deposits do not appear true across bubble
-  boundaries (unless the target bubble has revision capability)
-- `CorrigibleLedgerGoal`: when revision capability exists, revisions
-  produce deposits that are true in the target bubble
-- `SoundDepositsGoal`: effective audit cost stays within verification budget
-- `SelfCorrectionGoal`: revision capability exists (precondition for any
-  self-correction trace)
-
-These are safety properties, and necessity follows from what the property requires.
-
-## Connections
-
-- **Invariants.lean:** structural invariants (no_deposit_without_redeemability, etc.)
-  constrain what valid deposits look like; health goals build on these constraints
-- **Agent/Imposition.lean:** uses health goals to prove design-forcing
-  (constraints + goal + ¬mechanism → contradiction)
-- **Mechanisms.lean:** bridge theorems connect health predicates to mechanism predicates
+Key exports:
+- SafeWithdrawalGoal, ReliableExportGoal, CorrigibleLedgerGoal,
+  SoundDepositsGoal, SelfCorrectionGoal
+- Necessity theorems: corrigible_needs_revision,
+  self_correction_needs_revision, sound_deposits_needs_verification
+- FullSystemHealth (bundle)
 -/
 
 import EpArch.Basic

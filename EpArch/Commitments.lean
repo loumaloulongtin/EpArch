@@ -1,5 +1,5 @@
 /-
-EpArch/Commitments.lean — Architecture Commitments
+EpArch.Commitments — Architecture Commitments
 
 The 8 explicit architectural commitments that define what the EpArch
 framework requires of any conforming system.
@@ -16,7 +16,7 @@ hypothesis bundles.
     `caveated_authorization_does_not_force_certainty` (Direction 2 — header burden)
 - C2 (`no_universal_ledger`) — `WorldCtx.no_ledger_tradeoff` (EpArch CAP Theorem):
     proved from `W_partial_observability` + `obs_based`; for bubble-local ledgers
-    `hObs` is automatic via `WorldCtx.localLedger_is_obs_based` (see WorldCtx.lean).
+    `hObs` is automatic via `WorldCtx.localLedger_is_obs_based` (see EpArch.WorldCtx).
 - C3 (`SEVFactorization`)    — by rfl
 - C4b (`redeemability_requires_more_than_consensus`) — proved from `intra_bubble_only`
     and the definitional gap between `consensus` (True) and `redeemable`
@@ -42,7 +42,7 @@ design requirements.
 - **Constructive witness:** EpArch/Concrete/ provides a concrete
   model satisfying ALL 8 commitments — proving they are consistent and
   non-vacuous.
-- **Operational HOW:** Semantics/StepSemantics.lean gives the constructive
+- **Operational HOW:** EpArch.Semantics.StepSemantics gives the constructive
   lifecycle that grounds the proved commitments.
 
 ## Commitment List
@@ -182,9 +182,9 @@ theorem ladder_bank_split_from_innovation_and_headers
 
 /-! Commitment 2 (Scoped Bubbles): no global ledger can simultaneously support
     innovation and coordination.  This is now a **proved theorem** derived from
-    `W_partial_observability` and `obs_based` in WorldCtx.lean:
+    `W_partial_observability` and `obs_based` in EpArch.WorldCtx:
     `WorldCtx.no_ledger_tradeoff` — the EpArch CAP Theorem.
-    See §Ledger Tradeoff in WorldCtx.lean. -/
+    See §Ledger Tradeoff in EpArch.WorldCtx. -/
 
 
 /-! ## Commitment 3: S/E/V Factorization -/
@@ -193,7 +193,7 @@ theorem ladder_bank_split_from_innovation_and_headers
 
     Follows directly from the Deposit record structure (witness is d.h.S, d.h.E, d.h.V).
     The stronger architectural commitment — that validation failures localize to exactly
-    one of S, E, V — is expressed by `has_strong_SEV_factorization` in Semantics/StepSemantics.lean. -/
+    one of S, E, V — is expressed by `has_strong_SEV_factorization` in EpArch.Semantics.StepSemantics. -/
 theorem SEVFactorization (d : Deposit PropLike Standard ErrorModel Provenance) :
   ∃ (s : Standard) (e : ErrorModel) (v : Provenance),
     d.h.S = s ∧ d.h.E = e ∧ d.h.V = v :=
@@ -944,7 +944,7 @@ theorem WeakCtx_contradicts_TractionAuthorizationSplit
     Dependency profiles:
     - `no_universal_ledger`, `innovation_excludes_coordination`:
       take `hObs : C.obs_based L` as an explicit assumption.
-    - `no_obs_based_universal_ledger` (WorldCtx.lean): existential-negation
+    - `no_obs_based_universal_ledger` (EpArch.WorldCtx): existential-negation
       headline form — no such obs-based ledger can exist.
     - `no_universal_local_ledger`: `hObs` is automatic for bubble-local ledgers;
       partial observability alone forces the tradeoff. -/

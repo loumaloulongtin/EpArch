@@ -1,5 +1,5 @@
 /-
-Non-Trivial Predictions
+EpArch.Predictions — Non-Trivial Predictions
 
 Predictions where the EpArch model diverges from intuition
 and the model wins empirically. Encoded as structured claims

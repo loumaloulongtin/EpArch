@@ -1,12 +1,10 @@
 /-
-EpArch/Concrete/DeficientSystems.lean — Deficient System Witnesses and Bridge Impossibility
+EpArch.Concrete.DeficientSystems — Deficient System Witnesses and Bridge Impossibility
 
-Six concrete systems each lacking one feature, with:
-  - Scenario-data structures (RepresentsX)
-  - Structural model firing theorems
-  - Bridge-impossibility theorems
+Concrete systems each lacking one feature, with scenario-data structures,
+structural model firing theorems, and bridge-impossibility theorems.
 
-Part of: EpArch/Concrete/ split of ConcreteLedgerModel.lean
+Part of the EpArch.Concrete module family.
 -/
 
 import EpArch.Concrete.WorkingSystem
@@ -309,7 +307,7 @@ theorem noRevocation_bad_deposit_stuck (n : Nat) :
     If some `n` steps escape the accepted state, `bridge_revocation_impossible`
     derives the contradiction via induction — and `no_revocation_lacks_revocation`
     supplies the refutation.  The inductive force of `monotonic_no_exit` is
-    fully preserved in the `bridge_revocation_impossible` theorem in Minimality.lean. -/
+    fully preserved in the `bridge_revocation_impossible` theorem in EpArch.Minimality. -/
 theorem noRevocation_bridge_impossible
     (n : Nat)
     (h : iter lifecycle_step n LifecycleState.accepted ≠ LifecycleState.accepted) :

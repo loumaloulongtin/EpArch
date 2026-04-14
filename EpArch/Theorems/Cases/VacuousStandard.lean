@@ -17,7 +17,7 @@ E and V are both *correct*. Their correct content jointly witnesses that S carri
 a structural void. This demonstrates field independence: S can be broken while E and V
 are doing their jobs perfectly.
 
-Contrast with Standard.lean (relational S-failure):
+Contrast with EpArch.Theorems.Cases.Standard (relational S-failure):
 - Relational: what makes the deposit pass or fail differs per consuming agent.
 - Absolute/void: the two structural conditions are present in the fields
   regardless of which agent inspects the deposit.

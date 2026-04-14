@@ -1,5 +1,5 @@
 /-
-EpArch/Concrete/WorkedTraces.lean — Worked Diagnostic Traces
+EpArch.Concrete.WorkedTraces — Worked Diagnostic Traces
 
 These are case studies from epistemic failure, encoded as structured data.
 Each trace shows: where the failure localized, what primitive broke,

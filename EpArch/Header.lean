@@ -6,28 +6,9 @@ Deposit record that packages a claim with its full metadata. Also contains
 the Observational Completeness theorems: two deposits agreeing on all named
 fields are provably identical, leaving no hidden degrees of freedom.
 
-## Field Summary
-
-- **S (Standard):** The validation standard applied to this deposit.
-- **E (ErrorModel):** Known error modes and their exposures.
-- **V (Provenance):** Attestation lineage — where this validation came from.
-- **τ (tau):** Temporal validity marker (not wall-clock time).
-- **acl:** Access control list governing deposit operations.
-- **redeem:** Pointer to a constraint surface (external reality check).
-
-The S/E/V factorization is what enables field-localized diagnosis: knowing
+The S/E/V factorization enables field-localized diagnosis: knowing
 WHICH of the three independent fields failed tells you whether the problem
 is a standards failure (S), a detection miss (E), or a provenance weakness (V).
-See Theorems.lean for the Gettier and fake-barn route analyses that
-exploit this factorization.
-
-## Usage
-
-These types appear throughout the codebase:
-- **Semantics/StepSemantics.lean:** operational lifecycle (deposit, challenge, withdraw)
-- **EpArch/Concrete/:** zero-axiom constructive model witnessing all headers
-- **Theorems.lean:** epistemological analyses (Gettier, fake barns, safety/sensitivity)
-- **Bank.lean:** governance theorems over deposits with these headers
 -/
 
 import EpArch.Basic

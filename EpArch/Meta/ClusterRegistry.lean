@@ -1,5 +1,5 @@
 /-
-EpArch/Meta/ClusterRegistry.lean — Cluster Tag Registry and Routing
+EpArch.Meta.ClusterRegistry — Cluster Tag Registry and Routing
 
 Defines the EpArchConfig language, the 29 ClusterTag values and their
 per-family enumerations, the authoritative allXxxClusters lists, and the
@@ -8,7 +8,7 @@ routing/display functions.
 No EpArch-specific imports — this layer is pure metadata: every type here
 is self-contained and depends only on Lean 4 core.
 
-Imported by `Meta/Config.lean`, which adds the proof-carrying layer on top.
+Imported by EpArch.Meta.Config, which adds the proof-carrying layer on top.
 -/
 
 namespace EpArch.Meta.Config
@@ -103,7 +103,7 @@ inductive ClusterTag where
 /-! ## §2b  Per-Family Cluster Enumerations
 
 Six `EnabledXxxCluster` inductives — one per family — enable per-family proof
-carriers in `Config.lean`.  Tier 2 uses a direct `ConstraintProof` record;
+carriers in EpArch.Meta.Config.  Tier 2 uses a direct `ConstraintProof` record;
 all other families use indexed inductive witness carriers. -/
 
 /-- The six Tier 2 constraint-forcing clusters. -/
@@ -148,7 +148,7 @@ inductive EnabledLatticeCluster where
 It records the three fields that determine routing and display — no proofs.
 `constraintMeta` is the single source of truth for this data; `clusterEnabled`,
 `clusterDescription`, and `EnabledConstraintCluster.toClusterTag` all derive
-their Tier 2 answers from it.  `Config.lean` extends this record with a
+their Tier 2 answers from it.  EpArch.Meta.Config extends this record with a
 `witness : ConstraintProof` field via `ConstraintClusterSpec extends ConstraintClusterMeta`.
 
 Placed here (after §2 and §2b) so both `ClusterTag` and `EnabledConstraintCluster`
@@ -156,7 +156,7 @@ are in scope. -/
 
 /-- Metadata-only record for a Tier 2 constraint-forcing cluster.
     Contains the three fields needed for routing and display but **no proof**.
-    Extended in `Config.lean` by `ConstraintClusterSpec` which adds `witness`. -/
+    Extended in EpArch.Meta.Config by `ConstraintClusterSpec` which adds `witness`. -/
 structure ConstraintClusterMeta where
   globalTag   : ClusterTag
   enabledBy   : EpArchConfig → Bool
@@ -242,7 +242,7 @@ def EnabledLatticeCluster.toClusterTag : EnabledLatticeCluster → ClusterTag
 `clusterEnabled` is the single source of truth for which clusters a given
 `EpArchConfig` activates.  `explainConfig`/`showConfig` are derived from it.
 
-The per-family canonical lists live here (not in `Config.lean`) because they
+The per-family canonical lists live here (not in EpArch.Meta.Config) because they
 are metadata objects — pure enumeration facts, no proofs.  The global
 `allClusters` list is derived from them so ordering stays consistent
 automatically.  `constraintClusterOfTag?` enables Tier 2 routing and display

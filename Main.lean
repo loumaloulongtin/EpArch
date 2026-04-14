@@ -58,40 +58,40 @@ The formalization proves these claims:
 
 ## Recommended Reading Order
 
-1. **Basic.lean** — Core types: Agent, Claim, Bubble, Deposit, Header, Field, etc.
-2. **Header.lean** — The S/E/V/τ/acl/redeem header structure and observational
+1. **EpArch.Basic** — Core types: Agent, Claim, Bubble, Deposit, Header, Field, etc.
+2. **EpArch.Header** — The S/E/V/τ/acl/redeem header structure and observational
    completeness theorems.
-3. **Bank.lean** — Bank substrate: lifecycle operators (Validate, Challenge,
+3. **EpArch.Bank** — Bank substrate: lifecycle operators (Validate, Challenge,
    Repair, Revoke, etc.) as concrete guarded definitions.
-4. **Semantics/LTS.lean** — Generic labeled transition systems, traces, invariants,
+4. **EpArch.Semantics.LTS** — Generic labeled transition systems, traces, invariants,
    refinement, and safety preservation.
-5. **Semantics/StepSemantics.lean** — The constructive operational semantics: SystemState,
+5. **EpArch.Semantics.StepSemantics** — The constructive operational semantics: SystemState,
    Action, Step relation, competition gate theorem.
-6. **Commitments.lean** — Eight architectural commitments (all proved as standalone
+6. **EpArch.Commitments** — Eight architectural commitments (all proved as standalone
    theorems; `commitments_pack` bundles the unconditional ones).
-7. **Minimality.lean** — The convergence/impossibility theorems: constraints force
+7. **EpArch.Minimality** — The convergence/impossibility theorems: constraints force
    features, removal breaks properties.
-8. **WorldCtx.lean** — Parametric world semantics: the interface through which
+8. **EpArch.WorldCtx** — Parametric world semantics: the interface through which
    world-level assumptions (lies possible, bounded verification, partial
    observability) enter the formalization.
-9. **Semantics/RevisionSafety.lean** — Safe extensions: adding constraints doesn't break
+9. **EpArch.Semantics.RevisionSafety** — Safe extensions: adding constraints doesn't break
    existing theorems (the Compatible/transport_core machinery).
 10. **Theorems/** — Derived theorems, split into eight focused modules:
-    - **Withdrawal.lean** — Withdrawal gates, repair lifecycle, diagnosis infrastructure
+    - **Withdrawal** — Withdrawal gates, repair lifecycle, diagnosis infrastructure
     - **Cases/** — Classic epistemology case types, one file per case (open for contributions):
       `Gettier`, `FakeBarn`, `Standard`, `VacuousStandard`, `TypeErrors` (Lottery, Confabulation);
-      `Cases.lean` is the umbrella re-export
-    - **Headers.lean** — Diagnosability metrics, field checkability, header-dispute link
-    - **Modal.lean** — WorldCtx-parameterized modal cases (Safety↔V, Sensitivity↔E)
-    - **Dissolutions.lean** — Type-separation dissolutions (closure, luminosity, Moorean,
+      `EpArch.Theorems.Cases` is the umbrella re-export
+    - **Headers** — Diagnosability metrics, field checkability, header-dispute link
+    - **Modal** — WorldCtx-parameterized modal cases (Safety↔V, Sensitivity↔E)
+    - **Dissolutions** — Type-separation dissolutions (closure, luminosity, Moorean,
       preface, trace-level), progress metrics, dissolution criteria
-    - **Pathologies.lean** — Literature pathology diagnoses (testimony through extended
+    - **Pathologies** — Literature pathology diagnoses (testimony through extended
       cognition), bridge theorems, pathology summary table
-    - **Strip.lean** — All stripping results: provenance loss (`stripV`/`Payload`) and
+    - **Strip** — All stripping results: provenance loss (`stripV`/`Payload`) and
       header loss (`strip`/`PayloadStripped`); competition gate corners 3, 4, 10
-    - **Corners.lean** — Corner theorems 1, 2, 6, 7, 8, 9; entrenchment;
+    - **Corners** — Corner theorems 1, 2, 6, 7, 8, 9; entrenchment;
       lottery *gate* (operational: `lottery_no_deposit_blocks_withdraw`, `lottery_paradox_dissolved_architecturally`);
-      cf. `Cases/TypeErrors.lean` for the type-error *diagnosis* side
+      cf. `EpArch.Theorems.Cases.TypeErrors` for the type-error *diagnosis* side
 11. **EpArch/Concrete/** — Zero-axiom constructive witnesses split into five focused
     modules (Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity).
     Together they prove non-vacuity for all commitments.
@@ -105,17 +105,17 @@ No file imports from a layer above its own.
 Layer 0 (Types):      Basic, Header
 Layer 1 (Substrate):  Bank, Semantics/LTS, WorldCtx
 Layer 2 (Semantics):  Semantics/StepSemantics, Semantics/RevisionSafety, Predictions, Concrete/WorkedTraces
-Layer 3 (Theory):     Commitments, SystemSpec, Invariants, Minimality
-Layer 4 (Derived):    Theorems/{Withdrawal,Cases,Headers,Modal,Dissolutions,Pathologies,Strip,Corners,Diagnosability}, Health, Semantics/ScopeIrrelevance
+Layer 3 (Theory):     Commitments, SystemSpec, Invariants, Minimality, Convergence, Scenarios
+Layer 4 (Derived):    Theorems/{Withdrawal,Cases,Headers,Modal,Dissolutions,Pathologies,Strip,Corners,Diagnosability,BehavioralEquivalence}, Health, Semantics/ScopeIrrelevance
 Layer 5 (Agent):      Mechanisms, Agent/{Constraints, Imposition, Resilience, Corroboration}
-Layer 6 (Witness):    WorldWitness, Concrete/{Types,Commitments,WorkingSystem,DeficientSystems,NonVacuity}, Concrete/Realizer, Feasibility
+Layer 6 (Witness):    WorldWitness, WorldBridges, Concrete/{Types,Commitments,WorkingSystem,DeficientSystems,NonVacuity}, Concrete/Realizer, Feasibility
 Layer 7 (Adversarial): Adversarial/{Base, Obligations}
 Layer 8 (Meta):       Meta/* (incl. Meta/Modular, Meta/Config, Meta/TheoremTransport, Meta/LeanKernel/*)
 ```
 
 ## Build Surface
 
-`lake build` (via `Main.lean`) is the single build target.
+`lake build` (via Main) is the single build target.
 
 ## Axiom Declarations
 
@@ -125,7 +125,7 @@ are proved standalone theorems.  C1 (Traction/Authorization Split) is proved by
 `caveated_authorization_does_not_force_certainty`.  Some domain primitives are
 `opaque` constants (e.g., `agentTraction`, `ignores_bank_signal`, `pushback`,
 `τ_compress`, `V_spoof`, and the performance/adversarial-pressure opaques in
-`Theorems.Dissolutions` / `Theorems.Pathologies` / `AdversarialBase.lean`); others, including `certainty_L` and
+`Theorems.Dissolutions` / `Theorems.Pathologies` / `Adversarial.Base`); others, including `certainty_L` and
 `knowledge_B`, are ordinary `def`s grounded in their respective types.
 None are `axiom` declarations.
 -/

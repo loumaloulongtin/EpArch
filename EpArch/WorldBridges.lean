@@ -1,26 +1,26 @@
 /-
-EpArch/WorldBridges.lean — World-to-Structural Bridge Theorems
+EpArch.WorldBridges — World-to-Structural Bridge Theorems
 
-Connects the W_* world assumption bundles (WorldCtx.lean) to the structural
-impossibility models (Minimality.lean) and the Represents* scenario witnesses
-(Scenarios.lean).  These are the load-bearing convergence results that sit
+Connects the W_* world assumption bundles (EpArch.WorldCtx) to the structural
+impossibility models (EpArch.Minimality) and the Represents* scenario witnesses
+(EpArch.Scenarios).  These are the load-bearing convergence results that sit
 above the abstract structural machinery and below the concrete witnesses.
 
 ## Headline Theorems
 
-- \grounded_world_and_structure_force_bank_primitives\: the full 20-parameter
+- `grounded_world_and_structure_force_bank_primitives`: the full 20-parameter
   convergence theorem — uses six Represents* witnesses plus per-dimension bridge
   hypotheses to constructively derive containsBankPrimitives.
-- \undled_structure_forces_bank_primitives\: the packaged 4-argument form
+- `bundled_structure_forces_bank_primitives`: the packaged 4-argument form
   using SystemOperationalBundle + WorldBridgeBundle.
-- \world_assumptions_force_bank_primitives\: world-conditional variant using
+- `world_assumptions_force_bank_primitives`: world-conditional variant using
   WorldCtx W_* bundles directly.
-- \kernel_world_forces_bank_primitives\: zero-hypothesis corollary.
+- `kernel_world_forces_bank_primitives`: zero-hypothesis corollary.
 
 ## Dependencies
 
-WorldWitness.lean, Concrete/Realizer.lean (pulls Concrete.WorkingSystem),
-Scenarios.lean (pulls Convergence + Minimality).
+EpArch.WorldWitness, EpArch.Concrete.Realizer (pulls Concrete.WorkingSystem),
+EpArch.Scenarios (pulls Convergence + Minimality).
 -/
 
 import EpArch.WorldWitness
@@ -31,8 +31,8 @@ namespace EpArch.WorldBridges
 
 /-! ## World-to-Structural Bridges
 
-These theorems connect the W_* world assumption bundles (WorldCtx.lean) to the
-structural impossibility models (Minimality.lean).  Each bridge shows that any world
+These theorems connect the W_* world assumption bundles (EpArch.WorldCtx) to the
+structural impossibility models (EpArch.Minimality).  Each bridge shows that any world
 satisfying a W_* bundle supplies enough data to construct a matching structural
 scenario instance, so the forcing results apply without a separate construction step. -/
 
@@ -183,7 +183,7 @@ theorem structurally_forced_is_world_aware (C : @EpArch.WorldCtx.{0}) (W : Worki
     with no free assumptions.
 
     Proof path:
-    (1) WitnessCtx (WorldWitness.lean) witnesses all three W_* bundles.
+    (1) WitnessCtx (EpArch.WorldWitness) witnesses all three W_* bundles.
     (2) concrete_structurally_forced gives StructurallyForced ConcreteWorkingSystem.
     (3) structurally_forced_is_world_aware converts that to WorldAwareSystem WitnessCtx.
     (4) concrete_satisfies_all_properties gives SatisfiesAllProperties.

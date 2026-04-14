@@ -1,11 +1,11 @@
 /-
-EpArch/Concrete/Types.lean — Concrete Type Definitions
+EpArch.Concrete.Types — Concrete Type Definitions
 
 Ground-level concrete types for the EpArch non-vacuity witness:
   CProp = String, CStandard = Nat, CErrorModel/CProvenance = List String.
 No imports required — all types are ground Lean 4 types.
 
-Part of: EpArch/Concrete/ split of ConcreteLedgerModel.lean
+Part of the EpArch.Concrete module family.
 -/
 namespace EpArch.ConcreteModel
 

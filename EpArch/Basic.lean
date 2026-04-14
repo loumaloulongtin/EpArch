@@ -18,7 +18,7 @@ The EpArch model treats knowledge management as a banking system:
 - **Bubbles** are scoped validation domains — each with its own acceptance
   standards. Think of a scientific field, a legal jurisdiction, or a newsroom.
   Each bubble has its own Accept function and its own ledger of deposits.
-- **Banks** (defined in Bank.lean) are shared ledgers of deposits within a bubble.
+- **Banks** (defined in the Bank module) are shared ledgers of deposits within a bubble.
 
 The "Ladder vs Bank" distinction is central:
 - **Ladder** (agent-side): An agent's internal traction state for a claim.
@@ -38,12 +38,9 @@ knowledge is public authorization.
 All base types are minimal Nat-indexed inductives. This gives every type
 a canonical inhabitant (e.g., `Bubble.mk 0`), `DecidableEq`, and `Repr`
 without existence axioms — enabling fully constructive witnesses in
-`EpArch/Concrete/`.
-
-## File Dependencies
+the EpArch.Concrete module family.
 
 This file has no imports — it is the root of the dependency tree.
-Almost every other file in the project imports Basic.lean.
 -/
 
 namespace EpArch
@@ -170,7 +167,7 @@ def ladder_stage (a : Agent) (P : Claim) : LadderStage :=
     separate opaque predicate; Certainty alone does NOT close the channel.
     Entrenchment = Certainty + closed channel (see `Entrenched`).
 
-    Independence from Bank authorization: see §C1 in Commitments.lean.
+    Independence from Bank authorization: see §C1 in EpArch.Commitments.
     `innovation_allows_traction_without_authorization` (certainty_L ⊄ knowledge_B)
     `caveated_authorization_does_not_force_certainty` (knowledge_B ⊄ certainty_L). -/
 def certainty_L (a : Agent) (P : Claim) : Prop :=
@@ -209,7 +206,7 @@ Candidate → Validated → Deposited → (Quarantined → Revoked or Repaired).
 Repaired deposits loop back to Candidate for revalidation, not to Deposited.
 These statuses control what operations are available. For example, only
 Deposited claims can be withdrawn (relied upon), and only Quarantined
-claims can be repaired or revoked. See Semantics/StepSemantics.lean for the
+claims can be repaired or revoked. See EpArch.Semantics.StepSemantics for the
 operational transition system that enforces these rules.
 
 Note: Some descriptions list only four statuses (Candidate, Deposited,

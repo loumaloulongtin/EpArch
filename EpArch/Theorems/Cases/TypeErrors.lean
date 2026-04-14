@@ -22,17 +22,17 @@ instantiated in different substrates:
 Adding a new type-error case: create a structure carrying the relevant fields,
 then prove `TypeError (your_ladder_prop) (your_bank_prop)` directly.
 
-## Division of Labor with Corners.lean
+## Division of Labor with EpArch.Theorems.Corners
 
 This file carries the *diagnosis*: LotteryIsTypeError and confabulation_is_type_error
 identify the structural pattern (Ladder-state conflated with Bank-state).
 
-Theorems/Corners.lean carries the *operational consequence*: lottery_no_deposit_blocks_withdraw
+EpArch.Theorems.Corners carries the *operational consequence*: lottery_no_deposit_blocks_withdraw
 shows Step.withdraw is literally uninhabited without isDeposited, and
 lottery_paradox_dissolved_architecturally is the full dissolution theorem.
 
 Both modules use the word "lottery" but do different work. Start here for the
-category-error diagnosis; go to Corners.lean for the step-level operational result.
+category-error diagnosis; go to EpArch.Theorems.Corners for the step-level operational result.
 -/
 import EpArch.Basic
 import EpArch.Semantics.StepSemantics

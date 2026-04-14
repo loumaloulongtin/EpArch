@@ -1,19 +1,19 @@
 /-
-EpArch/Meta/Tier4Transport.lean — Tier 4 Transport Closure
+EpArch.Meta.Tier4Transport — Tier 4 Transport Closure
 
 Certifies that all theorem clusters in the main library (`Theorems/`,
-Commitments.lean) are machine-checked and transport-safe.
+Commitments) are machine-checked and transport-safe.
 
 ## The Clusters
 
 ### Cluster A — Standalone commitments theorem family
 
-All 8 architectural commitments are proved standalone theorems in Commitments.lean.
+All 8 architectural commitments are proved standalone theorems in EpArch.Commitments.
 `commitments_pack` bundles the unconditional ones (C3/C4b/C7b/C8); C1, C2, C5, C6b
 are proved as separately named theorems.  Cluster A is an unconditional theorem
 family — no transport machinery needed, no hypothesis context to extend.
 
-Key theorem family: `commitments_pack` (Commitments.lean).
+Key theorem family: `commitments_pack` (EpArch.Commitments).
 
 ### Cluster B — Standalone structural theorems
 
@@ -27,7 +27,7 @@ Key theorem: `structural_theorems_unconditional`.
 Two sub-results:
 
 **§3b — LTS-Universal Operational Theorems**
-The withdrawal/repair/submit theorems from `Theorems/Withdrawal.lean` are Cluster-B-style:
+The withdrawal/repair/submit theorems from EpArch.Theorems.Withdrawal are Cluster-B-style:
 they hold for every `SystemState`/`Step` instance by virtue of constructor
 preconditions. No model parameter varies, so no transport is needed.
 
@@ -75,7 +75,7 @@ variable {PropLike Standard ErrorModel Provenance : Type}
 
 /-! ## §1  Cluster A: Standalone Commitments Family -/
 
-/-! All 8 architectural commitments are proved standalone theorems in `Commitments.lean`.
+/-! All 8 architectural commitments are proved standalone theorems in `EpArch.Commitments`.
     `commitments_pack` packages the four universally-closable commitment theorems
     (C3/C4b/C7b/C8); C4b (`redeemability_requires_more_than_consensus`) is the
     commitment-specific result that distinguishes A from `structural_theorems_unconditional` (B).
@@ -180,7 +180,7 @@ theorem concrete_bank_vacuous_transport
 
 /-! ## §3b  LTS-Universal Theorems (Operational Layer)
 
-The concrete operational theorems from `Theorems/Withdrawal.lean` mirror Cluster B:
+The concrete operational theorems from EpArch.Theorems.Withdrawal mirror Cluster B:
 they are universally valid about the `Step` LTS and hold for **every**
 `SystemState` instance with no model parameter to transport.
 
@@ -230,7 +230,7 @@ This section closes the actual Cluster C gap: not just the competition gate
 any compatible extension of a concrete-bank-shaped CoreModel.
 
 Proof: direct application of the five individual transport theorems from
-`TheoremTransport.lean` to a `ConcreteBankModel` +  `Compatible` witness.
+`TheoremTransport` to a `ConcreteBankModel` +  `Compatible` witness.
 
 Note: the ∃-component of `CorrigibleLedgerGoal` requires `SurjectiveCompatible`
 (see `transport_corrigible_ledger`). This theorem covers the universal part. -/
@@ -333,7 +333,7 @@ theorem tier4_transport_pack
          (The ∃-part of CorrigibleLedgerGoal requires SurjectiveCompatible.)
 
     Note: Cluster A (standalone commitments) is not included here — this pack
-    covers Clusters B + C only.  `commitments_pack` in Commitments.lean certifies
+    covers Clusters B + C only.  `commitments_pack` in EpArch.Commitments certifies
     C3/C4b/C7b/C8 unconditionally; C1/C2/C5/C6b are proved as named theorems. -/
 theorem tier4_full_pack
     {Reason Evidence : Type}

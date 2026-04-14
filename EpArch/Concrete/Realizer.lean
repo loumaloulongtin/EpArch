@@ -1,5 +1,5 @@
 /-
-EpArch/Concrete/Realizer.lean — System Realizer Interface
+EpArch.Concrete.Realizer — System Realizer Interface
 
 This module defines a minimal "system realizer" type: an object that
 witnesses the satisfiability of the commitment bundle.
@@ -14,7 +14,7 @@ at least one concrete model satisfying all core commitments.
 
 - Thin interface: only fields we can populate from existing code
 - Commitments as Prop field, not definitional equalities
-- ConcreteRealizer witnesses via EpArch/Concrete/
+- ConcreteRealizer witnesses via the EpArch.Concrete module family
 - SuccessfulSystem bundles WorkingSystem + StructurallyForced + SatisfiesAllProperties
 
 -/
@@ -59,7 +59,7 @@ structure Realizer where
 
 /-- Canonical witness: the concrete ledger model already in the repo.
 
-    This is a trivial wrapper—the work was done in EpArch/Concrete/Commitments.lean.
+    This is a trivial wrapper—the work was done in EpArch.Concrete.Commitments.
     The Realizer just packages it into a stable type-level object. -/
 def ConcreteRealizer : Realizer :=
   { commitments := EpArch.ConcreteModel.all_commitments_satisfiable }

@@ -1,5 +1,5 @@
 /-
-EpArch/Meta/FalsifiableNotAuthorizable.lean — Meta-Status Proof Pack
+EpArch.Meta.FalsifiableNotAuthorizable — Meta-Status Proof Pack
 
 This module packages the meta-level claims about the theory itself:
 - (P1) Falsifiable: coherent countercontexts exist

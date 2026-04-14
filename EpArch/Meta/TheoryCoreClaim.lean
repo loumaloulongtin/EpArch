@@ -1,5 +1,5 @@
 /-
-EpArch/Meta/TheoryCoreClaim.lean — Optional Stretch: First-Class Theory Core Claim
+EpArch.Meta.TheoryCoreClaim — Optional Stretch: First-Class Theory Core Claim
 
 This module implements the optional stretch goal: encoding "the theory itself"
 as a first-class claim symbol `theory_core` that is provably underdetermined

@@ -1,42 +1,17 @@
 /-
-Minimality and Impossibility Theorems
+EpArch.Minimality — Minimality and Impossibility Theorems
 
-Formal convergence result: any system satisfying the operational
-constraints necessarily contains the Bank primitives.  The theorems
-here prove this via structural impossibility: remove primitive X and
-constraint Y cannot be satisfied.
+Structural impossibility models: remove primitive X and constraint Y
+cannot be satisfied. The convergence theorem itself
+(convergence_structural) lives in EpArch.Convergence.
 
 The core claim is convergence under constraints, not metaphysical necessity.
-These theorems formalize that convergence.
+Any working solution must contain these structural elements, but
+implementations can differ.
 
-## Central Role
-
-This file contains the structural impossibility models from which the
-convergence result follows.  The convergence theorem itself
-(`convergence_structural`) lives in `Convergence.lean`.  Each scenario
-proves: remove primitive X and the system cannot satisfy operational
-constraint Y — establishing necessity per dimension.
-
-This is convergence, not uniqueness: any working solution must contain
-these structural elements, but implementations can differ.
-
-## Key Definitions
-
-- `WorkingSystem` — record wrapping the `SystemSpec` configuration flags
-- `StructurallyForced` — forward-direction forcing implications (in Convergence.lean)
-
-## Related Files
-
-- **Theorems/BehavioralEquivalence.lean:** sharp observation-boundary equivalence theorems
-  (`Input`, `Observation`, `Behavior`, `BehaviorallyEquivalent`, equivalence theorems)
-- **Convergence.lean:** `StructurallyForced`, `ForcingEmbedding`, Bridge predicates,
-  Scenario predicates, `convergence_structural`, `structural_impossibility`
-
-## Dependencies
-
-- **SystemSpec.lean:** provides the `SystemSpec` structure that `MinimalConstraints` wraps
-- **Commitments.lean:** the commitments that are shown to be forced
-- **EpArch/Concrete/WorkingSystem.lean:** proves `WorkingSystem` is nonempty (non-vacuity)
+Key exports:
+- WorkingSystem (record wrapping SystemSpec configuration flags)
+- Six structural impossibility models and their impossibility theorems
 -/
 
 import EpArch.Basic
@@ -366,7 +341,7 @@ from that structure alone — no biconditionals needed.
 
 After the six models, the convergence proof machinery (`StructurallyForced`,
 `ForcingEmbedding`, Bridge predicates, Scenario predicates,
-`convergence_structural`) lives in `Convergence.lean`.
+`convergence_structural`) lives in EpArch.Convergence.
 -/
 
 
@@ -680,7 +655,7 @@ theorem delegation_necessary_iff_locally_inadequate (M : DelegatedVerification) 
 /-! ### §2c. Kernel Witness: BoundedVerification is Non-Vacuous by Construction
 
 The `BoundedVerification` structure and `verification_only_import_incomplete`
-are the architectural abstractions.  `DepthClaim` (VerificationDepth.lean) is
+are the architectural abstractions.  `DepthClaim` (EpArch.Concrete.VerificationDepth) is
 their semantic ground: it witnesses that claim families with irreducible
 verification cost exist within the kernel itself, not just as a structural
 hypothesis.
@@ -1334,11 +1309,11 @@ explicit: given any `GroundedX` witness, the matching impossibility result fires
 the non-trivial `Prop` that falls out of the bridge.
 
 **Relation to WorkingSystem.**  `WorkingSystem` carries six `Option GroundedXStrict`
-fields.  The `GroundedXStrict` structures are defined in `SystemSpec.lean` (where
+fields.  The `GroundedXStrict` structures are defined in EpArch.SystemSpec (where
 they only depend on `GroundedX` fields).
 
 **Construction convention.**
-- `G.toStrict` — standard path; inline proof from base fields (in `SystemSpec.lean`,
+- `G.toStrict` — standard path; inline proof from base fields (in EpArch.SystemSpec,
   no dependency on the named theorems here).  Used by `withGroundedBehavior`,
   `ConcreteWorkingSystem`, and `PartialGroundedSpec.toWorkingSystem`.
 - `GroundedXStrict.mk' G` — thin alias: `mk' G := G.toStrict`.  Kept as the

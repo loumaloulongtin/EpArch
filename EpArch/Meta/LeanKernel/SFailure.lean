@@ -1,5 +1,5 @@
 /-
-EpArch/Meta/LeanKernel/SFailure.lean â Lean Kernel S-Field Failure Taxonomy
+EpArch.Meta.LeanKernel.SFailure — Lean Kernel S-Field Failure Taxonomy
 
 Defines the Lean-specific S-failure taxonomy: the structured catalogue
 of ways a Lean proof system can satisfy S-field properties vacuously or void-ably.
@@ -12,9 +12,9 @@ Layer 3 â Kernel-Level S-Field Failure Taxonomy:
 
 ## Split from
 
-\EpArch/Meta/LeanKernelModel.lean\ (original monolithic file).
+EpArch.Meta.LeanKernelModel (original monolithic file).
 World + Architecture layers (and OleanStaleness) are in
-\EpArch/Meta/LeanKernel/World.lean\.
+EpArch.Meta.LeanKernel.World.
 
 -/
 import EpArch.Meta.LeanKernel.World

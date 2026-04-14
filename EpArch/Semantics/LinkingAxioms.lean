@@ -1,5 +1,5 @@
 /-
-EpArch/Semantics/LinkingAxioms.lean — Export-Gating Operational Grounding
+EpArch.Semantics.LinkingAxioms — Export-Gating Operational Grounding
 
 Proves that the Step relation's export constructors structurally force
 export gating: every successful Export step either has a trust bridge
@@ -7,8 +7,8 @@ export gating: every successful Export step either has a trust bridge
 There is no third constructor path.
 
 This is the operational grounding for the ExportGating commitment in
-Commitments.lean.  It does not claim to ground the full abstract forcing
-story in Minimality.lean; that story is carried at the abstract structural
+EpArch.Commitments.  It does not claim to ground the full abstract forcing
+story in EpArch.Minimality; that story is carried at the abstract structural
 level.  This file grounds the one specific slice where an operational
 proof adds something the abstract level does not give for free.
 
@@ -56,7 +56,7 @@ theorem grounded_no_bridge_forces_revalidation
     Every Step.Export either has a trust bridge (export_with_bridge constructor)
     or forces the deposit into .Candidate status (export_revalidate constructor).
     There is no third constructor; ungated export is structurally non-constructible.
-    This is the primary operational grounding for ExportGating in Commitments.lean. -/
+    This is the primary operational grounding for ExportGating in EpArch.Commitments. -/
 theorem export_gating_forced
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (B1 B2 : Bubble) (d_idx : Nat)
@@ -73,6 +73,6 @@ theorem export_gating_forced
 
 - `grounded_no_bridge_forces_revalidation`: Export without bridge → deposit enters as Candidate.
 - `export_gating_forced`: Every Export step either has a trust bridge or forces Candidate status.
-  Imported by `Commitments.lean` as the operational grounding for ExportGating. -/
+  Imported by EpArch.Commitments as the operational grounding for ExportGating. -/
 
 end EpArch.LinkingAxioms

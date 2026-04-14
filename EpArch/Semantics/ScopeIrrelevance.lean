@@ -1,5 +1,5 @@
 /-
-EpArch/Semantics/ScopeIrrelevance.lean — Scope Irrelevance
+EpArch.Semantics.ScopeIrrelevance — Scope Irrelevance
 
 Two transport results for extra-state invariance:
 

@@ -1,22 +1,22 @@
 /-
-EpArch/Meta/Config.lean — Configurable Certification Engine
+EpArch.Meta.Config — Configurable Certification Engine
 
 Given an `EpArchConfig` specifying which constraints, goals, and world bundles
 are active, this module computes and certifies:
 
   1. **Which theorem clusters are enabled** (`clusterEnabled` — computable `Bool`,
-     defined in `Meta/ClusterRegistry.lean`).
+     defined in EpArch.Meta.ClusterRegistry).
   2. **Human-readable routing report** (`explainConfig`, `showConfig` — `#eval`-able,
-     defined in `Meta/ClusterRegistry.lean`).
+     defined in EpArch.Meta.ClusterRegistry).
   3. **Machine-certified soundness** (`CertifiedProjection`, `certify`): every
      cluster returned as enabled is backed by a concrete machine-checked proof.
 
 ## Module split
 
-`Meta/ClusterRegistry.lean` — pure metadata (no EpArch-specific imports):
+EpArch.Meta.ClusterRegistry — pure metadata (no EpArch-specific imports):
   Types, per-family enumerations, routing, display strings.
 
-`Meta/Config.lean` (this file) — proof-carrying layer:
+EpArch.Meta.Config (this file) — proof-carrying layer:
   `ConstraintProof`, `ConstraintClusterSpec`, `GoalWitness`, `WorldWitness`,
   `Tier4Witness`, `MetaModularWitness`, `LatticeWitness`,
   `CertifiedProjection`, `certify`, completeness theorems,
@@ -396,7 +396,7 @@ def latticeWitness : (c : EnabledLatticeCluster) → LatticeWitness c
 /-! ## §4f  Correspondence Lemmas (support lemmas)
 
 The `allXxxClusters` canonical lists used by `certify` and the membership
-lemmas below are defined in `ClusterRegistry.lean` (they are metadata objects,
+lemmas below are defined in EpArch.Meta.ClusterRegistry (they are metadata objects,
 not proof objects).  `filterMap_mem_of_pos` is a local helper for
 `List.filterMap` membership.
 

@@ -1,5 +1,5 @@
 /-
-EpArch/Meta/LeanKernel/World.lean â Lean Kernel as EpArch Instantiation (World + Architecture layers)
+EpArch.Meta.LeanKernel.World — Lean Kernel as EpArch Instantiation (World + Architecture Layers)
 
 Proves that Lean's own type-checking kernel is a valid EpArch WorldCtx
 instantiation satisfying all three core world-assumption bundles.
@@ -202,7 +202,7 @@ theorem lean_kernel_satisfies_bundles :
 
     `EpArch.Meta.TheoryFloor C` (from `Meta.FalsifiableNotAuthorizable`) is the
     named conjunction of the three W_* bundle inhabitations.  This theorem
-    places `LeanKernelCtx` alongside `WitnessCtx` from `WorldWitness.lean` as
+    places `LeanKernelCtx` alongside `WitnessCtx` from EpArch.WorldWitness as
     a concrete witness, but with kernel-specific bundle interpretations:
     sorry / heartbeat / proof-irrelevance. -/
 theorem lean_kernel_theory_floor : EpArch.Meta.TheoryFloor LeanKernelCtx :=
@@ -238,7 +238,7 @@ theorem lean_kernel_no_tradeoff :
 
     Self-referential claim: `LeanKernelCtx` models the same kernel that
     type-checks this theorem.  Unlike the generic `WitnessCtx` from
-    `WorldWitness.lean`, this existential witness carries kernel-specific
+    EpArch.WorldWitness, this existential witness carries kernel-specific
     interpretations:
 
     - `W_lies_possible`        ↔ `sorry` mechanism
@@ -855,7 +855,7 @@ all `w'`; if `deposit_world ≠ P` the RHS is `False`, forcing `¬(w' = P)` for 
 `w'`.  Both are false in a 2-element type.  A richer world type (e.g. a single-
 world `Unit` context or a multi-valued propositions lattice) is needed to witness
 these structures non-trivially.  Their theorems (`safety_ctx_V_link`,
-`sensitivity_ctx_E_link`) are therefore demonstrated generically in `Theorems.lean`
+`sensitivity_ctx_E_link`) are therefore demonstrated generically in EpArch.Theorems
 rather than at this concrete instantiation. -/
 
 /-- Concrete Gettier case at `LeanKernelCtx`.
@@ -907,7 +907,7 @@ theorem leanKernel_gettier_gap :
 /-! ## .olean Cache: Deposit Staleness at the Bank-Primitive Level
 
 The Lean build system's cache invalidation is the deposit staleness lifecycle
-from `EpArch/Concrete/Types.lean` concretely instantiated: a compiled `.olean` is a
+from EpArch.Concrete.Types concretely instantiated: a compiled `.olean` is a
 deposit whose τ is the source epoch at compilation; `compute_status` returns
 `.Stale` once the source advances past that epoch; a stale artifact blocks
 withdrawal (use). -/

@@ -1,29 +1,17 @@
+/-
+EpArch.Theorems.Diagnosability — Observable Fields and Diagnosability
+
+Defines observability and diagnosability in terms of field sets:
+- ObservableFields (per-representation field lists)
+- Diagnosability (cardinality of observable fields)
+- systematically_harder (partial order: fewer fields = harder to diagnose)
+
+Uses List Field rather than Finset to avoid Mathlib dependency.
+No time/cost claims — only structural availability of diagnostic moves.
+-/
+
 import EpArch.Basic
 import EpArch.Header
-
-/-!
-# Theorems/Diagnosability.lean
-
-This module defines observability and diagnosability in terms of field sets,
-replacing hardcoded constants with a principled approach.
-
-## Key Concepts
-
-1. **ObservableFields**: The set of fields that can be inspected in a given
-   representation (full deposit vs stripped payload).
-
-2. **Diagnosability**: The cardinality of ObservableFields — how many
-   independent failure modes can be distinguished.
-
-3. **systematically_harder**: A partial order on representations based on
-   diagnosability. Fewer observable fields = harder to diagnose.
-
-## Design Decisions
-
-- We use `List Field` rather than `Finset` to avoid Mathlib dependency
-- "Harder" is definitional: fewer observable fields = coarser partition
-- No time/cost claims — only structural availability of diagnostic moves
--/
 
 namespace EpArch.Diagnosability
 

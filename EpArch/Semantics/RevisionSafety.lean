@@ -1,5 +1,5 @@
 /-
-EpArch/Semantics/RevisionSafety.lean — Revision Safety Meta-Theorems
+EpArch.Semantics.RevisionSafety — Revision Safety Meta-Theorems
 
 This module provides meta-theorems guaranteeing that:
 1. Extensions preserve the revision gate via forgetful projection

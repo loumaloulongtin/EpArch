@@ -1,12 +1,11 @@
 /-
-EpArch/Concrete/WorkingSystem.lean — Behavioral Equivalence, Grounding, and Working System
+EpArch.Concrete.WorkingSystem — Behavioral Equivalence, Grounding, and Working System
 
-This file has two namespace sections:
-  1. EpArch.ConcreteModel — behavioral equivalence and abstract-theorem grounding.
-  2. EpArch.ConcreteInstance — ConcreteWorkingSystem, Has* proofs, structural forcing,
-     ForcingEmbedding, and grounded-consequence derivation.
+Concrete model behavioral equivalence, abstract-theorem grounding,
+ConcreteWorkingSystem, Has* proofs, structural forcing, ForcingEmbedding,
+and grounded-consequence derivation.
 
-Part of: EpArch/Concrete/ split of ConcreteLedgerModel.lean
+Part of the EpArch.Concrete module family.
 -/
 
 import EpArch.Concrete.Commitments

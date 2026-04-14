@@ -1,26 +1,16 @@
 /-
-Core Invariants
+EpArch.Invariants — Core Invariants
 
 Protocol requirements for robust system functioning — what must hold
 for the system to remain healthy. Violations predict degradation.
 
-## Contents
+Grounded operational invariants proved from the constructive step semantics:
+- grounded_no_withdrawal_without_acl (from Step.withdraw)
+- grounded_no_export_without_gate (from Step.export)
+- challenge_requires_field_localization (Field enum exhaustion)
+- worldstate_requires_finite_τ (definitional from deposit_kind)
 
-This file contains grounded operational invariants proved from the
-constructive step semantics, plus definitional items:
-
-- `grounded_no_withdrawal_without_acl` — proved from StepSemantics.Step.withdraw
-- `grounded_no_export_without_gate` — proved from StepSemantics.Step.export
-- `challenge_requires_field_localization` — Field enum exhaustion
-- `worldstate_requires_finite_τ` — definitional from deposit_kind
-
-No `axiom` declarations are present.
-
-## Constructive Groundings
-
-- **Semantics/StepSemantics.lean** provides the operational semantics for the grounded theorems.
-- **EpArch/Concrete/** provides a concrete model satisfying all invariants.
-- **Health.lean** uses these theorems for health-goal necessity proofs.
+No axiom declarations are present.
 -/
 
 import EpArch.Basic

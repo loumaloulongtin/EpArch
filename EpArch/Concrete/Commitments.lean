@@ -1,11 +1,11 @@
 /-
-EpArch/Concrete/Commitments.lean — Concrete Commitment Witnesses (C1–C8)
+EpArch.Concrete.Commitments — Concrete Commitment Witnesses (C1–C8)
 
 Constructive witnesses for all 8 EpArch commitments in the concrete model.
 Each commitment has an explicit witness pair (or witness triple) and a
 closed proof that the commitment holds.
 
-Part of: EpArch/Concrete/ split of ConcreteLedgerModel.lean
+Part of the EpArch.Concrete module family.
 -/
 
 import EpArch.Concrete.Types

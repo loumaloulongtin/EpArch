@@ -1,5 +1,5 @@
 /-
-EpArch/Agent/Resilience.lean — Fault Events and Containment Invariants
+EpArch.Agent.Resilience — Fault Events and Containment Invariants
 
 This module defines agent fault events and proves containment invariants
 via trace induction over the Agent LTS.
@@ -242,7 +242,7 @@ theorem agent_containment {Agent Claim : Type u}
 /-! ## Simulation Relation to Operational Semantics
 
 The AgentLTS above is a SIMPLIFIED model for proving containment invariants.
-Semantics/StepSemantics.lean defines the CANONICAL operational semantics;
+EpArch.Semantics.StepSemantics defines the CANONICAL operational semantics;
 AgentLTS is a derived abstraction for proving containment invariants.
 The relationship is: StepSemantics ⊆ AgentLTS (simulation).
 

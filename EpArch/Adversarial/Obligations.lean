@@ -1,5 +1,5 @@
 /-
-EpArch/AdversarialObligations.lean — Obligation Theorems for Adversarial Claims
+EpArch.Adversarial.Obligations — Obligation Theorems for Adversarial Claims
 
 This module converts adversarial axioms into conditional obligation theorems.
 Instead of asserting mechanism claims as axioms, we prove them conditional
@@ -14,8 +14,8 @@ unjustified claims about the world), we prove:
 
 This makes every adversarial claim conditional on explicit, falsifiable
 assumptions. The high-level W_* bundles (W_lies_possible, etc.) are defined
-in WorldCtx.lean; finer-grained attack-specific bundles are defined locally.
-WorldWitness.lean proves these bundles are satisfiable (non-vacuous).
+in EpArch.WorldCtx; finer-grained attack-specific bundles are defined locally.
+EpArch.WorldWitness proves these bundles are satisfiable (non-vacuous).
 
 ## Obligation Theorem Targets
 
@@ -24,9 +24,9 @@ of attack-vector and boundary-condition obligation theorems.
 
 ## Naming Convention
 
-- `X` = original definition (in AdversarialBase.lean)
+- `X` = original definition (in EpArch.Adversarial.Base)
 - `X_of_W` = conditional theorem version (proved here)
-- `W_X` = minimal assumption bundle for `X_of_W` (defined in WorldCtx.lean or locally)
+- `W_X` = minimal assumption bundle for `X_of_W` (defined in EpArch.WorldCtx or locally)
 
 -/
 

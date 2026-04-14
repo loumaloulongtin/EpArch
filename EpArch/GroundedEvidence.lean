@@ -1,5 +1,5 @@
 /-
-EpArch/GroundedEvidence.lean — Grounded Feature Evidence
+EpArch.GroundedEvidence — Grounded Feature Evidence
 
 `GroundedX` structures witness that a system has the corresponding architectural
 feature from real domain evidence rather than a declared Bool flag.  Each structure

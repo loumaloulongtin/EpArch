@@ -1,5 +1,5 @@
 /-
-EpArch/Mechanisms.lean — Canonical Mechanism Predicates
+EpArch.Mechanisms — Canonical Mechanism Predicates
 
 This module defines the canonical mechanism predicates that health goals
 force under agent constraints. These are the "what the system must have"
@@ -7,7 +7,7 @@ predicates that design-imposition theorems target.
 
 This file consolidates predicates previously scattered across multiple files into:
 1. Abstract mechanism predicates (Prop-level, for agent reasoning)
-2. CoreModel mechanism predicates (for Health.lean integration)
+2. CoreModel mechanism predicates (for EpArch.Health integration)
 3. Mappings between the two levels
 
 ## Design
@@ -17,7 +17,7 @@ Mechanism predicates answer: "What capability does the system have?"
 - NOT the implementation details
 - Just: does the mechanism exist?
 
-Bridge theorems prove equivalence (↔) between these predicates and Health.lean capabilities.
+Bridge theorems prove equivalence (↔) between these predicates and Health capabilities.
 
 -/
 
@@ -64,7 +64,7 @@ def EvidenceSeparation (separationExists : Prop) : Prop := separationExists
 
 /-! ## CoreModel Mechanism Predicates
 
-These reference CoreModel/CoreOps and provide the bridge to Health.lean.
+These reference CoreModel/CoreOps and provide the bridge to EpArch.Health.
 -/
 
 /-- CoreModel has revision capability at some bubble. -/
@@ -113,7 +113,7 @@ def FullMechanismSuite (M : MechanismBundle) : Prop :=
 
 /-! ## Mechanism-Health Bridge Theorems
 
-These connect mechanism predicates to Health.lean capabilities.
+These connect mechanism predicates to Health capabilities.
 -/
 
 /-- Core-level revision is equivalent to Health's HasRevisionCapability. -/
@@ -135,7 +135,7 @@ to ensure revision-gate alignment.
 
 /-- Self-correction requires revision.
 
-    This is exactly RevisionGate M from Semantics/RevisionSafety.lean. -/
+    This is exactly RevisionGate M from EpArch.Semantics.RevisionSafety. -/
 theorem self_correction_requires_revision_gate (M : CoreModel) :
     (∀ B, M.ops.selfCorrects B → M.ops.hasRevision B) ↔ RevisionGate M := by
   constructor <;> intro h <;> exact h

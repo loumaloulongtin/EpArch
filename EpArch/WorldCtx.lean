@@ -1,10 +1,10 @@
 /-
-EpArch/WorldCtx.lean — World Context (Parametric Semantic Signature)
+EpArch.WorldCtx — World Context (Parametric Semantic Signature)
 
 This module defines WorldCtx: a parameterized semantic signature for world
 layer theorems. Instead of concrete stubs (Truth := True), we use abstract
 fields that can be instantiated differently for different purposes:
-- WitnessCtx (in WorldWitness.lean): a concrete Bool-valued model proving
+- WitnessCtx (in EpArch.WorldWitness): a concrete Bool-valued model proving
   that the assumption bundles are non-vacuous (satisfiable).
 - Real domain models: domain-specific truth/verification semantics.
 
@@ -17,7 +17,7 @@ W_bounded_verification, W_partial_observability, W_asymmetric_costs).
 
 WorldCtx provides the parametric interface through which these world-level
 assumptions enter the formalization. The obligation theorems in
-AdversarialObligations.lean take the form: W_* → mechanism claim.
+AdversarialObligations take the form: W_* → mechanism claim.
 
 By keeping WorldCtx abstract, we get two things:
 1. Theorems that hold for ANY world satisfying the bundles (generality).
@@ -45,11 +45,10 @@ where Truth := True makes everything vacuously satisfiable.
 
 ## Relationship to Other Files
 
-- **WorldWitness.lean**: Concrete instantiation proving W_* bundles are
+- **EpArch.WorldWitness**: Concrete instantiation proving W_* bundles are
   satisfiable (non-vacuity).
-- **World.lean**: DEPRECATED local stubs. Use WorldCtx instead.
-- **AdversarialObligations.lean**: Obligation theorems conditioned on W_* bundles.
-- **Meta/FalsifiableNotAuthorizable.lean**: Uses WorldCtx to prove the theory
+- **EpArch.Adversarial.Obligations**: Obligation theorems conditioned on W_* bundles.
+- **EpArch.Meta.FalsifiableNotAuthorizable**: Uses WorldCtx to prove the theory
   floor is falsifiable and not fully authorizable.
 -/
 
@@ -395,7 +394,7 @@ structure WorldCtxCompatible (E : ExtWorldCtx) (C : WorldCtx) where
     remove relevant worlds/claims from the domain. The embedding provides
     surjectivity-like properties needed to lift existential statements.
 
-    See Semantics/RevisionSafety.lean for the full transport infrastructure. -/
+    See EpArch.Semantics.RevisionSafety for the full transport infrastructure. -/
 structure WorldCtxEmbedding (E : ExtWorldCtx) (C : WorldCtx) (h : WorldCtxCompatible E C) where
   /-- Embed core world into extended world -/
   embedWorld : C.World → E.World

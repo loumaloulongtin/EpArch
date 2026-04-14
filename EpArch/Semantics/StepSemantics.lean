@@ -1,59 +1,21 @@
 /-
-Step Semantics — Labeled Transition System for EpArch
+EpArch.Semantics.StepSemantics — Step Semantics (Labeled Transition System)
 
-This is the constructive operational semantics of the epistemic architecture.
-It defines a concrete LTS (labeled transition system) over SystemState with
-seven actions (Submit, Withdraw, Export, Challenge, Tick, Repair, Revoke)
-and proves conditional linking results from operational preconditions rather
-than asserting them as axioms.
+Constructive operational semantics of the epistemic architecture.
+Defines a concrete LTS over SystemState with seven actions
+(Submit, Withdraw, Export, Challenge, Tick, Repair, Revoke)
+and proves conditional linking results from operational
+preconditions rather than asserting them as axioms.
 
-## Purpose
+Bank defines WHAT the operators must satisfy (specification axioms).
+This module defines HOW they work: the Step relation's preconditions
+FORCE certain architectural features.
 
-The Bank.lean file defines WHAT the operators must satisfy (specification
-axioms). This file defines HOW they work (constructive operational semantics).
-The key insight: the Step relation's preconditions FORCE certain architectural
-features. For example, Step.withdraw requires ACL permission, current τ, AND
-Deposited status — making it impossible to withdraw without all three gates.
-
-## Key Contributions
-
-1. **Competition Gate Theorem** (`no_revision_no_correction`):
-   If revision actions (Challenge, Revoke) are structurally prohibited,
-   then self-correction is impossible. This is the central impossibility
-   result: domains that claim self-correction MUST permit revision.
-
-2. **Invariant Preservation**: Generic invariant preservation theorem
-   (`generic_invariant_preservation`) plus specific invariants for valid
-   status, separation, and auditability.
-
-Split-out companions (same `Semantics/` subfolder):
-- `EpArch.Semantics.LinkingAxioms`: operational groundings for the six
-  linking theorems, proved from Step preconditions.
-
-## Section Map (approximate line ranges)
-
-- ACL / System State / Actions (~lines 70–120)
-- Preconditions and τ policy (~lines 122–195)
-- State update functions and list helpers (~lines 199–470)
-- Step relation (8 constructors, 7 actions) (~lines 474–545)
-- Trace type and revision predicates (~lines 550–830)
-- Competition gate theorems (~lines 831–895)
-- Legibility and repair paths (~lines 896–995)
-- Trace metrics and convergence (~lines 998–1250)
-- Step-preserved invariants (~lines 1253–1665)
-- Key lemmas and repair step theorems (~lines 1666–1771)
-- Feature predicates and coordination lemma (~lines 1772–1815)
-
-## Relationship to Other Files
-
-- **Bank.lean**: Specification operators (WHAT). StepSemantics provides the
-  constructive HOW.
-- **EpArch/Concrete/**: A fully constructive concrete model (split from ConcreteLedgerModel.lean)
-  that witnesses satisfiability of all commitments (zero axioms).
-- **Theorems.lean**: Imports StepSemantics to derive withdrawal gates,
-  repair theorems, and competition gate corners as proved theorems.
-- **Agent/Resilience.lean**: Builds a simplified AgentLTS on top of
-  StepSemantics, proving containment invariants (truth/gate preservation).
+Key exports:
+- SystemState, Step (inductive LTS relation, 8 constructors)
+- no_revision_no_correction (competition gate impossibility)
+- generic_invariant_preservation (step-preserved invariants)
+- Companion: EpArch.Semantics.LinkingAxioms (operational groundings)
 -/
 
 import EpArch.Basic
@@ -959,7 +921,7 @@ theorem trace_no_revision_preserves_deposited
     If revision is prohibited, self-correction is impossible.
 
     Operational grounding for
-    "NoSelfCorrectionWithoutRevision" in Commitments.lean.
+    "NoSelfCorrectionWithoutRevision" in EpArch.Commitments.
 
     The proof is structural: self-correction requires a deposit to
     go from Deposited to Revoked, which requires Challenge and Revoke
@@ -1189,7 +1151,7 @@ theorem strong_sev_localizes_to_core_fields
   let ⟨f, hf⟩ := h_broken
   ⟨f, hf, h_sev f hf⟩
 
--- NOTE: `monolithic_implies_opaque_failures` was moved to Theorems.lean
+-- NOTE: `monolithic_implies_opaque_failures` was moved to EpArch.Theorems
 -- as `bridge_monolithic_opaque`.
 
 /-! ## Trace Metrics and Convergence
@@ -1299,7 +1261,7 @@ theorem header_enables_efficient_resolution
     challenge_is_field_specific c := by
   exact all_challenges_field_specific c
 
--- NOTE: `stripped_challenges_lack_grounding` was moved to Theorems.lean
+-- NOTE: `stripped_challenges_lack_grounding` was moved to EpArch.Theorems
 -- as `bridge_stripped_ungrounded`.
 
 /-! ## Step-Preserved Invariants
@@ -1641,7 +1603,7 @@ theorem step_preserves_auditability
 /-! ## Key Lemmas for Linking Axioms -/
 
 /-- Withdrawal requires all three gates.
-    This grounds `withdrawal_gates` from Theorems.lean. -/
+    This grounds `withdrawal_gates` from EpArch.Theorems. -/
 theorem withdrawal_requires_three_gates
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (a : Agent) (B : Bubble) (d_idx : Nat)
@@ -1652,7 +1614,7 @@ theorem withdrawal_requires_three_gates
   refine ⟨?_, ?_, ?_⟩ <;> assumption
 
 /-- Export requires header preservation.
-    This grounds `export_requires_headers` from Minimality.lean. -/
+    This grounds `export_requires_headers` from EpArch.Minimality. -/
 theorem export_requires_header
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (B1 B2 : Bubble) (d_idx : Nat)
@@ -1662,7 +1624,7 @@ theorem export_requires_header
   cases h_step <;> assumption
 
 /-- Challenge requires field localization.
-    This grounds `challenge_requires_field_localization` from Invariants.lean. -/
+    This grounds `challenge_requires_field_localization` from EpArch.Invariants. -/
 theorem challenge_has_field_localization
     (c : EpArch.Challenge PropLike Reason Evidence) :
     ∃ f : Field, c.suspected = f := by
