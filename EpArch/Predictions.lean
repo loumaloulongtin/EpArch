@@ -8,9 +8,12 @@ machinery is used directly to close the gap between intuition and prediction.
 - Prediction 1 (Cult/Intelligence): import_channel_controlled ∧ E_field_closed →
   ignores_bank_signal; certainty does not protect against Entrenchment when both
   conditions hold. New predicates: `import_channel_controlled`, `E_field_closed`.
-- Prediction 2 (CT Non-Transfer): diagnosability is bubble-scoped; high diagnosability
-  in B1 does not transfer to B2. Proved via `strip_reduces_diagnosability` and
-  `import_cannot_reconstruct`.
+- Prediction 2 (CT Non-Transfer): `ct_transfer_case` carries two B2-side deposits —
+  `b2_stripped` (what actually arrives after import) and `b2_full` (the idealized
+  full-header counterpart). `ct_does_not_transfer` proves bubble separation + the
+  diagnosability collapse (6→0) + that `b2_stripped` and `b2_full` are
+  indistinguishable by `strip` with no reconstruction possible — all from the case
+  structure. Proof discharges via `import_cannot_reconstruct`.
 - Prediction 3 (Sharing ≠ Belief): export (sharing) and certainty (belief) are
   structurally independent. Bundling theorem over `testimony_is_export` and
   `certainty_not_exportable`.
@@ -140,60 +143,74 @@ theorem cult_produces_entrenchment (c : cult_case)
 
 /-! ## Prediction 2 Structure -/
 
-/-- A CT transfer case: the same agent trying to apply domain competence
-    from bubble B1 (home domain, established E-field) to bubble B2
-    (new domain, no E-field yet). The bubble_separation invariant certifies
-    these are genuinely distinct domains — the transfer is non-trivial. -/
+/-- A CT transfer case: the same agent expressing domain competence across two
+    distinct bubbles. B1 is the home domain (where the E-field and full diagnostic
+    headers were built); B2 is the new domain where the agent arrives.
+
+    The case carries two B2-side deposits that together witness the
+    information-loss event that formal CT non-transfer rests on:
+    - `b2_stripped` is what actually arrives after import — same claim and
+      lifecycle status as the home deposit, but the domain E-field is absent
+      (the header was stripped when crossing the bubble boundary).
+    - `b2_full` is the idealized counterpart: what CT transfer would require —
+      a B2 deposit carrying the home domain's full header metadata.
+    Their headers differ (`headers_differ`) but their stripped forms coincide
+    (proved by `ct_does_not_transfer`). B2 cannot tell these apart from the
+    payload alone, which is the formal content of "E-field must be built per
+    domain, not carried over by import." -/
 structure ct_transfer_case where
-  agent           : Agent
-  B1              : Bubble   -- home domain: established E-field, full headers
-  B2              : Bubble   -- new domain:  no E-field, no headers yet
+  agent             : Agent
+  B1                : Bubble   -- home domain: established E-field, full headers
+  B2                : Bubble   -- new domain: no domain E-field yet
   bubble_separation : B1 ≠ B2
+  /-- The actual import in B2: arrived with the domain E-field absent. -/
+  b2_stripped       : Deposit PropLike Standard ErrorModel Provenance
+  b2_stripped_in_B2 : b2_stripped.bubble = B2
+  /-- The idealized full-header counterpart in B2: same P, bubble, status but
+      carrying the home domain's E-field — what CT transfer would look like. -/
+  b2_full           : Deposit PropLike Standard ErrorModel Provenance
+  b2_full_in_B2     : b2_full.bubble = B2
+  same_P            : b2_stripped.P      = b2_full.P
+  same_status       : b2_stripped.status = b2_full.status
+  /-- The E-field does not survive the crossing: stripped header ≠ full header. -/
+  headers_differ    : b2_stripped.h ≠    b2_full.h
 
 /-! ## Prediction 2 Theorems -/
 
-/-- PREDICTION 2 THEOREM: CT does not transfer — diagnosability is bubble-scoped.
+/-- PREDICTION 2 THEOREM: CT does not transfer — diagnosability is bubble-scoped
+    and the import barrier is structurally irreversible.
 
-    **Theorem shape:** diagnosability in B1 (full header) = 6;
-    diagnosability in B2 (no header) = 0; B2 is systematically harder than B1.
+    **Theorem shape:** For the specific deposits in this case:
+    (1) B1 ≠ B2 — the two domains are genuinely distinct (from `c.bubble_separation`);
+    (2) diagnosability with full header = 6 — home domain competence is real;
+    (3) diagnosability without header = 0 — new domain starts blind;
+    (4) `c.b2_stripped` and `c.b2_full` are indistinguishable by `strip`,
+        and no reconstruction function can recover which header arrived —
+        B2 cannot reconstitute the home E-field from the import payload alone.
 
-    **The formal prediction:** Even for an agent with the same identity and
-    reasoning standard, the diagnostic capability in B2 is zero. S-quality
-    (high reasoning standard in B1) generates no observable fields in B2,
-    because diagnosability is a function of header availability, not of S.
-
-    **Proof strategy:** Three-way conjunction discharging directly to
-    `diagnosability_full`, `diagnosability_stripped`, and `strip_reduces_diagnosability`
-    from `EpArch.Theorems.Diagnosability`. The `ct_transfer_case` parameter
-    supplies the bubble_separation witness — the transfer is across distinct domains. -/
-theorem ct_does_not_transfer (_c : ct_transfer_case) :
+    **Proof strategy:** Components (1)–(3) discharge to `c.bubble_separation`,
+    `diagnosability_full`, and `diagnosability_stripped`. Component (4) discharges
+    to `import_cannot_reconstruct` applied to `c.b2_stripped` and `c.b2_full`:
+    same P (`c.same_P`), same bubble (both B2, via `c.b2_stripped_in_B2` and
+    `c.b2_full_in_B2`), same status (`c.same_status`), different headers
+    (`c.headers_differ`). The case structure — not just abstract header-boolean
+    facts — drives the proof. -/
+theorem ct_does_not_transfer (c : ct_transfer_case (PropLike := PropLike)
+    (Standard := Standard) (ErrorModel := ErrorModel) (Provenance := Provenance)) :
+    c.B1 ≠ c.B2 ∧
     diagnosability true = 6 ∧
     diagnosability false = 0 ∧
-    Diagnosability.systematically_harder false true :=
-  ⟨diagnosability_full, diagnosability_stripped, strip_reduces_diagnosability⟩
-
-/-- PREDICTION 2 BARRIER THEOREM: Import cannot recover the domain E-field.
-
-    Even if the agent imports a deposit from B1 into B2, stripping removes
-    the header (including the E-field component). The import operation
-    cannot reconstruct the E-field that enables domain-specific diagnosis.
-
-    **Theorem shape:** For any two deposits with distinct headers but
-    identical stripped form, strip is non-reconstructible — `import_cannot_reconstruct`.
-
-    **Proof strategy:** Direct delegation to `import_cannot_reconstruct` from
-    `EpArch.Theorems.Strip`. The prediction supplies motivation; the mechanism
-    is the existing strip non-injectivity theorem. -/
-theorem ct_import_barrier
-    (d1 d2 : Deposit PropLike Standard ErrorModel Provenance)
-    (h_same_P      : d1.P      = d2.P)
-    (h_same_bubble : d1.bubble = d2.bubble)
-    (h_same_status : d1.status = d2.status)
-    (h_diff_header : d1.h      ≠ d2.h) :
-    strip d1 = strip d2 ∧
+    strip c.b2_stripped = strip c.b2_full ∧
     ¬∃ (f : PayloadStripped PropLike → Deposit PropLike Standard ErrorModel Provenance),
-        f (strip d1) = d1 ∧ f (strip d2) = d2 :=
-  import_cannot_reconstruct d1 d2 h_same_P h_same_bubble h_same_status h_diff_header
+        f (strip c.b2_stripped) = c.b2_stripped ∧ f (strip c.b2_full) = c.b2_full :=
+  ⟨c.bubble_separation,
+   diagnosability_full,
+   diagnosability_stripped,
+   import_cannot_reconstruct c.b2_stripped c.b2_full
+     c.same_P
+     (c.b2_stripped_in_B2.trans c.b2_full_in_B2.symm)
+     c.same_status
+     c.headers_differ⟩
 
 
 /-! ========================================================================
