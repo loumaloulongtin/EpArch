@@ -1,5 +1,5 @@
 /-
-EpArch — Bank.Dynamics (Runtime Behavioral Profile)
+EpArch.Bank.Dynamics — Runtime Behavioral Profile
 
 Defines the runtime behavioral profiling layer for deposits: `DepositDynamics`,
 `reliance_level`, `challenge_frequency`, `blast_radius`, and the two behavioral

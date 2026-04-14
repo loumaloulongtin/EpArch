@@ -79,8 +79,7 @@ The formalization proves these claims:
 10. **Theorems/** — Derived theorems, split into eight focused modules:
     - **Withdrawal** — Withdrawal gates, repair lifecycle, diagnosis infrastructure
     - **Cases/** — Classic epistemology case types, one file per case (open for contributions):
-      `Gettier`, `FakeBarn`, `Standard`, `VacuousStandard`, `TypeErrors` (Lottery, Confabulation);
-      `EpArch.Theorems.Cases` is the umbrella re-export
+      `Gettier`, `FakeBarn`, `Standard`, `VacuousStandard`, `TypeErrors` (Lottery, Confabulation)
     - **Headers** — Diagnosability metrics, field checkability, header-dispute link
     - **Modal** — WorldCtx-parameterized modal cases (Safety↔V, Sensitivity↔E)
     - **Dissolutions** — Type-separation dissolutions (closure, luminosity, Moorean,
@@ -186,5 +185,6 @@ import EpArch.Meta.Config      -- Configurable certification engine: EpArchConfi
 import EpArch.Meta.LeanKernel.World     -- Self-referential: Lean kernel world + architecture + OleanStaleness
 import EpArch.Meta.LeanKernel.SFailure  -- Lean kernel S-field failure taxonomy
 
+/-- Entry point: confirms the formalization compiles and prints a banner. -/
 def main : IO Unit :=
   IO.println s!"EpArch: Epistemic Architecture Formalization"

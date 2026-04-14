@@ -134,7 +134,7 @@ theorem safety_preserved_under_refinement
   have h_l1_step : L₁.Step (R.φ s₂) (R.ψ a) (R.φ s₂') := R.simulation _ _ _ h_step
   exact h_inv _ _ _ h_ps₂ h_l1_step
 
-/-! ## Core Semantics = Semantics/StepSemantics
+/-! ## Core Semantics = EpArch.Semantics.StepSemantics
 
 The canonical LTS for EpArch is defined in EpArch.Semantics.StepSemantics.
 RevisionSafety uses these definitions to establish revision safety

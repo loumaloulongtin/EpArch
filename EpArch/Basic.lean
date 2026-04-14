@@ -1,5 +1,5 @@
 /-
-EpArch — Basic Types (Core Ontology)
+EpArch.Basic — Basic Types (Core Ontology)
 
 This file defines the foundational types for the Epistemic Architecture
 formalization. Everything else in the project builds on these types.

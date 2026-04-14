@@ -1,5 +1,5 @@
 /-
-EpArch — Header and Deposit
+EpArch.Header — Header and Deposit
 
 Defines the validation header (S, E, V, τ, acl, redeemability) and the
 Deposit record that packages a claim with its full metadata. Also contains

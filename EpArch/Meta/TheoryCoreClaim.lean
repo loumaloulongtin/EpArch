@@ -31,14 +31,11 @@ Then underdetermination transfers:
 
 ## Claim Budget
 
-**Buys:**
 - A literal "self-token" claim symbol you can point to in prose.
 - A crisp theorem: `NotDeterminedByObs theory_core` using the same obs surface.
-
-**Does NOT buy:**
-- "The real world satisfies theory_core."
-- "The theory is uniquely determined / uniquely correct."
-- Psychological claims.
+- Conservative alias only — the underdetermination result transfers from an
+  already-underdetermined base claim; no claim about real-world truth or
+  unique correctness.
 
 -/
 

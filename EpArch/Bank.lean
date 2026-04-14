@@ -1,5 +1,5 @@
 /-
-EpArch — Bank (Shared Ledger Substrate)
+EpArch.Bank — Bank (Shared Ledger Substrate)
 
 Defines the Bank substrate: the shared ledger of authorized deposits.
 Contains the core predicates (knowledge_B, deposited, hasDeposit), the
