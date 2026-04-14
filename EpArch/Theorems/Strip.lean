@@ -177,16 +177,6 @@ theorem import_cannot_reconstruct
     to recovering the original deposit. The header carries authorization
     that raw content does not. -/
 
-/-- DepositContentEq: two deposits have the same propositional content.
-    This is WEAKER than deposit identity. -/
-def DepositContentEq (d₁ d₂ : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
-  d₁.P = d₂.P
-
-/-- DepositFullEq: two deposits are fully identical (same P, header, bubble, status).
-    This is deposit IDENTITY. -/
-def DepositFullEq (d₁ d₂ : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
-  d₁ = d₂
-
 /-- CORNER 10 THEOREM: Same content does not imply same deposit.
 
     Two deposits can have identical P but differ in header, making them
@@ -199,7 +189,7 @@ theorem content_eq_not_implies_deposit_eq
     (d₁ d₂ : Deposit PropLike Standard ErrorModel Provenance)
     (h_same_P : d₁.P = d₂.P)
     (h_diff_header : d₁.h ≠ d₂.h) :
-    DepositContentEq d₁ d₂ ∧ ¬DepositFullEq d₁ d₂ := by
+    d₁.P = d₂.P ∧ d₁ ≠ d₂ := by
   constructor
   · exact h_same_P
   · intro h_eq
@@ -227,117 +217,6 @@ theorem provenance_matters
     have hh : d₁.h = d₂.h := congrArg Deposit.h h_eq
     exact congrArg Header.V hh
   exact h_diff_V this
-
-
-/-! ## Diagnosability Ordering
-
-    **Goal:** Make "systematically harder" fully internal — define it via
-    diagnosability (number of distinguishable failure modes) rather than
-    asserting it axiomatically.
-
-    **Key insight:** "Harder" means fewer diagnostic distinctions, which means
-    coarser partition of failure modes. This is a structural property of the
-    observation function, not a time metric. -/
-
-/-- FieldCount_Full: the number of fields that can be independently observed
-    and challenged in a full (non-stripped) deposit. This is 6:
-    S, E, V, τ, redeemability, acl. -/
-def FieldCount_Full : Nat := 6
-
-/-- FieldCount_Stripped: the number of fields remaining after stripping.
-    This is 3: P, bubble, status. -/
-def FieldCount_Stripped : Nat := 3
-
-/-- harder_by_field_count: ordering by distinguishable fields.
-    Fewer fields = harder to diagnose.
-
-    Note: This captures that harder = coarser partition = fewer repair paths. -/
-def harder_by_field_count (count₁ count₂ : Nat) : Prop :=
-  count₁ < count₂
-
-/-- THEOREM: Stripping reduces field count.
-
-    The stripped form has fewer distinguishable fields than the original.
-    This is the formal content of "stripping causes diagnosability drop." -/
-theorem strip_reduces_field_count :
-    harder_by_field_count FieldCount_Stripped FieldCount_Full := by
-  -- FieldCount_Stripped = 3, FieldCount_Full = 6
-  unfold harder_by_field_count FieldCount_Stripped FieldCount_Full
-  decide
-
-/-- THEOREM: Fewer fields means fewer repair targets.
-
-    If you can distinguish fewer fields, you have fewer targeted
-    repair options. This is the formal bridge from "harder" to "worse."
-
-    The key insight: repair targeting requires field identification.
-    Stripping collapses field identity, so repair becomes coarser. -/
-theorem fewer_fields_coarser_repair :
-    -- Stripped version has 3 distinguishable classes
-    -- Full version has 6 distinguishable classes
-    -- So stripped version can target at most 3 repair types
-    FieldCount_Stripped ≤ FieldCount_Full := by
-  unfold FieldCount_Stripped FieldCount_Full
-  decide
-
-/-! ## Summary: The "harder" ordering is definitional.
-
-    1. FieldCount_Full = 6 distinguishable fields
-    2. FieldCount_Stripped = 3 distinguishable fields
-    3. 3 < 6, so stripping reduces diagnostic granularity
-    4. Lower granularity = fewer repair options
-    5. Therefore stripping makes repair "harder" (definitionally)
-
-    No time metric required. "Harder" is a structural property.
-
-    See also `sev_refines_stripped` in Corner 4 for the partition
-    refinement form of this result. -/
-
-
-/-! ## Bridge to Diagnosability Module
-
-    The `FieldCount_*` constants are superseded by the principled
-    approach in `EpArch.Theorems.Diagnosability`. This section bridges the two.
-
-    Key improvements:
-    - `AllFields` and `StrippedFields` are actual lists, not magic numbers
-    - `diagnosability` is computed from list length
-    - `canTargetRepair` connects observability to repair routing
-    - `SoundDiagnosis` constrains diagnosis oracles -/
-
-/-- Bridge theorem: FieldCount_Full matches the principled diagnosability for full deposits. -/
-theorem fieldcount_full_eq_diagnosability :
-    FieldCount_Full = diagnosability true := by
-  unfold FieldCount_Full diagnosability ObservableFields AllFields
-  rfl
-
-/-- Bridge theorem: stripped diagnosability is 0.
-
-    Only header fields are observable; stripped deposits have none, yielding 0. -/
-theorem stripped_diagnosability_is_zero :
-    diagnosability false = 0 := diagnosability_stripped
-
-/-- Bridge theorem: `strip_reduces_diagnosability` implies `strip_reduces_field_count`.
-
-    The principled result is strictly stronger because it uses the actual field sets. -/
-theorem v8_implies_v7_strip_reduces :
-    Diagnosability.systematically_harder false true → harder_by_field_count 0 FieldCount_Full := by
-  intro _
-  unfold harder_by_field_count FieldCount_Full
-  decide
-
-/-- Bridge theorem: repair routing is impossible without observable fields.
-
-    We can now prove that repair
-    *cannot* be field-specific on stripped deposits (not just that it's "harder"). -/
-theorem stripped_repair_must_be_coarse :
-    ∀ f : Field, ¬canTargetRepair false f := stripped_no_field_repair
-
-/-- Bridge theorem: full deposits support surgical repair.
-
-    Any field can be targeted for repair in a full deposit. -/
-theorem full_repair_can_be_surgical :
-    ∀ f : Field, canTargetRepair true f := full_can_repair_any
 
 
 /-! ## Corner 4 — Header-stripping gate (partition refinement)

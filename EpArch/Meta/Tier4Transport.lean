@@ -62,7 +62,6 @@ import EpArch.Theorems.Cases.TypeErrors
 import EpArch.Theorems.Headers
 import EpArch.Theorems.Dissolutions
 import EpArch.Theorems.Pathologies
-import EpArch.Theorems.Strip
 import EpArch.Theorems.Corners
 import EpArch.Meta.TheoremTransport
 
