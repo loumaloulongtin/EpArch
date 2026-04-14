@@ -154,35 +154,23 @@ theorem vacuous_standard_is_S_failure (vc : VacuousStandardCase (PropLike := Pro
   ⟨vc.testimony_sound.mp vc.s_testimony_certified,
     vc.source.unreliability_sound.mp vc.e_documents_unreliability⟩
 
-/-- Generic: for any `VacuousStandardCase`, testimony-only S over a documented-unreliable
-    source yields void S.  The proof uses the Prop fields directly — the soundness bridges
-    (`testimony_sound`, `unreliability_sound`) extract the Prop content from the Bool certs.
-    Canonical instances apply this theorem rather than re-proving via construction. -/
-theorem testimony_only_plus_unreliable_source_yields_void_S
-    (vc : VacuousStandardCase (PropLike := PropLike))
-    (h_testimony  : vc.testimony_only)
-    (h_unreliable : vc.source.is_unreliable) :
-    S_is_vacuous vc :=
-  ⟨h_testimony, h_unreliable⟩
-
 /-- CANONICAL vacuous case: the known-liar cook. -/
 def canonical_liar_cook_case (P : PropLike) : VacuousStandardCase (PropLike := PropLike) :=
   { claim  := P,
-    source := { source_id           := "cook",
-                tags                := [.documented_liar],
+    source := { source_id             := "cook",
+                tags                  := [.documented_liar],
                 documented_unreliable := true,
-                unreliability_sound := by decide },
+                unreliability_sound   := by decide },
     e_documents_unreliability  := rfl,
     testimony_mode             := .sole_source,
     s_is_source_testimony_only := true,
     testimony_sound            := ⟨fun _ => rfl, fun _ => rfl⟩,
     s_testimony_certified      := rfl }
 
-/-- The canonical liar-cook case yields void S, as an instance of the generic theorem. -/
+/-- The canonical liar-cook case yields void S. -/
 theorem canonical_liar_cook_is_void (P : PropLike) :
     S_is_vacuous (canonical_liar_cook_case P) :=
-  testimony_only_plus_unreliable_source_yields_void_S _ rfl
-    (Or.inl (List.Mem.head _))
+  vacuous_standard_is_S_failure _
 
 /-- Absolute vs relational S-failure: two kinds of S-void.
 
