@@ -19,8 +19,8 @@ instantiated in different substrates:
 - Confabulation (neuropsychological): memory gap → fluent narrative, no trace
 - Hallucination (generative AI): language model → high confidence, no grounding
 
-Adding a new type-error case: create a structure carrying `has_ladder_state` and
-`lacks_bank_state`, then instantiate `LotteryIsTypeError` (or prove directly).
+Adding a new type-error case: create a structure carrying the relevant fields,
+then prove `TypeError (your_ladder_prop) (your_bank_prop)` directly.
 
 ## Division of Labor with Corners.lean
 
@@ -63,25 +63,22 @@ structure LotterySituation where
 def high_credence (s : LotterySituation (PropLike := PropLike)) : Prop :=
   s.credence_level ≥ 95
 
-/-- No deposit: the proposition has no authorized deposit in the agent's bank. -/
-def no_deposit (s : LotterySituation (PropLike := PropLike)) : Prop :=
-  s.has_deposit = false
-
 /-- Type error: a situation exhibits category confusion between ladder and bank.
 
-    In the banking metaphor: having credence (ladder-state) but no deposit (bank-state)
-    and conflating the two. The type error IS the situation, not just acting on it.
+    `LadderState` names the specific Prop being confused with bank authorization
+    (e.g., `high_credence s`, `c.fluency_traction = true`).
+    `BankState` names the specific Prop showing authorization is absent
+    (e.g., `s.has_deposit = false`, `c.has_grounding = false`).
+
+    Parameterized so each instantiation records which pair was confused —
+    not merely that some confusion occurred.
 
     "You can't withdraw from a bank that never accepted a deposit." -/
-structure TypeError where
-  /-- High credence exists (ladder-state) -/
-  has_ladder_state : Prop
-  /-- No authorization exists (bank-state) -/
-  lacks_bank_state : Prop
+structure TypeError (LadderState BankState : Prop) where
   /-- Evidence of ladder state -/
-  ladder_evidence : has_ladder_state
+  ladder_evidence : LadderState
   /-- Evidence of missing bank state -/
-  bank_evidence : lacks_bank_state
+  bank_evidence   : BankState
 
 /-- Theorem: Lottery problem is a type error.
 
@@ -91,12 +88,12 @@ structure TypeError where
     This is a category confusion between certainty (ladder) and knowledge (bank).
 
     The lottery situation IS a type error: it exhibits the structural pattern of
-    having ladder-state (high credence) while lacking bank-state (no deposit).
+    having ladder-state (high credence) while lacking bank-state (s.has_deposit = false).
     The type error is IDENTIFIED BY the combination, not caused by acting on it. -/
 theorem LotteryIsTypeError (s : LotterySituation (PropLike := PropLike)) :
-    high_credence s → no_deposit s → TypeError := by
-  intro h_credence h_no_deposit
-  exact ⟨high_credence s, no_deposit s, h_credence, h_no_deposit⟩
+    high_credence s → s.has_deposit = false →
+    TypeError (high_credence s) (s.has_deposit = false) :=
+  fun h_credence h_no_deposit => ⟨h_credence, h_no_deposit⟩
 
 
 /-! ## Confabulation as Type Error -/
@@ -127,9 +124,6 @@ structure ConfabulationCase where
   /-- A traceable constraint-surface contact exists (Bank-side grounding) -/
   has_grounding     : Bool
 
-def high_fluency (c : ConfabulationCase (PropLike := PropLike)) : Prop := c.fluency_traction = true
-def ungrounded   (c : ConfabulationCase (PropLike := PropLike)) : Prop := c.has_grounding = false
-
 /-- Theorem: Confabulation is a type error.
 
     High fluency-traction with no grounding is the identical architectural type error
@@ -137,10 +131,10 @@ def ungrounded   (c : ConfabulationCase (PropLike := PropLike)) : Prop := c.has_
     The failure is not accuracy failure but category confusion — the system accepted
     an output in a slot requiring Bank without Bank contact.
 
-    Direct instantiation of LotteryIsTypeError with fluency/grounding fields. -/
+    Same structural pattern as LotteryIsTypeError, different field names. -/
 theorem confabulation_is_type_error (c : ConfabulationCase (PropLike := PropLike)) :
-    high_fluency c → ungrounded c → TypeError := by
-  intro h_fluency h_ungrounded
-  exact ⟨high_fluency c, ungrounded c, h_fluency, h_ungrounded⟩
+    c.fluency_traction = true → c.has_grounding = false →
+    TypeError (c.fluency_traction = true) (c.has_grounding = false) :=
+  fun h_fluency h_ungrounded => ⟨h_fluency, h_ungrounded⟩
 
 end EpArch
