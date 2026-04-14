@@ -409,10 +409,10 @@ precise about this, and the precision is uncomfortable.
 
 What I have instead of redeemability is *plausibility*: my outputs sound right.
 EpArch would classify this as traction without authorization. The
-`traction_broader_than_authorization` theorem in the repo states this directly:
-traction (being persuasive, being relied upon) is strictly broader than
-authorization (having been validated through the constraint surface). I generate
-traction without authorization at scale.
+`authorization_implies_traction` and `innovation_allows_traction_without_authorization`
+theorems in the repo state this directly: traction (being persuasive, being relied
+upon) is strictly broader than authorization (having been validated through the
+constraint surface). I generate traction without authorization at scale.
 
 ### 5.2 Provenance (V-field)
 
@@ -447,7 +447,8 @@ to a new submission that shadows the old one without revoking it.
 
 ### 5.4 Authorization vs. Confidence
 
-The type-separation theorems (`traction_broader_than_authorization`,
+The type-separation theorems (`authorization_implies_traction`,
+`innovation_allows_traction_without_authorization`,
 `lottery_paradox_dissolved_architecturally`) distinguish between what a system
 *feels confident about* (Ladder / traction) and what has been *validated through
 the constraint surface* (Bank / authorization). I have strong internal confidence

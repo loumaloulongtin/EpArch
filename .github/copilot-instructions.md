@@ -71,8 +71,9 @@ These are architectural invariants, not version-specific facts.
   gated by `EpArchConfig`. Inspect `clusterEnabled` in `ClusterRegistry.lean` for
   the authoritative routing.
 
-- **Traction ≠ authorization.** Core architectural split. Search `Theorems.lean`
-  for `traction_broader_than_authorization`.
+- **Traction ≠ authorization.** Core architectural split. See
+  `authorization_implies_traction` in `Theorems/Corners.lean` and
+  `innovation_allows_traction_without_authorization` in `Commitments.lean`.
 
 - **RevisionGate = SelfCorrectionGoal.** Definitionally equal. See
   `self_correction_is_revision_gate` in `Health.lean`.

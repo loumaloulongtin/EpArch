@@ -75,25 +75,10 @@ The four theorems form a natural arc: corroboration is required (T1), works unde
 - Universal quantification over k: naive k-of-n fails when k ≤ compromised set size
 - Corroboration needs diversity, not just multiplicity
 
-## Claim Budget
-
-### What This Buys (Strong, Paper-Usable)
-
-- ✅ Formal reason "why 2-3 independent attestations beats one" under explicit independence interface
-- ✅ Formal reason "why corroboration can fail spectacularly" when independence violated
-- ✅ Conditional minimality: if NoSPoF goal, corroboration is FORCED
-- ✅ No sociology: everything about admissible models and explicit constraints
-
-### What This Does NOT Buy
-
-- ❌ "Humans do this in practice" / "reasonable people will..."
-- ❌ "The real world satisfies the independence interface"
-- ❌ "Corroboration guarantees truth" (only reduces risk under explicit constraints)
-- ❌ Claims about specific social institutions or practices
-
-## Integration
-
-- **Imports:** Only `EpArch.Basic`
+This module does not buy claims about whether humans practice corroboration,
+whether the real world satisfies the independence interface, that corroboration
+guarantees truth (it only reduces risk under explicit constraints), or claims
+about specific social institutions or practices.
 ## Technical Notes
 
 ### Proof Status

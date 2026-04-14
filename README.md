@@ -77,7 +77,7 @@ The framework has three layers:
 |---|---|
 | Core types (`Deposit`, `Bubble`, `Header`, `DepositStatus`) | `EpArch/Basic.lean`, `EpArch/Header.lean` |
 | Lifecycle gate theorems (withdrawal, export, challenge) | `EpArch/Theorems/Withdrawal.lean`, `EpArch/Theorems/Corners.lean` |
-| Type-separation: traction ≠ authorization | `EpArch/Theorems/Corners.lean` — `traction_broader_than_authorization` |
+| Type-separation: traction ≠ authorization | `EpArch/Theorems/Corners.lean` — `authorization_implies_traction`; `EpArch/Commitments.lean` — `innovation_allows_traction_without_authorization` |
 | Gettier → V-field failure | `EpArch/Theorems/Cases/Gettier.lean` — `gettier_is_V_failure` |
 | Lottery → type error (diagnosis) | `EpArch/Theorems/Cases/TypeErrors.lean` — `LotteryIsTypeError` |
 | Lottery → dissolved operationally | `EpArch/Theorems/Corners.lean` — `lottery_paradox_dissolved_architecturally` |
@@ -95,7 +95,8 @@ The framework has three layers:
 | Claim | Key Theorem | File |
 |---|---|---|
 | Self-correction requires revision capability | `no_revision_no_correction` | Semantics/StepSemantics.lean |
-| Traction is broader than authorization | `traction_broader_than_authorization` | Theorems/Corners.lean |
+| Authorization implies traction (one direction) | `authorization_implies_traction` | Theorems/Corners.lean |
+| Traction without authorization (other direction) | `innovation_allows_traction_without_authorization` | Commitments.lean |
 | Header stripping has no left inverse | `no_strip_left_inverse` | Theorems/Strip.lean |
 | Stripping reduces diagnosability | `strip_reduces_diagnosability` | Theorems/Diagnosability.lean |
 | Lottery paradox is a type error | `lottery_paradox_dissolved_architecturally` | Theorems/Corners.lean |
@@ -135,14 +136,16 @@ The framework has three layers:
 
 | Module | Purpose |
 |---|---|
-| `Theorems/` | Primary theorem library — 8 focused sub-modules: `Withdrawal`, `Cases`, `Headers`, `Modal`, `Strip`, `Corners`, `Dissolutions`, `Pathologies` |
+| `Theorems/` | Primary theorem library — 10 focused sub-modules: `Withdrawal`, `Cases`, `Headers`, `Modal`, `Strip`, `Corners`, `Dissolutions`, `Pathologies`, `Diagnosability`, `BehavioralEquivalence` |
 | `Theorems/Diagnosability.lean` | Observability-based diagnosability ordering |
 | `Adversarial/Base.lean` | Adversarial type definitions |
 | `Adversarial/Obligations.lean` | Attack/defense obligation theorems under world bundles |
 | `Agent/Corroboration.lean` | k-of-n corroboration guarantees and independence conditions |
 | `Commitments.lean` | The 8 structural commitments; all proved as standalone theorems; `commitments_pack` bundles the unconditional ones (C3/C4b/C7b/C8) |
 | `Minimality.lean` | Structural impossibility models + alternative-architecture dismissals; `Pressure` inductive as canonical dimension index |
-| `Convergence.lean` | `StructurallyForced`, `ForcingEmbedding`, `convergence_structural`, bridge predicates; six per-dimension `*_forces_*` theorems; `SystemOperationalBundle`, `WorldBridgeBundle` |
+| `Scenarios.lean` | Six `Represents*` scenario enrichments + `SystemOperationalBundle`/`WorldBridgeBundle` packaging |
+| `GroundedEvidence.lean` | `GroundedX` evidence structures; `GroundedSystemSpec`/`PartialGroundedSpec` compliance API |
+| `Convergence.lean` | `StructurallyForced`, `ForcingEmbedding`, `convergence_structural`, bridge predicates; six per-dimension `*_forces_*` theorems |
 | `Concrete/VerificationDepth.lean` | Kernel-grounded verification depth: `DepthClaim` constructive witness; `bounded_verify` budget decision procedure; `DepthWorldCtx` instantiates `W_bounded_verification` by construction |
 | `Theorems/BehavioralEquivalence.lean` | Observation-boundary equivalence; `working_systems_equivalent` — any two `GroundedBehavior` certificates are behaviorally equivalent (unconditional; no `SatisfiesAllProperties` premise); step-bridge section grounds withdraw/challenge/tick via `ReadyState` witnesses |
 | `Feasibility.lean` | Existence/non-vacuity witnesses: `world_bundles_feasible`, `commitments_feasible`, `existence_under_constraints_structural`, `existence_under_constraints_embedding` |
@@ -154,8 +157,10 @@ The framework has three layers:
 | `Meta/Modular.lean` | Constraint-subset modularity: `PartialWellFormed`, `modular` (∀ S ⊆ constraints, biconditional fragment → forcing projection), `allConstraints`/`noConstraints` |
 | `Meta/ClusterRegistry.lean` | 29-cluster tag registry: `ClusterTag`, `EnabledXxxCluster` inductives, per-family canonical lists, `clusterEnabled`/`clusterDescription` routing |
 | `Meta/Config.lean` | Configurable certification engine: `CertifiedProjection`, `certify`, named proof witnesses for all 29 clusters |
-| `Meta/LeanKernel/World.lean` | Lean kernel self-application — world layer (`LeanKernelCtx`, bundle witnesses, Gettier), architecture layer (`LeanWorkingSystem`, HasX proofs, convergence chain), and OleanStaleness deposit witness; 30 theorems proving the Lean kernel is EpArch-compliant |
+| `Meta/LeanKernel/World.lean` | Lean kernel self-application — world layer (`LeanKernelCtx`, bundle witnesses, Gettier), architecture layer (`LeanWorkingSystem`, HasX proofs, convergence chain), and OleanStaleness deposit witness; 27 theorems proving the Lean kernel is EpArch-compliant |
 | `Meta/LeanKernel/SFailure.lean` | Lean kernel S-field failure taxonomy: `LeanAxiomLevel`, `ElabMode`, `LeanStandardCase`, `LeanVacuousStandard`, relational vs. absolute S-failure theorems |
+| `Meta/LeanKernel/OdometerModel.lean` | Concrete minimal sub-bundle: single-bubble append-only system, graceful degradation witness |
+| `Bank/Dynamics.lean` | Behavioral profiling: `success_driven_bypass`, `blast_radius_scales_with_reliance` |
 
 ### Safety and Scope
 
@@ -171,7 +176,7 @@ The framework has three layers:
 | Module | Purpose |
 |---|---|
 | `Main.lean` | Full build entry point |
-| `EpArch/Concrete/` | Zero-axiom constructive witness (5 modules: Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity) |
+| `EpArch/Concrete/` | Zero-axiom constructive witness (8 modules: Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity, Realizer, VerificationDepth, WorkedTraces) |
 
 ---
 

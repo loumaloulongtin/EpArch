@@ -175,6 +175,6 @@ only theorems, definitions, and opaque constants.
 | `Invariants.lean` | Grounded operational invariants |
 | `Semantics/StepSemantics.lean` | Concrete step semantics (LTS core) |
 | `Semantics/LinkingAxioms.lean` | Grounded linking theorems (Step preconditions → architectural features) |
-| `Theorems/` | Derived theorems (8 sub-modules) |
-| `EpArch/Concrete/` | Constructive concrete model (5 modules: Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity) |
+| `Theorems/` | Derived theorems (10 sub-modules) |
+| `EpArch/Concrete/` | Constructive concrete model (8 modules: Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity, Realizer, VerificationDepth, WorkedTraces) |
 | All others | Theorem-bearing or definitional surfaces only |

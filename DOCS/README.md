@@ -1,6 +1,6 @@
 # EpArch Lean Formalization — Documentation Index
 
-This folder documents the Lean formalization of the Epistemic Architecture (EpArch) framework — 712 proved theorems, 0 axiom declarations, zero sorries.
+This folder documents the Lean formalization of the Epistemic Architecture (EpArch) framework — 646 proved theorems, 0 axiom declarations, zero sorries.
 
 **The core claim:** lifecycle gates, header-preserving export, a revision loop, and temporal validity are not design choices. They are *forced* by the combination of agent constraints (imperfect agents face permanent challenge pressure) and system health goals (safe withdrawal, reliable export, self-correction). The files below are the machine-checked record of that forcing argument.
 
@@ -20,6 +20,8 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | [SEMANTICS.md](SEMANTICS.md) | Step semantics and LTS overview |
 | [WITNESS-SCOPE.md](WITNESS-SCOPE.md) | What the concrete model witnesses (and doesn't) |
 | [MODULARITY.md](MODULARITY.md) | Modularity tiers: what survives disabling a constraint, health goal, or world bundle, and by what mechanism |
+| [CASE-STUDIES.md](CASE-STUDIES.md) | Cross-domain convergence test: do real-world systems under pressure reinvent the same primitives? |
+| [SELF-APPLICATION-AI.md](SELF-APPLICATION-AI.md) | Self-application: Claude Opus 4.6 through the EpArch certification surface |
 
 ## Core Concepts (Glossary)
 
@@ -74,7 +76,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | 26 | Theorem Transport — Main Library Layer (Tier 4 closure: standalone commitments + structural + LTS + health goals) |
 | 27 | Modularity Meta-Theorem — ∀ S ⊆ Constraints, projection_valid S |
 | 28 | Certification Engine — `EpArchConfig → ClusterTag → certified proof` (29 clusters) |
-| 29 | Lean Kernel Instantiation — Lean's type-checking kernel modeled as EpArch-compliant (`LeanKernelCtx`, `LeanWorkingSystem`, 30 theorems) |
+| 29 | Lean Kernel Instantiation — Lean's type-checking kernel modeled as EpArch-compliant (`LeanKernelCtx`, `LeanWorkingSystem`, 32 theorems across World.lean and SFailure.lean) |
 
 ### Key Files
 
@@ -84,7 +86,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | `Header.lean` | S/E/V header structure + Deposit records | 0 |
 | `Semantics/StepSemantics.lean` | Labeled transition system (Step, Trace, Action, invariant preservation) | 0 |
 | `Semantics/LinkingAxioms.lean` | Grounded linking theorems: Step preconditions force architectural features | 0 |
-| `Theorems/` | Primary theorem library split into 8 focused sub-modules (Withdrawal, Cases, Headers, Modal, Strip, Corners, Dissolutions, Pathologies) | 0 |
+| `Theorems/` | Primary theorem library split into 10 focused sub-modules (Withdrawal, Cases, Headers, Modal, Strip, Corners, Dissolutions, Pathologies, Diagnosability, BehavioralEquivalence) | 0 |
 | `Adversarial/Obligations.lean` | Adversarial axioms → obligation theorems | 0 |
 | `Semantics/RevisionSafety.lean` | Premise strengthening + compatible extensions | 0 |
 | `Semantics/ScopeIrrelevance.lean` | Scope irrelevance theorems | 0 |
@@ -95,6 +97,8 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | `Health.lean` | Health predicates + necessity theorems | 0 |
 | `Invariants.lean` | Protocol requirements | 0 |
 | `Minimality.lean` | Structural impossibility models + alternative-architecture dismissals | 0 |
+| `Scenarios.lean` | Six `Represents*` scenario enrichments + `SystemOperationalBundle`/`WorldBridgeBundle` packaging | 0 |
+| `GroundedEvidence.lean` | `GroundedX` evidence structures powering `PartialGroundedSpec` compliance API | 0 |
 | `Convergence.lean` | `StructurallyForced`, `ForcingEmbedding`, `convergence_structural`, bridge predicates | 0 |
 | `Theorems/BehavioralEquivalence.lean` | Observation-boundary equivalence; `Behavior` takes `GroundedBehavior`, step-grounded for withdraw/challenge/tick | 0 |
 | `Concrete/Types.lean` | Concrete types (CProp/CDeposit/CBubble/etc.) | 0 |
@@ -102,8 +106,12 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | `Concrete/WorkingSystem.lean` | Behavioral equivalence, grounding, `ConcreteWorkingSystem` | 0 |
 | `Concrete/DeficientSystems.lean` | 6 deficient-system bridge-impossibility witnesses | 0 |
 | `Concrete/NonVacuity.lean` | Advanced non-vacuity: traces, legibility, convergence, modal | 0 |
+| `Concrete/Realizer.lean` | `Realizer` and `SuccessfulSystem` type packaging | 0 |
+| `Concrete/VerificationDepth.lean` | `DepthClaim` constructive witness, `bounded_verify` decision procedure | 0 |
+| `Concrete/WorkedTraces.lean` | Worked trace examples for theorem transport | 0 |
 | `Meta/LeanKernel/World.lean` | Lean kernel self-application: `LeanKernelCtx`, `LeanWorkingSystem`, world-layer witnesses, architecture-layer proofs, convergence chain, OleanStaleness | 0 |
 | `Meta/LeanKernel/SFailure.lean` | Lean kernel S-field failure taxonomy: axiom levels, standard/vacuous cases, relational vs. absolute failure | 0 |
+| `Meta/LeanKernel/OdometerModel.lean` | Concrete minimal sub-bundle: single-bubble append-only system, graceful degradation witness | 0 |
 
 ## Build & Verification
 

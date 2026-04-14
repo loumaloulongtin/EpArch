@@ -182,6 +182,11 @@ theorem WorldCtx.kernel_redundant_without_lies (C : WorldCtx)
 | `collapse_causes_centralization` | `collapse_causes_centralization_of_W` | `W_collapse_centralization` |
 | `lies_scale` | `lies_scale_of_W` | `W_lies_scale` |
 | `rolex_ddos_structural_equivalence` | `rolex_ddos_structural_equivalence_of_W` | `W_rolex_ddos` |
+| *(cheap validator)* | `cheap_validator_blocks_V_attack_of_W` | `W_cheap_validator` |
+| *(trust bridge)* | `trust_bridge_blocks_V_attack_of_W` | `W_trust_bridge` |
+| *(reversibility)* | `reversibility_neutralizes_τ_of_W` | `W_reversibility` |
+| *(E-field inclusion)* | `E_inclusion_closes_expertise_gap_of_W` | `W_E_inclusion` |
+| *(cheap constraint)* | `cheap_constraint_blocks_V_spoof_of_W` | `W_cheap_constraint` |
 
 The `ddos_to_centralization_of_W` theorem composes the DDoS and centralization results into the full argument chain: "DDoS vectors → verification collapse → trust centralization."
 

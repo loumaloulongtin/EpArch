@@ -171,18 +171,18 @@ gives `WorldAwareSystem` as a strict weakening.
 
 ## Structural Convergence Theorems
 
-### `structural_goals_force_bank_primitives`
+### `convergence_structural`
 
-**File:** `EpArch/Feasibility.lean`
+**File:** `EpArch/Convergence.lean`
 
 ```lean
-theorem structural_goals_force_bank_primitives :
+theorem convergence_structural :
     ∀ W : WorkingSystem,
       StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W
 ```
 
-Structural alias for `convergence_structural` (from `Convergence.lean`). The preferred
-citation when the structural path needs to be made explicit — no `WorldCtx`, no W_* bundles.
+The structural convergence theorem — no `WorldCtx`, no W_* bundles. The preferred
+citation when the structural path needs to be made explicit.
 
 ### `existence_under_constraints_embedding`
 
@@ -239,30 +239,22 @@ discharge the W_* antecedents.
 
 ### `EpArch/Concrete/`
 
-Split from the former `ConcreteLedgerModel.lean` into five focused modules:
+Split from the former `ConcreteLedgerModel.lean` into eight focused modules:
 - `Concrete/Types.lean` — concrete types (CProp, CDeposit, CBubble, …)
 - `Concrete/Commitments.lean` — C1–C8 commitment witnesses + `all_commitments_satisfiable`
 - `Concrete/WorkingSystem.lean` — behavioral equivalence, grounding, `ConcreteWorkingSystem`
 - `Concrete/DeficientSystems.lean` — six deficient-system bridge-impossibility witnesses
 - `Concrete/NonVacuity.lean` — advanced non-vacuity: traces, legibility, convergence
+- `Concrete/Realizer.lean` — `Realizer` and `SuccessfulSystem` type packaging
+- `Concrete/VerificationDepth.lean` — `DepthClaim` constructive witness, `bounded_verify`
+- `Concrete/WorkedTraces.lean` — worked trace examples for theorem transport
 
 Provides `ConcreteWorkingSystem` with `concrete_structurally_forced` and
 `concrete_satisfies_all_properties`.
 
----
-
-## Claim Budget
-
-- **Non-vacuity:** The constraint + objective package is consistent and non-empty.
-- **Existence:** There is at least one working system meeting the success bundle.
-- **Forcing (structural):** Bank primitives are necessary — no `WorldCtx` required.
-- **Forcing (world-grounded):** W_* bundles force Bank primitives; WitnessCtx closes the loop.
-
-What these theorems do not establish:
-
-- Uniqueness (many realizations can exist)
-- Optimality (no optimality claim is made)
-- Realism (the concrete witnesses are formal constructions, not empirical models)
+These theorems do not establish uniqueness (many realizations can exist),
+optimality (no optimality claim is made), or realism (the concrete witnesses
+are formal constructions, not empirical models).
 
 ---
 
@@ -307,7 +299,7 @@ concrete_forcing_embedding
   concrete_structurally_forced
   │
   ▼
-  convergence_structural (= structural_goals_force_bank_primitives)
+  convergence_structural
   │
   ├──▶  existence_under_constraints_structural
   │       (StructurallyForced ∧ SatisfiesAllProperties ∧ containsBankPrimitives)

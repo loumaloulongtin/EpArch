@@ -1,6 +1,6 @@
 # Theorem Inventory
 
-This document catalogs **712** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
+This document catalogs **646** proved theorems in the formalization, organized by argumentative role. The count covers all named `theorem` declarations in the EpArch namespace (case-sensitive keyword match, excluding example lines inside doc comments).
 
 **What the architecture claims:** Decentralized epistemic authorization requires specific structural mechanisms — a lifecycle with type-separated stages, header-preserving export, a revision loop, temporal validity, and a Bank substrate. These aren't design preferences; they are forced by the combination of agent constraints and system health goals.
 
@@ -35,8 +35,8 @@ This document catalogs **712** proved theorems in the formalization, organized b
 | `candidate_blocks_withdrawal` | Theorems/Corners.lean | Candidate status blocks withdrawal | Lottery dissolution |
 | `withdrawal_requires_deposited` | Theorems/Corners.lean | Must be Deposited to withdraw | Bank gates |
 | `submit_produces_candidate` | Theorems/Corners.lean | Submit creates Candidate status | Lifecycle |
-| `traction_broader_than_authorization` | Theorems/Corners.lean | Traction âŠƒ Authorization | Core split |
-| `authorization_implies_traction` | Theorems/Corners.lean | Authorization → Traction | One direction |
+| `authorization_implies_traction` | Theorems/Corners.lean | Authorization → Traction (one direction) | Core split |
+| `innovation_allows_traction_without_authorization` | Commitments.lean | Traction without authorization (other direction) | Core split |
 
 ### Math Form
 
@@ -1060,10 +1060,10 @@ File: `Agent/Imposition.lean`
 
 | Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
-| `structural_goals_force_bank_primitives` | Feasibility.lean | ∀ W. StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W | Minimality: forced primitives (structural path) |
+| `convergence_structural` | Convergence.lean | ∀ W. StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W | Minimality: forced primitives (structural path) |
 | `existence_under_constraints_structural` | Feasibility.lean | ∃ W. StructurallyForced W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W | Existence via structural path |
 | `existence_under_constraints_embedding` | Feasibility.lean | ∃ W. ForcingEmbedding W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W | Existence via embedding path (strongest form) |
-| `bundled_structure_forces_bank_primitives` | Feasibility.lean | `SystemOperationalBundle W → WorldBridgeBundle W → SatisfiesAllProperties W → containsBankPrimitives W` | Headline 4-argument form; no `WorldCtx` |
+| `bundled_structure_forces_bank_primitives` | WorldBridges.lean | `SystemOperationalBundle W → WorldBridgeBundle W → SatisfiesAllProperties W → containsBankPrimitives W` | Headline 4-argument form; no `WorldCtx` |
 | `world_bundles_feasible` | Feasibility.lean | World bundles satisfiable | World non-vacuity |
 | `commitments_feasible` | Feasibility.lean | 8 commitments satisfiable | Model non-vacuity |
 | `joint_feasible` | Feasibility.lean | Constraints + objectives jointly satisfiable | Non-vacuity |
@@ -1197,7 +1197,7 @@ File: `Agent/Imposition.lean`
 
 | Definition | File | Description |
 |------------|------|-------------|
-| `Entrenched` | Basic.lean:189 | `certainty_L a P ∧ ignores_bank_signal a P` — Certainty + closed review channel |
+| `Entrenched` | Basic.lean:198 | `certainty_L a P ∧ ignores_bank_signal a P` — Certainty + closed review channel |
 | `EntrenchedAgent` | Theorems/Corners.lean | Structure bundling agent, claim, and entrenchment proof |
 | `deposit_no_longer_active` | Theorems/Corners.lean | Deposit is Quarantined or Revoked |
 
@@ -1217,10 +1217,10 @@ $$\text{Entrenched}(a, P) \land \text{deposit-no-longer-active}(s, d) \Rightarro
 
 | Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
-| `header_ext` | Header.lean:149 | Headers agreeing on 6 fields are equal | B16b.1: Header extensionality |
-| `deposit_ext` | Header.lean:166 | Deposits agreeing on 4 fields are equal | A.OC2: Deposit extensionality |
-| `observational_completeness` | Header.lean:182 | Field-equal deposits are predicate-indistinguishable | B16b.3: Closure theorem |
-| `observational_completeness_full` | Header.lean:199 | All 9 primitive fields → predicate-indistinguishable | A.OC1: Full field version |
+| `header_ext` | Header.lean:129 | Headers agreeing on 6 fields are equal | B16b.1: Header extensionality |
+| `deposit_ext` | Header.lean:146 | Deposits agreeing on 4 fields are equal | A.OC2: Deposit extensionality |
+| `observational_completeness` | Header.lean:162 | Field-equal deposits are predicate-indistinguishable | B16b.3: Closure theorem |
+| `observational_completeness_full` | Header.lean:179 | All 9 primitive fields → predicate-indistinguishable | A.OC1: Full field version |
 
 ### Math Form
 

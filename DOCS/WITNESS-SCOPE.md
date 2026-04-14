@@ -1,6 +1,6 @@
 # Witness Scope: What `EpArch/Concrete/` Establishes
 
-This document specifies what is **directly witnessed by the `EpArch/Concrete/` modules** (formerly `ConcreteLedgerModel.lean`, now split into five files), what is **proved elsewhere in the repo**, and what is **out of scope**.
+This document specifies what is **directly witnessed by the `EpArch/Concrete/` modules** (formerly `ConcreteLedgerModel.lean`, now split into eight files), what is **proved elsewhere in the repo**, and what is **out of scope**.
 
 Its job is narrow:
 
@@ -32,8 +32,9 @@ What it does **not** buy by itself:
 ## Directly Witnessed in `EpArch/Concrete/`
 
 These are concrete-instance results, not merely abstract theorems.
-They are split across five modules: `Concrete/Types.lean`, `Concrete/Commitments.lean`,
-`Concrete/WorkingSystem.lean`, `Concrete/DeficientSystems.lean`, `Concrete/NonVacuity.lean`.
+They are split across eight modules: `Concrete/Types.lean`, `Concrete/Commitments.lean`,
+`Concrete/WorkingSystem.lean`, `Concrete/DeficientSystems.lean`, `Concrete/NonVacuity.lean`,
+`Concrete/Realizer.lean`, `Concrete/VerificationDepth.lean`, `Concrete/WorkedTraces.lean`.
 
 | Property | Theorem |
 |----------|---------|
@@ -63,7 +64,7 @@ These are real results, but **this file is not where they live**.
 |--------|-------------------|-------|
 | World-bundle feasibility | `EpArch.WorldWitness`, `EpArch.Feasibility.world_bundles_feasible` | Witnessed at the world-bundle layer |
 | Existence-under-constraints | `existence_under_constraints_structural` (via `StructurallyForced`), `existence_under_constraints_embedding` (via `ForcingEmbedding`), `bundled_structure_forces_bank_primitives` (headline bundled form) | Packages non-vacuity + success + forced primitives; multiple forms available |
-| Forced-primitives / minimality | `EpArch.Minimality`, `EpArch.Feasibility.structural_goals_force_bank_primitives`, `bundled_structure_forces_bank_primitives` | "Bank primitives are necessary" is not a witness-only claim |
+| Forced-primitives / minimality | `EpArch.Minimality`, `EpArch.Convergence.convergence_structural`, `bundled_structure_forces_bank_primitives` | "Bank primitives are necessary" is not a witness-only claim |
 | Field-completeness / no hidden DOF | `EpArch.Header` (`observational_completeness_full`) | Type/completeness result, not a concrete witness |
 | Safe compatible extension | `EpArch.RevisionSafety` | Repo-level preservation theorem |
 | LTS refinement / operational grounding | `EpArch.StepSemantics`, `EpArch.Theorems` | Proved abstractly, not by inspecting one concrete model |
