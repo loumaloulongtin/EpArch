@@ -34,7 +34,7 @@ lake build   # Lean 4.3.0, no Mathlib
 | **Transport theorems through compatible extensions** — Tier 3–4 closure | `EpArch/Meta/TheoremTransport.lean`, `EpArch/Meta/Tier4Transport.lean` |
 | **Extend or adapt the framework** — 29-cluster registry + contributor recipes | [`DOCS/MODULARITY.md`](DOCS/MODULARITY.md) |
 | **Verify a constructive witness** — zero-axiom trace from initial state to revoked | `EpArch/Concrete/NonVacuity.lean` |
-| **Localize an epistemic puzzle** (Gettier, Lottery, Fake Barn, confabulation) | `EpArch/Theorems/Cases.lean` — `gettier_is_V_failure`, `confabulation_is_type_error`; `EpArch/Theorems/Corners.lean` — `lottery_paradox_dissolved_architecturally` |
+| **Localize an epistemic puzzle** (Gettier, Lottery, Fake Barn, confabulation) | `EpArch/Theorems/Cases/` — `gettier_is_V_failure` (Gettier.lean), `confabulation_is_type_error` (TypeErrors.lean); `EpArch/Theorems/Corners.lean` — `lottery_paradox_dissolved_architecturally` |
 
 ---
 
@@ -78,7 +78,7 @@ The framework has three layers:
 | Core types (`Deposit`, `Bubble`, `Header`, `DepositStatus`) | `EpArch/Basic.lean`, `EpArch/Header.lean` |
 | Lifecycle gate theorems (withdrawal, export, challenge) | `EpArch/Theorems/Withdrawal.lean`, `EpArch/Theorems/Corners.lean` |
 | Type-separation: traction ≠ authorization | `EpArch/Theorems/Corners.lean` — `traction_broader_than_authorization` |
-| Gettier → V-field failure | `EpArch/Theorems/Cases.lean` — `gettier_is_V_failure` |
+| Gettier → V-field failure | `EpArch/Theorems/Cases/Gettier.lean` — `gettier_is_V_failure` |
 | Lottery → type error | `EpArch/Theorems/Corners.lean` — `lottery_paradox_dissolved_architecturally` |
 | Header stripping has no left inverse | `EpArch/Theorems/Strip.lean` — `no_strip_left_inverse` |
 | Non-vacuity witnesses (all constraints satisfiable) | `EpArch/WorldWitness.lean`, `EpArch/Concrete/` |

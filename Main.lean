@@ -78,8 +78,9 @@ The formalization proves these claims:
    existing theorems (the Compatible/transport_core machinery).
 10. **Theorems/** — Derived theorems, split into eight focused modules:
     - **Withdrawal.lean** — Withdrawal gates, repair lifecycle, diagnosis infrastructure
-    - **Cases.lean** — Classic epistemology case types (Gettier, Fake Barn, Standard,
-      Vacuous Standard, Lottery as type error, Confabulation)
+    - **Cases/** — Classic epistemology case types, one file per case (open for contributions):
+      `Gettier`, `FakeBarn`, `Standard`, `VacuousStandard`, `TypeErrors` (Lottery, Confabulation);
+      `Cases.lean` is the umbrella re-export
     - **Headers.lean** — Diagnosability metrics, field checkability, header-dispute link
     - **Modal.lean** — WorldCtx-parameterized modal cases (Safety↔V, Sensitivity↔E)
     - **Dissolutions.lean** — Type-separation dissolutions (closure, luminosity, Moorean,

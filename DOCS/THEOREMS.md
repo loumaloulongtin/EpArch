@@ -208,18 +208,18 @@ $$\tau\text{-valid}(\text{clock}, \tau) \land \text{clock}' > \text{clock} \Righ
 
 | Theorem | File | Diagnosis |
 |---------|------|-----------|
-| `gettier_is_V_failure` | Theorems/Cases.lean | Gettier = V-field failure (unconditional; `tracks_false_certified` structural field) |
-| `gettier_ground_disconnected` | Theorems/Cases.lean | Truth-maker and provenance are structurally distinct grounds (`ground_distinct` field) |
-| `canonical_gettier_is_gettier` | Theorems/Cases.lean | Canonical Gettier satisfies `IsGettierCase` |
-| `canonical_gettier_conditions` | Theorems/Cases.lean | Canonical Gettier satisfies all GettierCase conditions |
+| `gettier_is_V_failure` | Theorems/Cases/Gettier.lean | Gettier = V-field failure (unconditional; `tracks_false_certified` structural field) |
+| `gettier_ground_disconnected` | Theorems/Cases/Gettier.lean | Truth-maker and provenance are structurally distinct grounds (`ground_distinct` field) |
+| `canonical_gettier_is_gettier` | Theorems/Cases/Gettier.lean | Canonical Gettier satisfies `IsGettierCase` |
+| `canonical_gettier_conditions` | Theorems/Cases/Gettier.lean | Canonical Gettier satisfies all GettierCase conditions |
 
 ### Fake Barn Cases
 
 | Theorem | File | Diagnosis |
 |---------|------|----------|
-| `fake_barn_is_E_failure` | Theorems/Cases.lean | Fake Barn = E-field failure (unconditional; `e_certified` structural field) |
-| `fake_barn_profile_yields_E_failure` | Theorems/Cases.lean | Alias demonstrating the structural certification pattern |
-| `canonical_fake_barn_is_fake_barn` | Theorems/Cases.lean | Canonical fake barn satisfies FakeBarnCase |
+| `fake_barn_is_E_failure` | Theorems/Cases/FakeBarn.lean | Fake Barn = E-field failure (unconditional; `e_certified` structural field) |
+| `fake_barn_profile_yields_E_failure` | Theorems/Cases/FakeBarn.lean | Alias demonstrating the structural certification pattern |
+| `canonical_fake_barn_is_fake_barn` | Theorems/Cases/FakeBarn.lean | Canonical fake barn satisfies FakeBarnCase |
 
 ### Standard Case (S-Field Failure)
 
@@ -228,25 +228,25 @@ certify that S is vacuous regardless of consumer). Both repair by targeting Fiel
 
 | Theorem | File | Diagnosis |
 |---------|------|------------|
-| `standard_case_is_S_failure` | Theorems/Cases.lean | IsStandardCase → case_S_inadequate (Prop-level; not Bool.not_false) |
-| `canonical_standard_case_is_standard` | Theorems/Cases.lean | Peanut-allergy canonical case satisfies IsStandardCase |
-| `standard_failure_targets_S` | Theorems/Cases.lean | IsStandardCase → S_fails = true (executable mirror) |
-| `standard_failure_is_relational` | Theorems/Cases.lean | Same deposit standard: allergic agent fails, lenient agent passes |
-| `same_deposit_standard_split_yields_relational_S_failure` | Theorems/Cases.lean | Generic: same deposit_standard + opposite threshold outcomes → RelationalClearanceSplit |
-| `canonical_allergy_is_relational_split` | Theorems/Cases.lean | Canonical allergy pair is a RelationalClearanceSplit |
-| `s_failure_v_is_sound` | Theorems/Cases.lean | In an S-failure, V-provenance is genuinely tracking (V is positively certified) |
-| `s_failure_e_is_sound` | Theorems/Cases.lean | In an S-failure, E-coverage has no relevant gap (E is positively certified) |
-| `s_failure_v_mode_and_e_threat` | Theorems/Cases.lean | Data-backed form: `mode = .direct_inspection` and `threat âˆˆ modeled_threats` (concrete witnesses) |
-| `relational_S_requires_matching_VE_data` | Theorems/Cases.lean | Relational S-failure: symmetric V/E data across both consumers; only threshold differs |
+| `standard_case_is_S_failure` | Theorems/Cases/Standard.lean | IsStandardCase → case_S_inadequate (Prop-level; not Bool.not_false) |
+| `canonical_standard_case_is_standard` | Theorems/Cases/Standard.lean | Peanut-allergy canonical case satisfies IsStandardCase |
+| `standard_failure_targets_S` | Theorems/Cases/Standard.lean | IsStandardCase → S_fails = true (executable mirror) |
+| `standard_failure_is_relational` | Theorems/Cases/Standard.lean | Same deposit standard: allergic agent fails, lenient agent passes |
+| `same_deposit_standard_split_yields_relational_S_failure` | Theorems/Cases/Standard.lean | Generic: same deposit_standard + opposite threshold outcomes → RelationalClearanceSplit |
+| `canonical_allergy_is_relational_split` | Theorems/Cases/Standard.lean | Canonical allergy pair is a RelationalClearanceSplit |
+| `s_failure_v_is_sound` | Theorems/Cases/Standard.lean | In an S-failure, V-provenance is genuinely tracking (V is positively certified) |
+| `s_failure_e_is_sound` | Theorems/Cases/Standard.lean | In an S-failure, E-coverage has no relevant gap (E is positively certified) |
+| `s_failure_v_mode_and_e_threat` | Theorems/Cases/Standard.lean | Data-backed form: `mode = .direct_inspection` and `threat ∈ modeled_threats` (concrete witnesses) |
+| `relational_S_requires_matching_VE_data` | Theorems/Cases/Standard.lean | Relational S-failure: symmetric V/E data across both consumers; only threshold differs |
 
 ### Vacuous Standard Case (S Voided by E + V Interaction)
 
 | Theorem | File | Diagnosis |
 |---------|------|------------|
-| `vacuous_standard_is_S_failure` | Theorems/Cases.lean | VacuousStandardCase → S_is_vacuous (both conditions certified as structural fields) |
-| `testimony_only_plus_unreliable_source_yields_void_S` | Theorems/Cases.lean | Generic: testimony-only S over documented-unreliable source → void S |
-| `canonical_liar_cook_is_void` | Theorems/Cases.lean | Known-liar cook case → S_is_vacuous (instance of generic theorem) |
-| `absolute_vs_relational_S_failure` | Theorems/Cases.lean | Both failure subtypes in one theorem: relational (allergy) ∧ absolute (liar cook) |
+| `vacuous_standard_is_S_failure` | Theorems/Cases/VacuousStandard.lean | VacuousStandardCase → S_is_vacuous (both conditions certified as structural fields) |
+| `testimony_only_plus_unreliable_source_yields_void_S` | Theorems/Cases/VacuousStandard.lean | Generic: testimony-only S over documented-unreliable source → void S |
+| `canonical_liar_cook_is_void` | Theorems/Cases/VacuousStandard.lean | Known-liar cook case → S_is_vacuous (instance of generic theorem) |
+| `absolute_vs_relational_S_failure` | Theorems/Cases/VacuousStandard.lean | Both failure subtypes in one theorem: relational (allergy) ∧ absolute (liar cook) |
 
 ### Lottery Paradox
 

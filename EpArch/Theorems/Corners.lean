@@ -360,7 +360,7 @@ theorem export_ignores_target_acl
     merely mislabelled.
 
     This is the step-grounded bridge between the case-type taxonomy
-    (Cases.lean: LotteryIsTypeError) and the architectural dissolution
+    (Cases/TypeErrors.lean: LotteryIsTypeError) and the architectural dissolution
     below (Corner 2: status_distinction_blocks_lottery,
     lottery_paradox_dissolved_architecturally). -/
 
