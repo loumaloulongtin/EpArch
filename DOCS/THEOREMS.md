@@ -1559,3 +1559,21 @@ $$\text{containsBankPrimitives}(\text{LeanWorkingSystem}) \quad \text{(directly 
 |------|-----------|---------------|
 | `olean_stale_when_source_changed` | `0 < r.compiled_at → source_changed epoch r → compute_status (olean_as_deposit r path) epoch = .Stale` | A changed source makes the `.olean` deposit stale; τ = compiled_at falls below the current epoch |
 | `stale_olean_blocks_withdrawal` | `0 < r.compiled_at → source_changed epoch r → ¬ c_can_withdraw … (olean_as_deposit r path) epoch` | Stale `.olean` cannot be withdrawn; `c_can_withdraw` requires `compute_status = .Deposited` |
+
+---
+
+## Deferred Predictions
+
+### Prediction 4 — Audited Entities Fail Spectacularly (Blast Radius Scaling)
+
+**Why deferred:** Prediction 4 requires multi-agent reliance semantics: the claim is that high-reliance entities accumulate trust and receive proportionally less scrutiny, so their blast radius scales with reliance depth. Formalizing this needs a reliance graph over agents (not just per-deposit ACL), a challenge-frequency model tied to success history, and a blast-radius metric over the graph. None of these are in the current single-agent kernel scope.
+
+**Intuition-model divergence:** Common sense: audit = safety. Model: high-uptime → reduced challenge frequency → larger blast radius on failure. Success-driven header bypass is the mechanism.
+
+**Mechanism:** `success_driven_bypass` (Bank.Dynamics) already models reliance depth and failure cost at the per-deposit level. Extending to a multi-agent reliance graph (`relies_on : Agent → Agent → Prop`, `blast_radius_bounded_by_reliance_depth`) would provide the formal substrate. That extension is `Bank/Dynamics.lean` territory.
+
+**Falsifier:** If high-audit-frequency entities showed proportionally lower catastrophic failure rates across controlled samples.
+
+**Evidence:** Enron (audited by Arthur Andersen), FTX (audited, high-trust), systematic pattern of surprising failures in trusted institutions with deep reliance graphs.
+
+**Path to formalization:** Extend `Bank.Dynamics` with a `RelianceGraph` structure and prove `reliance_depth_bounds_blast_radius` against it. Then `audit_frequency_uncorrelated_with_blast_radius` follows from the reliance-graph structure the same way `success_driven_bypass` follows from single-agent deposit health.
