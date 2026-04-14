@@ -11,7 +11,6 @@ Also includes:
 import EpArch.Basic
 import EpArch.Semantics.StepSemantics
 import EpArch.Minimality
-import EpArch.Theorems.Withdrawal
 
 namespace EpArch
 

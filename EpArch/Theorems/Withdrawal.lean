@@ -1,10 +1,9 @@
 /-
-EpArch.Theorems.Withdrawal — Withdrawal, Repair, and Diagnosis Theorems
+EpArch.Theorems.Withdrawal — Withdrawal and Repair Theorems
 
 Derived theorems for the operational withdrawal lifecycle:
 - Withdrawal gates: ACL + currentness + bank consultation
 - Repair enforces revalidation (Candidate status after repair)
-- Diagnosis infrastructure: DiagnosableDeposit, DiagnoseField
 -/
 import EpArch.Basic
 import EpArch.Semantics.StepSemantics
@@ -29,28 +28,11 @@ predicates from StepSemantics.  Three gates must all be satisfied:
 
 This is what distinguishes knowledge (Bank) from certainty (Ladder). -/
 
-/-- Operational withdrawal: defined in terms of Step.withdraw preconditions.
-
-    A withdrawal is possible in state s for agent a from bubble B at deposit index d_idx
-    iff all three gates are satisfied:
-    - ACL permission exists
-    - Deposit is current (τ valid)
-    - Deposit is in Deposited status (bank consultation) -/
-def CanWithdrawAt (s : SystemState PropLike Standard ErrorModel Provenance)
-    (B : Bubble) (a : Agent) (d_idx : Nat) : Prop :=
-  hasACLPermission s a B d_idx ∧ isCurrentDeposit s d_idx ∧ isDeposited s d_idx
-
 /-- ACL gate: agent has permission for this deposit in this bubble.
     Definitionally equal to `hasACLPermission`. -/
 def ACL_OK_At (s : SystemState PropLike Standard ErrorModel Provenance)
     (a : Agent) (B : Bubble) (d_idx : Nat) : Prop :=
   hasACLPermission s a B d_idx
-
-/-- Current: deposit's τ is valid relative to some clock.
-    Definitional version: there exists a clock at which this deposit is current.
-    This connects to the operational `isCurrentDeposit` in StepSemantics. -/
-def Current (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
-  ∃ clock : Time, d.h.τ ≤ clock
 
 /-- Currentness at a specific state: deposit at index has valid τ.
     Definitionally equal to `isCurrentDeposit`. -/
@@ -63,18 +45,6 @@ def Current_At (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx 
     Definitionally equal to `isDeposited`. -/
 def ConsultedBank_At (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat) : Prop :=
   isDeposited s d_idx
-
-/-- Any deposit with τ ≤ some clock is current. -/
-theorem current_from_clock (d : Deposit PropLike Standard ErrorModel Provenance)
-    (clock : Time) (h : d.h.τ ≤ clock) : Current d :=
-  ⟨clock, h⟩
-
-/-- Current is deposit-intrinsic: every deposit is current with respect to
-    its own timestamp.  `d.h.τ ≤ d.h.τ` witnesses the existential — no
-    external clock hypothesis required. -/
-theorem current_stable (d : Deposit PropLike Standard ErrorModel Provenance) :
-    Current d :=
-  ⟨d.h.τ, Nat.le_refl _⟩
 
 /-- WITHDRAWAL GATES THEOREM (derived from LTS, no axiom!)
 
@@ -93,33 +63,6 @@ theorem withdrawal_gates
   -- Directly use the operational theorem from StepSemantics
   exact withdrawal_requires_three_gates s s' a B d_idx h_step
 
-/-- Corollary: CanWithdrawAt is exactly the conjunction of the three gates. -/
-theorem canWithdrawAt_iff_gates
-    (s : SystemState PropLike Standard ErrorModel Provenance)
-    (B : Bubble) (a : Agent) (d_idx : Nat) :
-    CanWithdrawAt s B a d_idx ↔
-    (ACL_OK_At s a B d_idx ∧ Current_At s d_idx ∧ ConsultedBank_At s d_idx) :=
-  -- Definitional equality (unfold reveals same conjunction)
-  Iff.rfl
-
-/-- The three gates are necessary: if withdrawal step fires, CanWithdrawAt held. -/
-theorem withdrawal_requires_canWithdrawAt
-    (s s' : SystemState PropLike Standard ErrorModel Provenance)
-    (B : Bubble) (a : Agent) (d_idx : Nat)
-    (h_step : Step (Reason := Reason) (Evidence := Evidence) s (.Withdraw a B d_idx) s') :
-    CanWithdrawAt s B a d_idx := by
-  exact withdrawal_requires_three_gates s s' a B d_idx h_step
-
-/-- The three gates are sufficient: if CanWithdrawAt holds, withdrawal step can fire.
-    (The step exists as a valid transition.) -/
-theorem canWithdrawAt_enables_step
-    (s : SystemState PropLike Standard ErrorModel Provenance)
-    (B : Bubble) (a : Agent) (d_idx : Nat)
-    (h_can : CanWithdrawAt s B a d_idx) :
-    Step (Reason := Reason) (Evidence := Evidence) s (.Withdraw a B d_idx) s := by
-  let ⟨h_acl, h_current, h_deposited⟩ := h_can
-  exact Step.withdraw s a B d_idx h_acl h_current h_deposited
-
 
 /-! ## Repair Theorems
 
@@ -130,15 +73,6 @@ The repair loop is operational in StepSemantics:
 
 When a deposit is superseded or repaired, the replacement must go through
 acceptance — claims cannot be patched without revalidation. -/
-
-/-- Candidate status predicate: deposit has status = .Candidate.
-    Now definitional rather than opaque. -/
-def IsCandidate (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
-  d.status = .Candidate
-
-/-- Operational Candidate_At: deposit at index has Candidate status. -/
-def IsCandidate_At (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat) : Prop :=
-  ∃ d, s.ledger.get? d_idx = some d ∧ d.status = .Candidate
 
 /-- Repair enforces revalidation: after Step.repair, deposit is Candidate.
 
