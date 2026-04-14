@@ -1,26 +1,30 @@
 /-
-EpArch.Predictions — Non-Trivial Typed Predictions
+EpArch.ConditionalPredictions — Conditional Structural Predictions
 
-Formally typed theorems encoding the model's three structural predictions.
-Each prediction is a proved theorem (not a string record): the model's
-machinery is used directly to close the gap between intuition and prediction.
+Typed structural theorems establishing the model's conditional predictions:
+results of the form "under structural conditions X, outcome Y holds" where X
+is stated over architectural predicates (not empirical premises). Each theorem
+is proved within the current kernel. The conditions themselves — agent psychology
+bridges, bubble admission policies — are named opaques: the explicit unconditional
+presuppositions. The predictions earn their place here, but they are waiting for an
+agent model to correlate them: richer psychology or simulation machinery would let
+the conditional premises be derived rather than supplied.
 
-- Prediction 1 (Cult/Intelligence): two named opaques — `import_gated` (bubble
-  admission policy blocks disconfirming deposits) and `structural_seal_implies_signal`
-  (bridge from structural conditions to agent psychology) — with `structural_e_closure`
-  derived from the diagnosability machinery (`e_closure_blocks_field_check` is a proved
-  theorem, not an assumed invariant). `traction_sealed_under_control` is a proved
-  conjunction of `c.h_import_gated` and `h_eclosed`, replacing the packed anonymous
-  `traction_sealed` record field from the prior design.
-- Prediction 2 (CT Non-Transfer): `ct_transfer_case` carries two B2-side deposits —
-  `b2_stripped` (what actually arrives after import) and `b2_full` (the idealized
-  full-header counterpart). `ct_does_not_transfer` proves bubble separation + the
-  diagnosability collapse (6→0) + that `b2_stripped` and `b2_full` are
-  indistinguishable by `strip` with no reconstruction possible — all from the case
-  structure. Proof discharges via `import_cannot_reconstruct`.
-- Prediction 3 (Sharing ≠ Belief): export (sharing) and certainty (belief) are
-  structurally independent. Bundling theorem over `testimony_is_export` and
-  `certainty_not_exportable`.
+- Conditional Prediction 1 (Cult/Intelligence): Conditions: `import_gated` (bubble
+  admission policy blocks disconfirming deposits, named opaque) + `structural_e_closure`
+  (no deposit in current state has a header, derived def) + `h_bank_sealed` (named
+  bridge field: import gating → Bank signal ignored). Under these conditions,
+  `cult_produces_entrenchment` is proved. `structural_e_closure` is a derived def;
+  `e_closure_blocks_field_check` is proved from `field_checkable_iff_header` — not an
+  assumed invariant. `traction_sealed_under_control` is a proved conjunction.
+- Conditional Prediction 2 (CT Non-Transfer): Condition: `ct_transfer_case` carries
+  two B2-side deposits — `b2_stripped` (what arrives after import) and `b2_full` (the
+  idealized full-header counterpart). Under the case structure, `ct_does_not_transfer`
+  proves bubble separation + diagnosability collapse (6→0) + strip-indistinguishability
+  with no reconstruction. Proof discharges via `import_cannot_reconstruct`.
+- Conditional Prediction 3 (Sharing ≠ Belief): export (sharing) and certainty (belief)
+  are structurally independent. Proved bundling of `testimony_is_export` and
+  `certainty_not_exportable`; this one has minimal conditioning — it generalizes well.
 
 Prediction 4 (audited entities / blast radius scaling) requires multi-agent reliance
 semantics outside the current kernel scope. Its mechanism and falsifier are preserved
@@ -43,31 +47,28 @@ universe u
 variable {PropLike Standard ErrorModel Provenance : Type u}
 
 /-! ========================================================================
-    PREDICTION 1 — Intelligence Does Not Protect Against Cults
+    CONDITIONAL PREDICTION 1 — Intelligence Does Not Protect Against Cults
 
     Intuition says: intelligent people (high S-quality) should see through
     manipulation and resist cult recruitment.
 
-    Model says: S-quality is orthogonal to cult susceptibility when two
-    structural conditions hold simultaneously:
+    Conditional model result: S-quality is orthogonal to cult susceptibility
+    when two structural conditions hold simultaneously:
     (1) `import_gated` — the bubble's admission policy blocks disconfirming
         deposits from reaching the agent (import side);
     (2) `structural_e_closure` — every deposit in the relevant state lacks
         a header, so no E-targeted challenge can be grounded (revision side).
-    Together they seal the Bank correction pathway. Entrenchment follows
-    from Certainty — regardless of S-quality.
+    Together they seal the Bank correction pathway. Entrenchment follows from
+    Certainty — regardless of S-quality — given the named bridge `h_bank_sealed`.
 
-    Architecture of the proof:
-    - `import_gated` and `structural_seal_implies_signal` are the two named
-      opaques — the minimal explicit trust boundary set.
-    - `structural_e_closure` is a derived def; `e_closure_blocks_field_check`
-      is a proved theorem from `field_checkable_iff_header` — not an assumed
-      invariant.
-    - `traction_sealed_under_control` is a proved conjunction, not a field
-      extraction from a packed record invariant.
+    The structural half (import gating + E-closure → `bank_signal_structurally_sealed`)
+    is proved unconditionally. The psychology-coupling half — that structural sealing
+    forces `ignores_bank_signal` — is the one explicit named conditional (the bridge
+    field `h_bank_sealed`). An agent model that derived this from agent-internal
+    dynamics would turn this into an unconditional result.
     ======================================================================== -/
 
-/-! ## Prediction 1 Predicates and Bridge -/
+/-! ## Conditional Prediction 1 Predicates and Bridge -/
 
 /-- Import channel gating: the bubble's admission policy for agent a on claim P
     blocks disconfirming deposits from outside the approved provenance chains.
@@ -110,7 +111,7 @@ def bank_signal_structurally_sealed
     (s : SystemState PropLike Standard ErrorModel Provenance) : Prop :=
   import_gated a B P ∧ structural_e_closure s
 
-/-! ## Prediction 1 Structure -/
+/-! ## Conditional Prediction 1 Structure -/
 
 /-- A cult case: an agent in a bubble where the import channel is gated.
 
@@ -138,7 +139,7 @@ structure cult_case where
       architectural fact (opaque), not a `Bool = true` equality. -/
   h_bank_sealed : import_gated agent bubble claim → ignores_bank_signal agent claim
 
-/-! ## Prediction 1 Theorems -/
+/-! ## Conditional Prediction 1 Theorems -/
 
 /-- PREDICTION 1 THEOREM: Import gating + E-closure seals the Bank signal.
 
@@ -181,19 +182,22 @@ theorem cult_produces_entrenchment (c : cult_case)
 
 
 /-! ========================================================================
-    PREDICTION 2 — Critical Thinking Does Not Transfer Across Domains
+    CONDITIONAL PREDICTION 2 — Critical Thinking Does Not Transfer Across Domains
 
     Intuition says: critical thinking is a general skill; high S in one
     domain should carry over to a new domain.
 
-    Model says: S-quality is grounded in the agent's home bubble (B1)
-    where an established E-field (domain error model) makes challenges and
-    diagnosis possible. In a new domain (B2) the agent has no E-field yet,
-    so diagnosability collapses to zero — regardless of how high S is in B1.
-    Import cannot bridge the gap: stripping removes the E-field component.
+    Conditional model result: under the `ct_transfer_case` structural conditions
+    (two distinct bubbles, an actual stripped import, an idealized full-header
+    counterpart), the diagnosability collapse and the import barrier are provable
+    from library theorems. The conditioning here is light: the case structure
+    names the deposits explicitly rather than quantifying over all agents and
+    bubbles. An agent-model extension would identify which agents are susceptible
+    to assuming CT transfer (e.g., agents whose S-estimate is anchored to B1
+    performance) — the structural half is already closed.
     ======================================================================== -/
 
-/-! ## Prediction 2 Structure -/
+/-! ## Conditional Prediction 2 Structure -/
 
 /-- A CT transfer case: the same agent expressing domain competence across two
     distinct bubbles. B1 is the home domain (where the E-field and full diagnostic
@@ -227,7 +231,7 @@ structure ct_transfer_case where
   /-- The E-field does not survive the crossing: stripped header ≠ full header. -/
   headers_differ    : b2_stripped.h ≠    b2_full.h
 
-/-! ## Prediction 2 Theorems -/
+/-! ## Conditional Prediction 2 Theorems -/
 
 /-- PREDICTION 2 THEOREM: CT does not transfer — diagnosability is bubble-scoped
     and the import barrier is structurally irreversible.
@@ -266,17 +270,16 @@ theorem ct_does_not_transfer (c : ct_transfer_case (PropLike := PropLike)
 
 
 /-! ========================================================================
-    PREDICTION 3 — Sharing ≠ Belief
+    CONDITIONAL PREDICTION 3 — Sharing ≠ Belief
 
     Intuition says: people share what they believe; sharing tracks belief.
 
-    Model says: sharing (export) and believing (deposit/certainty) are
-    distinct operations on separate architectural channels. Export is a
-    bubble-to-bubble operation on deposits; certainty is a private Ladder
-    stage. Neither implies the other:
-    - You can export without being at Certainty (social sharing without belief).
-    - You can be at Certainty without having an exportable deposit (mere traction,
-      no authorization value).
+    Model result: sharing (export) and believing (deposit/certainty) are
+    structurally independent — proved from the Pathologies library, minimal
+    conditioning. This is the strongest of the three predictions: no agent
+    model is needed to derive it. Export and certainty operate on separate
+    architectural channels (bubble-to-bubble deposit operations vs. private
+    Ladder stages); neither implies the other by construction.
     ======================================================================== -/
 
 /-- PREDICTION 3 THEOREM: Sharing ≠ Belief — the export gate and the Ladder gate

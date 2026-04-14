@@ -84,7 +84,7 @@ does what prevents confusion about where to look and where to edit.
 - `Theorems/BehavioralEquivalence.lean` — `GroundedBehavior`-indexed behavioral-equivalence results; step-bridge section grounds withdraw/challenge/tick via `ReadyState` witnesses and `behavior_from_step`.
 - `Health.lean`, `Meta/TheoremTransport.lean` — Tier 3 goal predicates and transport.
 - `Commitments.lean`, `Theorems/` (10 sub-modules), `Agent/*.lean`,
-  `Invariants.lean`, `Semantics/ScopeIrrelevance.lean`, `Predictions.lean`, `Concrete/WorkedTraces.lean` — Tier 4.
+  `Invariants.lean`, `Semantics/ScopeIrrelevance.lean`, `ConditionalPredictions.lean`, `Concrete/WorkedTraces.lean` — Tier 4.
 - `WorldCtx.lean`, `Adversarial/Obligations.lean`, `WorldWitness.lean` — Tier 1 / world.
 - `Meta/Modular.lean` — meta-modularity; `Meta/TheoremTransport.lean` (§8) — lattice-stability; `Meta/LeanKernel/OdometerModel.lean` — concrete odometer sub-bundle.
 - **Editing here does not change the cluster surface** unless Config.lean is updated too.
@@ -381,7 +381,7 @@ This means they are already halfway to being transport-safe — the predicate mo
 
 ## Tier 4 — Main Theorem Library (transport schema complete)
 
-**Files:** `Theorems/` (10 sub-modules: Withdrawal, Cases, Headers, Modal, Strip, Corners, Dissolutions, Pathologies, Diagnosability, BehavioralEquivalence), `Agent/Corroboration.lean`, `Agent/Resilience.lean`, `Invariants.lean`, `Semantics/ScopeIrrelevance.lean`, `Predictions.lean`, `Concrete/WorkedTraces.lean`
+**Files:** `Theorems/` (10 sub-modules: Withdrawal, Cases, Headers, Modal, Strip, Corners, Dissolutions, Pathologies, Diagnosability, BehavioralEquivalence), `Agent/Corroboration.lean`, `Agent/Resilience.lean`, `Invariants.lean`, `Semantics/ScopeIrrelevance.lean`, `ConditionalPredictions.lean`, `Concrete/WorkedTraces.lean`
 
 **Status:** ✅ Closed by `Meta/Tier4Transport.lean`.
 

@@ -109,7 +109,7 @@ Layer 1 (Substrate):  Bank, Semantics/LTS, WorldCtx
 Layer 2 (Semantics):  Semantics/StepSemantics, Semantics/RevisionSafety, Concrete/WorkedTraces
 Layer 3 (Theory):     Commitments, SystemSpec, Invariants, Minimality, Convergence, Scenarios
 Layer 4 (Derived):    Theorems/{Withdrawal,Cases,Headers,Modal,Dissolutions,Pathologies,Strip,Corners,Diagnosability,BehavioralEquivalence}, Health, Semantics/ScopeIrrelevance
-Layer 5 (Agent):      Predictions, Mechanisms, Agent/{Constraints, Imposition, Resilience, Corroboration}
+Layer 5 (Agent):      ConditionalPredictions, Mechanisms, Agent/{Constraints, Imposition, Resilience, Corroboration}
 Layer 6 (Witness):    WorldWitness, WorldBridges, Concrete/{Types,Commitments,WorkingSystem,DeficientSystems,NonVacuity}, Concrete/Realizer, Feasibility
 Layer 7 (Adversarial): Adversarial/{Base, Obligations}
 Layer 8 (Meta):       Meta/* (incl. Meta/Modular, Meta/Config, Meta/TheoremTransport, Meta/LeanKernel/*)
@@ -156,7 +156,7 @@ import EpArch.Convergence
 import EpArch.Adversarial.Base  -- Base types/structures (no axioms)
 import EpArch.Invariants
 import EpArch.Concrete.WorkedTraces
-import EpArch.Predictions
+import EpArch.ConditionalPredictions
 import EpArch.Semantics.StepSemantics
 import EpArch.Theorems.Diagnosability  -- principled observability
 import EpArch.Concrete.Types
