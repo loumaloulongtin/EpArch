@@ -361,8 +361,8 @@ theorem export_ignores_target_acl
 
     This is the step-grounded bridge between the case-type taxonomy
     (Cases/TypeErrors.lean: LotteryIsTypeError) and the architectural dissolution
-    below (Corner 2: status_distinction_blocks_lottery,
-    lottery_paradox_dissolved_architecturally). -/
+    below (Corner 2: lottery_paradox_dissolved_architecturally,
+    candidate_blocks_withdrawal). -/
 
 /-- Without an authorized deposit, no withdrawal Step can fire.
     `Step.withdraw` carries `h_deposited : isDeposited s d_idx` as a
@@ -443,72 +443,6 @@ theorem candidate_blocks_withdrawal
     (I can act as if I know they'll all lose). The status distinction
     breaks this: Candidate (high credence) ≠ Deposited (authorized). -/
 
-/-- LOTTERY DISSOLUTION 1: High credence doesn't auto-close.
-
-    Having N items at Candidate status does NOT imply you have
-    authorization for all N simultaneously. The Bank doesn't auto-close
-    under conjunction — each must be individually promoted.
-
-    This is the structural blocker for the lottery paradox:
-    Even if you believe P1, P2, ..., Pn individually (all Candidate),
-    you don't get NOT(P1 AND P2 AND ... AND Pn) as authorized knowledge. -/
-theorem credence_does_not_auto_close
-    (s : SystemState PropLike Standard ErrorModel Provenance)
-    (indices : List Nat)
-    (_h_all_candidate : forall i, i ∈ indices → IsCandidate_At s i) :
-    -- The fact that all are Candidate does NOT imply all are Deposited
-    -- (i.e., high credence != authorization)
-    ¬(forall i, i ∈ indices → isDeposited s i) ∨
-    -- ...unless they were explicitly promoted (which we can't infer from Candidate alone)
-    True := by
-  exact Or.inr trivial
-
-/-- LOTTERY DISSOLUTION 2: Status distinction blocks closure inconsistency.
-
-    If we collapsed Candidate and Deposited, then:
-    - Submit would create immediate authorization
-    - All high-credence beliefs would be knowledge
-    - The lottery paradox would emerge
-
-    With the distinction:
-    - Submit creates only Candidate (not authorized)
-    - Promotion requires explicit validation
-    - No automatic closure under conjunction
-
-    This theorem states: the existence of the Candidate status means
-    newly submitted deposits are NOT withdrawable, creating the gap
-    that blocks premature authorization.
-
-    Formulated as implication: IF deposit is at Candidate at index,
-    THEN it cannot be withdrawn (regardless of how it got there). -/
-theorem status_distinction_blocks_lottery
-    (s : SystemState PropLike Standard ErrorModel Provenance)
-    (a : Agent) (B : Bubble) (d_idx : Nat)
-    (d : Deposit PropLike Standard ErrorModel Provenance)
-    (h_get : s.ledger.get? d_idx = some d)
-    (h_candidate : d.status = .Candidate) :
-    -- Candidate deposits cannot be withdrawn
-    ¬∃ s', Step (Reason := Reason) (Evidence := Evidence) s (.Withdraw a B d_idx) s' := by
-  -- This is exactly candidate_blocks_withdrawal
-  exact candidate_blocks_withdrawal s a B d_idx d h_get h_candidate
-
-/-! ### LOTTERY DISSOLUTION 3: The architecture is the solution.
-
-    Summary: The lottery paradox is dissolved architecturally by
-    requiring explicit promotion from Candidate to Deposited.
-
-    - Individual high-credence beliefs -> Candidate (personal traction OK)
-    - Authorized knowledge -> Deposited (collective reliance OK)
-    - Conjunction closure -> NOT automatic (no lottery paradox)
-
-    This is not a "solution to the lottery paradox" in the philosophical
-    sense -- it is a structural reason why the paradox doesn't arise in
-    EpArch: the type system enforces the distinction.
-
-    See `lottery_paradox_dissolved_architecturally` after Corner 1 for
-    the formal statement using AllowsTraction/AllowsAuthorization. -/
-
-
 /-! ## Corner 1 — Type-separation gate (one-state accounts can't do both jobs)
 
     **Theorem shape:** Traction (individual action-guiding) and Authorization
@@ -532,25 +466,6 @@ def AllowsAuthorization (s : SystemState PropLike Standard ErrorModel Provenance
     (d_idx : Nat) : Prop :=
   -- Authorization requires Deposited — Candidate is not enough
   isDeposited s d_idx
-
-/-- CORNER 1 THEOREM: Traction is broader than Authorization.
-
-    AllowsTraction holds for Candidates, but AllowsAuthorization doesn't.
-    This is the type separation: personal action ≠ exportable knowledge. -/
-theorem traction_broader_than_authorization
-    (s : SystemState PropLike Standard ErrorModel Provenance)
-    (d_idx : Nat) (d : Deposit PropLike Standard ErrorModel Provenance)
-    (h_get : s.ledger.get? d_idx = some d)
-    (h_candidate : d.status = .Candidate) :
-    AllowsTraction s d_idx ∧ ¬AllowsAuthorization s d_idx := by
-  constructor
-  · exact ⟨d, h_get, Or.inl h_candidate⟩
-  · intro h_auth
-    let ⟨d', h_get', h_deposited⟩ := h_auth
-    rw [h_get] at h_get'
-    injection h_get' with h_eq
-    rw [← h_eq, h_candidate] at h_deposited
-    cases h_deposited
 
 /-- CORNER 1 COROLLARY: Authorization implies Traction, but not vice versa.
 
