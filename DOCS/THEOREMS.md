@@ -307,24 +307,7 @@ certify that S is vacuous regardless of consumer). Both repair by targeting Fiel
 
 **Role:** Connect modal epistemology to architectural fields.
 
-### Core Theorems
-
-| Theorem | File | Statement | Claim |
-|---------|------|-----------|-------------|
-| `safety_V_link` | Semantics/ModalLinks.lean | Unsafe → ¬V_independent | Safety = V |
-| `sensitivity_E_link` | Semantics/ModalLinks.lean | Insensitive → ¬E_covers | Sensitivity = E |
-| `safety_iff_V_independence` | Semantics/ModalLinks.lean | Safe ↔ V_independent | Biconditional |
-| `sensitivity_iff_E_coverage` | Semantics/ModalLinks.lean | Sensitive ↔ E_covers | Biconditional |
-| `headers_provide_modal_properties` | Semantics/ModalLinks.lean | header_preserved → Safe ∧ Sensitive | Headers matter |
-| `stripped_headers_lose_modal_properties` | Semantics/ModalLinks.lean | ¬header_preserved → Unsafe ∧ Insensitive | Stripping hurts |
-| `safety_sensitivity_coincide` | Semantics/ModalLinks.lean | Safe ↔ Sensitive | Coincidence |
-| `modal_robustness_is_header_preservation` | Semantics/ModalLinks.lean | (Safe ∧ Sensitive) ↔ header_preserved | Unified |
-
-### Math Form
-
-$$\text{Safe}(d) \Leftrightarrow \text{V-independent}(d) \Leftrightarrow \text{header-preserved}(d)$$
-
-$$\text{Sensitive}(d) \Leftrightarrow \text{E-covers}(d) \Leftrightarrow \text{header-preserved}(d)$$
+> **Note:** `Semantics/ModalLinks.lean` was removed. The modal vocabulary (Safe, Sensitive, V_independent, E_covers) and its connection to `header_preserved` was entirely definitional — all eight theorems reduced to `Iff.rfl` or `exact h`. The case-level theorems below (in `Theorems/`) remain.
 
 ### Modal Case Theorems (Theorems/Modal.lean)
 
@@ -552,7 +535,7 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 
 ---
 
-## Bucket 9d: Kernel Verification Depth (VerificationDepth.lean)
+## Bucket 9d: Kernel Verification Depth (Concrete/VerificationDepth.lean)
 
 **Role:** Provides a *constructive* kernel-level witness that `W_bounded_verification` is not an empirical world assumption but follows from the structural properties of the verification relation itself. `DepthClaim n` is a depth-indexed proposition family with exactly n constructors; a budget-d verifier traverses only d constructors and therefore cannot decide `DepthClaim (d+1)`, which is genuinely true. This justifies the bounded-audit forcing argument for trust bridges by construction rather than supposition.
 
@@ -1092,10 +1075,10 @@ File: `Agent/Imposition.lean`
 
 | Structure | File | Purpose |
 |-----------|------|---------|
-| `Realizer` | Realizer.lean | Type packaging commitment proofs |
-| `SuccessfulSystem` | Realizer.lean | Type packaging successful system (W + sf + sat) |
-| `ConcreteRealizer` | Realizer.lean | Realizer witness instance |
-| `ConcreteSuccessfulSystem` | Realizer.lean | SuccessfulSystem witness instance |
+| `Realizer` | Concrete/Realizer.lean | Type packaging commitment proofs |
+| `SuccessfulSystem` | Concrete/Realizer.lean | Type packaging successful system (W + sf + sat) |
+| `ConcreteRealizer` | Concrete/Realizer.lean | Realizer witness instance |
+| `ConcreteSuccessfulSystem` | Concrete/Realizer.lean | SuccessfulSystem witness instance |
 | `WitnessCtx` | WorldWitness.lean | Concrete WorldCtx instance |
 
 ---
@@ -1251,7 +1234,7 @@ $$\forall\, \text{Pred},\ d_1 = d_2 \implies \text{Pred}(d_1) \implies \text{Pre
 
 **Role:** Proves EpArch is bidirectionally modular at the `RevisionGate` / competition-gate layer: the `RevisionGate` predicate is preserved in both directions under bundle perturbation. Removing the self-correction health goal leaves a valid sub-architecture where `RevisionGate` holds vacuously; compatible extensions at any level preserve `RevisionGate` through the existing transport machinery.
 
-**File:** `Modularity.lean`
+**Files:** `Meta/TheoremTransport.lean` (abstract theorems + `SubBundle`, `NoSelfCorrection`, `modularity_pack`) · `Meta/LeanKernel/OdometerModel.lean` (concrete sub-bundle witness)
 
 **The headline claim:** EpArch is a floor, not a cage. Any sub-bundle is a valid EpArch instantiation; any compatible extension of a sub-bundle is safe.
 
@@ -1259,7 +1242,7 @@ $$\forall\, \text{Pred},\ d_1 = d_2 \implies \text{Pred}(d_1) \implies \text{Pre
 
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
-| `graceful_degradation` | Modularity.lean | `NoSelfCorrection M → RevisionGate M` | Vacuous gate: drop self-correction goal → RevisionGate holds |
+| `graceful_degradation` | Meta/TheoremTransport.lean | `NoSelfCorrection M → RevisionGate M` | Vacuous gate: drop self-correction goal → RevisionGate holds |
 
 ### OdometerModel — Concrete Minimal Sub-bundle
 
@@ -1267,23 +1250,23 @@ A non-revisable system satisfying only `SoundDepositsGoal` (readings must be ver
 
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
-| `odometer_no_self_correction` | Modularity.lean | `NoSelfCorrection OdometerModel` | Odometer has no self-correction |
-| `odometer_revision_gate` | Modularity.lean | `RevisionGate OdometerModel` | Odometer satisfies the revision gate (vacuously) |
-| `odometer_sound_deposits` | Modularity.lean | `SoundDepositsGoal OdometerModel` | Readings are verifiable within effectiveTime |
-| `odometer_not_corrigible` | Modularity.lean | `¬CorrigibleLedgerGoal OdometerModel` | Correctly fails the revision goal it does not claim |
+| `odometer_no_self_correction` | Meta/LeanKernel/OdometerModel.lean | `NoSelfCorrection OdometerModel` | Odometer has no self-correction |
+| `odometer_revision_gate` | Meta/LeanKernel/OdometerModel.lean | `RevisionGate OdometerModel` | Odometer satisfies the revision gate (vacuously) |
+| `odometer_sound_deposits` | Meta/LeanKernel/OdometerModel.lean | `SoundDepositsGoal OdometerModel` | Readings are verifiable within effectiveTime |
+| `odometer_not_corrigible` | Meta/LeanKernel/OdometerModel.lean | `¬CorrigibleLedgerGoal OdometerModel` | Correctly fails the revision goal it does not claim |
 
 ### Sub-level RevisionSafety (Downward + Upward)
 
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
-| `sub_revision_safety` | Modularity.lean | `Compatible E S.model → RevisionGate S.model → RevisionGate (forget E)` | RevisionSafety holds at every sub-bundle level |
-| `odometer_extension_safe` | Modularity.lean | `Compatible E OdometerModel → RevisionGate (forget E)` | Any compatible extension of the odometer satisfies the revision gate |
+| `sub_revision_safety` | Meta/TheoremTransport.lean | `Compatible E S.model → RevisionGate S.model → RevisionGate (forget E)` | RevisionSafety holds at every sub-bundle level |
+| `odometer_extension_safe` | Meta/LeanKernel/OdometerModel.lean | `Compatible E OdometerModel → RevisionGate (forget E)` | Any compatible extension of the odometer satisfies the revision gate |
 
 ### Headline: ModularityPack
 
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
-| `modularity_pack` | Modularity.lean | `GracefulDegradation ∧ SubRevisionSafety ∧ FullRevisionSafety` | Full bidirectional lattice-stability |
+| `modularity_pack` | Meta/TheoremTransport.lean | `GracefulDegradation ∧ SubRevisionSafety ∧ FullRevisionSafety` | Full bidirectional lattice-stability |
 
 ### Math Form
 
@@ -1298,9 +1281,9 @@ $$\text{ModularityPack} := \text{GracefulDegradation} \land \text{SubRevisionSaf
 | Definition | File | Purpose |
 |------------|------|---------|
 | `RevisionGate` | Semantics/RevisionSafety.lean | `∀ B, selfCorrects B → hasRevision B` — competition gate predicate |
-| `NoSelfCorrection` | Modularity.lean | Sub-bundle predicate: no bubble self-corrects |
-| `SubBundle` | Modularity.lean | CoreModel + active SubGoal predicate + satisfaction witness |
-| `OdometerModel` | Modularity.lean | Concrete sub-bundle: one bubble, append-only, SoundDepositsGoal only |
+| `NoSelfCorrection` | Meta/TheoremTransport.lean | Sub-bundle predicate: no bubble self-corrects (`abbrev` of `VacuousSelfCorrects`) |
+| `SubBundle` | Meta/TheoremTransport.lean | CoreModel + active SubGoal predicate + satisfaction witness |
+| `OdometerModel` | Meta/LeanKernel/OdometerModel.lean | Concrete sub-bundle: one bubble, append-only, SoundDepositsGoal only |
 
 ---
 
@@ -1352,7 +1335,7 @@ clusters) are always enabled because they depend on no config gate. Given any
 machine-checked justification for each enabled cluster. This includes 8 world-bundle
 obligation clusters wiring `EpArchConfig.worlds` to proved obligation theorems in
 `WorldCtx.lean` and `Adversarial/Obligations.lean`, 1 constraint-modularity cluster from
-`Meta/Modular.lean`, and 3 lattice-stability clusters from `Modularity.lean`.
+`Meta/Modular.lean`, and 3 lattice-stability clusters from `Meta/TheoremTransport.lean` (§8).
 
 **Note on `.partial_observability`:** Now fully wired. `WorldCtx.partial_obs_no_omniscience`
 formalizes the epistemic-gap argument: under partial observability there exists a proposition

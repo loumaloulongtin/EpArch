@@ -19,12 +19,12 @@ above the abstract structural machinery and below the concrete witnesses.
 
 ## Dependencies
 
-WorldWitness.lean, Realizer.lean (pulls Concrete.WorkingSystem),
+WorldWitness.lean, Concrete/Realizer.lean (pulls Concrete.WorkingSystem),
 Scenarios.lean (pulls Convergence + Minimality).
 -/
 
 import EpArch.WorldWitness
-import EpArch.Realizer
+import EpArch.Concrete.Realizer
 import EpArch.Scenarios
 
 namespace EpArch.Feasibility
@@ -136,15 +136,22 @@ theorem world_assumptions_force_bank_primitives (C : @EpArch.WorldCtx.{0})
     (h_wa : WorldAwareSystem C W)
     (h_sat : SatisfiesAllProperties W) :
     containsBankPrimitives W := by
-  -- Construct h_sf from the WorldAwareSystem components.
+  -- Name each component of WorldAwareSystem's And-chain for legibility.
+  -- Order matches the definition: trust ∧ revocation ∧ redeemability ∧ scope ∧ headers ∧ bank
+  have h_trust_wa   := h_wa.1
+  have h_rev_wa     := h_wa.2.1
+  have h_redeem_wa  := h_wa.2.2.1
+  have h_scope_wa   := h_wa.2.2.2.1
+  have h_headers_wa := h_wa.2.2.2.2.1
+  have h_bank_wa    := h_wa.2.2.2.2.2
   have h_sf : StructurallyForced W :=
     { forcing := fun P h => match P with
-        | .scope         => h_wa.2.2.2.1 h
-        | .trust         => h_wa.1 Wv h
-        | .headers       => h_wa.2.2.2.2.1 h
-        | .revocation    => h_wa.2.1 Wl h
-        | .bank          => h_wa.2.2.2.2.2 h
-        | .redeemability => h_wa.2.2.1 Wo h
+        | .scope         => h_scope_wa h
+        | .trust         => h_trust_wa Wv h
+        | .headers       => h_headers_wa h
+        | .revocation    => h_rev_wa Wl h
+        | .bank          => h_bank_wa h
+        | .redeemability => h_redeem_wa Wo h
       evidence := {
         scope_consequence         := fun G _h_ev => G.no_flat_resolver
         trust_consequence         := fun G _h_ev => G.bridge_forces_acceptance
@@ -163,6 +170,8 @@ theorem world_assumptions_force_bank_primitives (C : @EpArch.WorldCtx.{0})
     strict weakening of StructurallyForced. -/
 theorem structurally_forced_is_world_aware (C : @EpArch.WorldCtx.{0}) (W : WorkingSystem)
     (h_sf : StructurallyForced W) : WorldAwareSystem C W :=
+  -- Tuple order must match WorldAwareSystem's And-chain:
+  -- (trust) ∧ (revocation) ∧ (redeemability) ∧ (scope) ∧ (headers) ∧ (bank)
   ⟨fun _ => h_sf.forcing .trust,
    fun _ => h_sf.forcing .revocation,
    fun _ => h_sf.forcing .redeemability,

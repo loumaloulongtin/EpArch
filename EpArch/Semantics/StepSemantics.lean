@@ -29,8 +29,6 @@ Deposited status — making it impossible to withdraw without all three gates.
 Split-out companions (same `Semantics/` subfolder):
 - `EpArch.Semantics.LinkingAxioms`: operational groundings for the six
   linking theorems, proved from Step preconditions.
-- `EpArch.Semantics.ModalLinks`: Safety ↔ V-independence, Sensitivity ↔
-  E-coverage. Both modal epistemology conditions reduce to header preservation.
 
 ## Section Map (approximate line ranges)
 

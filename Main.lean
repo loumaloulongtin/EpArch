@@ -100,9 +100,9 @@ No file imports from a layer above its own.
 ```
 Layer 0 (Types):      Basic, Header
 Layer 1 (Substrate):  Bank, LTS, WorldCtx
-Layer 2 (Semantics):  StepSemantics, RevisionSafety, Predictions, WorkedTraces, World (deprecated)
+Layer 2 (Semantics):  StepSemantics, RevisionSafety, Predictions, WorkedTraces
 Layer 3 (Theory):     Commitments, SystemSpec, Invariants, Minimality
-Layer 4 (Derived):    Theorems/{Withdrawal,Cases,Headers,Modal,Dissolutions,Pathologies,Strip,Corners,Diagnosability}, Health, ScopeIrrelevance
+Layer 4 (Derived):    Theorems/{Withdrawal,Cases,Headers,Modal,Dissolutions,Pathologies,Strip,Corners,Diagnosability}, Health, Semantics/ScopeIrrelevance
 Layer 5 (Agent):      Mechanisms, Agent/{Constraints, Imposition, Resilience, Corroboration}
 Layer 6 (Witness):    WorldWitness, ConcreteLedgerModel, Realizer, Feasibility
 Layer 7 (Adversarial): Adversarial/{Base, Obligations}
@@ -146,7 +146,7 @@ import EpArch.Theorems.BehavioralEquivalence
 import EpArch.Convergence
 import EpArch.Adversarial.Base  -- Base types/structures (no axioms)
 import EpArch.Invariants
-import EpArch.WorkedTraces
+import EpArch.Concrete.WorkedTraces
 import EpArch.Predictions
 import EpArch.Semantics.StepSemantics
 import EpArch.Theorems.Diagnosability  -- principled observability
@@ -155,26 +155,25 @@ import EpArch.Concrete.Commitments
 import EpArch.Concrete.WorkingSystem
 import EpArch.Concrete.DeficientSystems
 import EpArch.Concrete.NonVacuity
-import EpArch.World  -- World layer for obligation theorems
 import EpArch.WorldWitness  -- Non-vacuity witness for world bundles
 import EpArch.Adversarial.Obligations  -- Adversarial axioms → obligation theorems
 import EpArch.Semantics.LTS  -- Generic LTS for revision safety
 import EpArch.Semantics.RevisionSafety  -- Revision safety meta-theorems
 import EpArch.Health  -- Health predicates and necessity theorems
 import EpArch.Mechanisms  -- Canonical mechanism predicates
-import EpArch.ScopeIrrelevance  -- Scope/irrelevance theorems
+import EpArch.Semantics.ScopeIrrelevance  -- Scope/irrelevance theorems
 import EpArch.Agent.Constraints   -- AgentConstraints, PRP, PRP theorems
 import EpArch.Agent.Imposition    -- Design-forcing theorems
 import EpArch.Agent.Resilience    -- Fault events, LTS, containment proofs
 import EpArch.Agent.Corroboration -- Multi-agent corroboration theorems
-import EpArch.Realizer  -- Feasibility: System realizer interface
+import EpArch.Concrete.Realizer  -- Feasibility: System realizer interface
 import EpArch.Feasibility  -- Feasibility: Joint non-vacuity theorem
 import EpArch.WorldBridges  -- World-to-structural bridges + headline convergence
 import EpArch.Meta.FalsifiableNotAuthorizable  -- Meta-status proof pack
 import EpArch.Meta.TheoryCoreClaim  -- Optional stretch: theory_core claim token
 import EpArch.Meta.TheoremTransport  -- Generic theorem transport schema (Tier 3 closure)
 import EpArch.Meta.Tier4Transport    -- Main theorem library transport (Tier 4 closure)
-import EpArch.Modularity  -- Lattice-stability: graceful scale-down + sub-level RevisionSafety
+import EpArch.Meta.LeanKernel.OdometerModel  -- Odometer sub-model: concrete minimal EpArch instance
 import EpArch.Meta.Modular     -- Modularity meta-theorem: ∀ S ⊆ constraints, projection_valid S
 import EpArch.Meta.Config      -- Configurable certification engine: EpArchConfig → ClusterTag → certified proof
 import EpArch.Meta.LeanKernel.World     -- Self-referential: Lean kernel world + architecture + OleanStaleness

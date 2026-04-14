@@ -224,7 +224,7 @@ the per-dimension obligations.
 
 ## Supporting Modules
 
-### `EpArch/Realizer.lean`
+### `EpArch/Concrete/Realizer.lean`
 
 Defines `Realizer` (8-commitment conjunction) and `SuccessfulSystem` (working system +
 `StructurallyForced` + `SatisfiesAllProperties`). `ConcreteRealizer` and
@@ -244,7 +244,7 @@ Split from the former `ConcreteLedgerModel.lean` into five focused modules:
 - `Concrete/Commitments.lean` — C1–C8 commitment witnesses + `all_commitments_satisfiable`
 - `Concrete/WorkingSystem.lean` — behavioral equivalence, grounding, `ConcreteWorkingSystem`
 - `Concrete/DeficientSystems.lean` — six deficient-system bridge-impossibility witnesses
-- `Concrete/NonVacuity.lean` — advanced non-vacuity: traces, legibility, convergence, modal
+- `Concrete/NonVacuity.lean` — advanced non-vacuity: traces, legibility, convergence
 
 Provides `ConcreteWorkingSystem` with `concrete_structurally_forced` and
 `concrete_satisfies_all_properties`.

@@ -136,9 +136,9 @@ All 30 of 30 clusters enabled at run time. The `certify` call type-checks, produ
 [World] W_ddos: DDoS causes verification collapse  (AdversarialObligations.ddos_causes_verification_collapse_of_W)
 [Meta] Constraint-subset modularity: ∀ S W, PartialWellFormed W S → projection_valid S W  (Meta.Modular.modular)
 [Meta] WellFormed systems are modular on every constraint subset  (Meta.Modular.wellformed_is_modular)
-[Lattice] Graceful degradation: NoSelfCorrection M → RevisionGate M  (Modularity.graceful_degradation)
-[Lattice] Sub-level revision safety: Compatible extension of any sub-bundle with RevisionGate preserves RevisionGate  (Modularity.sub_revision_safety)
-[Lattice] EpArch is a floor, not a cage: full bidirectional lattice-stability  (Modularity.modularity_pack)
+[Lattice] Graceful degradation: NoSelfCorrection M → RevisionGate M  (Meta.TheoremTransport.graceful_degradation)
+[Lattice] Sub-level revision safety: Compatible extension of any sub-bundle with RevisionGate preserves RevisionGate  (Meta.TheoremTransport.sub_revision_safety)
+[Lattice] EpArch is a floor, not a cage: full bidirectional lattice-stability  (Meta.TheoremTransport.modularity_pack)
 ```
 
 ### Full `explainConfig` output

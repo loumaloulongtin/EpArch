@@ -54,7 +54,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | 9 | Grounded Minimality — Each feature necessary for specific capabilities |
 | 9b | Abstract Structural Forcing — Six per-dimension `*_forces_*` theorems (no `WellFormed`, no biconditionals) + `SystemOperationalBundle` / `WorldBridgeBundle`; headline `bundled_structure_forces_bank_primitives`; six structural impossibility models + `StructurallyForced` / `convergence_structural` (`Minimality.lean` + `Convergence.lean`) |
 | 9c | Observation-Boundary Equivalence — Any two `GroundedBehavior` witnesses produce identical observations; step-bridge grounds withdraw/challenge/tick via `ReadyState` + `behavior_from_step` (`Theorems/BehavioralEquivalence.lean`) |
-| 9d | Kernel Verification Depth — `DepthClaim` constructive witness; `bounded_verify` budget decision procedure; `DepthWorldCtx` closes `W_bounded_verification` by construction (`VerificationDepth.lean`) |
+| 9d | Kernel Verification Depth — `DepthClaim` constructive witness; `bounded_verify` budget decision procedure; `DepthWorldCtx` closes `W_bounded_verification` by construction (`Concrete/VerificationDepth.lean`) |
 | 10 | Adversarial Model — Attack structures, DDoS vectors, obligation theorems |
 | 11 | Repair Loop Semantics — Challenge-repair-revalidation cycle |
 | 12 | Withdrawal Gates — Three-gate model (Status ∧ ACL ∧ τ) |
@@ -84,7 +84,6 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | `Header.lean` | S/E/V header structure + Deposit records | 0 |
 | `Semantics/StepSemantics.lean` | Labeled transition system (Step, Trace, Action, invariant preservation) | 0 |
 | `Semantics/LinkingAxioms.lean` | Grounded linking theorems: Step preconditions force architectural features | 0 |
-| `Semantics/ModalLinks.lean` | Modal epistemology (Safety/Sensitivity ↔ S/E/V fields via header_preserved) | 0 |
 | `Theorems/` | Primary theorem library split into 8 focused sub-modules (Withdrawal, Cases, Headers, Modal, Strip, Corners, Dissolutions, Pathologies) | 0 |
 | `World.lean` | World layer for obligation theorems | 0 |
 | `Adversarial/Obligations.lean` | Adversarial axioms → obligation theorems | 0 |

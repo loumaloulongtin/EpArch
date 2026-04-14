@@ -13,7 +13,6 @@ Part of: EpArch/Concrete/ split of ConcreteLedgerModel.lean
 
 import EpArch.Concrete.WorkingSystem
 import EpArch.Semantics.StepSemantics
-import EpArch.Semantics.ModalLinks
 
 namespace EpArch.ConcreteInstance
 
@@ -463,57 +462,6 @@ theorem competition_gate_non_vacuity_stripping :
     don't prohibit revision, and they CAN self-correct.
 
     This separates revision-prohibiting from revision-permitting domains. -/
-
-
-/-! ## Non-Vacuity Proofs for Modal Links -/
-
-open EpArch.ModalLinks
-
-/-- The modal conditions are logically coherent: Safe ↔ Sensitive. -/
-theorem concrete_modal_coherence11
-    (d : Deposit String CStandard String String) :
-    Safe d ↔ Sensitive d :=
-  safety_sensitivity_coincide d
-
-/-- If a deposit has header_preserved, it has both modal properties. -/
-theorem concrete_modal_from_header11
-    (d : Deposit String CStandard String String)
-    (h_pres : header_preserved d) :
-    Safe d ∧ Sensitive d :=
-  headers_provide_modal_properties d h_pres
-
-/-- If a deposit lacks header_preserved, it lacks both modal properties. -/
-theorem concrete_modal_loss_from_stripping11
-    (d : Deposit String CStandard String String)
-    (h_stripped : ¬header_preserved d) :
-    Unsafe d ∧ Insensitive d :=
-  stripped_headers_lose_modal_properties d h_stripped
-
-/-- The safety-V link holds for all deposits (modal safety condition). -/
-theorem concrete_safety_V_link11 (d : Deposit String CStandard String String) :
-    ModalLinks.Unsafe d → ¬ModalLinks.V_independent d :=
-  ModalLinks.safety_V_link d
-
-/-- The sensitivity-E link holds for all deposits (modal sensitivity condition). -/
-theorem concrete_sensitivity_E_link11 (d : Deposit String CStandard String String) :
-    ModalLinks.Insensitive d → ¬ModalLinks.E_covers_counterfactual d :=
-  ModalLinks.sensitivity_E_link d
-
-/-- Non-vacuity: V_independent ↔ Safe is meaningful. -/
-example (d : Deposit String CStandard String String) :
-    (V_independent d → Safe d) ∧ (Safe d → V_independent d) :=
-  ⟨V_independence_implies_safety d, id⟩
-
-/-- Non-vacuity: E_covers ↔ Sensitive is meaningful. -/
-example (d : Deposit String CStandard String String) :
-    (ModalLinks.E_covers_counterfactual d → Sensitive d) ∧
-    (Sensitive d → ModalLinks.E_covers_counterfactual d) :=
-  ⟨E_coverage_implies_sensitivity d, id⟩
-
-/-- The modal_robustness_is_header_preservation theorem is instantiable. -/
-example (d : Deposit String CStandard String String) :
-    (Safe d ∧ Sensitive d) ↔ header_preserved d :=
-  modal_robustness_is_header_preservation d
 
 
 end EpArch.ConcreteInstance

@@ -37,7 +37,7 @@ These package non-vacuity + forced primitives into citable results.
 -/
 
 import EpArch.WorldWitness
-import EpArch.Realizer
+import EpArch.Concrete.Realizer
 import EpArch.Minimality
 import EpArch.Convergence
 
@@ -149,4 +149,3 @@ theorem existence_under_constraints_embedding :
    EpArch.ConcreteInstance.concrete_forcing_embedding,
    EpArch.ConcreteInstance.concrete_satisfies_all_properties,
    EpArch.ConcreteInstance.concrete_structural_convergence⟩
-

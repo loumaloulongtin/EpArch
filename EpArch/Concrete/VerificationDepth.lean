@@ -1,5 +1,5 @@
 /-
-EpArch/VerificationDepth.lean — Kernel-grounded verification depth
+EpArch/Concrete/VerificationDepth.lean — Kernel-grounded verification depth
 
 ## What this file shows
 

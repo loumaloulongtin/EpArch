@@ -1,5 +1,5 @@
 /-
-EpArch/WorkedTraces.lean — Worked Diagnostic Traces
+EpArch/Concrete/WorkedTraces.lean — Worked Diagnostic Traces
 
 These are case studies from epistemic failure, encoded as structured data.
 Each trace shows: where the failure localized, what primitive broke,
@@ -11,8 +11,6 @@ import EpArch.Header
 import EpArch.Bank
 
 namespace EpArch
-
-universe u
 
 /-! ## Worked Trace Structure -/
 
@@ -57,7 +55,7 @@ def hcqTrace : WorkedTrace where
   traceSection := "Export protocol"
   location := "Export"
   traceLocalization := "Header stripping; premature export"
-  end_state := "Revoked (scientific); Contested (public)"
+  end_state := "Revoked (scientific); Challenged (public)"
   traceIntervention := "Header-preserving export ('preliminary, single-site, uncontrolled')"
   traceFalsifier := "If header-preserved export had produced same downstream confusion"
 
@@ -77,16 +75,16 @@ def replicationCrisisTrace : WorkedTrace where
 
 /-- Vaccine Misinformation
 
-    Location: Recipe (Bubble corruption)
-    Problem: Blocked import, conspiracy-closed E
-    Key feature: Channel corruption, not claim-level error -/
+    Location: Recipe
+    Problem: Bridge failure (blocked import); E-field entrenchment
+    Key feature: Two distinct failures — channel failure and filter failure -/
 def vaccineMisinfoTrace : WorkedTrace where
   name := "Vaccine Misinformation"
   traceSection := "Convergence (misinformation)"
   location := "Recipe"
-  traceLocalization := "Bubble corruption (blocked import, conspiracy-closed E)"
-  end_state := "Persists; intervention = channel repair"
-  traceIntervention := "Reopen import channels; expand E to admit disconfirmation"
+  traceLocalization := "Bridge failure (blocked import); E-field entrenchment"
+  end_state := "Deposited (challenge-blocked; revision-resistant)"
+  traceIntervention := "Reopen import channels (bridge repair); expand E-field to admit disconfirmation (entrenchment revision)"
   traceFalsifier := "If 'more facts' reliably corrected without channel repair"
 
 
@@ -128,9 +126,9 @@ structure TraceSummary where
 
 def traceSummaryTable : List TraceSummary := [
   ⟨"Ulcer Dispute", "S/E/V intro", "E-field mismatch; V-independence", "Revoked → Redeposited (new E)"⟩,
-  ⟨"HCQ Episode", "Export", "Header stripping; premature export", "Revoked (sci); Contested (pub)"⟩,
+  ⟨"HCQ Episode", "Export", "Header stripping; premature export", "Revoked (sci); Challenged (pub)"⟩,
   ⟨"Replication Crisis", "Recipe", "E/V failure (miscalibrated gate)", "Quarantine/Revoke ongoing"⟩,
-  ⟨"Vaccine Misinfo", "Recipe", "Bubble corruption (blocked import)", "Persists; channel repair needed"⟩
+  ⟨"Vaccine Misinfo", "Recipe", "Bridge failure; E-field entrenchment", "Deposited (challenge-blocked)"⟩
 ]
 
 end EpArch

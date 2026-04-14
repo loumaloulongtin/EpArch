@@ -65,7 +65,6 @@ import EpArch.Health
 import EpArch.Meta.TheoremTransport
 import EpArch.Meta.Tier4Transport
 import EpArch.Meta.Modular
-import EpArch.Modularity
 import EpArch.WorldCtx
 import EpArch.Adversarial.Obligations
 
@@ -76,7 +75,6 @@ open RevisionSafety
 open EpArch.Meta.TheoremTransport
 open EpArch.Meta.Tier4Transport
 open EpArch.Meta.Modular
-open EpArch.Modularity
 open EpArch.AdversarialObligations
 
 -- Universe parameter shared across all theorem-level propositions in this file.

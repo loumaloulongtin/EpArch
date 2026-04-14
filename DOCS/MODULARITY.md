@@ -84,9 +84,9 @@ does what prevents confusion about where to look and where to edit.
 - `Theorems/BehavioralEquivalence.lean` — `GroundedBehavior`-indexed behavioral-equivalence results; step-bridge section grounds withdraw/challenge/tick via `ReadyState` witnesses and `behavior_from_step`.
 - `Health.lean`, `Meta/TheoremTransport.lean` — Tier 3 goal predicates and transport.
 - `Commitments.lean`, `Theorems/` (9 sub-modules), `Agent/*.lean`,
-  `Invariants.lean`, `ScopeIrrelevance.lean`, `Predictions.lean`, `WorkedTraces.lean` — Tier 4.
+  `Invariants.lean`, `ScopeIrrelevance.lean`, `Predictions.lean`, `Concrete/WorkedTraces.lean` — Tier 4.
 - `WorldCtx.lean`, `Adversarial/Obligations.lean`, `WorldWitness.lean` — Tier 1 / world.
-- `Meta/Modular.lean` — meta-modularity; `Modularity.lean` — lattice-stability.
+- `Meta/Modular.lean` — meta-modularity; `Meta/TheoremTransport.lean` (§8) — lattice-stability; `Meta/LeanKernel/OdometerModel.lean` — concrete odometer sub-bundle.
 - **Editing here does not change the cluster surface** unless Config.lean is updated too.
 
 ---
@@ -365,15 +365,15 @@ This means they are already halfway to being transport-safe — the predicate mo
 |---|---|---|---|
 | `SafeWithdrawalGoal` | `truth`, `obs`, `submit` | Health.lean | Not requiring it in your `SubBundle.SubGoal` |
 | `ReliableExportGoal` | `submit`, `obs` | Health.lean | Not requiring it |
-| `CorrigibleLedgerGoal` | `revise`, `hasRevision` | Health.lean | Not requiring it (→ `odometer_not_corrigible` in Modularity.lean) |
+| `CorrigibleLedgerGoal` | `revise`, `hasRevision` | Health.lean | Not requiring it (→ `odometer_not_corrigible` in Meta/LeanKernel/OdometerModel.lean) |
 | `SoundDepositsGoal` | `verifyWithin`, `effectiveTime` | Health.lean | Not requiring it |
 | `SelfCorrectionGoal` | `selfCorrects`, `hasRevision` | Health.lean | Not requiring it |
 
 **`RevisionGate`** (the competition gate) references only `selfCorrects`, `hasRevision` — the minimal slice needed for the revision gate.
 
 **Transport:** `transport_core` (Semantics/RevisionSafety.lean) transports `RevisionGate` exactly.
-`sub_revision_safety` (Modularity.lean) transports `RevisionGate` at sub-bundle level.
-`graceful_degradation` (Modularity.lean) shows dropping `SelfCorrectionGoal` → `RevisionGate` holds vacuously.
+`sub_revision_safety` (Meta/TheoremTransport.lean §8) transports `RevisionGate` at sub-bundle level.
+`graceful_degradation` (Meta/TheoremTransport.lean §8) shows dropping `SelfCorrectionGoal` → `RevisionGate` holds vacuously.
 
 **Gap:** ~~None~~ Closed. `transport_safe_withdrawal`, `transport_reliable_export`, `transport_sound_deposits`, `transport_self_correction` (and the full `transport_corrigible_ledger` via `SurjectiveCompatible`) are proved in `Meta/TheoremTransport.lean`. The `health_goal_transport_pack` headline theorem packages all five.
 
@@ -381,7 +381,7 @@ This means they are already halfway to being transport-safe — the predicate mo
 
 ## Tier 4 — Main Theorem Library (transport schema complete)
 
-**Files:** `Theorems/` (9 sub-modules: Withdrawal, Cases, Headers, Modal, Strip, Corners, Dissolutions, Pathologies, Diagnosability), `Agent/Corroboration.lean`, `Agent/Resilience.lean`, `Invariants.lean`, `ScopeIrrelevance.lean`, `Predictions.lean`, `WorkedTraces.lean`
+**Files:** `Theorems/` (9 sub-modules: Withdrawal, Cases, Headers, Modal, Strip, Corners, Dissolutions, Pathologies, Diagnosability), `Agent/Corroboration.lean`, `Agent/Resilience.lean`, `Invariants.lean`, `ScopeIrrelevance.lean`, `Predictions.lean`, `Concrete/WorkedTraces.lean`
 
 **Status:** ✅ Closed by `Meta/Tier4Transport.lean`.
 
@@ -555,7 +555,7 @@ This is the real Cluster C result — not just the competition gate but the full
 |---|---|---|---|
 | World bundles (`W_*`) | Explicit hypothesis — not providing proof disables | ✅ Complete | `WorldCtx.lean`, `Adversarial/Obligations.lean` |
 | Constraints (6 forcing results) | Independent conjuncts + `PartialWellFormed`/`modular` meta-theorem | ✅ Complete | `Minimality.lean`, `Convergence.lean`, `Meta/Modular.lean` |
-| `RevisionGate` / competition gate | `transport_core` + `sub_revision_safety` | ✅ Complete | `Semantics/RevisionSafety.lean`, `Modularity.lean` |
+| `RevisionGate` / competition gate | `transport_core` + `sub_revision_safety` | ✅ Complete | `Semantics/RevisionSafety.lean`, `Meta/TheoremTransport.lean` |
 | Health goals (5 predicates) | `CoreModel`-parameterized + individual transport theorems | ✅ Complete | `Health.lean`, `Meta/TheoremTransport.lean` |
 | Main theorem library (109+) | Four-part schema: standalone commitments, structural unconditional, LTS-universal operational, all-five-health-goals bank bridge | ✅ Complete | `Meta/Tier4Transport.lean` |
 | Certified cluster surface (29 clusters) | `EpArchConfig → ClusterTag → Bool` routing + indexed witness carriers; all 6 cluster families are proof-carrying; constraint/goal/world families are config-selectable; Tier 4/meta-modular/lattice families are always-on | ✅ Complete | `Meta/ClusterRegistry.lean`, `Meta/Config.lean` |

@@ -1,5 +1,5 @@
 /-
-EpArch/Realizer.lean — System Realizer Interface
+EpArch/Concrete/Realizer.lean — System Realizer Interface
 
 This module defines a minimal "system realizer" type: an object that
 witnesses the satisfiability of the commitment bundle.

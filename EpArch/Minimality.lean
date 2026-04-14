@@ -22,10 +22,8 @@ these structural elements, but implementations can differ.
 
 ## Key Definitions
 
-- `Constraints` — typeclass capturing the minimal system predicates
 - `WorkingSystem` — record wrapping the `SystemSpec` configuration flags
 - `StructurallyForced` — forward-direction forcing implications (in Convergence.lean)
-- `PrimitiveNecessity` — minimal constraints table as data
 
 ## Related Files
 
@@ -46,69 +44,10 @@ import EpArch.Header
 import EpArch.Bank
 import EpArch.Commitments
 import EpArch.SystemSpec
-import EpArch.VerificationDepth
+import EpArch.GroundedEvidence
+import EpArch.Concrete.VerificationDepth
 
 namespace EpArch
-
-universe u
-
-variable {PropLike Standard ErrorModel Provenance : Type u}
-
-/-! ## Constraints Typeclass (Minimal Constraints)
-
-The minimal constraints table has three columns:
-  | Constraint | What It Forces | If Relaxed |
-
-This typeclass captures the constraint column. The "What It Forces" is captured
-by the convergence theorem and impossibility theorems below. -/
-
-/-- Predicate: agent controls acceptance for a bubble. -/
-opaque controls_acceptance : Agent → Bubble → Prop
-
-/-- Predicate: claim can be fully verified within available resources. -/
-opaque can_fully_verify : PropLike → Prop
-
-/-- Predicate: deposit is an adversarial injection (fabricated claim/header). -/
-opaque is_adversarial_injection : Deposit PropLike Standard ErrorModel Provenance → Prop
-
-/-- Predicate: deposit passed the bubble's acceptance protocol. -/
-opaque passed_acceptance : Bubble → Deposit PropLike Standard ErrorModel Provenance → Prop
-
-/-- The minimal constraints encoded as a typeclass.
-    Each field corresponds to one row of the constraint table.
-    The semantic content captures the informal descriptions. -/
-class Constraints (B : Bank (PropLike := PropLike)
-    (Standard := Standard) (ErrorModel := ErrorModel) (Provenance := Provenance)) : Prop where
-
-  /-- **Distributed agents**: No single agent controls all bubble acceptance.
-      If relaxed: single agent control suffices; no Bank needed. -/
-  distributed_agents : ¬∃ (controller : Agent), ∀ (B : Bubble), controls_acceptance controller B
-
-  /-- **Bounded audit**: Some claims cannot be fully verified.
-      If relaxed: unbounded audit; full revalidation always; no need for trust-based import. -/
-  bounded_audit : ∃ (P : PropLike), ¬can_fully_verify P
-
-  /-- **Export across boundaries**: Deposits propagate between distinct bubbles.
-      If relaxed: isolated bubbles; coordination collapses but no contamination. -/
-  export_across_boundaries : ∃ (B1 B2 : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance),
-    B1 ≠ B2 ∧ exportDep B1 B2 d
-
-  /-- **Adversarial/corruption pressure**: Adversarial deposits can pass acceptance.
-      If relaxed: weaker V requirements; simpler hygiene.
-      Note: The PRESSURE is that bad deposits sometimes succeed. -/
-  adversarial_pressure : ∃ (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance),
-    is_adversarial_injection d ∧ passed_acceptance B d
-
-  /-- **Coordination need**: Multiple agents must rely on shared deposits.
-      If relaxed: no coordination; each agent runs solo. -/
-  coordination_need : ∃ (a1 a2 : Agent) (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance),
-    a1 ≠ a2 ∧ withdraw a1 B d ∧ withdraw a2 B d
-
-  /-- **Truth pressure (redeemability)**: Deposits can fail constraint-surface contact.
-      If relaxed: self-agreement suffices; system drifts into unfalsifiable consensus. -/
-  truth_pressure : ∃ (d : Deposit PropLike Standard ErrorModel Provenance),
-    d.status = .Deposited ∧ ¬redeemable d
-
 
 /-! ## Working System Abstraction -/
 
@@ -392,25 +331,6 @@ theorem all_features_constitute_bank (W : WorkingSystem) :
   containsBankPrimitives W := by
   intro h1 h2 h3 h4 h5 h6 P
   cases P <;> assumption
-
-
-/-! ## Primitive Necessity Summary -/
-
-/-- Summary structure: what primitives are forced by what constraints. -/
-structure PrimitiveNecessity where
-  constraint : String
-  forced_primitive : String
-  if_removed : String
-
-/-- The minimal constraints table as data. -/
-def minimalConstraintsTable : List PrimitiveNecessity := [
-  ⟨"Distributed agents", "Bubbles (scoped domains)", "Single agent; personal certainty suffices"⟩,
-  ⟨"Bounded audit", "Trust bridges", "Unbounded audit; full revalidation always possible"⟩,
-  ⟨"Export across boundaries", "Headers (S/E/V) + export gating", "No export; isolated scopes"⟩,
-  ⟨"Adversarial pressure", "Provenance discipline + revocation", "No adversaries; simpler hygiene"⟩,
-  ⟨"Coordination need", "Bank (shared ledger)", "No coordination; Ladder suffices"⟩,
-  ⟨"Truth pressure", "Redeemability reference", "No truth pressure; unfalsifiable consensus"⟩
-]
 
 
 /-! ========================================================================
@@ -729,16 +649,21 @@ def LocallyVerifiable (M : DelegatedVerification) (c : M.Claim) : Prop :=
 theorem trust_required_iff_not_locally_verifiable (M : DelegatedVerification) (c : M.Claim) :
     M.verify_cost c > M.budget ↔ ¬LocallyVerifiable M c :=
   ⟨fun hgt hle => absurd hle (Nat.not_le_of_gt hgt),
-   fun h => (Nat.lt_or_ge M.budget (M.verify_cost c)).elim id (fun h' => (h h').elim)⟩
+   fun h => (Nat.lt_or_ge M.budget (M.verify_cost c)).elim id (fun h' => absurd h' h)⟩
 
 /-- At the system level, existence of a claim exceeding the budget is equivalent to
-    failure of universal local verifiability.  `M.hard_claim` witnesses the
-    right-to-left direction. -/
+    failure of universal local verifiability.  The right-to-left direction extracts
+    a witness from the negated universal via classical logic. -/
 theorem delegation_necessary_iff_locally_inadequate (M : DelegatedVerification) :
     (∃ c : M.Claim, M.verify_cost c > M.budget) ↔
     ¬∀ c : M.Claim, LocallyVerifiable M c :=
   ⟨fun ⟨c, hc⟩ hA => absurd (hA c) (Nat.not_le_of_gt hc),
-   fun _ => ⟨M.hard_claim, M.exceeds_budget⟩⟩
+   fun h =>
+     Classical.byContradiction (fun h_ne =>
+       h (fun c =>
+         (Nat.lt_or_ge M.budget (M.verify_cost c)).elim
+           (fun hgt => absurd ⟨c, hgt⟩ h_ne)
+           id))⟩
 
 
 /-! ### §2c. Kernel Witness: BoundedVerification is Non-Vacuous by Construction
@@ -1127,8 +1052,8 @@ structure ReplicatedLog where
 /-- A replicated log with synchronization: both agents access the same deposits.
     Isolation does not hold. -/
 theorem replicated_log_is_shared (M : ReplicatedLog) :
-    ∀ d, M.has_access M.a₁ d → M.has_access M.a₁ d ∧ M.has_access M.a₂ d :=
-  fun d h => ⟨h, M.synchronized d h⟩
+    ∀ d, M.has_access M.a₁ d → M.has_access M.a₂ d :=
+  fun d h => M.synchronized d h
 
 /-- Attestation network: agent₁ publishes; agent₂ can read the attestation. -/
 structure AttestationNetwork where
@@ -1144,8 +1069,8 @@ structure AttestationNetwork where
 /-- An attestation network with shared read-access: both agents reach the same
     deposits.  Isolation does not hold. -/
 theorem attestation_network_is_shared (M : AttestationNetwork) :
-    ∀ d, M.has_access M.a₁ d → M.has_access M.a₁ d ∧ M.has_access M.a₂ d :=
-  fun d h => ⟨h, M.readable d h⟩
+    ∀ d, M.has_access M.a₁ d → M.has_access M.a₂ d :=
+  fun d h => M.readable d h
 
 /-- CRDT: convergence guarantees both agents observe the same committed value. -/
 structure CRDTStorage where
@@ -1161,8 +1086,8 @@ structure CRDTStorage where
 /-- CRDT-based shared state where convergence means both agents access the same
     deposits.  Isolation does not hold. -/
 theorem crdt_is_shared (M : CRDTStorage) :
-    ∀ d, M.has_access M.a₁ d → M.has_access M.a₁ d ∧ M.has_access M.a₂ d :=
-  fun d h => ⟨h, M.converges d h⟩
+    ∀ d, M.has_access M.a₁ d → M.has_access M.a₂ d :=
+  fun d h => M.converges d h
 
 
 /-! ### 6. Truth Pressure → Redeemability

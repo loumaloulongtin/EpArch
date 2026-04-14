@@ -53,12 +53,10 @@ consistent with the transport theorem by inspection.
 -/
 
 import EpArch.Health
-import EpArch.Modularity
 
 namespace EpArch.Meta.TheoremTransport
 
 open RevisionSafety
-open EpArch.Modularity
 
 universe u
 
@@ -249,6 +247,16 @@ def VacuousSubmit (M : CoreModel) : Prop :=
 def VacuousTruth (M : CoreModel) : Prop :=
   ∀ (B : M.sig.Bubble) (d : M.sig.Deposit), ¬M.ops.truth B d
 
+/-- Abbreviation: NoSelfCorrection = VacuousSelfCorrects, used in modularity theorems. -/
+abbrev NoSelfCorrection (M : CoreModel) : Prop := VacuousSelfCorrects M
+
+/-- Graceful degradation: any model with NoSelfCorrection satisfies RevisionGate.
+    The competition gate is vacuously satisfied — there is nothing to trigger it. -/
+theorem graceful_degradation (M : CoreModel) (h : NoSelfCorrection M) : RevisionGate M := by
+  unfold RevisionGate
+  intro B h_sc
+  exact absurd h_sc (h B)
+
 
 /-! ## 6. Consequences of Disabling Operations -/
 
@@ -320,5 +328,52 @@ theorem health_goal_transport_pack :
    transport_reliable_export,
    transport_sound_deposits,
    transport_corrigible_universal⟩
+
+
+/-! ## 8. Lattice-Stability: Sub-bundle Modularity -/
+
+/-- A sub-bundle model: a CoreModel equipped with a sub-goal predicate.
+    The `SubGoal` predicate records which health goals are active.
+    `satisfies` witnesses that the model meets those goals. -/
+structure SubBundle where
+  model    : CoreModel
+  /-- The active health-goal predicate for this sub-bundle -/
+  SubGoal  : CoreModel → Prop
+  satisfies : SubGoal model
+
+/-- SubRevisionSafety: compatible extensions preserve sub-bundle properties.
+
+    For any sub-bundle S with active property `SubGoal`, any `Compatible`
+    extension E of S.model satisfies: if S.model satisfies SubGoal, then
+    the forgetful projection of E satisfies RevisionGate.
+
+    This is the downward + upward closure: trim to a sub-bundle,
+    then extend compatibly — RevisionGate is preserved through both moves. -/
+theorem sub_revision_safety (S : SubBundle) (E : ExtModel)
+    (h_compat : Compatible E S.model)
+    (h_gate : RevisionGate S.model) :
+    RevisionGate (forget E) :=
+  transport_core E S.model h_compat h_gate
+
+/-- ModularityPack: the full bidirectional lattice-stability result.
+
+    Component 1 — Graceful Degradation (downward):
+      Any sub-bundle with NoSelfCorrection satisfies RevisionGate.
+    Component 2 — Sub-level RevisionSafety (downward then upward):
+      Compatible extension of any sub-bundle with RevisionGate → RevisionGate preserved.
+    Component 3 — Full-level RevisionSafety (upward):
+      Compatible extension of the full bundle → RevisionGate preserved.
+
+    Together: EpArch is a floor, not a cage. -/
+theorem modularity_pack :
+    -- (1) Graceful degradation
+    (∀ (M : CoreModel), NoSelfCorrection M → RevisionGate M) ∧
+    -- (2) Sub-level revision safety
+    (∀ (S : SubBundle) (E : ExtModel),
+        Compatible E S.model → RevisionGate S.model → RevisionGate (forget E)) ∧
+    -- (3) Full-level revision safety
+    (∀ (C : CoreModel) (R : RevisionSafeExtension C),
+        RevisionGate C → RevisionGate (forget R.ext)) :=
+  ⟨graceful_degradation, sub_revision_safety, safe_extension_preserves⟩
 
 end EpArch.Meta.TheoremTransport

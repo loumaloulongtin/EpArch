@@ -137,6 +137,5 @@ Because preconditions are structural rather than checked post-hoc, the encoding 
 
 This file specifies the canonical operational semantics: transition structure, precondition encoding, and the trace-level safety pattern. It is about structural preconditions and preservation, not runtime implementation details or empirical systems. Core proofs live in `Semantics/StepSemantics.lean`; containment arguments live in `Agent/Resilience.lean` and transport back via simulation.
 
-Two companion files live in the same `Semantics/` folder and share the same base import:
+One companion file lives in the same `Semantics/` folder and shares the same base import:
 - `Semantics/LinkingAxioms.lean`: proves that Step preconditions *force* the six architectural features (operational groundings for linking theorems in Minimality.lean/Commitments.lean).
-- `Semantics/ModalLinks.lean`: connects Safety/Sensitivity (modal epistemology) to the S/E/V field structure; both conditions reduce to `header_preserved` (used for concrete instantiation tests in `Concrete/NonVacuity.lean`).
