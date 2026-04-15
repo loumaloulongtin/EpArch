@@ -51,16 +51,32 @@ variable {PropLike Standard ErrorModel Provenance : Type u}
     - `ttl_valid`: the deposit's verification window is open (d.h.τ > 0)
     - `status_live`: the deposit is not revoked (can still be inspected and challenged)
 
-    PathExists is non-trivially constructable: you cannot manufacture a path
-    for an expired deposit OR a revoked deposit. The Bool fields from previous
-    designs are removed. Provenance and constraint properties belong in the
-    W bundle *hypotheses* (cheap_validator_reachable, trust_bridge_on_hand, etc.),
-    not as separate fields here — the abstract Deposit type cannot inspect
-    Provenance or Standard contents.
+    **Why only two fields — why not "V is non-empty"?**
 
-    PathExists IS the path evidence; there is no separate has_path predicate.
-    The spoofing W bundle claims V_spoof blocks PathExists entirely (¬PathExists d);
-    the defense bundles claim their mitigation produces PathExists d. -/
+    `d.h.V : Provenance` is a bare type variable. EpArch is a schema, not a
+    data model: the architecture deliberately does not prescribe what provenance
+    looks like. In one bubble it might be `List String`, in another `Set AgentId`,
+    in another a Merkle root. Because `Provenance` carries no typeclass structure
+    at the abstract layer, there is nothing to inspect — you cannot write
+    `d.h.V.length > 0` without knowing `Provenance` is a `List`.
+
+    **The real goal of PathExists is not to certify source richness.**
+
+    It is to show what happens *if* V is not empty — i.e., *given* that an agent
+    has supplied valid provenance (the W bundle hypothesis), the path is either
+    intact (ttl_valid ∧ status_live) or destroyed by the attack (¬PathExists d).
+    The W bundles carry the provenance assumption; PathExists carries the
+    consequence. V-spoofing and consultation suppression block the path not by
+    emptying V per se, but by making the deposit untrustworthy in a way that
+    forces its revocation or prevents it from ever reaching Deposited status.
+
+    **If you are modeling agents and want to say more about provenance:**
+    Add a typeclass to `Provenance` in `Header.lean` (e.g., a `nonempty_V` predicate
+    or `[DecidableEq Provenance]` + a cardinality function) and add a corresponding
+    field here. That change propagates through every downstream signature that
+    parameterizes over `Provenance`. The modular architecture (Meta/Config.lean,
+    ClusterRegistry) supports registering a richer PathExists cluster alongside
+    this one without touching the existing proof surface. -/
 structure PathExists (d : Deposit PropLike Standard ErrorModel Provenance) : Prop where
   /-- Deposit TTL is positive: the verification window is open (kernel-verified) -/
   ttl_valid   : d.h.τ > 0
