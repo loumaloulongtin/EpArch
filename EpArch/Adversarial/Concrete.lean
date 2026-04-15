@@ -28,6 +28,7 @@ Four-step demonstration connecting the abstract attack vocabulary
 -/
 
 import EpArch.Adversarial.Base
+import EpArch.Adversarial.Obligations
 import EpArch.Concrete.Types
 
 namespace EpArch.Adversarial.Concrete
@@ -87,7 +88,7 @@ example : c_header_stripped fully_stripped_deposit := Or.inl rfl
     With d.τ ≤ t, case-splitting on compute_status branches gives:
     - d.τ = 0 → .Revoked ≠ .Deposited (by decide)
     - d.τ ≤ t → .Stale ≠ .Deposited (by decide)
-    - Remaining branches all have ¬(d.τ ≤ t) contradicting h (by omega). -/
+    - Remaining branches all have ¬(d.τ ≤ t) contradicting h (Nat.lt_irrefl via Nat.lt_of_lt_of_le). -/
 theorem τ_expired_not_withdrawable {acl : CACL} {a : CAgent} {B : CBubble}
     (d : CDeposit) (t : CTime) (h : d.τ ≤ t) :
     ¬c_can_withdraw acl a B d t := by
@@ -108,9 +109,9 @@ theorem τ_expired_not_withdrawable {acl : CACL} {a : CAgent} {B : CBubble}
     **Theorem shape:** d.V.length = 0 → d.τ > t + 10 → ¬c_can_withdraw acl a B d t.
 
     **Proof strategy:** With d.τ > t + 10, the Revoked/Stale/Aging branches are
-    arithmetic contradictions (omega). The Candidate branch fires when d.V.length = 0,
+    arithmetic contradictions (Nat.lt_irrefl via Nat.lt_of_lt_of_le). The Candidate branch fires when d.V.length = 0,
     giving .Candidate ≠ .Deposited (by decide). The .Deposited branch requires
-    d.V.length ≠ 0, contradicting h_V (by omega). -/
+    d.V.length ≠ 0, contradicting h_V (Nat.lt_irrefl 0 after rw). -/
 theorem V_stripped_not_withdrawable {acl : CACL} {a : CAgent} {B : CBubble}
     (d : CDeposit) (t : CTime) (h_V : d.V.length = 0) (h_τ : d.τ > t + 10) :
     ¬c_can_withdraw acl a B d t := by
@@ -136,7 +137,8 @@ theorem V_stripped_not_withdrawable {acl : CACL} {a : CAgent} {B : CBubble}
 
     **Proof strategy:** c_header_stripped is S = 0 ∨ E.length = 0 ∨ V.length = 0;
     c_header_preserved requires S > 0 ∧ E.length > 0 ∧ V.length > 0.
-    Each disjunct omega-contradicts the corresponding positivity hypothesis. -/
+    Each disjunct rewrites the zero-equality into the positivity hypothesis, then
+    Nat.lt_irrefl 0 closes the goal. -/
 theorem E_stripped_diagnosis_lost (d : CDeposit) (h : c_header_stripped d) :
     ¬c_header_preserved d := by
   intro ⟨hS, hE, hV⟩
@@ -192,15 +194,21 @@ theorem pseudo_deposit_blocked_at_candidate_stage
 
 /-! ### Concrete DDoS V-Channel Collapse -/
 
-/-- overwhelmed_channel_collapses_V: an overwhelmed channel with a capacity deficit
-    for the pending provenance chain returns an empty result.
+/-- overwhelmed_channel_collapses_V: a provenance chain that exceeds channel capacity
+    returns an empty result from c_process_V.
 
-    **Theorem shape:** c_channel_overwhelmed cc → sources.length > cc.capacity
-                       → c_process_V cc sources = [].
+    **Theorem shape:** sources.length > cc.capacity → c_process_V cc sources = [].
 
-    **Proof strategy:** c_process_V fires the else-branch when the if-guard
-    `sources.length ≤ cc.capacity` fails. The guard fails because h_deficit gives
-    `sources.length > cc.capacity`; if_neg + Nat.lt_irrefl close the goal. -/
+    Note: `c_channel_overwhelmed cc` (cc.volume > cc.capacity) is accepted as a
+    parameter for contextual framing — it names the DDoS scenario — but is not
+    used by the proof. The sufficient condition is `h_deficit` alone: the guard
+    `sources.length ≤ cc.capacity` fails, firing the else-branch. The `_` binding
+    reflects that `c_channel_overwhelmed` and `h_deficit` measure different things
+    (`cc.volume` vs `sources.length`); both are relevant to the scenario, but only
+    `h_deficit` participates in the arithmetic.
+
+    **Proof strategy:** `c_process_V` fires the else-branch when the if-guard
+    `sources.length ≤ cc.capacity` fails. `if_neg + Nat.lt_irrefl` close the goal. -/
 theorem overwhelmed_channel_collapses_V (cc : CAuditChannel) (sources : CProvenance)
     (_ : c_channel_overwhelmed cc)
     (h_deficit : sources.length > cc.capacity) :
@@ -217,15 +225,17 @@ theorem overwhelmed_channel_collapses_V (cc : CAuditChannel) (sources : CProvena
                        → ¬c_can_withdraw acl a B d t.
 
     Chain:
-    1. c_channel_overwhelmed cc  — volume > capacity (DDoS active, Nat inequality)
-    2. sources.length > cc.capacity — this deposit's V-check exceeds remaining capacity
-    3. overwhelmed_channel_collapses_V → c_process_V cc sources = []  (channel math)
-    4. h_V bridges channel to deposit: d.V = c_process_V cc sources
-    5. d.V.length = 0 → V_stripped_not_withdrawable closes the goal
+    1. h_deficit : sources.length > cc.capacity — V-check exceeds capacity (sufficient condition)
+    2. overwhelmed_channel_collapses_V → c_process_V cc sources = []  (channel arithmetic)
+    3. h_V bridges channel to deposit: d.V = c_process_V cc sources
+    4. d.V.length = 0 → V_stripped_not_withdrawable closes the goal
 
-    h_V is the modeling bridge: it states that the deposit's V field was populated
-    by routing through channel cc, so the collapsed channel result is what the
-    deposit actually carries when it arrives at the withdrawal gate. -/
+    h_overwhelmed (c_channel_overwhelmed cc) provides scenario framing — it names the DDoS
+    context — but is threaded to overwhelmed_channel_collapses_V where it is also unused in
+    the proof (see that theorem's doc). The active sufficient condition throughout is h_deficit.
+    h_V is the modeling bridge: it states that the deposit's V field was populated by routing
+    through channel cc, so the collapsed channel result is what the deposit actually carries
+    when it arrives at the withdrawal gate. -/
 theorem ddos_V_channel_collapse_blocks_withdrawal
     {acl : CACL} {a : CAgent} {B : CBubble}
     (cc : CAuditChannel)
@@ -348,5 +358,206 @@ theorem full_stack_attack_concrete_blocked (acl : CACL) (a : CAgent) (B : CBubbl
   apply τ_expired_not_withdrawable
   -- Goal: (5 : CTime) ≤ 100
   decide
+
+/-! ========================================================================
+    STEP 5A — CONCRETE W_lies_scale WITNESS
+    ========================================================================
+
+    c_export_cost = 1 (one submission step), c_verify_cost d = d.V.length + 1.
+    The asymmetry is a Nat inequality proved by Nat.succ_lt_succ —
+    no axiom required. This grounds W_lies_scale concretely: the W assumption
+    has a machine-checked satisfying instance rather than remaining purely
+    hypothetical. -/
+
+section ConcreteObligationWitnesses
+open EpArch.AdversarialObligations
+
+/-- Concrete W_lies_scale: export costs 1 step; verifying a non-empty provenance
+    chain costs V.length + 1 steps, which is strictly more.
+
+    **Proof strategy:** `c_export_cost_lt_verify_cost d h` is `Nat.succ_lt_succ h`
+    applied to `0 < d.V.length`. No assumption — the inequality is definitionally grounded. -/
+def concrete_W_lies_scale (d : CDeposit) (h : 0 < d.V.length) : W_lies_scale :=
+  { export_cost    := c_export_cost
+    defense_cost   := c_verify_cost d
+    asymmetry_holds := c_export_cost_lt_verify_cost d h }
+
+/-- `lies_scale_of_W` fires on the concrete instance: 1 < 2 for τ_expired_deposit
+    (which has V := ["src"], so V.length = 1 and c_verify_cost = 2). -/
+theorem lies_scale_concrete :
+    c_export_cost < c_verify_cost τ_expired_deposit :=
+  lies_scale_of_W (concrete_W_lies_scale τ_expired_deposit (by decide))
+
+/-! ========================================================================
+    STEP 5B — CONCRETE BOUNDARY-CONDITION WITNESSES
+    ========================================================================
+
+    Four boundary-condition W bundles are concretely discharged by deriving
+    both PathExists proof fields (ttl_valid, status_live) from hypotheses.
+    No Bool fields; no hand-set values.  W_E_inclusion remains undischarged
+    (see open items at end of file). -/
+
+/-- Concrete W_cheap_validator: for a non-revoked deposit with positive TTL, a reachable
+    cheap validator produces a PathExists witness with both proof fields derived from
+    preconditions.
+
+    `h_cv : cheap_validator_reachable a d.h.τ` is definitionally `d.h.τ > 0` (grounded
+    def in Base.lean) — used directly as `ttl_valid`. `h_s : d.status ≠ .Revoked` used
+    as `status_live`. No Bool fields; no hand-set values. -/
+def concrete_W_cheap_validator :
+    W_cheap_validator (PropLike := CProp) (Standard := CStandard)
+      (ErrorModel := CErrorModel) (Provenance := CProvenance) :=
+  { cheap_validator_enables_path := fun _a _d h_cv h_s =>
+      { ttl_valid := h_cv, status_live := h_s } }
+
+/-- Concrete W_trust_bridge: a pre-established trust bridge provides a PathExists witness
+    for a non-expired, non-revoked deposit. Both proof fields derived from preconditions.
+
+    `h_τ : d.h.τ > 0` used as `ttl_valid`. `h_s : d.status ≠ .Revoked` used as
+    `status_live`. The `_h_tb : trust_bridge_on_hand a` (opaque) cannot be further
+    reduced at the abstract level — the bridge's existence is asserted by the W bundle
+    hypothesis and does not derive from concrete deposit fields. -/
+def concrete_W_trust_bridge :
+    W_trust_bridge (PropLike := CProp) (Standard := CStandard)
+      (ErrorModel := CErrorModel) (Provenance := CProvenance) :=
+  { trust_bridge_enables_path := fun _a _d _h_tb h_τ h_s =>
+      { ttl_valid := h_τ, status_live := h_s } }
+
+/-- Concrete W_cheap_constraint: a cheaply testable constraint surface produces a
+    PathExists witness with both proof fields derived from preconditions.
+
+    `h_ct : constraint_cheaply_testable d` is definitionally `d.h.τ > 0` (grounded
+    def in Base.lean) — used directly as `ttl_valid`. `h_s : d.status ≠ .Revoked`
+    used as `status_live`. No Bool fields; no hand-set values. -/
+def concrete_W_cheap_constraint :
+    W_cheap_constraint (PropLike := CProp) (Standard := CStandard)
+      (ErrorModel := CErrorModel) (Provenance := CProvenance) :=
+  { cheap_test_enables_path := fun _d h_ct h_s =>
+      { ttl_valid := h_ct, status_live := h_s } }
+
+/-- Concrete W_reversibility: a reversible deposit retains a PathExists witness after
+    τ compression, with both proof fields derived from preconditions.
+
+    `h_rev : transaction_reversible d` is definitionally `d.h.τ > 0` (grounded def
+    in Base.lean) — used directly as `ttl_valid`. `h_s : d.status ≠ .Revoked` used
+    as `status_live`. This is the key grounded witness: the path field is not
+    constructed by hand but flows directly from the reversibility hypothesis. -/
+def concrete_W_reversibility :
+    W_reversibility (PropLike := CProp) (Standard := CStandard)
+      (ErrorModel := CErrorModel) (Provenance := CProvenance) :=
+  { reversibility_survives_τ_compress := fun _t_orig _t_compressed _d h_rev _h_compress h_s =>
+      { ttl_valid := h_rev, status_live := h_s } }
+
+
+
+/-! ========================================================================
+    STEP 5C — CONCRETE DDoS V-CHANNEL EXHAUSTION NAMED THEOREM
+    ========================================================================
+
+    `ddos_V_channel_collapse_blocks_withdrawal` (Step 3) traces the full
+    concrete chain from `c_channel_overwhelmed` to `¬c_can_withdraw`.  Here
+    we name that result explicitly as the concrete observable effect of the
+    `V_exhaustion_collapses` vector in the abstract `W_ddos` bundle, and
+    connect it to the abstract obligation layer by exhibiting the channel-collapse
+    step that field describes.
+
+    Note: the abstract `W_ddos` obligation is `V_channel_exhausted a →
+    verification_collapsed a` (agent-level collapse), not `¬PathExists d`.  This
+    concrete theorem proves `¬c_can_withdraw` — the concrete correlate of
+    verification collapse for the V-channel vector.  The mapping from abstract
+    `verification_collapsed` to concrete `¬c_can_withdraw` is the modeling
+    bridge; this theorem sits on the concrete side of it. -/
+
+/-- concrete_V_channel_exhaustion_obligation: the concrete DDoS V-channel
+    collapse is the observable effect that the abstract W_ddos bundle's
+    `V_exhaustion_collapses` field models.
+
+    Chain (concrete):
+    1. `c_channel_overwhelmed cc`        — volume > capacity  (Nat def)
+    2. `sources.length > cc.capacity`    — this deposit's V-check overflows
+    3. `c_process_V cc sources = []`     — channel arithmetic (overwhelmed_channel_collapses_V)
+    4. `d.V = []`                        — bridge via h_V
+    5. `¬c_can_withdraw acl a B d t`     — V gate fires (V_stripped_not_withdrawable)
+
+    This names the same chain as `ddos_V_channel_collapse_blocks_withdrawal`
+    but makes explicit that it is the concrete observable effect of the abstract
+    `V_exhaustion_collapses` vector.  The abstract obligation asserts
+    `V_channel_exhausted a → verification_collapsed a`; this theorem witnesses
+    the V-channel side of that collapse at the concrete `¬c_can_withdraw` level. -/
+theorem concrete_V_channel_exhaustion_obligation
+    {acl : CACL} {a : CAgent} {B : CBubble}
+    (cc : CAuditChannel)
+    (h_overwhelmed : c_channel_overwhelmed cc)
+    (sources : CProvenance) (h_deficit : sources.length > cc.capacity)
+    (d : CDeposit) (t : CTime)
+    (h_V : d.V = c_process_V cc sources)
+    (h_τ : d.τ > t + 10) :
+    ¬c_can_withdraw acl a B d t :=
+  ddos_V_channel_collapse_blocks_withdrawal cc h_overwhelmed sources h_deficit d t h_V h_τ
+
+end ConcreteObligationWitnesses
+
+
+/-! ========================================================================
+    OPEN ITEMS — PERMANENT EXTENSION POINTS
+    ========================================================================
+
+    The items below are intentionally left open in this repository.  They are
+    not bugs or planned work — they mark the boundary where the abstract
+    Deposit/Agent kernel ends and richer agent models begin.  Each one is an
+    entry point for anyone interested in extending the formalization with
+    concrete agent structure.
+
+    ### 1. `E_includes_threat` remains opaque (Base.lean)
+
+    `E_includes_threat : Agent → Prop` cannot be grounded as a `def` because
+    the abstract `Agent` type is `Nat`-indexed with no capability or
+    expertise field.  Grounding it requires either:
+    - adding a capability/expertise field to abstract `Agent`, or
+    - a separate predicate-bridge layer that maps `Agent` to a richer type
+      carrying an E-field.
+    Either route changes the agent model beyond what this kernel commits to.
+    `W_E_inclusion` therefore has no concrete witness in this file.
+
+    ### 2. `collapse_causes_centralization_of_W` is a field projection
+
+    The obligation theorem `collapse_causes_centralization_of_W` extracts
+    `W_collapse_centralization.exhaustion_triggers_delegation` directly.
+    Both `verification_collapsed` and `trust_centralized` are opaque
+    agent-level predicates — the abstract kernel cannot define what
+    "verification collapse" or "trust centralization" look like internally.
+    A concrete discharge requires an agent model that specifies when an
+    agent's verification capacity is exhausted and when it delegates.
+
+    ### 3. `lies_scale_of_W` is a field projection (with concrete satisfier)
+
+    The obligation theorem `lies_scale_of_W` extracts
+    `W_lies_scale.asymmetry_holds`.  Unlike item 2, this bundle *does* have
+    a concrete satisfier: `concrete_W_lies_scale` in Step 5A above grounds
+    the cost asymmetry via `c_export_cost_lt_verify_cost` with real Nat
+    arithmetic.  The theorem body is still a field return, but the bundle
+    is non-vacuously inhabited at the concrete layer.
+
+    ### 4. `concrete_V_channel_exhaustion_obligation` is a named restatement
+
+    The concrete DDoS V-channel exhaustion theorem (Step 5C) names the same
+    chain as `ddos_V_channel_collapse_blocks_withdrawal` (Step 3).  It is
+    not a deeper end-to-end discharge of the full abstract `W_ddos` bundle;
+    it covers only the `V_exhaustion_collapses` vector.  The other three
+    vectors (`ladder_overloaded`, `E_field_poisoned`, `denial_triggered`)
+    remain opaque agent-level predicates.  Concretely discharging them
+    requires an agent model that specifies traction formation, E-field
+    noise thresholds, and trust-import dynamics respectively.
+
+    ────────────────────────────────────────────────────────────────────────
+    All four items converge on the same design boundary: the abstract kernel
+    treats agents as unscripted (`Agent := Nat`-indexed, no internal fields).
+    Any extension that adds agent-internal structure (expertise fields,
+    verification budgets, traction dynamics, trust-delegation rules) can
+    ground one or more of these items without changing the existing proof
+    surface.  The modular architecture (Meta/Config.lean, ClusterRegistry)
+    supports registering new clusters for such extensions.
+    ======================================================================== -/
+
 
 end EpArch.Adversarial.Concrete

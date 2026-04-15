@@ -17,17 +17,12 @@ assumptions. The high-level W_* bundles (W_lies_possible, etc.) are defined
 in EpArch.WorldCtx; finer-grained attack-specific bundles are defined locally.
 EpArch.WorldWitness proves these bundles are satisfiable (non-vacuous).
 
-## Obligation Theorem Targets
-
-See the two summary tables at the end of this file for the full list
-of attack-vector and boundary-condition obligation theorems.
-
 ## Naming Convention
 
-- `X` = original definition (in EpArch.Adversarial.Base)
 - `X_of_W` = conditional theorem version (proved here)
-- `W_X` = minimal assumption bundle for `X_of_W` (defined in EpArch.WorldCtx or locally)
-
+- `W_X` = minimal assumption bundle for `X_of_W` (defined locally or in EpArch.WorldCtx)
+- All W_* bundles use vocabulary from EpArch.Adversarial.Base directly —
+  no local shadow types duplicating Base vocabulary.
 -/
 
 import EpArch.Basic
@@ -45,173 +40,176 @@ universe u
 variable {PropLike Standard ErrorModel Provenance : Type u}
 
 
-/-! ## World Assumption Bundles for Adversarial Claims -/
+/-! ## Verification Path
 
-/-- PathExists: there is a verification path to the constraint surface.
+    PathExists names the abstract structure of a provenance verification path.
+    Used in V-spoofing and consultation-suppression theorems. -/
 
-    A path exists when:
-    1. The provenance chain is intact (V not spoofed)
-    2. The chain leads to a constraint surface contact
-    3. The contact can be verified within available resources -/
-structure PathExists (d : Deposit PropLike Standard ErrorModel Provenance) where
-  provenance_intact : Bool
-  reaches_constraint : Bool
-  verifiable : Bool
+/-- PathExists: evidence that a verification path exists for deposit d.
 
-def has_path (p : PathExists d) : Prop :=
-  p.provenance_intact ∧ p.reaches_constraint ∧ p.verifiable
+    Carries two kernel-verifiable proof obligations:
+    - `ttl_valid`: the deposit's verification window is open (d.h.τ > 0)
+    - `status_live`: the deposit is not revoked (can still be inspected and challenged)
 
-/-- V_Spoofed: the verification field was fabricated.
+    **Why only two fields — why not "V is non-empty"?**
 
-    When V is spoofed:
-    - Provenance chain is fabricated at source
-    - Chain is broken (no valid path to constraint surface) -/
-structure V_Spoofed_State (d : Deposit PropLike Standard ErrorModel Provenance) where
-  fabricated : Bool
-  chain_broken : Bool
+    `d.h.V : Provenance` is a bare type variable. EpArch is a schema, not a
+    data model: the architecture deliberately does not prescribe what provenance
+    looks like. In one bubble it might be `List String`, in another `Set AgentId`,
+    in another a Merkle root. Because `Provenance` carries no typeclass structure
+    at the abstract layer, there is nothing to inspect — you cannot write
+    `d.h.V.length > 0` without knowing `Provenance` is a `List`.
 
-def is_V_spoofed (v : V_Spoofed_State d) : Prop :=
-  v.fabricated ∧ v.chain_broken
+    **The real goal of PathExists is not to certify source richness.**
+
+    It is to show what happens *if* V is not empty — i.e., *given* that an agent
+    has supplied valid provenance (the W bundle hypothesis), the path is either
+    intact (ttl_valid ∧ status_live) or destroyed by the attack (¬PathExists d).
+    The W bundles carry the provenance assumption; PathExists carries the
+    consequence. V-spoofing and consultation suppression block the path not by
+    emptying V per se, but by making the deposit untrustworthy in a way that
+    forces its revocation or prevents it from ever reaching Deposited status.
+
+    **If you are modeling agents and want to say more about provenance:**
+    Add a typeclass to `Provenance` in `Header.lean` (e.g., a `nonempty_V` predicate
+    or `[DecidableEq Provenance]` + a cardinality function) and add a corresponding
+    field here. That change propagates through every downstream signature that
+    parameterizes over `Provenance`. The modular architecture (Meta/Config.lean,
+    ClusterRegistry) supports registering a richer PathExists cluster alongside
+    this one without touching the existing proof surface. -/
+structure PathExists (d : Deposit PropLike Standard ErrorModel Provenance) : Prop where
+  /-- Deposit TTL is positive: the verification window is open (kernel-verified) -/
+  ttl_valid   : d.h.τ > 0
+  /-- Deposit is not revoked: it can still be inspected and challenged (kernel-verified) -/
+  status_live : d.status ≠ DepositStatus.Revoked
 
 
-/-! ## W_spoofedV: World assumptions for spoofed-V blocking path -/
+/-! ## W_spoofedV: V spoofing and consultation suppression block the verification path -/
 
-/-- World assumptions for the spoofed-V-blocks-path claim.
+/-- World assumption: either V spoofing or consultation suppression blocks the
+    verification path entirely.
 
-    Assumption: If V is fabricated and chain is broken, no path can exist.
-    This is structural: a broken chain cannot be traversed.
+    Uses Base opaques `V_spoof` and `consultation_suppressed` directly — no
+    shadow Bool-field types. The two mechanisms are distinct (V_spoof injects
+    false provenance; consultation_suppressed blocks real validators) but both
+    eliminate the path: V_spoof → ¬PathExists d (the spoofed deposit cannot
+    remain non-revoked once the spoof is acted on); consultation_suppressed
+    similarly closes every path.
 
-    This converts the axiom `spoofed_V_blocks_path` into an explicit assumption. -/
+    Matches `FullStackAttack.attack_succeeds` clause 2: (V_spoofed ∨ consultation_blocked). -/
 structure W_spoofedV where
-  /-- Broken provenance chain implies no path to constraint surface -/
-  broken_chain_no_path : ∀ (d : Deposit PropLike Standard ErrorModel Provenance)
-    (v : V_Spoofed_State d) (p : PathExists d),
-    v.chain_broken → ¬p.provenance_intact
+  /-- Spoofed provenance blocks the verification path: deposit cannot remain non-revoked -/
+  spoof_blocks_path : ∀ (d : Deposit PropLike Standard ErrorModel Provenance),
+    EpArch.V_spoof d → ¬PathExists d
+  /-- Consultation suppression also blocks the verification path -/
+  suppression_blocks_path : ∀ (a : EpArch.Agent)
+    (d : Deposit PropLike Standard ErrorModel Provenance),
+    EpArch.consultation_suppressed a → ¬PathExists d
 
-/-- Obligation theorem: Spoofed V blocks path (conditional version).
+/-- Obligation theorem: V spoofing or consultation suppression blocks any verification path.
 
-    Conditional version: this holds UNDER the assumption that broken chains block paths. -/
+    **Theorem shape:** If V is spoofed OR consultation is suppressed, then no PathExists
+    witness can exist for deposit d: the attack hypothesis contradicts any path evidence.
+
+    **Proof strategy:** `intro h p` introduces the disjunction and the path evidence, then
+    `cases h` dispatches to `spoof_blocks_path` or `suppression_blocks_path`, each of
+    which has type `→ ¬PathExists d` and is applied to the path evidence `p`. -/
 theorem spoofed_V_blocks_path_of_W
     (W : W_spoofedV (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
     (d : Deposit PropLike Standard ErrorModel Provenance)
-    (v : V_Spoofed_State d) (p : PathExists d) :
-    is_V_spoofed v → ¬has_path p := by
-  intro ⟨_, h_broken⟩
-  intro ⟨h_intact, _, _⟩
-  have h_no_intact := W.broken_chain_no_path d v p h_broken
-  exact h_no_intact h_intact
+    (a : EpArch.Agent) (p : PathExists d) :
+    (EpArch.V_spoof d ∨ EpArch.consultation_suppressed a) → False := by
+  intro h
+  cases h with
+  | inl h_spoof => exact W.spoof_blocks_path d h_spoof p
+  | inr h_supp  => exact W.suppression_blocks_path a d h_supp p
 
 
-/-! ## W_ddos: World assumptions for DDoS causing verification collapse -/
+/-! ## W_ddos: DDoS attack causes verification collapse -/
 
-/-- Verification capacity model.
+/-- World assumption: each DDoS vector causes verification collapse.
 
-    An agent has finite verification capacity per time unit.
-    When incoming volume exceeds capacity, verification collapses. -/
-structure VerificationCapacity where
-  capacity_per_unit : Nat
-  incoming_volume : Nat
-  is_overwhelmed : Bool := incoming_volume > capacity_per_unit
-
-/-- DDoS attack state: multiple vectors can overwhelm verification. -/
-structure DDoSState (a : Agent) where
-  ladder_load : Nat       -- candidate items flooding ladder
-  V_channel_load : Nat    -- provenance check requests
-  E_field_noise : Nat     -- error signal noise level
-  denial_pressure : Nat   -- distrust induction pressure
-  capacity : VerificationCapacity
-
-/-- Any vector overwhelmed implies at least one attack succeeding. -/
-def some_vector_overwhelmed (s : DDoSState a) : Prop :=
-  s.ladder_load > s.capacity.capacity_per_unit ∨
-  s.V_channel_load > s.capacity.capacity_per_unit ∨
-  s.E_field_noise > s.capacity.capacity_per_unit ∨
-  s.denial_pressure > s.capacity.capacity_per_unit
-
-/-- Verification collapsed state. -/
-structure CollapsedState (a : Agent) where
-  cannot_verify : Bool
-  delegating : Bool
-
-def is_collapsed (c : CollapsedState a) : Prop :=
-  c.cannot_verify
-
-/-- World assumptions for DDoS-causes-collapse claim.
-
-    Assumption: When any vector overwhelms capacity, verification collapses.
-    This is resource-theoretic: finite capacity + excess demand = failure. -/
+    One field per `DDoSVector` constructor, using Base opaques throughout.
+    Replaces the shadow `DDoSState`/`CollapsedState` types that duplicated
+    Base vocabulary with disconnected Bool-field structures. -/
 structure W_ddos where
-  /-- Overwhelmed capacity implies verification failure -/
-  overwhelm_causes_collapse : ∀ (a : Agent) (s : DDoSState a) (c : CollapsedState a),
-    some_vector_overwhelmed s → is_collapsed c
+  /-- Ladder overload: traction forms before V can be checked → verification collapses -/
+  ladder_collapses : ∀ (a : EpArch.Agent),
+    EpArch.ladder_overloaded a → EpArch.verification_collapsed a
+  /-- V-channel exhaustion: provenance checking too costly → verification collapses -/
+  V_exhaustion_collapses : ∀ (a : EpArch.Agent),
+    EpArch.V_channel_exhausted a → EpArch.verification_collapsed a
+  /-- E-field poisoning: ubiquitous noise makes everything uncertain → verification collapses -/
+  E_poisoning_collapses : ∀ (a : EpArch.Agent),
+    EpArch.E_field_poisoned a → EpArch.verification_collapsed a
+  /-- Denial triggering: generalized distrust blocks all external import → verification collapses -/
+  denial_collapses : ∀ (a : EpArch.Agent),
+    EpArch.denial_triggered a → EpArch.verification_collapsed a
 
-/-- Obligation theorem: DDoS causes verification collapse (conditional version).
+/-- Obligation theorem: any DDoS vector causes verification collapse.
 
-    Conditional version: this holds UNDER the assumption that overwhelmed capacity
-    implies collapse. -/
+    **Proof strategy:** 4-way nested `cases h with` dispatching each `DDoSVector`
+    branch to its per-vector W field. Each branch requires a distinct W field — no
+    single field covers all four cases. -/
 theorem ddos_causes_verification_collapse_of_W
     (W : W_ddos)
-    (a : Agent) (s : DDoSState a) (c : CollapsedState a) :
-    some_vector_overwhelmed s → is_collapsed c := by
-  exact W.overwhelm_causes_collapse a s c
+    (a : EpArch.Agent) :
+    (EpArch.ladder_overloaded a ∨ EpArch.V_channel_exhausted a ∨
+     EpArch.E_field_poisoned a ∨ EpArch.denial_triggered a) →
+    EpArch.verification_collapsed a := by
+  intro h
+  cases h with
+  | inl h_ladder => exact W.ladder_collapses a h_ladder
+  | inr h =>
+    cases h with
+    | inl h_V => exact W.V_exhaustion_collapses a h_V
+    | inr h =>
+      cases h with
+      | inl h_E     => exact W.E_poisoning_collapses a h_E
+      | inr h_denial => exact W.denial_collapses a h_denial
 
 
-/-! ## W_collapse_centralization: Collapse leads to trust centralization -/
+/-! ## W_collapse_centralization: Verification collapse causes trust centralization -/
 
-/-- Trust centralization state: agent delegates to single authority. -/
-structure CentralizedState (a : Agent) where
-  delegates_to_single : Bool
-  authority : Agent
+/-- World assumption: verification collapse triggers trust centralization (delegation).
 
-def is_centralized (t : CentralizedState a) : Prop :=
-  t.delegates_to_single
+    Uses Base opaques `verification_collapsed` and `trust_centralized` directly.
+    Replaces the shadow `CollapsedState`/`CentralizedState` types.
 
-/-- World assumptions for collapse-causes-centralization.
-
-    Assumption: When verification collapses, agents seek a single trusted authority.
-    This is behavioral: exhaustion → path of least resistance → delegation. -/
+    **Implication:** exhausted agents seek a single "trusted" authority — behavioral
+    path of least resistance under verification failure. -/
 structure W_collapse_centralization where
-  /-- Verification collapse triggers delegation behavior -/
-  exhaustion_triggers_delegation : ∀ (a : Agent) (c : CollapsedState a) (t : CentralizedState a),
-    is_collapsed c → is_centralized t
+  /-- Exhaustion triggers delegation: verification failure → centralized trust -/
+  exhaustion_triggers_delegation : ∀ (a : EpArch.Agent),
+    EpArch.verification_collapsed a → EpArch.trust_centralized a
 
-/-- Obligation theorem: Collapse causes centralization (conditional version).
-
-    Conditional version: this holds UNDER the behavioral assumption about exhaustion. -/
+/-- Obligation theorem: verification collapse causes trust centralization. -/
 theorem collapse_causes_centralization_of_W
     (W : W_collapse_centralization)
-    (a : Agent) (c : CollapsedState a) (t : CentralizedState a) :
-    is_collapsed c → is_centralized t := by
-  exact W.exhaustion_triggers_delegation a c t
+    (a : EpArch.Agent) :
+    EpArch.verification_collapsed a → EpArch.trust_centralized a :=
+  W.exhaustion_triggers_delegation a
 
 
 /-! ## W_lies_scale: Export cost asymmetry -/
 
-/-- Cost model for export vs defense.
+/-- World assumption: export costs strictly less than defense.
 
-    Export (lying): creating and publishing a false claim
-    Defense (verification): checking incoming claims for validity -/
-structure CostModel where
-  export_cost : Nat        -- cost to publish a claim
-  defense_cost : Nat       -- cost to verify a claim
-  asymmetric : Bool := export_cost < defense_cost
-
-/-- World assumptions for lies-scale claim.
-
-    Assumption: Export is structurally cheaper than defense.
-    This is information-theoretic: creation < verification in general. -/
+    Grounded concretely: `c_export_cost = 1 < c_verify_cost d` for any deposit
+    with `d.V.length ≥ 1`. See `EpArch.Adversarial.Concrete.concrete_W_lies_scale`
+    for the proved instance that discharges this bundle without axioms. -/
 structure W_lies_scale where
-  /-- The cost model exhibits asymmetry -/
-  costs : CostModel
-  /-- Export is cheaper than defense -/
-  asymmetry_holds : costs.export_cost < costs.defense_cost
+  /-- Concrete publication cost (steps) -/
+  export_cost : Nat
+  /-- Concrete verification cost (steps) -/
+  defense_cost : Nat
+  /-- Asymmetry holds: publication is strictly cheaper than verification -/
+  asymmetry_holds : export_cost < defense_cost
 
-/-- Obligation theorem: Lies scale (conditional version).
-
-    Conditional version: this holds UNDER a world where the cost asymmetry exists. -/
+/-- Obligation theorem: lies scale — export costs strictly less than defense costs. -/
 theorem lies_scale_of_W (W : W_lies_scale) :
-    W.costs.export_cost < W.costs.defense_cost :=
+    W.export_cost < W.defense_cost :=
   W.asymmetry_holds
 
 
@@ -228,14 +226,16 @@ structure ExploitStructure where
   overwhelms_verification : Bool
   forces_suboptimal_acceptance : Bool
 
+/-- Propositional equality of two ExploitStructures: both Bool fields match.
+    Used by `W_rolex_ddos` to assert that individual-scale (Rolex) and
+    population-scale (DDoS) attacks share the same structural blueprint. -/
 def same_structure (e1 e2 : ExploitStructure) : Prop :=
   e1.overwhelms_verification = e2.overwhelms_verification ∧
   e1.forces_suboptimal_acceptance = e2.forces_suboptimal_acceptance
 
-/-- World assumptions for Rolex-DDoS equivalence.
+/-- World assumption: individual-scale and population-scale attacks share exploit structure.
 
-    Assumption: Consultation blocking (individual) and channel overwhelming (population)
-    produce structurally equivalent exploits. -/
+    Both overwhelm verification capacity and force suboptimal acceptance. -/
 structure W_rolex_ddos where
   /-- Individual-scale attack structure -/
   rolex_structure : ExploitStructure
@@ -246,9 +246,7 @@ structure W_rolex_ddos where
   /-- Both force suboptimal acceptance -/
   both_force : rolex_structure.forces_suboptimal_acceptance ∧ ddos_structure.forces_suboptimal_acceptance
 
-/-- Obligation theorem: Rolex-DDoS structural equivalence (conditional version).
-
-    Conditional version: this holds UNDER a world where both attacks share structure. -/
+/-- Obligation theorem: Rolex-DDoS structural equivalence (conditional version). -/
 theorem rolex_ddos_structural_equivalence_of_W (W : W_rolex_ddos) :
     same_structure W.rolex_structure W.ddos_structure := by
   constructor
@@ -263,30 +261,19 @@ theorem rolex_ddos_structural_equivalence_of_W (W : W_rolex_ddos) :
 /-- Combined world assumptions for full DDoS chain. -/
 structure W_ddos_full extends W_ddos, W_collapse_centralization
 
-/-- Obligation theorem: Full DDoS chain (conditional version).
+/-- Obligation theorem: Full DDoS chain — any DDoS vector reaches trust centralization.
 
-    Composes the two conditional theorems for DDoS → collapse → centralization. -/
+    **Proof strategy:** Composes `ddos_causes_verification_collapse_of_W` and
+    `collapse_causes_centralization_of_W` sequentially. -/
 theorem ddos_to_centralization_of_W
     (W : W_ddos_full)
-    (a : Agent) (s : DDoSState a) (c : CollapsedState a) (t : CentralizedState a) :
-    some_vector_overwhelmed s → is_centralized t := by
-  intro h_overwhelm
-  have h_collapsed := ddos_causes_verification_collapse_of_W W.toW_ddos a s c h_overwhelm
-  exact collapse_causes_centralization_of_W W.toW_collapse_centralization a c t h_collapsed
-
-
-/-! ## Axiom-to-Obligation Summary (Attack Vectors)
-
-| Original Axiom | Obligation Theorem | World Bundle |
-|----------------|-------------------|--------------|
-| `spoofed_V_blocks_path` | `spoofed_V_blocks_path_of_W` | `W_spoofedV` |
-| `ddos_causes_verification_collapse` | `ddos_causes_verification_collapse_of_W` | `W_ddos` |
-| `collapse_causes_centralization` | `collapse_causes_centralization_of_W` | `W_collapse_centralization` |
-| `lies_scale` | `lies_scale_of_W` | `W_lies_scale` |
-| `rolex_ddos_structural_equivalence` | `rolex_ddos_structural_equivalence_of_W` | `W_rolex_ddos` |
-| `ddos_to_centralization` | `ddos_to_centralization_of_W` | `W_ddos_full` |
-
--/
+    (a : EpArch.Agent) :
+    (EpArch.ladder_overloaded a ∨ EpArch.V_channel_exhausted a ∨
+     EpArch.E_field_poisoned a ∨ EpArch.denial_triggered a) →
+    EpArch.trust_centralized a := by
+  intro h
+  have h_collapsed := ddos_causes_verification_collapse_of_W W.toW_ddos a h
+  exact collapse_causes_centralization_of_W W.toW_collapse_centralization a h_collapsed
 
 
 /-! ## Boundary Condition Countermeasures
@@ -298,199 +285,182 @@ perfection. Wherever independent validation is cheap and reachable inside
 the decision window, this attack class fails.
 -/
 
+/-! ### W_cheap_validator: Cheap validator maintains path despite V-failure -/
 
-/-! ### W_cheap_validator: Cheap validator blocks V-failure attack -/
+/-- World assumption: a reachable cheap validator preserves a valid verification
+    path regardless of V spoofing or consultation suppression.
 
-/-- Cheap validator available: can verify within time budget τ. -/
-structure CheapValidatorAvailable (a : Agent) (τ : Time) where
-  validator_exists : Bool
-  cost_within_budget : Bool
-  reachable_in_time : Bool
+    The attack (W_spoofedV) says every path is blocked. The countermeasure says
+    the cheap validator keeps at least one path open — the attacker has not won.
 
-def has_cheap_validator (cv : CheapValidatorAvailable a τ) : Prop :=
-  cv.validator_exists ∧ cv.cost_within_budget ∧ cv.reachable_in_time
-
-/-- Attack state: V was spoofed or consultation was blocked. -/
-structure VAttackState where
-  V_spoofed : Bool
-  consultation_blocked : Bool
-
-def V_attack_succeeded (v : VAttackState) : Prop :=
-  v.V_spoofed ∨ v.consultation_blocked
-
-/-- World assumptions for cheap-validator defense.
-
-    Assumption: If a cheap validator is reachable within τ, the agent can
-    successfully verify, so neither V spoofing nor consultation blocking works. -/
+    Field uses `cheap_validator_reachable a d.h.τ` — the validator's time budget is
+    tied to the deposit's own TTL window. `cheap_validator_reachable` is grounded
+    as `d.h.τ > 0` (see Base.lean), so `h_cv : d.h.τ > 0` directly discharges
+    `ttl_valid` in PathExists. The `h_s` precondition certifies non-revoked status,
+    discharging `status_live`. -/
 structure W_cheap_validator where
-  /-- Cheap validator enables verification despite attack attempts -/
-  cheap_validator_enables_check : ∀ (a : Agent) (τ : Time)
-    (cv : CheapValidatorAvailable a τ) (v : VAttackState),
-    has_cheap_validator cv → ¬V_attack_succeeded v
+  /-- Cheap validator enables path: validator reachable within deposit window, deposit not revoked -/
+  cheap_validator_enables_path : ∀ (a : EpArch.Agent)
+    (d : Deposit PropLike Standard ErrorModel Provenance),
+    EpArch.cheap_validator_reachable a d.h.τ →
+    d.status ≠ DepositStatus.Revoked →
+    PathExists d
 
-/-- Obligation theorem: Cheap validator blocks V attack (conditional version).
+/-- Obligation theorem: cheap validator maintains a valid verification path.
 
-    Conditional version: cheap validator reachable within τ disables the attack. -/
-theorem cheap_validator_blocks_V_attack_of_W
-    (W : W_cheap_validator)
-    (a : Agent) (τ : Time)
-    (cv : CheapValidatorAvailable a τ) (v : VAttackState) :
-    has_cheap_validator cv → ¬V_attack_succeeded v :=
-  W.cheap_validator_enables_check a τ cv v
+    **Proof strategy:** `cheap_validator_reachable a d.h.τ` is definitionally
+    `d.h.τ > 0`, which the W field uses directly. Result: PathExists d with
+    ttl_valid = h_cv and status_live = h_s. -/
+theorem cheap_validator_maintains_path_of_W
+    (W : W_cheap_validator (PropLike := PropLike) (Standard := Standard)
+         (ErrorModel := ErrorModel) (Provenance := Provenance))
+    (a : EpArch.Agent)
+    (d : Deposit PropLike Standard ErrorModel Provenance)
+    (h_s : d.status ≠ DepositStatus.Revoked) :
+    EpArch.cheap_validator_reachable a d.h.τ →
+    PathExists d :=
+  fun h_cv => W.cheap_validator_enables_path a d h_cv h_s
 
 
-/-! ### W_trust_bridge: Trust bridge blocks V-failure attack -/
+/-! ### W_trust_bridge: Trust bridge maintains path despite V-failure -/
 
-/-- Trust bridge available: pre-established trust relationship. -/
-structure TrustBridgeAvailable (a : Agent) where
-  bridge_exists : Bool
-  provides_expertise : Bool
+/-- World assumption: a pre-established trust bridge provides an alternative
+    verification path, maintaining access despite V spoofing or consultation
+    suppression.
 
-def has_trust_bridge (tb : TrustBridgeAvailable a) : Prop :=
-  tb.bridge_exists ∧ tb.provides_expertise
-
-/-- World assumptions for trust-bridge defense.
-
-    Assumption: A pre-established trust bridge provides an alternative
-    verification path that bypasses consultation blocking and detects spoofing. -/
+    The bridge does not prevent V_spoof from occurring — it opens an
+    alternative route so the attack cannot close off all paths.
+    `trust_bridge_on_hand` remains opaque (an agent property with no
+    abstract grounding on the Nat-indexed Agent type). -/
 structure W_trust_bridge where
-  /-- Trust bridge enables verification despite attack attempts -/
-  trust_bridge_enables_check : ∀ (a : Agent)
-    (tb : TrustBridgeAvailable a) (v : VAttackState),
-    has_trust_bridge tb → ¬V_attack_succeeded v
+  /-- Trust bridge enables path: deposit non-expired and non-revoked -/
+  trust_bridge_enables_path : ∀ (a : EpArch.Agent)
+    (d : Deposit PropLike Standard ErrorModel Provenance),
+    EpArch.trust_bridge_on_hand a →
+    d.h.τ > 0 →
+    d.status ≠ DepositStatus.Revoked →
+    PathExists d
 
-/-- Obligation theorem: Trust bridge blocks V attack (conditional version).
+/-- Obligation theorem: trust bridge maintains a valid verification path. -/
+theorem trust_bridge_maintains_path_of_W
+    (W : W_trust_bridge (PropLike := PropLike) (Standard := Standard)
+         (ErrorModel := ErrorModel) (Provenance := Provenance))
+    (a : EpArch.Agent)
+    (d : Deposit PropLike Standard ErrorModel Provenance)
+    (h_τ : d.h.τ > 0)
+    (h_s : d.status ≠ DepositStatus.Revoked) :
+    EpArch.trust_bridge_on_hand a →
+    PathExists d :=
+  fun h_tb => W.trust_bridge_enables_path a d h_tb h_τ h_s
 
-    Conditional version: trust bridge provides an alternative verification path. -/
-theorem trust_bridge_blocks_V_attack_of_W
-    (W : W_trust_bridge)
-    (a : Agent)
-    (tb : TrustBridgeAvailable a) (v : VAttackState) :
-    has_trust_bridge tb → ¬V_attack_succeeded v :=
-  W.trust_bridge_enables_check a tb v
 
+/-! ### W_reversibility: Reversibility maintains path after τ compression -/
 
-/-! ### W_reversibility: Reversibility neutralizes τ compression -/
+/-- World assumption: if a deposit is reversible, τ compression cannot close
+    all verification paths — the victim retains a recovery path even after
+    the decision window has been compressed.
 
-/-- Transaction reversibility: can undo after verification. -/
-structure TransactionReversible (d : Deposit PropLike Standard ErrorModel Provenance) where
-  can_reverse : Bool
-  reversal_available : Bool
-
-def is_reversible (tr : TransactionReversible d) : Prop :=
-  tr.can_reverse ∧ tr.reversal_available
-
-/-- τ compression attack state. -/
-structure τCompressionState where
-  τ_compressed : Bool
-  decision_forced : Bool
-
-def τ_attack_effective (tc : τCompressionState) : Prop :=
-  tc.τ_compressed ∧ tc.decision_forced
-
-/-- World assumptions for reversibility defense.
-
-    Assumption: If transaction is reversible, τ compression loses force—
-    the victim can verify after commitment and reverse if failed. -/
+    The attack (τ_compress) shortens the window, not the recovery capability.
+    Reversibility means the post-compress state still has a path for verify-and-undo.
+    `transaction_reversible d` is grounded as `d.h.τ > 0` (Base.lean), directly
+    discharging `ttl_valid` in PathExists. The `h_s` precondition certifies
+    non-revoked status. -/
 structure W_reversibility where
-  /-- Reversibility neutralizes urgency -/
-  reversibility_neutralizes : ∀ (d : Deposit PropLike Standard ErrorModel Provenance)
-    (tr : TransactionReversible d) (tc : τCompressionState),
-    is_reversible tr → ¬τ_attack_effective tc
+  /-- Reversibility keeps a path open even after τ compression, provided deposit not revoked -/
+  reversibility_survives_τ_compress : ∀ (t_orig t_compressed : EpArch.Time)
+    (d : Deposit PropLike Standard ErrorModel Provenance),
+    EpArch.transaction_reversible d →
+    EpArch.τ_compress t_orig t_compressed →
+    d.status ≠ DepositStatus.Revoked →
+    PathExists d
 
-/-- Obligation theorem: Reversibility neutralizes τ (conditional version).
-
-    Conditional version: if reversible, τ compression loses force. -/
-theorem reversibility_neutralizes_τ_of_W
+/-- Obligation theorem: reversibility maintains a path after τ compression. -/
+theorem reversibility_maintains_path_after_τ_compress_of_W
     (W : W_reversibility (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
+    (t_orig t_compressed : EpArch.Time)
     (d : Deposit PropLike Standard ErrorModel Provenance)
-    (tr : TransactionReversible d) (tc : τCompressionState) :
-    is_reversible tr → ¬τ_attack_effective tc :=
-  W.reversibility_neutralizes d tr tc
+    (h_s : d.status ≠ DepositStatus.Revoked) :
+    EpArch.transaction_reversible d →
+    EpArch.τ_compress t_orig t_compressed →
+    PathExists d :=
+  fun h_rev h_compress => W.reversibility_survives_τ_compress t_orig t_compressed d h_rev h_compress h_s
 
 
-/-! ### W_E_inclusion: E-field threat modeling closes expertise gap -/
+/-! ### W_E_inclusion: E-field threat modeling prevents verification collapse -/
 
-/-- E-field includes threat model for this attack pattern. -/
-structure EFieldIncludesThreat (a : Agent) where
-  threat_modeled : Bool
-  countermeasures_known : Bool
+/-- World assumption: if an agent's E-field models the attack pattern,
+    verification collapse is prevented — the expertise gap exists but is
+    not exploitable.
 
-def E_includes_threat (ef : EFieldIncludesThreat a) : Prop :=
-  ef.threat_modeled ∧ ef.countermeasures_known
-
-/-- Expertise gap attack state. -/
-structure ExpertiseGapState (a : Agent) where
-  gap_exists : Bool
-  exploited : Bool
-
-def expertise_gap_exploited (eg : ExpertiseGapState a) : Prop :=
-  eg.gap_exists ∧ eg.exploited
-
-/-- World assumptions for E-field inclusion defense.
-
-    Assumption: If the agent's E-field models this threat pattern,
-    the expertise gap cannot be exploited. -/
+    The attack exploits a gap between what the victim checks and what matters.
+    When E models the threat, the agent recognizes and resists the substitution
+    before V collapse occurs.
+    Uses Base opaques `E_includes_threat` and `verification_collapsed` directly. -/
 structure W_E_inclusion where
-  /-- E-field modeling closes the gap -/
-  E_modeling_closes_gap : ∀ (a : Agent)
-    (ef : EFieldIncludesThreat a) (eg : ExpertiseGapState a),
-    E_includes_threat ef → ¬expertise_gap_exploited eg
+  /-- E-field threat modeling prevents verification collapse -/
+  E_modeling_prevents_collapse : ∀ (a : EpArch.Agent),
+    EpArch.E_includes_threat a → ¬EpArch.verification_collapsed a
 
-/-- Obligation theorem: E-field inclusion closes expertise gap (conditional version).
-
-    Conditional version: if E-field models threat, the expertise gap is closed. -/
-theorem E_inclusion_closes_expertise_gap_of_W
+/-- Obligation theorem: E-field inclusion prevents verification collapse. -/
+theorem E_inclusion_prevents_collapse_of_W
     (W : W_E_inclusion)
-    (a : Agent)
-    (ef : EFieldIncludesThreat a) (eg : ExpertiseGapState a) :
-    E_includes_threat ef → ¬expertise_gap_exploited eg :=
-  W.E_modeling_closes_gap a ef eg
+    (a : EpArch.Agent) :
+    EpArch.E_includes_threat a → ¬EpArch.verification_collapsed a :=
+  W.E_modeling_prevents_collapse a
 
 
-/-! ### W_cheap_constraint: Cheaply testable constraint blocks V spoof -/
+/-! ### W_cheap_constraint: Cheaply testable constraint maintains path despite V spoof -/
 
-/-- Constraint surface is cheaply testable. -/
-structure ConstraintCheapTest (d : Deposit PropLike Standard ErrorModel Provenance) where
-  test_available : Bool
-  cost_acceptable : Bool
-  within_τ : Bool
+/-- World assumption: if the constraint surface is cheaply testable, a real
+    redeemability check happens within τ, maintaining a valid path regardless
+    of V spoofing or consultation suppression.
 
-def constraint_cheaply_testable (ct : ConstraintCheapTest d) : Prop :=
-  ct.test_available ∧ ct.cost_acceptable ∧ ct.within_τ
-
-/-- World assumptions for cheap constraint test defense.
-
-    Assumption: If constraint surface is cheaply testable, real redeemability
-    check happens within τ, exposing any spoofed V. -/
+    `constraint_cheaply_testable d` is grounded as `d.h.τ > 0` (Base.lean),
+    directly discharging `ttl_valid` in PathExists. The `h_s` precondition
+    certifies non-revoked status, discharging `status_live`. Together, both
+    PathExists fields are derived from the preconditions — no hand-set Bools. -/
 structure W_cheap_constraint where
-  /-- Cheap testing exposes spoofed V -/
-  cheap_test_exposes_spoof : ∀ (d : Deposit PropLike Standard ErrorModel Provenance)
-    (ct : ConstraintCheapTest d) (v : VAttackState),
-    constraint_cheaply_testable ct → ¬V_attack_succeeded v
+  /-- Cheap testing enables path: TTL positive (via grounded constraint_cheaply_testable), deposit not revoked -/
+  cheap_test_enables_path : ∀ (d : Deposit PropLike Standard ErrorModel Provenance),
+    EpArch.constraint_cheaply_testable d →
+    d.status ≠ DepositStatus.Revoked →
+    PathExists d
 
-/-- Obligation theorem: Cheap constraint test blocks V spoof (conditional version).
-
-    Conditional version: a quick redeemability test exposes spoofed V. -/
-theorem cheap_constraint_blocks_V_spoof_of_W
+/-- Obligation theorem: cheaply testable constraint maintains a valid verification path. -/
+theorem cheap_constraint_maintains_path_of_W
     (W : W_cheap_constraint (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
     (d : Deposit PropLike Standard ErrorModel Provenance)
-    (ct : ConstraintCheapTest d) (v : VAttackState) :
-    constraint_cheaply_testable ct → ¬V_attack_succeeded v :=
-  W.cheap_test_exposes_spoof d ct v
+    (h_s : d.status ≠ DepositStatus.Revoked) :
+    EpArch.constraint_cheaply_testable d →
+    PathExists d :=
+  fun h_ct => W.cheap_test_enables_path d h_ct h_s
+
+
+/-! ## Axiom-to-Obligation Summary (Attack Vectors)
+
+| Obligation Theorem | World Bundle |
+|---|---|
+| `spoofed_V_blocks_path_of_W` | `W_spoofedV` |
+| `ddos_causes_verification_collapse_of_W` | `W_ddos` |
+| `collapse_causes_centralization_of_W` | `W_collapse_centralization` |
+| `lies_scale_of_W` | `W_lies_scale` |
+| `rolex_ddos_structural_equivalence_of_W` | `W_rolex_ddos` |
+| `ddos_to_centralization_of_W` | `W_ddos_full` |
+
+-/
 
 
 /-! ## Axiom-to-Obligation Summary (Boundary Conditions)
 
-| Original Axiom | Obligation Theorem | World Bundle |
-|----------------|-------------------|--------------|
-| `cheap_validator_blocks_V_attack` | `cheap_validator_blocks_V_attack_of_W` | `W_cheap_validator` |
-| `trust_bridge_blocks_V_attack` | `trust_bridge_blocks_V_attack_of_W` | `W_trust_bridge` |
-| `reversibility_neutralizes_τ` | `reversibility_neutralizes_τ_of_W` | `W_reversibility` |
-| `E_inclusion_closes_expertise_gap` | `E_inclusion_closes_expertise_gap_of_W` | `W_E_inclusion` |
-| `cheap_constraint_blocks_V_spoof` | `cheap_constraint_blocks_V_spoof_of_W` | `W_cheap_constraint` |
+| Obligation Theorem | World Bundle | Effect asserted |
+|---|---|---|
+| `cheap_validator_maintains_path_of_W` | `W_cheap_validator` | `PathExists d` (ttl_valid + status_live) |
+| `trust_bridge_maintains_path_of_W` | `W_trust_bridge` | `PathExists d` (ttl_valid + status_live) |
+| `reversibility_maintains_path_after_τ_compress_of_W` | `W_reversibility` | `PathExists d` survives τ compress |
+| `E_inclusion_prevents_collapse_of_W` | `W_E_inclusion` | `¬verification_collapsed` |
+| `cheap_constraint_maintains_path_of_W` | `W_cheap_constraint` | `PathExists d` (ttl_valid + status_live) |
 
 -/
 

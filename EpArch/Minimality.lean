@@ -531,8 +531,8 @@ every import from scratch) cannot handle those claims.  To import them
 the system needs a trust-based mechanism: accept based on the source
 scope's endorsement rather than full reverification.
 
-**Proof technique.**  The hard claim's cost exceeds the budget; omega
-closes the Nat contradiction. -/
+**Proof technique.**  The hard claim's cost exceeds the budget;
+Nat.not_le_of_gt closes the Nat contradiction. -/
 
 /-- A claim universe where at least one claim exceeds the verification budget. -/
 structure BoundedVerification where

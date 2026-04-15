@@ -690,11 +690,11 @@ un-bypassable at the concrete model level.
 
 | Theorem | File | Statement | Original Axiom |
 |---------|------|-----------|----------------|
-| `cheap_validator_blocks_V_attack_of_W` | Adversarial/Obligations.lean | W_cheap_validator → cheap validator → ¬V_attack | `cheap_validator_blocks_V_attack` |
-| `trust_bridge_blocks_V_attack_of_W` | Adversarial/Obligations.lean | W_trust_bridge → trust bridge → ¬V_attack | `trust_bridge_blocks_V_attack` |
-| `reversibility_neutralizes_τ_of_W` | Adversarial/Obligations.lean | W_reversibility → reversible → ¬τ_attack | `reversibility_neutralizes_τ` |
-| `E_inclusion_closes_expertise_gap_of_W` | Adversarial/Obligations.lean | W_E_inclusion → E includes threat → ¬gap_exploited | `E_inclusion_closes_expertise_gap` |
-| `cheap_constraint_blocks_V_spoof_of_W` | Adversarial/Obligations.lean | W_cheap_constraint → cheap test → ¬V_attack | `cheap_constraint_blocks_V_spoof` |
+| `cheap_validator_maintains_path_of_W` | Adversarial/Obligations.lean | W_cheap_validator → cheap validator reachable → not revoked → PathExists d | `cheap_validator_blocks_V_attack` |
+| `trust_bridge_maintains_path_of_W` | Adversarial/Obligations.lean | W_trust_bridge → trust bridge → τ > 0 → not revoked → PathExists d | `trust_bridge_blocks_V_attack` |
+| `reversibility_maintains_path_after_τ_compress_of_W` | Adversarial/Obligations.lean | W_reversibility → reversible → not revoked → PathExists d survives τ compress | `reversibility_neutralizes_τ` |
+| `E_inclusion_prevents_collapse_of_W` | Adversarial/Obligations.lean | W_E_inclusion → E includes threat → ¬verification_collapsed a | `E_inclusion_closes_expertise_gap` |
+| `cheap_constraint_maintains_path_of_W` | Adversarial/Obligations.lean | W_cheap_constraint → constraint cheaply testable → not revoked → PathExists d | `cheap_constraint_blocks_V_spoof` |
 
 **World Assumption Bundles:** 16 `W_*` bundles (`W_lies_possible` through `W_cheap_constraint`) each gate exactly one obligation theorem above; full definitions in WorldCtx.lean and Adversarial/Obligations.lean.
 
@@ -704,7 +704,7 @@ $$\text{W-lies-possible} \Rightarrow \exists w\, a\, P.\, \text{Lie}(w, a, P)$$
 
 $$\text{RequiresSteps}(w, P, k) \land t < k \Rightarrow \neg\text{VerifyWithin}(w, P, t)$$
 
-$$\text{W-ddos-full} \land \text{overwhelmed}(s) \Rightarrow \text{centralized}(t)$$
+$$\text{W-ddos-full} \land (\text{ladder\_overloaded}(a) \lor \text{V\_channel\_exhausted}(a) \lor \text{E\_field\_poisoned}(a) \lor \text{denial\_triggered}(a)) \Rightarrow \text{trust\_centralized}(a)$$
 
 ---
 
@@ -1497,10 +1497,10 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 | `cluster_world_bounded_audit` | Meta/Config.lean | `C.RequiresSteps w P k → t < k → ¬C.VerifyWithin w P t` | `.bounded_verification` | `WorldCtx.bounded_audit_fails` |
 | `cluster_world_asymmetric_costs` | Meta/Config.lean | `C.W_asymmetric_costs → W.export_cost < W.defense_cost` | `.asymmetric_costs` | `WorldCtx.cost_asymmetry_of_W` |
 | `cluster_world_partial_observability` | Meta/Config.lean | `C.W_partial_observability → ∃ P, C.NotDeterminedByObs P` | `.partial_observability` | `WorldCtx.partial_obs_no_omniscience` |
-| `cluster_world_spoofed_v` | Meta/Config.lean | `W_spoofedV → is_V_spoofed v → ¬has_path p` | `.spoofedV` | `AdversarialObligations.spoofed_V_blocks_path_of_W` |
-| `cluster_world_lies_scale` | Meta/Config.lean | `W_lies_scale → W.costs.export_cost < W.costs.defense_cost` | `.lies_scale` | `AdversarialObligations.lies_scale_of_W` |
+| `cluster_world_spoofed_v` | Meta/Config.lean | `W_spoofedV → (V_spoof d ∨ consultation_suppressed a) → PathExists d → False` | `.spoofedV` | `AdversarialObligations.spoofed_V_blocks_path_of_W` |
+| `cluster_world_lies_scale` | Meta/Config.lean | `W_lies_scale → W.export_cost < W.defense_cost` | `.lies_scale` | `AdversarialObligations.lies_scale_of_W` |
 | `cluster_world_rolex_ddos` | Meta/Config.lean | `W_rolex_ddos → same_structure W.rolex_structure W.ddos_structure` | `.rolex_ddos` | `AdversarialObligations.rolex_ddos_structural_equivalence_of_W` |
-| `cluster_world_ddos` | Meta/Config.lean | `W_ddos → some_vector_overwhelmed s → is_collapsed c` | `.ddos` | `AdversarialObligations.ddos_causes_verification_collapse_of_W` |
+| `cluster_world_ddos` | Meta/Config.lean | `W_ddos → (ladder_overloaded a ∨ V_channel_exhausted a ∨ E_field_poisoned a ∨ denial_triggered a) → verification_collapsed a` | `.ddos` | `AdversarialObligations.ddos_causes_verification_collapse_of_W` |
 
 #### Constraint-Modularity Meta-Theorem Witnesses (Phase F)
 
