@@ -135,8 +135,10 @@ inductive CTrustBridgeAuth where
   | byToken (token_ok : ByteArray → Bool) -- credential check; gate applies token_ok to auth_token; presenter anonymous
 -- NO deriving Repr (function field in byToken)
 
-/-- Trust bridge: a cross-bubble trust authorization covering either a named agent
-    or a key-backed attestation verifier. scope = [] means all claims covered. -/
+/-- Trust bridge: authorization for a cross-bubble claim transfer.
+    auth selects the gate check (.byAgent: named presenter checked by identity;
+    .byToken: predicate applied to auth_token — any credential the deployer chooses).
+    scope restricts which claims are covered; [] means all. -/
 structure CTrustBridge where
   auth  : CTrustBridgeAuth  -- which gate check applies
   scope : List String       -- which claims are covered; [] = all
@@ -157,8 +159,8 @@ def mutate_header_for_export (d : CDeposit) (source : CBubble) : CDeposit :=
   { d with V := d.V ++ [s!"exported from {source.id}"] }
 
 /-- Export is valid if: revalidated OR the trust bridge gate passes.
-    byAgent:       presenting agent's id matches the bridge's authorized agent.
-    byAttestation: the request carries an attestation that the bridge's verifier accepts. -/
+    byAgent:  presenting agent's id matches the bridge's authorized agent.
+    byToken:  req.auth_token is Some tok and token_ok tok returns true. -/
 def c_valid_export (req : CExportRequest) : Bool :=
   req.revalidated ||
   req.via_trust_bridge.any (fun tb =>
