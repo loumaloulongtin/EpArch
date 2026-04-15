@@ -10,6 +10,8 @@ Standalone Lean 4 framework for reasoning about bounded epistemic systems under 
 
 **0 axiom declarations. 0 sorries.**
 
+> **Reading guide.** Much of the theorem surface is structural bookkeeping (transport lemmas, `Has*` witnesses, definitional unfolding). For the substantive results — the impossibility proofs that show *why* alternative architectures fail — start with `StructurallyForced` in `Convergence.lean` and the impossibility witnesses in `GroundedXStrict`, not the `Has*` predicates in `Minimality.lean`.
+
 ```bash
 lake build   # Lean 4.3.0, no Mathlib
 ```
