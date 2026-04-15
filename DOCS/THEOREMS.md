@@ -1498,7 +1498,7 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 | `cluster_world_asymmetric_costs` | Meta/Config.lean | `C.W_asymmetric_costs → W.export_cost < W.defense_cost` | `.asymmetric_costs` | `WorldCtx.cost_asymmetry_of_W` |
 | `cluster_world_partial_observability` | Meta/Config.lean | `C.W_partial_observability → ∃ P, C.NotDeterminedByObs P` | `.partial_observability` | `WorldCtx.partial_obs_no_omniscience` |
 | `cluster_world_spoofed_v` | Meta/Config.lean | `W_spoofedV → (V_spoof d ∨ consultation_suppressed a) → PathExists d → False` | `.spoofedV` | `AdversarialObligations.spoofed_V_blocks_path_of_W` |
-| `cluster_world_lies_scale` | Meta/Config.lean | `W_lies_scale → W.costs.export_cost < W.costs.defense_cost` | `.lies_scale` | `AdversarialObligations.lies_scale_of_W` |
+| `cluster_world_lies_scale` | Meta/Config.lean | `W_lies_scale → W.export_cost < W.defense_cost` | `.lies_scale` | `AdversarialObligations.lies_scale_of_W` |
 | `cluster_world_rolex_ddos` | Meta/Config.lean | `W_rolex_ddos → same_structure W.rolex_structure W.ddos_structure` | `.rolex_ddos` | `AdversarialObligations.rolex_ddos_structural_equivalence_of_W` |
 | `cluster_world_ddos` | Meta/Config.lean | `W_ddos → (ladder_overloaded a ∨ V_channel_exhausted a ∨ E_field_poisoned a ∨ denial_triggered a) → verification_collapsed a` | `.ddos` | `AdversarialObligations.ddos_causes_verification_collapse_of_W` |
 

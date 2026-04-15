@@ -462,7 +462,7 @@ def concrete_W_reversibility :
     step that field describes.
 
     Note: the abstract `W_ddos` obligation is `V_channel_exhausted a →
-    verification_collapsed a` (agent-level collapse), not `¬has_path`.  This
+    verification_collapsed a` (agent-level collapse), not `¬PathExists d`.  This
     concrete theorem proves `¬c_can_withdraw` — the concrete correlate of
     verification collapse for the V-channel vector.  The mapping from abstract
     `verification_collapsed` to concrete `¬c_can_withdraw` is the modeling
