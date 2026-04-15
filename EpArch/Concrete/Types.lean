@@ -126,32 +126,32 @@ def c_can_withdraw (acl : CACL) (agent : CAgent) (bubble : CBubble)
 
 /-! ## Export/Import Protocols -/
 
-/-- Trust bridge: explicit trust relationship between bubbles. -/
+/-- Trust bridge: an agent-scoped trust authorization.
+    It is the presenting agent, not the source bubble, that the receiving
+    bubble trusts. The bridge names the authorized agent and restricts
+    which claims are covered. scope = [] means all claims in scope. -/
 structure CTrustBridge where
-  source_bubble : String
-  target_bubble : String
-  accountability : String    -- Who is responsible if export fails
-  scope : List String        -- What claims are covered
-  deriving Repr
+  authorized_agent : CAgent    -- The agent whose cross-bubble assertions are trusted
+  scope : List String          -- What claims are covered
 
 /-- Export request: moving a deposit across bubble boundaries. -/
 structure CExportRequest where
   deposit : CDeposit
   source : CBubble
   target : CBubble
+  presenting_agent : CAgent    -- The agent asserting the transfer
   via_trust_bridge : Option CTrustBridge
   revalidated : Bool
-  deriving Repr
 
 /-- Header mutation on export: V gets extended with export metadata. -/
 def mutate_header_for_export (d : CDeposit) (source : CBubble) : CDeposit :=
   { d with V := d.V ++ [s!"exported from {source.id}"] }
 
-/-- Export is valid if: revalidated OR trust bridge exists. -/
+/-- Export is valid if: revalidated OR the presenting agent holds a valid trust bridge. -/
 def c_valid_export (req : CExportRequest) : Bool :=
   req.revalidated ||
   (req.via_trust_bridge.isSome &&
-   req.via_trust_bridge.any (fun tb => tb.source_bubble == req.source.id))
+   req.via_trust_bridge.any (fun tb => tb.authorized_agent.id == req.presenting_agent.id))
 
 /-- Import a deposit: creates new deposit with mutated header. -/
 def c_import_deposit (req : CExportRequest) : Option CDeposit :=

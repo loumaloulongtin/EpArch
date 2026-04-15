@@ -59,10 +59,10 @@ def process_export (req : CExportRequest) : COutcome :=
     .ExportSuccess req.deposit.claim req.target.id
   else match req.via_trust_bridge with
     | some tb =>
-      if tb.source_bubble = req.source.id then
+      if tb.authorized_agent.id = req.presenting_agent.id then
         .ExportSuccess req.deposit.claim req.target.id
       else
-        .ExportDenied "trust bridge mismatch"
+        .ExportDenied "trust bridge agent mismatch"
     | none =>
       .ExportDenied "no revalidation or trust bridge"
 

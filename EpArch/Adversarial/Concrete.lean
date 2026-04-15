@@ -21,13 +21,14 @@ Four-step demonstration connecting the abstract attack vocabulary
   trust bridge. Absent both, c_import_deposit returns none. Invocation order
   ("withdrawal must precede export") cannot be enforced architecturally for two
   independent reasons: (a) bounded verification — CAuditChannel capacity is finite,
-  so trust-bridge transfers are legitimate and bypass the withdrawal-first sequence;
-  (b) decentralization — bubble B has no read access to bubble A's withdrawal
-  ledger; the claim "this was withdrawn from A" arrives only as content of the
-  CExportRequest the agent constructs, and an agent could fabricate that content
-  entirely. Both constraints are foundational, not relaxable. The delegation to the
-  agent layer is therefore theorem-backed, not a design shortcut.
-  EpArch proves the gate conditions are un-bypassable when invoked.
+  so trust-bridge transfers are legitimate and it is the presenting agent, not
+  the source bubble, that the receiver trusts; (b) decentralization — bubble B
+  has no read access to bubble A's withdrawal ledger; the claim "this was withdrawn
+  from A" arrives only as content of the CExportRequest the agent constructs, and
+  an agent could fabricate that content entirely. Both constraints are foundational,
+  not relaxable. The delegation to the agent layer is therefore theorem-backed,
+  not a design shortcut. EpArch proves the gate conditions are un-bypassable when
+  invoked.
 -/
 
 import EpArch.Adversarial.Base
@@ -294,7 +295,7 @@ theorem ddos_V_channel_collapse_blocks_withdrawal
     must be delegated to the agent layer. EpArch's claim is therefore precise:
     the gate conditions themselves are un-bypassable. c_valid_export requires:
     (a) req.revalidated = true (deposit re-checked at destination), or
-    (b) a trust bridge exists whose source matches the exporting bubble.
+    (b) a trust bridge exists whose authorized agent matches the presenting agent.
     Absent both, c_valid_export = false and c_import_deposit = none.
 
     Several legitimate engineering approaches can implement the agent-layer
