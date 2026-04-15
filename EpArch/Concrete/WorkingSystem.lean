@@ -59,10 +59,17 @@ def process_export (req : CExportRequest) : COutcome :=
     .ExportSuccess req.deposit.claim req.target.id
   else match req.via_trust_bridge with
     | some tb =>
-      if tb.authorized_agent.id = req.presenting_agent.id then
-        .ExportSuccess req.deposit.claim req.target.id
-      else
-        .ExportDenied "trust bridge agent mismatch"
+      match tb.auth with
+      | .byAgent a =>
+        if a.id = req.presenting_agent.id then
+          .ExportSuccess req.deposit.claim req.target.id
+        else
+          .ExportDenied "trust bridge agent mismatch"
+      | .byToken ok =>
+        match req.auth_token with
+        | some tok => if ok tok then .ExportSuccess req.deposit.claim req.target.id
+                      else .ExportDenied "auth token check failed"
+        | none     => .ExportDenied "auth token required for this bridge"
     | none =>
       .ExportDenied "no revalidation or trust bridge"
 
@@ -110,7 +117,8 @@ theorem concrete_export_needs_provenance (req : CExportRequest) :
   | false =>
     simp only [h_rev, Bool.false_or] at h
     cases h_tb : req.via_trust_bridge with
-    | none => simp only [h_tb, Option.isSome, Bool.and_eq_true, Bool.false_and] at h
+    | none =>
+      simp only [h_tb, Option.any] at h
     | some _ => exact Or.inr rfl
 
 /-- Theorem: Withdrawal requires three gates (grounded version).
@@ -214,8 +222,9 @@ open EpArch
 
 The concrete model has ALL Bank features:
 - Bubble separation: CBubble provides scoped trust zones
-- Trust bridges: CTrustBridge is agent-scoped — it is the presenting agent,
-  not the source bubble, that the receiving bubble trusts
+- Trust bridges: CTrustBridge.auth is a sum — byAgent checks presenter identity;
+  byToken applies an arbitrary credential check (email domain, badge, JWT, crypto
+  key — anything ByteArray can carry). Both paths require an accountable party.
 - Headers: CDeposit has S/E/V/τ structure
 - Revocation: CDepositStatus.Revoked exists
 - Shared ledger: CGlobalLedger provides bank functionality

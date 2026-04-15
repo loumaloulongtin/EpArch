@@ -268,7 +268,7 @@ theorem invalid_export_requires_reval_or_bridge (req : CExportRequest)
     c_valid_export req = false := by
   unfold c_valid_export
   rw [h_no_reval, h_no_bridge]
-  -- false || (none.isSome && none.any f) reduces to false = false definitionally
+  -- false || none.any f reduces to false = false definitionally (Option.any on none)
   rfl
 
 /-- missing_export_gate_blocks_import: when c_valid_export returns false,

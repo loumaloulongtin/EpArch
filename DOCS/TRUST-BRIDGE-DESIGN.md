@@ -21,11 +21,11 @@ agent presents it.
 `c_valid_export` would check:
 
 ```
-tb.source_bubble == req.source  ∧  tb.verify (withdrawal_attestation req.deposit)
+tb.source_bubble == req.source  ∧  tb.token_ok req.auth_token
 ```
 
 The presenting agent's identity is not part of the gate. Any agent that can produce
-a deposit with a valid attestation from the source bubble can complete the transfer.
+a deposit with a valid credential from the source bubble can complete the transfer.
 
 ### Agent-scoped bridges (EpArch's choice)
 
@@ -54,22 +54,25 @@ DDoS proofs in `Adversarial/Concrete.lean` use). A receiving bubble cannot alway
 re-verify provenance from scratch: sources may be unreachable, or the capacity budget
 may be exhausted. A Bubble-scoped bridge that covers all presenting agents must therefore
 certify that *for any deposit arriving via this bridge, the source bubble has already done
-the work*. The natural mechanism is a cryptographic signature: the source bubble signs the
-withdrawal event, and the gate checks the signature. Without it, the bridge is a blanket
-trust grant with no attestation anchor.
+the work*. Without this, the bridge is a blanket trust grant with no credential anchor.
 
 **Decentralization.** Bubble B has no read access to bubble A's ledger. The claim "deposit
 d was withdrawn from bubble A" is an assertion in `CExportRequest`, not a verifiable fact
 at the architecture level. A Bubble-scoped gate cannot check the source ledger directly; it
-can only check what the source bubble has cryptographically attested. The crypto path is
-therefore not optional — it is load-bearing for correctness.
+can only check what the source bubble has attested via a credential.
 
 So a correct Bubble-scoped implementation requires:
 
-1. The source bubble to hold a signing key and emit signed withdrawal attestations.
-2. The target bubble to hold the corresponding verification key (and a revocation
-   mechanism if keys can be rotated).
-3. `c_valid_export` to verify the attestation signature before admitting the deposit.
+1. The source bubble to issue credentials for withdrawal events (signed tokens, employee
+   badges, email-domain assertions, JWTs, or any other mechanism whose validity the
+   bridge's `token_ok` function can check).
+2. The target bubble's bridge configuration to carry the matching `token_ok` check.
+3. `c_valid_export` to apply it to `req.auth_token` before admitting the deposit.
+
+The credential mechanism is not prescribed — it is whatever `token_ok : ByteArray → Bool`
+implements. An employee presenting a company-issued badge, a service account authenticated
+by email domain, or a relay carrying a signed withdrawal receipt are all valid designs;
+they differ only in what bytes end up in `auth_token` and what `token_ok` checks.
 
 The presenting agent's identity plays no role. That is the feature, not a gap: any relay,
 daemon, or pub/sub consumer can carry the deposit from A to B, and accountability rests
@@ -108,16 +111,16 @@ Bubble-scoped bridges are the right design when:
   rather than the individual (agent) level — for example, inter-organisation claim
   exchange where organisation A endorses its exports as a whole.
 
-In these cases the `CTrustBridge` type would carry a `verify : ByteArray → Bool` field
-(or a public key reference), and `c_valid_export` would apply it to a
-`withdrawal_attestation` extracted from the request. The presenting agent's identity
-field could be omitted from `CExportRequest` entirely, or retained for auditing without
-being part of the gate check.
+The current `CTrustBridge.auth` sum already supports this: use `.byToken` with a
+`token_ok` function that verifies whatever credential the source bubble issues.
+`CExportRequest.auth_token` carries the credential; the gate checks it. The presenting
+agent's identity plays no role in the `.byToken` path — any relay that obtains the
+credential can present it.
 
-**Important:** "unauthenticated presenter" in this design does not mean "no trust anchor."
-The trust anchor is the source bubble's signing key. An implementation that removes the
-signature check entirely degrades the bridge to a blanket grant and loses the correctness
-properties described above.
+**Important:** "anonymous presenter" in this design does not mean "no trust anchor."
+The trust anchor is whatever `token_ok` accepts. An implementation that sets
+`token_ok := fun _ => true` degrades the bridge to a blanket grant and loses the
+correctness properties described above.
 
 ---
 

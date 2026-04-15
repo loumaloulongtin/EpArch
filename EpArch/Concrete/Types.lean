@@ -126,32 +126,45 @@ def c_can_withdraw (acl : CACL) (agent : CAgent) (bubble : CBubble)
 
 /-! ## Export/Import Protocols -/
 
-/-- Trust bridge: an agent-scoped trust authorization.
-    It is the presenting agent, not the source bubble, that the receiving
-    bubble trusts. The bridge names the authorized agent and restricts
-    which claims are covered. scope = [] means all claims in scope. -/
+/-- Trust bridge authorization mode.
+    Both paths require an accountable party: byAgent names it directly;
+    byToken names it indirectly as the holder of a credential (email domain,
+    badge, JWT, crypto key — any token the bridge's check function accepts). -/
+inductive CTrustBridgeAuth where
+  | byAgent (a : CAgent)             -- named party; gate checks presenter identity
+  | byToken (token_ok : ByteArray → Bool) -- credential check; gate applies token_ok to auth_token; presenter anonymous
+-- NO deriving Repr (function field in byToken)
+
+/-- Trust bridge: a cross-bubble trust authorization covering either a named agent
+    or a key-backed attestation verifier. scope = [] means all claims covered. -/
 structure CTrustBridge where
-  authorized_agent : CAgent    -- The agent whose cross-bubble assertions are trusted
-  scope : List String          -- What claims are covered
+  auth  : CTrustBridgeAuth  -- which gate check applies
+  scope : List String       -- which claims are covered; [] = all
+-- NO deriving Repr (auth may contain function)
 
 /-- Export request: moving a deposit across bubble boundaries. -/
 structure CExportRequest where
-  deposit : CDeposit
-  source : CBubble
-  target : CBubble
-  presenting_agent : CAgent    -- The agent asserting the transfer
-  via_trust_bridge : Option CTrustBridge
-  revalidated : Bool
+  deposit                : CDeposit
+  source                 : CBubble
+  target                 : CBubble
+  presenting_agent       : CAgent           -- the agent asserting the transfer (used by byAgent path)
+  via_trust_bridge       : Option CTrustBridge
+  revalidated            : Bool
+  auth_token             : Option ByteArray -- credential for byToken path (any bytes the bridge's token_ok accepts); none on agent path
 
 /-- Header mutation on export: V gets extended with export metadata. -/
 def mutate_header_for_export (d : CDeposit) (source : CBubble) : CDeposit :=
   { d with V := d.V ++ [s!"exported from {source.id}"] }
 
-/-- Export is valid if: revalidated OR the presenting agent holds a valid trust bridge. -/
+/-- Export is valid if: revalidated OR the trust bridge gate passes.
+    byAgent:       presenting agent's id matches the bridge's authorized agent.
+    byAttestation: the request carries an attestation that the bridge's verifier accepts. -/
 def c_valid_export (req : CExportRequest) : Bool :=
   req.revalidated ||
-  (req.via_trust_bridge.isSome &&
-   req.via_trust_bridge.any (fun tb => tb.authorized_agent.id == req.presenting_agent.id))
+  req.via_trust_bridge.any (fun tb =>
+    match tb.auth with
+    | .byAgent a       => a.id == req.presenting_agent.id
+    | .byToken ok => req.auth_token.any ok)
 
 /-- Import a deposit: creates new deposit with mutated header. -/
 def c_import_deposit (req : CExportRequest) : Option CDeposit :=
