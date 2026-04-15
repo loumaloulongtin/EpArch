@@ -196,18 +196,22 @@ def c_stale (d : CDeposit) (current_time : CTime) : Prop :=
   d.τ ≤ current_time
 
 
-/-! ## Concrete Audit Channel -/
+/-! ## Concrete Audit Channel
 
-/-- Concrete audit channel: models finite V-verification throughput.
-    capacity = maximum provenance-chain verifications per processing round.
-    volume   = provenance-chain verifications demanded this round.
-    When volume > capacity, the excess requests cannot each complete. -/
+    Models finite V-verification throughput as a Nat capacity/volume pair.
+    This is the concrete substrate for the DDoS channel-collapse proofs in
+    EpArch.Adversarial.Concrete: when volume > capacity, c_process_V returns [],
+    making the deposit's V field empty and letting the V gate fire. -/
+
+/-- Concrete audit channel: capacity is the per-round V-check budget;
+    volume is the per-round demand. The gap between them is what DDoS exploits. -/
 structure CAuditChannel where
   capacity : Nat   -- max V-checks per round
   volume   : Nat   -- V-checks demanded per round
   deriving Repr, DecidableEq, Inhabited
 
-/-- Concrete channel overwhelmed: more V-check requests this round than available capacity. -/
+/-- The threshold condition for V-channel collapse: once demand exceeds capacity,
+    c_process_V cannot service all pending provenance checks and returns []. -/
 def c_channel_overwhelmed (cc : CAuditChannel) : Prop :=
   cc.volume > cc.capacity
 

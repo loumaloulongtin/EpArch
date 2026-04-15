@@ -4,19 +4,13 @@ EpArch.Adversarial.Base — Adversarial Base Types and Structures
 This module contains the TYPE-LEVEL definitions for adversarial modeling:
 - Attack primitives (opaques)
 - Attack structures and attack-success predicate
+- `is_lie_iff` biconditional
 
-NO AXIOMS HERE. Obligation theorems live in EpArch.Adversarial.Obligations;
-the biconditional `is_lie_iff` is co-located here.
-
-## What is "Adversarial" in EpArch?
-
-"Adversarial" doesn't mean malicious intent — it means the model accounts
-for ANY source of epistemic failure: lies, omissions, misobservations,
-forgeries.  Attack structures formalize the SPACE of possible failures
-so that obligation theorems can prove which mechanisms are forced.
-
-See EpArch.Adversarial.Obligations for the conditional obligation theorems
-that use these types.
+"Adversarial" here means any source of epistemic failure — lies, omissions,
+misobservations, forgeries. Attack structures formalize the space of possible
+failures so that the obligation theorems can prove which mechanisms are forced.
+Obligation theorems live in EpArch.Adversarial.Obligations; `is_lie_iff` is the
+only structural theorem co-located here.
 -/
 
 import EpArch.Basic
