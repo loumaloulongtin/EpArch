@@ -109,6 +109,29 @@ proves sound is transfer legitimacy: was the presenter authorised to make this
 cross-bubble assertion? Whether the underlying withdrawal was valid is the
 presenting agent's protocol obligation, enforced by whatever mechanism it uses.
 
+The deeper structural point: deposits carry *epistemic standing*, not truth. A
+claim that has cleared bubble A's standards has been accepted as meeting A's
+epistemic regime — its V chain, its S threshold, its E model, its current τ.
+None of that transfers automatically to bubble B. B may impose different
+standards on any of those dimensions. The trust bridge authorises the
+presenter; it does not resolve whether the deposit meets B's standards. That
+is a separate question, and the architecture keeps it permanently separate.
+
+This is why `revalidated = true` exists as a first-class export path alongside
+the two bridge modes. Revalidation is the path where B explicitly ran the
+lifecycle at its own standards. The bridge paths are the path where B accepts
+the presenting agent's authority instead of rerunning the full check locally — a
+legitimate decision, but a decision about trust in the agent, not a claim about
+the deposit's epistemic adequacy under B's regime.
+
+The full lifecycle — repair, staleness, headers, bank consultation — is
+necessary precisely because deposits are process records, not truth
+certificates. If a Deposited claim were guaranteed true everywhere and
+indefinitely, none of that machinery would be needed: a deposit in any bubble
+would be valid in all bubbles for all time. It is the formal argument for
+conservatism: the full epistemic process is non-negotiable at each site of
+reliance, regardless of how the cross-bubble transfer was authorised.
+
 ---
 
 ## Gate Invariants That Hold in Both Modes
