@@ -12,7 +12,8 @@ This module defines HOW they work: the Step relation's preconditions
 FORCE certain architectural features.
 
 Key exports:
-- SystemState, Step (inductive LTS relation, 8 constructors)
+- ACLRole (Reader | BankOperator), ACLEntry (with role field), SystemState
+- Step (inductive LTS relation, 11 constructors)
 - no_revision_no_correction (competition gate impossibility)
 - generic_invariant_preservation (step-preserved invariants)
 - Companion: EpArch.Semantics.LinkingAxioms (operational groundings)
@@ -28,11 +29,20 @@ universe u
 
 /-! ## ACL Entry -/
 
-/-- An ACL entry: who can access what deposit in which bubble. -/
+/-- Role carried by an ACL entry.  Determines what operations the entry authorises.
+    - `Reader`      : may submit and withdraw deposits (regular agent access).
+    - `BankOperator`: additionally may validate, accept, and inspect deposits. -/
+inductive ACLRole where
+  | Reader : ACLRole
+  | BankOperator : ACLRole
+  deriving DecidableEq, Repr
+
+/-- An ACL entry: who can access what deposit in which bubble, at what role. -/
 structure ACLEntry where
-  agent : Agent
-  bubble : Bubble
-  deposit_id : Nat  -- index into ledger
+  agent      : Agent
+  bubble     : Bubble
+  deposit_id : Nat        -- index into ledger
+  role       : ACLRole := .Reader
 
 /-! ## System State -/
 
@@ -50,10 +60,6 @@ structure SystemState (PropLike Standard ErrorModel Provenance : Type u) where
   clock       : Time
   acl_table   : List ACLEntry
   trust_bridges : List (Bubble × Bubble)
-  /-- Bank operators: agents authorized to validate and accept deposits in specific bubbles.
-      An entry (a, B) means agent a may run Validate and Accept for deposits in bubble B.
-      Default: empty — no bank authority granted. -/
-  bank_authority : List (Agent × Bubble) := []
   /-- Per-agent, per-claim Ladder state.  Pass-through on every Step (no Step ever
       modifies it — proved by `step_preserves_ladder_map`).  Default: Ignorance. -/
   ladder_map  : Agent → PropLike → LadderStage := fun _ _ => LadderStage.Ignorance
@@ -112,10 +118,15 @@ def isCandidate (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx
 def isValidated (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat) : Prop :=
   ∃ d, s.ledger.get? d_idx = some d ∧ d.status = .Validated
 
-/-- Check if agent has bank operator authority for the given bubble.    Required to run Validate and Accept steps. -/
+/-- Check if agent has bank operator authority for the given bubble.
+    Open architecture: if the ACL table is empty, all agents have bank authority.
+    Gated mode: the agent must have an entry with role `BankOperator` for that bubble
+    (the `deposit_id` field is ignored for bubble-level authority checks).
+    Required to run Validate, Accept, and Inspect steps. -/
 def hasBankAuthority (s : SystemState PropLike Standard ErrorModel Provenance)
     (a : Agent) (B : Bubble) : Prop :=
-  (a, B) ∈ s.bank_authority
+  s.acl_table = [] ∨
+  ∃ entry, entry ∈ s.acl_table ∧ entry.agent = a ∧ entry.bubble = B ∧ entry.role = .BankOperator
 
 /-- Check if trust bridge exists between bubbles. -/
 def hasTrustBridge (s : SystemState PropLike Standard ErrorModel Provenance)
