@@ -78,6 +78,9 @@ theorem frozen_canon_no_revocation
   | withdraw _ _ _ _ _ _ =>
     -- s' = s, so d' = d
     simp_all
+  | inspect _ _ _ _ _ _ =>
+    -- s' = s, so d' = d
+    simp_all
   | export_with_bridge _ B2 d_exp_idx _ _ _ =>
     -- addToNewBubble either appends or leaves unchanged
     -- For existing indices < s.ledger.length, get? is unchanged
@@ -188,7 +191,7 @@ theorem allRestricted_implies_no_revision
     simp only [Trace.hasRevision]
     have h_not_rev : a.isRevision = false := by
       cases a with
-      | Submit _ | Withdraw _ _ _ | Export _ _ _ | Tick | Validate _ _ _ | Accept _ _ _ =>
+      | Submit _ | Withdraw _ _ _ | Export _ _ _ | Tick | Validate _ _ _ | Accept _ _ _ | Inspect _ _ _ =>
         simp [Action.isRevision]
       | Challenge _ | Revoke _ | Repair _ _ =>
         simp [isContestationAction] at h_not_contest

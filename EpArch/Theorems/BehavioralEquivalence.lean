@@ -277,6 +277,7 @@ def observe_step_action : CAction → Observation
   | .Revoke _            => .TimeAdvanced
   | .Validate _ _ _      => .TimeAdvanced
   | .Accept _ _ _        => .TimeAdvanced
+  | .Inspect _ _ _       => .TimeAdvanced
 
 /-! ### Ready States -/
 
@@ -318,7 +319,7 @@ def withdraw_ready_state (B : GroundedBehavior) (a_n b_n d_idx : Nat) :
   let _ := B.bank.produced        -- certificate field present: bank typechecks
   let _ := B.trust_bridges.downstream_via_bridge  -- certificate field present: trust_bridges typechecks
   have h_acl : hasACLPermission s (.mk a_n) (.mk b_n) d_idx :=
-    ⟨_, List.Mem.head _, rfl, rfl, rfl⟩
+    Or.inr ⟨_, List.Mem.head _, rfl, rfl, rfl⟩
   have h_current : isCurrentDeposit s d_idx :=
     ⟨canonDeposit, canonLedger_get d_idx d_idx (Nat.lt_succ_self d_idx),
      Nat.le_refl 0⟩

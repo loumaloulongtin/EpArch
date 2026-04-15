@@ -82,13 +82,17 @@ inductive Action (PropLike Standard ErrorModel Provenance Reason Evidence : Type
   | Revoke (d_idx : Nat)
   | Validate (a : Agent) (B : Bubble) (d_idx : Nat)
   | Accept (a : Agent) (B : Bubble) (d_idx : Nat)
+  | Inspect (a : Agent) (B : Bubble) (d_idx : Nat)
 
 /-! ## Preconditions -/
 
 /-- Check if agent has ACL permission to withdraw deposit at index.
-    Existential over ACL table entries matching (agent, bubble, deposit_id). -/
+    Open architecture: if the ACL table is empty, all agents are authorized
+    (no gating enforced). Otherwise, an explicit entry must match the
+    (agent, bubble, deposit_id) triple. -/
 def hasACLPermission (s : SystemState PropLike Standard ErrorModel Provenance)
     (a : Agent) (B : Bubble) (d_idx : Nat) : Prop :=
+  s.acl_table = [] ∨
   ∃ entry, entry ∈ s.acl_table ∧ entry.agent = a ∧ entry.bubble = B ∧ entry.deposit_id = d_idx
 
 /-- Check if deposit at index is in Deposited status.
@@ -549,6 +553,19 @@ inductive Step : SystemState PropLike Standard ErrorModel Provenance →
       Step s (.Accept a B d_idx)
         { s with ledger := updateDepositStatus s.ledger d_idx .Deposited }
 
+  /-- Inspect: bank authority agent reads a pre-Deposited deposit.
+      Bank operators need to access Candidate and Validated deposits to
+      validate and accept them — no agent can verify a deposit they cannot
+      read. State unchanged (inspection is non-destructive).
+      Preconditions: bank authority for the bubble, current timestamp,
+      Candidate or Validated status. -/
+  | inspect (s : SystemState PropLike Standard ErrorModel Provenance)
+      (a : Agent) (B : Bubble) (d_idx : Nat)
+      (h_auth : hasBankAuthority s a B)
+      (h_current : isCurrentDeposit s d_idx)
+      (h_pre : isCandidate s d_idx ∨ isValidated s d_idx) :
+      Step s (.Inspect a B d_idx) s
+
 /-! ## Ladder Invariants
 
 The `ladder_map` field of `SystemState` is never modified by any Step.
@@ -748,6 +765,9 @@ theorem step_non_revision_preserves_non_revoked
   | withdraw _ _ _ _ _ _ =>
     -- Withdraw doesn't change ledger at all
     exact h_not_revoked d hd h_status
+  | inspect _ _ _ _ _ _ =>
+    -- Inspect doesn't change ledger
+    exact h_not_revoked d hd h_status
   | export_with_bridge B1 B2 d_export_idx _ _ _ =>
     -- Export appends via addToNewBubble; similar to Submit
     simp only at hd
@@ -932,6 +952,9 @@ theorem step_no_revision_preserves_deposited
     exact (List.get?_append_left' s.ledger _ d_idx h_in_orig).trans h_get
   | withdraw _ _ _ _ _ _ =>
     -- Withdraw: s' = s (state unchanged)
+    exact ⟨d, h_get, h_status⟩
+  | inspect _ _ _ _ _ _ =>
+    -- Inspect: s' = s (state unchanged)
     exact ⟨d, h_get, h_status⟩
   | export_with_bridge B1exp B2exp d_export_idx h_dep_exp _ _ =>
     -- s'.ledger = addToNewBubble s.ledger d_export_idx B2exp (some branch)
@@ -1692,6 +1715,8 @@ theorem step_preserves_valid_status
   case submit d =>
     exact submit_preserves_valid_status s d h_inv
   case withdraw =>
+    exact h_inv
+  case inspect =>
     exact h_inv
   case export_with_bridge B1 B2 d_idx _ _ _ =>
     exact export_preserves_valid_status s d_idx B2 h_inv

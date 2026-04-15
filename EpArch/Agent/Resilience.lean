@@ -357,6 +357,9 @@ theorem deposit_promotion_requires_bank_authority
   | withdraw _ _ _ _ _ _ =>
     -- s' = s, state unchanged by successful withdrawal
     exact absurd h_after h_not
+  | inspect _ _ _ _ _ _ =>
+    -- s' = s, state unchanged by inspection
+    exact absurd h_after h_not
   | export_with_bridge _ _ _ _ _ _ =>
     -- s' = { s with ledger := addToNewBubble s.ledger d_idx B2 }
     apply absurd h_after; intro ⟨d', hd', hP', hstatus'⟩
