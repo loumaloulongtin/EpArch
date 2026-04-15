@@ -94,6 +94,33 @@ theorem w_partial_obs_forces_redeemability (C : @EpArch.WorldCtx.{0})
   exact ⟨P, w0, fun endorsed obs_stable closed h_end =>
     (h_bic.mp (closed w0 P h_end)) (closed w1 P (obs_stable P w0 w1 h_obs h_end))⟩
 
+/-- W_multi_agent_heterogeneous witnesses a non-trivially restricted authorization surface.
+
+    The `secrets_exist` field directly supplies (a, P) where `¬Utter a P` — an agent
+    that cannot assert some claim.  This is the formal basis for why open-mode ACL
+    (acl_table = [], all agents authorized) is insufficient: at least one agent must be
+    excluded from at least one claim's certification path. -/
+theorem w_multi_agent_forces_authorization_need (C : @EpArch.WorldCtx.{0})
+    (W : C.W_multi_agent_heterogeneous) :
+    ∃ (a : C.Agent) (P : C.Claim), ¬C.Utter a P :=
+  W.secrets_exist
+
+/-- W_lies_possible and W_multi_agent_heterogeneous are incompatible.
+
+    W_lies_possible.unrestricted_utterance asserts every agent can utter every claim.
+    W_multi_agent_heterogeneous.secrets_exist asserts some agent cannot utter some claim.
+    These are direct contradictions.
+
+    Architectural consequence: a world under full adversarial pressure (W_lies_possible,
+    unrestricted submission) cannot simultaneously protect secrets (W_multi_agent_heterogeneous).
+    Equivalently, to protect secrets, the authorization surface must be gated — open-mode
+    ACL is only sound when secrets are not a requirement. -/
+theorem w_lies_multi_agent_incompatible (C : @EpArch.WorldCtx.{0})
+    (W_lies : C.W_lies_possible)
+    (W_multi : C.W_multi_agent_heterogeneous) : False := by
+  have ⟨a, P, h_no_utter⟩ := W_multi.secrets_exist
+  exact h_no_utter (W_lies.unrestricted_utterance a P)
+
 
 /-! ## World-Grounded Convergence -/
 

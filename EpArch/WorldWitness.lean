@@ -116,6 +116,44 @@ theorem all_bundles_satisfiable :
   ⟨⟨holds_W_lies_possible⟩, ⟨holds_W_bounded_verification⟩, ⟨holds_W_partial_observability⟩⟩
 
 
+/-! ## MultiAgentWitnessCtx — Non-vacuity for W_multi_agent_heterogeneous
+
+W_multi_agent_heterogeneous cannot be witnessed by WitnessCtx because:
+  - WitnessCtx.Agent := Unit (single agent — cannot have two distinct agents)
+  - WitnessCtx.Utter := fun _ _ => True (unrestricted — no secrets possible)
+
+A separate two-agent context is needed. -/
+
+/-- MultiAgentWitnessCtx: a WorldCtx with two distinct agents and restricted utterance.
+
+    - Agent := Bool: authorized agent (true) and restricted agent (false).
+    - Utter a _ := a = true: only the authorized agent can utter any claim.
+    - Truth, World, Obs match WitnessCtx for consistency.
+
+    This witnesses W_multi_agent_heterogeneous: two agents exist, false
+    propositions exist, and the restricted agent cannot utter any claim. -/
+def MultiAgentWitnessCtx : EpArch.WorldCtx where
+  World := Bool
+  Agent := Bool  -- true = authorized, false = restricted
+  Claim := Bool
+  Obs   := Unit
+  Truth := fun w P => w = P
+  Utter := fun a _ => a = true   -- only authorized agent can utter
+  obs   := fun _ => ()
+  VerifyWithin  := fun _ _ t => t ≥ 1
+  effectiveTime := fun _ => 10
+  world_inhabited := ⟨true⟩
+  agent_inhabited := ⟨true⟩
+  claim_inhabited := ⟨true⟩
+
+/-- W_multi_agent_heterogeneous is satisfiable in MultiAgentWitnessCtx. -/
+theorem holds_W_multi_agent_heterogeneous :
+    MultiAgentWitnessCtx.W_multi_agent_heterogeneous where
+  distinct_agents := ⟨true, false, Bool.noConfusion⟩
+  some_false      := ⟨false, true, fun h => Bool.noConfusion h⟩
+  secrets_exist   := ⟨false, true, fun h => Bool.noConfusion h⟩
+
+
 /-! ## Derived Theorem Instantiation
 
 The generic theorems from WorldCtx can be instantiated at WitnessCtx. -/
