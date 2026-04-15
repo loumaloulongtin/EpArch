@@ -250,42 +250,6 @@ Forward implications: if goal holds, capability must exist.
 These follow from the contrapositive theorems above.
 -/
 
-/-- NOTE: This theorem proves `ReversibleWithdrawal True = True`, which is
-    trivially provable since ReversibleWithdrawal is defined as `canUndo` and
-    True is trivially true. The Classical.em case immediately takes the True
-    branch; the other premises are unused. The real necessity argument is in
-    `safe_withdrawal_needs_reversibility`. -/
-theorem SafeWithdrawalGoal_implies_ReversibleWithdrawal
-    (mistakeOccurred harmCanOccur : Prop)
-    (h_mistakes_happen : mistakeOccurred)
-    (h_no_rev_means_harm : ¬ReversibleWithdrawal True → harmCanOccur)
-    (h_goal : SafeWithdrawalGoal mistakeOccurred harmCanOccur) :
-    ReversibleWithdrawal True := by
-  -- Proof by contradiction using classical logic
-  -- If no reversibility, then harm occurs, but goal says no harm
-  have h_decide := Classical.em (ReversibleWithdrawal True)
-  cases h_decide with
-  | inl h_rev => exact h_rev
-  | inr h_no_rev =>
-    have h_harm := h_no_rev_means_harm h_no_rev
-    have h_no_harm := h_goal h_mistakes_happen
-    exact absurd h_harm h_no_harm
-
-/-- NOTE: This theorem proves `CheapValidatorAvailable True = True` via ex falso:
-    `h_expensive : claimCost > budget` contradicts `h_goal : SoundDepositsGoal = (claimCost ≤ budget)`.
-    The premises are inconsistent, so the conclusion `True` follows vacuously.
-    The real necessity argument is in `sound_deposits_need_cheap_validator`. -/
-theorem SoundDepositsGoal_implies_CheapValidatorAvailable
-    (claimCost budget : Nat)
-    (h_expensive : claimCost > budget)
-    (h_goal : SoundDepositsGoal claimCost budget) :
-    CheapValidatorAvailable True := by
-  -- Goal says claimCost ≤ budget
-  -- But h_expensive says claimCost > budget
-  -- This is a contradiction, so we can prove anything (ex falso)
-  have h_not_le : ¬(claimCost ≤ budget) := Nat.not_le_of_gt h_expensive
-  exact absurd h_goal h_not_le
-
 /-- Forward implication: Reliable export goal → Export gate capability.
     (When observations can be incorrect, gate is needed.) -/
 theorem ReliableExportGoal_implies_ExportGateEnforced
