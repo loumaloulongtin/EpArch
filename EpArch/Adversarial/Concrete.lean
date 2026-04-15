@@ -422,16 +422,27 @@ def concrete_W_trust_bridge :
 def concrete_W_cheap_constraint :
     W_cheap_constraint (PropLike := CProp) (Standard := CStandard)
       (ErrorModel := CErrorModel) (Provenance := CProvenance) :=
-  { cheap_test_enables_path := fun _a _d _h =>
+  { cheap_test_enables_path := fun _d _h =>
       ⟨{ provenance_intact := true, reaches_constraint := true, verifiable := true },
        ⟨rfl, rfl, rfl⟩⟩ }
 
-/-! W_reversibility and W_E_inclusion concrete witnesses are not discharged here.
-    Both carry opaque predicates (EpArch.transaction_reversible, EpArch.τ_compress,
-    EpArch.verification_collapsed) that cannot be reduced to CDeposit arithmetic.
-    Grounding these bundles requires a bridge axiom connecting the abstract agent
-    model to the concrete CAuditChannel / CDeposit model — a separate layer of
-    the formalization. -/
+/-- Concrete W_reversibility: a reversible deposit (d.h.τ > 0) retains a valid
+    verification path even after τ compression (t_compressed < t_orig).
+
+    The deposit's positive TTL means the verify-and-undo path is still reachable.
+    PathExists fields are independent Bools; the all-true instance is always
+    constructable regardless of the remaining TTL amount. -/
+def concrete_W_reversibility :
+    W_reversibility (PropLike := CProp) (Standard := CStandard)
+      (ErrorModel := CErrorModel) (Provenance := CProvenance) :=
+  { reversibility_survives_τ_compress := fun _t_orig _t_compressed _d _h_rev _h_compress =>
+      ⟨{ provenance_intact := true, reaches_constraint := true, verifiable := true },
+       ⟨rfl, rfl, rfl⟩⟩ }
+
+/-! W_E_inclusion concrete witness is not discharged here.
+    `E_includes_threat : Agent → Prop` cannot be grounded from the abstract `Agent`
+    type (which is `Nat`-indexed with no E field). Grounding it requires either adding
+    a capability field to abstract `Agent` or a separate predicate-bridge layer. -/
 
 /-! ========================================================================
     STEP 5C — CONCRETE DDoS V-CHANNEL EXHAUSTION NAMED THEOREM

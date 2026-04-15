@@ -368,8 +368,7 @@ theorem E_inclusion_prevents_collapse_of_W
     Uses Base opaque `constraint_cheaply_testable` directly. -/
 structure W_cheap_constraint where
   /-- Cheap testing maintains path: at least one valid path exists -/
-  cheap_test_enables_path : ∀ (a : EpArch.Agent)
-    (d : Deposit PropLike Standard ErrorModel Provenance),
+  cheap_test_enables_path : ∀ (d : Deposit PropLike Standard ErrorModel Provenance),
     EpArch.constraint_cheaply_testable d →
     ∃ (p : PathExists d), has_path p
 
@@ -377,11 +376,10 @@ structure W_cheap_constraint where
 theorem cheap_constraint_maintains_path_of_W
     (W : W_cheap_constraint (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
-    (a : EpArch.Agent)
     (d : Deposit PropLike Standard ErrorModel Provenance) :
     EpArch.constraint_cheaply_testable d →
     ∃ (p : PathExists d), has_path p :=
-  W.cheap_test_enables_path a d
+  W.cheap_test_enables_path d
 
 
 /-! ## Axiom-to-Obligation Summary (Attack Vectors)

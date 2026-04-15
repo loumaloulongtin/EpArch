@@ -26,8 +26,9 @@ variable {PropLike Standard ErrorModel Provenance : Type u}
 
 /-! ## Attack Primitives -/
 
-/-- τ compression: attacker forces short decision window. -/
-opaque τ_compress : Time → Time → Prop  -- (original, compressed)
+/-- τ compression: compressed time is strictly less than the original window.
+    Concretely: the attacker succeeds when t_compressed < t_orig. -/
+def τ_compress (t_orig t_compressed : Time) : Prop := t_compressed < t_orig
 
 /-- V spoofing: attacker injects fake provenance header. -/
 opaque V_spoof : Deposit PropLike Standard ErrorModel Provenance → Prop
@@ -174,8 +175,10 @@ opaque cheap_validator_reachable : Agent → Time → Prop
 /-- Trust bridge on-hand: victim has pre-established expertise access. -/
 opaque trust_bridge_on_hand : Agent → Prop
 
-/-- Transaction reversible: redeemability check before commitment. -/
-opaque transaction_reversible : Deposit PropLike Standard ErrorModel Provenance → Prop
+/-- Transaction reversible: deposit has remaining TTL (d.h.τ > 0).
+    A deposit with positive TTL can still be verified and undone before commitment. -/
+def transaction_reversible (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
+  d.h.τ > 0
 
 /-- E-field includes threat: victim models this attack pattern. -/
 opaque E_includes_threat : Agent → Prop
