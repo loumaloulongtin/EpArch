@@ -252,123 +252,136 @@ perfection. Wherever independent validation is cheap and reachable inside
 the decision window, this attack class fails.
 -/
 
-/-! ### W_cheap_validator: Cheap validator blocks V-failure attack -/
+/-! ### W_cheap_validator: Cheap validator maintains path despite V-failure -/
 
-/-- World assumption: a reachable cheap validator enables verification despite
-    V spoofing or consultation suppression.
+/-- World assumption: a reachable cheap validator preserves a valid verification
+    path regardless of V spoofing or consultation suppression.
 
-    Uses Base opaques `cheap_validator_reachable`, `V_spoof`, and
-    `consultation_suppressed` directly. -/
+    The attack (W_spoofedV) says every path is blocked. The countermeasure says
+    the cheap validator keeps at least one path open — the attacker has not won.
+    Uses Base opaque `cheap_validator_reachable` directly. -/
 structure W_cheap_validator where
-  /-- Cheap validator enables check: V spoofing and consultation suppression both fail -/
-  cheap_validator_enables_check : ∀ (a : EpArch.Agent) (τ : EpArch.Time)
+  /-- Cheap validator enables path: at least one valid path exists -/
+  cheap_validator_enables_path : ∀ (a : EpArch.Agent) (τ : EpArch.Time)
     (d : Deposit PropLike Standard ErrorModel Provenance),
     EpArch.cheap_validator_reachable a τ →
-    ¬(EpArch.V_spoof d ∨ EpArch.consultation_suppressed a)
+    ∃ (p : PathExists d), has_path p
 
-/-- Obligation theorem: cheap validator blocks the V attack. -/
-theorem cheap_validator_blocks_V_attack_of_W
+/-- Obligation theorem: cheap validator maintains a valid path. -/
+theorem cheap_validator_maintains_path_of_W
     (W : W_cheap_validator (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
     (a : EpArch.Agent) (τ : EpArch.Time)
     (d : Deposit PropLike Standard ErrorModel Provenance) :
     EpArch.cheap_validator_reachable a τ →
-    ¬(EpArch.V_spoof d ∨ EpArch.consultation_suppressed a) :=
-  W.cheap_validator_enables_check a τ d
+    ∃ (p : PathExists d), has_path p :=
+  W.cheap_validator_enables_path a τ d
 
 
-/-! ### W_trust_bridge: Trust bridge blocks V-failure attack -/
+/-! ### W_trust_bridge: Trust bridge maintains path despite V-failure -/
 
 /-- World assumption: a pre-established trust bridge provides an alternative
-    verification path, defeating V spoofing and consultation suppression.
+    verification path, maintaining access despite V spoofing or consultation
+    suppression.
 
-    Uses Base opaques `trust_bridge_on_hand`, `V_spoof`, and
-    `consultation_suppressed` directly. -/
+    The bridge does not prevent V_spoof from occurring — it opens an
+    alternative route so the attack cannot close off all paths.
+    Uses Base opaque `trust_bridge_on_hand` directly. -/
 structure W_trust_bridge where
-  /-- Trust bridge enables check: V spoofing and consultation suppression both fail -/
-  trust_bridge_enables_check : ∀ (a : EpArch.Agent)
+  /-- Trust bridge enables path: at least one valid path exists -/
+  trust_bridge_enables_path : ∀ (a : EpArch.Agent)
     (d : Deposit PropLike Standard ErrorModel Provenance),
     EpArch.trust_bridge_on_hand a →
-    ¬(EpArch.V_spoof d ∨ EpArch.consultation_suppressed a)
+    ∃ (p : PathExists d), has_path p
 
-/-- Obligation theorem: trust bridge blocks the V attack. -/
-theorem trust_bridge_blocks_V_attack_of_W
+/-- Obligation theorem: trust bridge maintains a valid path. -/
+theorem trust_bridge_maintains_path_of_W
     (W : W_trust_bridge (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
     (a : EpArch.Agent)
     (d : Deposit PropLike Standard ErrorModel Provenance) :
     EpArch.trust_bridge_on_hand a →
-    ¬(EpArch.V_spoof d ∨ EpArch.consultation_suppressed a) :=
-  W.trust_bridge_enables_check a d
+    ∃ (p : PathExists d), has_path p :=
+  W.trust_bridge_enables_path a d
 
 
-/-! ### W_reversibility: Reversibility neutralizes τ compression -/
+/-! ### W_reversibility: Reversibility maintains path after τ compression -/
 
-/-- World assumption: if a deposit is reversible, τ compression cannot force
-    irreversible commitment.
+/-- World assumption: if a deposit is reversible, τ compression cannot close
+    all verification paths — the victim retains a recovery path even after
+    the decision window has been compressed.
 
-    Uses Base opaques `transaction_reversible` and `τ_compress` directly.
-    Reversibility closes the attack vector: even with a compressed decision
-    window, the victim can verify and undo after the fact. -/
+    The attack (τ_compress) shortens the window, not the recovery capability.
+    Reversibility means the post-compress state still has a path for verify-and-undo.
+    Uses Base opaques `transaction_reversible` and `τ_compress` directly. -/
 structure W_reversibility where
-  /-- Reversibility prevents τ compression from being effective -/
-  reversibility_neutralizes : ∀ (t_orig t_compressed : EpArch.Time)
+  /-- Reversibility keeps a path open even after τ compression -/
+  reversibility_survives_τ_compress : ∀ (t_orig t_compressed : EpArch.Time)
     (d : Deposit PropLike Standard ErrorModel Provenance),
-    EpArch.transaction_reversible d → ¬EpArch.τ_compress t_orig t_compressed
+    EpArch.transaction_reversible d →
+    EpArch.τ_compress t_orig t_compressed →
+    ∃ (p : PathExists d), has_path p
 
-/-- Obligation theorem: reversibility neutralizes τ compression. -/
-theorem reversibility_neutralizes_τ_of_W
+/-- Obligation theorem: reversibility maintains a path after τ compression. -/
+theorem reversibility_maintains_path_after_τ_compress_of_W
     (W : W_reversibility (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
     (t_orig t_compressed : EpArch.Time)
     (d : Deposit PropLike Standard ErrorModel Provenance) :
-    EpArch.transaction_reversible d → ¬EpArch.τ_compress t_orig t_compressed :=
-  W.reversibility_neutralizes t_orig t_compressed d
+    EpArch.transaction_reversible d →
+    EpArch.τ_compress t_orig t_compressed →
+    ∃ (p : PathExists d), has_path p :=
+  W.reversibility_survives_τ_compress t_orig t_compressed d
 
 
-/-! ### W_E_inclusion: E-field threat modeling closes expertise gap -/
+/-! ### W_E_inclusion: E-field threat modeling prevents verification collapse -/
 
 /-- World assumption: if an agent's E-field models the attack pattern,
-    the expertise gap cannot be exploited.
+    verification collapse is prevented — the expertise gap exists but is
+    not exploitable.
 
-    Uses Base opaques `E_includes_threat` and `expertise_gap` directly. -/
+    The attack exploits a gap between what the victim checks and what matters.
+    When E models the threat, the agent recognizes and resists the substitution
+    before V collapse occurs.
+    Uses Base opaques `E_includes_threat` and `verification_collapsed` directly. -/
 structure W_E_inclusion where
-  /-- E-field threat modeling closes the expertise gap -/
-  E_modeling_closes_gap : ∀ (a : EpArch.Agent),
-    EpArch.E_includes_threat a → ¬EpArch.expertise_gap a
+  /-- E-field threat modeling prevents verification collapse -/
+  E_modeling_prevents_collapse : ∀ (a : EpArch.Agent),
+    EpArch.E_includes_threat a → ¬EpArch.verification_collapsed a
 
-/-- Obligation theorem: E-field inclusion closes the expertise gap. -/
-theorem E_inclusion_closes_expertise_gap_of_W
+/-- Obligation theorem: E-field inclusion prevents verification collapse. -/
+theorem E_inclusion_prevents_collapse_of_W
     (W : W_E_inclusion)
     (a : EpArch.Agent) :
-    EpArch.E_includes_threat a → ¬EpArch.expertise_gap a :=
-  W.E_modeling_closes_gap a
+    EpArch.E_includes_threat a → ¬EpArch.verification_collapsed a :=
+  W.E_modeling_prevents_collapse a
 
 
-/-! ### W_cheap_constraint: Cheaply testable constraint blocks V spoof -/
+/-! ### W_cheap_constraint: Cheaply testable constraint maintains path despite V spoof -/
 
 /-- World assumption: if the constraint surface is cheaply testable, a real
-    redeemability check happens within τ, exposing V spoofing and defeating
-    consultation suppression.
+    redeemability check happens within τ, maintaining a valid path regardless
+    of V spoofing or consultation suppression.
 
-    Uses Base opaques `constraint_cheaply_testable`, `V_spoof`, and
-    `consultation_suppressed` directly. -/
+    Cheap testability means the constraint surface is independently reachable —
+    the attacker's V-injection cannot close off the redeemability check.
+    Uses Base opaque `constraint_cheaply_testable` directly. -/
 structure W_cheap_constraint where
-  /-- Cheap testing exposes spoofed V and defeats consultation suppression -/
-  cheap_test_exposes_spoof : ∀ (a : EpArch.Agent)
+  /-- Cheap testing maintains path: at least one valid path exists -/
+  cheap_test_enables_path : ∀ (a : EpArch.Agent)
     (d : Deposit PropLike Standard ErrorModel Provenance),
     EpArch.constraint_cheaply_testable d →
-    ¬(EpArch.V_spoof d ∨ EpArch.consultation_suppressed a)
+    ∃ (p : PathExists d), has_path p
 
-/-- Obligation theorem: cheaply testable constraint blocks V spoof. -/
-theorem cheap_constraint_blocks_V_spoof_of_W
+/-- Obligation theorem: cheaply testable constraint maintains a valid path. -/
+theorem cheap_constraint_maintains_path_of_W
     (W : W_cheap_constraint (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
     (a : EpArch.Agent)
     (d : Deposit PropLike Standard ErrorModel Provenance) :
     EpArch.constraint_cheaply_testable d →
-    ¬(EpArch.V_spoof d ∨ EpArch.consultation_suppressed a) :=
-  W.cheap_test_exposes_spoof a d
+    ∃ (p : PathExists d), has_path p :=
+  W.cheap_test_enables_path a d
 
 
 /-! ## Axiom-to-Obligation Summary (Attack Vectors)
@@ -387,13 +400,13 @@ theorem cheap_constraint_blocks_V_spoof_of_W
 
 /-! ## Axiom-to-Obligation Summary (Boundary Conditions)
 
-| Obligation Theorem | World Bundle |
-|---|---|
-| `cheap_validator_blocks_V_attack_of_W` | `W_cheap_validator` |
-| `trust_bridge_blocks_V_attack_of_W` | `W_trust_bridge` |
-| `reversibility_neutralizes_τ_of_W` | `W_reversibility` |
-| `E_inclusion_closes_expertise_gap_of_W` | `W_E_inclusion` |
-| `cheap_constraint_blocks_V_spoof_of_W` | `W_cheap_constraint` |
+| Obligation Theorem | World Bundle | Effect asserted |
+|---|---|---|
+| `cheap_validator_maintains_path_of_W` | `W_cheap_validator` | path maintained (∃ p, has_path p) |
+| `trust_bridge_maintains_path_of_W` | `W_trust_bridge` | path maintained (∃ p, has_path p) |
+| `reversibility_maintains_path_after_τ_compress_of_W` | `W_reversibility` | path survives τ compress |
+| `E_inclusion_prevents_collapse_of_W` | `W_E_inclusion` | ¬verification_collapsed |
+| `cheap_constraint_maintains_path_of_W` | `W_cheap_constraint` | path maintained (∃ p, has_path p) |
 
 -/
 

@@ -380,6 +380,95 @@ theorem lies_scale_concrete :
     c_export_cost < c_verify_cost τ_expired_deposit :=
   lies_scale_of_W (concrete_W_lies_scale τ_expired_deposit (by decide))
 
+/-! ========================================================================
+    STEP 5B — CONCRETE BOUNDARY-CONDITION WITNESSES
+    ========================================================================
+
+    Three boundary-condition W bundles can be concretely discharged by
+    constructing an explicit PathExists with all fields true.  The `full_path`
+    helper shows that any Deposit type admits such a path — PathExists is a
+    record of three Bools, none of which references the deposit's contents.
+
+    W_E_inclusion and W_reversibility carry opaque predicates
+    (verification_collapsed, τ_compress) that cannot be reduced to
+    CDeposit-level arithmetic.  They are listed as open items below. -/
+
+/-- Concrete W_cheap_validator: a reachable cheap validator always produces a
+    valid path.  Provenance is intact through the cheap validator regardless of
+    what the attacker injected into V.
+
+    The all-true PathExists is constructable for any Deposit: PathExists fields are
+    three independent Bools that do not reference deposit contents. -/
+def concrete_W_cheap_validator :
+    W_cheap_validator (PropLike := CProp) (Standard := CStandard)
+      (ErrorModel := CErrorModel) (Provenance := CProvenance) :=
+  { cheap_validator_enables_path := fun _a _τ _d _h =>
+      ⟨{ provenance_intact := true, reaches_constraint := true, verifiable := true },
+       ⟨rfl, rfl, rfl⟩⟩ }
+
+/-- Concrete W_trust_bridge: a pre-established trust bridge always provides a
+    valid alternative path.  The bridge is an out-of-band provenance route that
+    V spoofing cannot reach. -/
+def concrete_W_trust_bridge :
+    W_trust_bridge (PropLike := CProp) (Standard := CStandard)
+      (ErrorModel := CErrorModel) (Provenance := CProvenance) :=
+  { trust_bridge_enables_path := fun _a _d _h =>
+      ⟨{ provenance_intact := true, reaches_constraint := true, verifiable := true },
+       ⟨rfl, rfl, rfl⟩⟩ }
+
+/-- Concrete W_cheap_constraint: a cheaply testable constraint surface always
+    yields a valid path.  The test is independent of the V chain, so V spoofing
+    cannot prevent it from succeeding. -/
+def concrete_W_cheap_constraint :
+    W_cheap_constraint (PropLike := CProp) (Standard := CStandard)
+      (ErrorModel := CErrorModel) (Provenance := CProvenance) :=
+  { cheap_test_enables_path := fun _a _d _h =>
+      ⟨{ provenance_intact := true, reaches_constraint := true, verifiable := true },
+       ⟨rfl, rfl, rfl⟩⟩ }
+
+/-! W_reversibility and W_E_inclusion concrete witnesses are not discharged here.
+    Both carry opaque predicates (EpArch.transaction_reversible, EpArch.τ_compress,
+    EpArch.verification_collapsed) that cannot be reduced to CDeposit arithmetic.
+    Grounding these bundles requires a bridge axiom connecting the abstract agent
+    model to the concrete CAuditChannel / CDeposit model — a separate layer of
+    the formalization. -/
+
+/-! ========================================================================
+    STEP 5C — CONCRETE DDoS V-CHANNEL EXHAUSTION NAMED THEOREM
+    ========================================================================
+
+    `ddos_V_channel_collapse_blocks_withdrawal` (Step 3) traces the full
+    concrete chain from `c_channel_overwhelmed` to `¬c_can_withdraw`.  Here
+    we name that result explicitly as the concrete realization of the
+    `V_channel_exhausted → ¬withdrawal_possible` obligation, and connect it
+    to the W_ddos obligation layer by exhibiting the channel-collapse step
+    that the abstract bundle's V_exhaustion_collapses field describes. -/
+
+/-- concrete_V_channel_exhaustion_obligation: the concrete DDoS V-channel
+    collapse is the observable effect that the abstract W_ddos bundle's
+    `V_exhaustion_collapses` field models.
+
+    Chain (concrete):
+    1. `c_channel_overwhelmed cc`        — volume > capacity  (Nat def)
+    2. `sources.length > cc.capacity`    — this deposit's V-check overflows
+    3. `c_process_V cc sources = []`     — channel arithmetic (overwhelmed_channel_collapses_V)
+    4. `d.V = []`                        — bridge via h_V
+    5. `¬c_can_withdraw acl a B d t`     — V gate fires (V_stripped_not_withdrawable)
+
+    This names the same chain as `ddos_V_channel_collapse_blocks_withdrawal`
+    but makes explicit that it is the CONCRETE DISCHARGE of the abstract
+    V_channel_exhausted → ¬has_path obligation. -/
+theorem concrete_V_channel_exhaustion_obligation
+    {acl : CACL} {a : CAgent} {B : CBubble}
+    (cc : CAuditChannel)
+    (h_overwhelmed : c_channel_overwhelmed cc)
+    (sources : CProvenance) (h_deficit : sources.length > cc.capacity)
+    (d : CDeposit) (t : CTime)
+    (h_V : d.V = c_process_V cc sources)
+    (h_τ : d.τ > t + 10) :
+    ¬c_can_withdraw acl a B d t :=
+  ddos_V_channel_collapse_blocks_withdrawal cc h_overwhelmed sources h_deficit d t h_V h_τ
+
 end ConcreteObligationWitnesses
 
 end EpArch.Adversarial.Concrete
