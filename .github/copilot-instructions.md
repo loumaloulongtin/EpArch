@@ -83,25 +83,3 @@ These are architectural invariants, not version-specific facts.
   inductive in `ClusterRegistry.lean`.
 
 ---
-
-## Rules
-
-1. **Read the relevant `.lean` file before proposing edits.** The Lean source is
-   the source of truth. README and DOCS prose are secondary.
-
-2. **Use current theorem names.** Do not invent or guess. Search the repo.
-
-3. **Do not add `axiom` declarations.** Use `opaque` for domain primitives.
-
-4. **Do not add `sorry`.** Every theorem is fully proved.
-
-5. **Preserve the routing/proof split.** No proof terms in the registry, no
-   routing logic in the config.
-
-6. **Update layers together.** Changing a cluster means updating
-   `ClusterRegistry.lean`, `Config.lean`, and `DOCS/MODULARITY.md` in one pass.
-   See `DOCS/MODULARITY.md` for the exact recipe.
-
-7. **Do not modify theorem code unless explicitly asked.**
-
-8. **If the cluster count changes**, update `DOCS/MODULARITY.md` and `README.md`.
