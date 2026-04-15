@@ -18,11 +18,13 @@ Four-step demonstration connecting the abstract attack vocabulary
   V gate fires). A concrete FullStackAttack witness satisfies attack_succeeds.
 
 - Step 4: The export gate conditions: c_valid_export requires revalidation or a
-  trust bridge whose authorized agent matches the presenting agent. Absent both,
-  c_import_deposit returns none. The gate enforces transfer legitimacy — whether
-  the receiving bubble has epistemic grounds to accept the claim — not invocation
-  order. Deposits are epistemic claims, not tokens; there is no double-spending
-  problem to sequence around.
+  trust bridge whose gate passes — either the presenting agent matches a named
+  authorized agent (.byAgent), or the request carries a credential that the bridge's
+  token_ok predicate accepts (.byToken). Absent both, c_import_deposit returns none.
+  The gate enforces transfer legitimacy — whether the receiving bubble has epistemic
+  grounds to accept the claim — not invocation order. Deposits are epistemic claims,
+  not tokens; there is no double-spending problem to sequence around. Bubbles never
+  communicate directly; there is always an agent in the middle.
 -/
 
 import EpArch.Adversarial.Base
@@ -244,14 +246,15 @@ theorem ddos_V_channel_collapse_blocks_withdrawal
 
     CExportRequest packages a deposit with gate metadata (revalidated flag,
     trust bridge) and a presenting_agent identity. c_valid_export requires
-    either revalidation at the destination or a trust bridge whose authorized
-    agent matches the presenting agent. Absent both, c_import_deposit returns
-    none.
+    either revalidation at the destination or a passing trust bridge gate.
+    Absent both, c_import_deposit returns none.
 
     The gate enforces transfer legitimacy: did a vetted agent vouch for this
-    deposit, or did the destination re-check it? Deposits are epistemic claims,
-    not tokens — there is no double-spending problem and no resource to deplete.
-    Invocation order is not the constraint c_valid_export enforces. -/
+    deposit (.byAgent: presenter identity matches), or does it carry a valid
+    credential (.byToken: token_ok passes), or was it revalidated at the
+    destination? Deposits are epistemic claims, not tokens — there is no
+    double-spending problem and no resource to deplete. Bubbles never
+    communicate directly; there is always an agent in the middle. -/
 
 /-- invalid_export_requires_reval_or_bridge: absent both revalidation and trust bridge,
     c_valid_export returns false.

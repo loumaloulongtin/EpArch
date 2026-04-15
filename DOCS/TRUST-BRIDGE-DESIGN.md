@@ -1,137 +1,124 @@
 # Trust Bridge Design Notes
 
-This document compares two trust-bridge ontologies considered for the concrete
-model and explains the design choice reflected in `EpArch/Concrete/Types.lean`.
-Its job is narrow: describe the two designs, show what each requires, and explain
-why Agent-scoped is the simpler default. It does not evaluate which design is
-better for a given deployment — both are coherent, and the choice is the
-implementer's.
+This document describes the two trust-bridge authorization modes in
+`EpArch/Concrete/Types.lean`, explains the topology of trust chains across
+bubble boundaries, and states the one invariant that both modes share.
+Its job is narrow: describe what each mode does, when each fits, and what
+never changes regardless of which is used.
 
 ---
 
-## Two Ontologies
+## The One Invariant
 
-### Bubble-scoped bridges
+Bubbles never communicate directly. There is always an agent in the middle.
 
-A `CTrustBridge` names `source_bubble` and `target_bubble`. The bridge is a
-relationship between epistemic contexts. The receiving bubble accepts any deposit
-that arrives with a valid bridge covering the source context, regardless of which
-agent presents it.
+This is not a constraint imposed for simplicity — it is what a bubble *is*.
+A bubble is an epistemic context: a scoped ledger of accepted claims. It does
+not have a communication channel, a transport layer, or an intent. Only agents
+do. Any deposit crossing a bubble boundary was placed there by an agent, and
+`c_valid_export` is the gate that asks: is this agent authorised to do that?
 
-`c_valid_export` would check:
+The two modes in `CTrustBridgeAuth` are two answers to that question.
+
+---
+
+## Two Auth Modes
+
+### `.byAgent` — named presenter
+
+The bridge names a specific `CAgent`. The gate checks that the presenting agent
+matches:
 
 ```
-tb.source_bubble == req.source  ∧  tb.token_ok req.auth_token
+tb.auth = .byAgent a  →  gate: a.id == req.presenting_agent.id
 ```
 
-The presenting agent's identity is not part of the gate. Any agent that can produce
-a deposit with a valid credential from the source bubble can complete the transfer.
+Accountability is explicit: the bridge names exactly who may use it. No relay,
+proxy, or daemon can exercise the bridge unless it is the named agent.
 
-### Agent-scoped bridges (EpArch's choice)
+Fits when: the accountable party is known in advance and individual identity is
+trackable.
 
-A `CTrustBridge` names `authorized_agent`. The bridge is a relationship between an
-accountable party and a receiving context. Only the named agent can rely on it.
+### `.byToken` — credential-checked presenter
 
-`c_valid_export` checks:
+The bridge carries a `token_ok : ByteArray → Bool` predicate. The gate checks
+that the request carries a passing credential:
 
 ```
-tb.authorized_agent.id == req.presenting_agent.id
+tb.auth = .byToken ok  →  gate: ok req.auth_token
 ```
 
-The presenting agent's identity is the gate condition. The bridge cannot be exercised
-by a relay or proxy — the accountability is tied directly to the individual who asserts
-the transfer.
+The presenting agent's identity is not part of the gate. Any agent that obtains
+a valid credential can exercise the bridge. Accountability rests with whoever
+configures and manages `token_ok` — typically the source bubble's administrator
+or the issuing institution.
+
+The credential mechanism is not prescribed. `token_ok` can verify an email-domain
+assertion, a company badge ID, a JWT, a delegated OAuth scope, a cryptographic
+signature, or any other serialisable proof of authority. The architecture does not
+care what bytes are in `auth_token`; that is the deployer's choice.
+
+Fits when: many agents legitimately relay claims from bubble A to bubble B, or
+when accountability is institutional rather than individual.
+
+**Important:** anonymous presenter does not mean no trust anchor. The anchor is
+whatever `token_ok` accepts. Setting `token_ok := fun _ => true` degrades the
+bridge to a blanket grant.
 
 ---
 
-## What Bubble-Scoped Requires
+## Multi-Hop Chains
 
-A correct Bubble-scoped implementation has to solve two problems that the Agent-scoped
-design sidesteps.
+A single bubble-to-bubble transfer does not have to be a one-edge graph. The
+normal real-world structure is often:
 
-**Bounded verification.** `CAuditChannel.capacity` is finite (the same finiteness the
-DDoS proofs in `Adversarial/Concrete.lean` use). A receiving bubble cannot always
-re-verify provenance from scratch: sources may be unreachable, or the capacity budget
-may be exhausted. A Bubble-scoped bridge that covers all presenting agents must therefore
-certify that *for any deposit arriving via this bridge, the source bubble has already done
-the work*. Without this, the bridge is a blanket trust grant with no credential anchor.
+```
+Bubble A  ←→  Agent₁  ←→  Agent₂  ←→  Bubble B
+```
 
-**Decentralization.** Bubble B has no read access to bubble A's ledger. The claim "deposit
-d was withdrawn from bubble A" is an assertion in `CExportRequest`, not a verifiable fact
-at the architecture level. A Bubble-scoped gate cannot check the source ledger directly; it
-can only check what the source bubble has attested via a credential.
+or longer chains. A lawyer speaks for a client. A company rep speaks for an
+institution. An auditor vouches for a report. A manager authorises an employee
+who submits something to another organisation. Nested represented authority is
+ordinary, not pathological.
 
-So a correct Bubble-scoped implementation requires:
+EpArch handles this naturally: each bubble boundary is a separate `CExportRequest`
+with its own gate check. Agent₁ receives a deposit into its bubble via
+`c_import_deposit`, then presents a new export request as Agent₂'s counterpart
+into Bubble B. The gate fires independently at each crossing. No hop is gate-free.
 
-1. The source bubble to issue credentials for withdrawal events (signed tokens, employee
-   badges, email-domain assertions, JWTs, or any other mechanism whose validity the
-   bridge's `token_ok` function can check).
-2. The target bubble's bridge configuration to carry the matching `token_ok` check.
-3. `c_valid_export` to apply it to `req.auth_token` before admitting the deposit.
+The recursion that earlier seemed like a modeling problem — "who validates the
+validator?" — is just the normal structure of delegated representation. The
+architecture does not need to collapse it; it enforces accountability at each hop.
 
-The credential mechanism is not prescribed — it is whatever `token_ok : ByteArray → Bool`
-implements. An employee presenting a company-issued badge, a service account authenticated
-by email domain, or a relay carrying a signed withdrawal receipt are all valid designs;
-they differ only in what bytes end up in `auth_token` and what `token_ok` checks.
-
-The presenting agent's identity plays no role. That is the feature, not a gap: any relay,
-daemon, or pub/sub consumer can carry the deposit from A to B, and accountability rests
-with the source bubble's key infrastructure.
+What matters at each crossing is not whether the chain is long but whether:
+- the presenter is identifiable (`.byAgent`) or carries a valid credential (`.byToken`)
+- the bridge's `scope` covers the claim being transferred
+- the gate check is not vacuous
 
 ---
 
-## Why Agent-Scoped Is Simpler
+## What Neither Mode Proves
 
-Any correct Bubble-scoped implementation needs an entity that: holds the source bubble's
-signing key, monitors the withdrawal ledger, signs events, manages key rotation, and
-asserts "this signature is valid and covers this deposit." That entity is an agent by
-EpArch's definition — it holds claims about A's state and asserts them into B's context.
+Neither `.byAgent` nor `.byToken` proves that the deposit was validly withdrawn
+from the source bubble before the export request was constructed. Bubble B has
+no read access to bubble A's ledger, and `CAuditChannel.capacity` is finite —
+full re-verification is not always possible even if the ledger were accessible.
 
-Once that entity exists, tying the bridge directly to it is the minimal design:
-
-- No key management at the bubble level.
-- No anonymous presenting surface — the gate always names who is accountable.
-- The accountability chain terminates at a party that `c_valid_export` can directly
-  check, not at a signing key whose holder is not tracked by the architecture.
-
-The tradeoff: Agent-scoped bridges cannot be used by anonymous relayers or by
-architectures where the source bubble, not an individual agent, is the accountable party.
+Both modes delegate that responsibility to the agent layer. The gate EpArch
+proves sound is transfer legitimacy: was the presenter authorised to make this
+cross-bubble assertion? Whether the underlying withdrawal was valid is the
+presenting agent's protocol obligation, enforced by whatever mechanism it uses.
 
 ---
 
-## When Bubble-Scoped Fits
+## Gate Invariants That Hold in Both Modes
 
-Bubble-scoped bridges are the right design when:
-
-- Many agents legitimately relay claims from bubble A to bubble B, and tracking each
-  relayer's identity in a bridge entry would be impractical or unnecessary.
-- The deployment runs a pub/sub or event-relay architecture where the source bubble
-  signs withdrawal events as a matter of course, and any subscriber may deliver them.
-- The accountability model places responsibility at the institutional (bubble) level
-  rather than the individual (agent) level — for example, inter-organisation claim
-  exchange where organisation A endorses its exports as a whole.
-
-The current `CTrustBridge.auth` sum already supports this: use `.byToken` with a
-`token_ok` function that verifies whatever credential the source bubble issues.
-`CExportRequest.auth_token` carries the credential; the gate checks it. The presenting
-agent's identity plays no role in the `.byToken` path — any relay that obtains the
-credential can present it.
-
-**Important:** "anonymous presenter" in this design does not mean "no trust anchor."
-The trust anchor is whatever `token_ok` accepts. An implementation that sets
-`token_ok := fun _ => true` degrades the bridge to a blanket grant and loses the
-correctness properties described above.
-
----
-
-## Gate Invariants That Hold in Both Designs
-
-In both designs, `c_import_deposit` returns `none` when the gate condition fails. The
-gate is un-bypassable regardless of ontology — that property follows from the structure
-of `c_import_deposit`, not from the specific check inside `c_valid_export`.
+`c_import_deposit` returns `none` when `c_valid_export` returns `false`. This
+holds regardless of which auth mode the bridge uses — it follows from the
+structure of `c_import_deposit`, not from anything inside `c_valid_export`.
 
 The theorems in `EpArch.Adversarial.Concrete` (`invalid_export_requires_reval_or_bridge`,
-`missing_export_gate_blocks_import`) are proved over the Agent-scoped definition of
-`c_valid_export`. A Bubble-scoped implementation would require analogous theorems over
-its own `c_valid_export` — the proof structure would be identical; only the gate check
-being unfolded changes.
+`missing_export_gate_blocks_import`, `V_spoof_blocks_cross_bubble_reliance`) are proved
+over the current `c_valid_export` definition, which dispatches on `CTrustBridgeAuth`.
+They hold for both modes because the proofs only rely on the absence of any bridge
+(`via_trust_bridge = none`), not on which auth variant is present.
