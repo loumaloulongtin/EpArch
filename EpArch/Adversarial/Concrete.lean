@@ -448,10 +448,17 @@ def concrete_W_reversibility :
 
     `ddos_V_channel_collapse_blocks_withdrawal` (Step 3) traces the full
     concrete chain from `c_channel_overwhelmed` to `¬c_can_withdraw`.  Here
-    we name that result explicitly as the concrete realization of the
-    `V_channel_exhausted → ¬withdrawal_possible` obligation, and connect it
-    to the W_ddos obligation layer by exhibiting the channel-collapse step
-    that the abstract bundle's V_exhaustion_collapses field describes. -/
+    we name that result explicitly as the concrete observable effect of the
+    `V_exhaustion_collapses` vector in the abstract `W_ddos` bundle, and
+    connect it to the abstract obligation layer by exhibiting the channel-collapse
+    step that field describes.
+
+    Note: the abstract `W_ddos` obligation is `V_channel_exhausted a →
+    verification_collapsed a` (agent-level collapse), not `¬has_path`.  This
+    concrete theorem proves `¬c_can_withdraw` — the concrete correlate of
+    verification collapse for the V-channel vector.  The mapping from abstract
+    `verification_collapsed` to concrete `¬c_can_withdraw` is the modeling
+    bridge; this theorem sits on the concrete side of it. -/
 
 /-- concrete_V_channel_exhaustion_obligation: the concrete DDoS V-channel
     collapse is the observable effect that the abstract W_ddos bundle's
@@ -465,8 +472,10 @@ def concrete_W_reversibility :
     5. `¬c_can_withdraw acl a B d t`     — V gate fires (V_stripped_not_withdrawable)
 
     This names the same chain as `ddos_V_channel_collapse_blocks_withdrawal`
-    but makes explicit that it is the CONCRETE DISCHARGE of the abstract
-    V_channel_exhausted → ¬has_path obligation. -/
+    but makes explicit that it is the concrete observable effect of the abstract
+    `V_exhaustion_collapses` vector.  The abstract obligation asserts
+    `V_channel_exhausted a → verification_collapsed a`; this theorem witnesses
+    the V-channel side of that collapse at the concrete `¬c_can_withdraw` level. -/
 theorem concrete_V_channel_exhaustion_obligation
     {acl : CACL} {a : CAgent} {B : CBubble}
     (cc : CAuditChannel)
