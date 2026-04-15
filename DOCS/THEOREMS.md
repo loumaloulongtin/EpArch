@@ -584,10 +584,45 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 
 | Theorem | File | Statement |
 |---------|------|----------|
-| `sophistication_monotonic` | Adversarial/Base.lean | Attack levels form monotonic hierarchy |
-| `sincerity_norms_irrelevant` | Adversarial/Base.lean | Lies don't require violating sincerity norms |
-| `lies_structurally_possible` | Adversarial/Base.lean | Lies are structurally possible given `is_lie` |
-| `adversarial_proxy_signature` | Adversarial/Base.lean | Adversarial proxy = truthful but mislicensed |
+| `is_lie_iff` | Adversarial/Base.lean | `is_lie l ↔ l.fabricated_V ∧ l.severed_redeemability` — biconditional by `Iff.rfl` |
+
+---
+
+## Bucket 10a: Concrete Attack Mitigation (Adversarial/Concrete.lean)
+
+**Role:** Connect the abstract attack vocabulary to concrete type instances (`CDeposit`, `CAuditChannel`,
+`CExportRequest` from `Concrete/Types.lean`). Four-step demonstration that gate conditions are
+un-bypassable at the concrete model level.
+
+### Step 2: Gate Theorems
+
+| Theorem | File | Statement | Claim |
+|---------|------|-----------|-------|
+| `τ_expired_not_withdrawable` | Adversarial/Concrete.lean | `d.τ ≤ t → ¬c_can_withdraw acl a B d t` | τ gate fires |
+| `V_stripped_not_withdrawable` | Adversarial/Concrete.lean | `d.V.length = 0 → d.τ > t + 10 → ¬c_can_withdraw acl a B d t` | V gate fires |
+| `E_stripped_diagnosis_lost` | Adversarial/Concrete.lean | `c_header_stripped d → ¬c_header_preserved d` | E/header gate fires |
+
+### Step 3: Attack-Named Wrappers and DDoS Chain
+
+| Theorem | File | Statement | Claim |
+|---------|------|-----------|-------|
+| `τ_compressed_deposit_blocked` | Adversarial/Concrete.lean | τ-compression attack blocked at status gate | τCompress → τ gate |
+| `V_spoof_deposit_blocked` | Adversarial/Concrete.lean | V-spoofing attack blocked at status gate | VSpoof → V gate |
+| `pseudo_deposit_blocked_at_candidate_stage` | Adversarial/Concrete.lean | Pseudo-deposit stalls at `.Candidate` | PseudoDeposit → V gate |
+| `overwhelmed_channel_collapses_V` | Adversarial/Concrete.lean | `c_channel_overwhelmed ∧ sources.length > capacity → c_process_V = []` | Channel capacity math |
+| `ddos_V_channel_collapse_blocks_withdrawal` | Adversarial/Concrete.lean | DDoS chain: channel overload → V = [] → ¬c_can_withdraw | DDoS → V gate (5-step) |
+| `concrete_attack_succeeds` | Adversarial/Concrete.lean | `attack_succeeds concrete_full_stack_attack` holds | Attack vocab non-vacuity |
+| `full_stack_attack_concrete_blocked` | Adversarial/Concrete.lean | Matching `CDeposit` blocked by τ gate at current_time 100 | End-to-end |
+
+### Step 4: Export Gate Conditions
+
+| Theorem | File | Statement | Claim |
+|---------|------|-----------|-------|
+| `invalid_export_requires_reval_or_bridge` | Adversarial/Concrete.lean | `¬revalidated ∧ via_trust_bridge = none → c_valid_export = false` | Gate condition fires |
+| `missing_export_gate_blocks_import` | Adversarial/Concrete.lean | `c_valid_export = false → c_import_deposit = none` | Import blocked |
+| `V_spoof_blocks_cross_bubble_reliance` | Adversarial/Concrete.lean | `¬revalidated ∧ ¬bridge → c_import_deposit = none` | V-spoof surface → gate fires |
+
+**Scope boundary:** these theorems prove gate conditions are un-bypassable *when invoked*. Whether an agent must invoke `c_can_withdraw` before constructing a `CExportRequest` is an agent-layer protocol obligation, not enforced by `EpArch.Adversarial.Concrete`. EpArch proves the gates are sound; agents prove the gates are invoked in the right order.
 
 ---
 
