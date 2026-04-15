@@ -28,6 +28,7 @@ Four-step demonstration connecting the abstract attack vocabulary
 -/
 
 import EpArch.Adversarial.Base
+import EpArch.Adversarial.Obligations
 import EpArch.Concrete.Types
 
 namespace EpArch.Adversarial.Concrete
@@ -348,5 +349,37 @@ theorem full_stack_attack_concrete_blocked (acl : CACL) (a : CAgent) (B : CBubbl
   apply τ_expired_not_withdrawable
   -- Goal: (5 : CTime) ≤ 100
   decide
+
+/-! ========================================================================
+    STEP 5A — CONCRETE W_lies_scale WITNESS
+    ========================================================================
+
+    c_export_cost = 1 (one submission step), c_verify_cost d = d.V.length + 1.
+    The asymmetry is a Nat inequality proved by omega from definitions —
+    no axiom required. This grounds W_lies_scale concretely: the W assumption
+    has a machine-checked satisfying instance rather than remaining purely
+    hypothetical. -/
+
+section ConcreteObligationWitnesses
+open EpArch.AdversarialObligations
+
+/-- Concrete W_lies_scale: export costs 1 step; verifying a non-empty provenance
+    chain costs V.length + 1 steps, which is strictly more.
+
+    **Proof strategy:** `c_export_cost_lt_verify_cost d h` is proved by omega from
+    the definitions `c_export_cost := 1` and `c_verify_cost d := d.V.length + 1`.
+    No assumption — the inequality is definitionally grounded. -/
+def concrete_W_lies_scale (d : CDeposit) (h : 0 < d.V.length) : W_lies_scale :=
+  { export_cost    := c_export_cost
+    defense_cost   := c_verify_cost d
+    asymmetry_holds := c_export_cost_lt_verify_cost d h }
+
+/-- `lies_scale_of_W` fires on the concrete instance: 1 < 2 for τ_expired_deposit
+    (which has V := ["src"], so V.length = 1 and c_verify_cost = 2). -/
+theorem lies_scale_concrete :
+    c_export_cost < c_verify_cost τ_expired_deposit :=
+  lies_scale_of_W (concrete_W_lies_scale τ_expired_deposit (by decide))
+
+end ConcreteObligationWitnesses
 
 end EpArch.Adversarial.Concrete

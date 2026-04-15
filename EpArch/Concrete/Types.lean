@@ -240,4 +240,25 @@ def c_process_V (cc : CAuditChannel) (sources : CProvenance) : CProvenance :=
   if sources.length ≤ cc.capacity then sources else []
 
 
+/-! ## Concrete Cost Model
+
+    Step-counting model for the export-cost asymmetry argument.
+    Publishing a claim = 1 step; verifying provenance = V.length + 1 steps minimum.
+    The cost inequality is proved from definitions by omega — not an axiom. -/
+
+/-- Concrete export cost: publishing a claim takes 1 computational step.
+    Export is structurally cheap: one submission regardless of claim size. -/
+def c_export_cost : Nat := 1
+
+/-- Concrete verification cost: checking a provenance chain takes one step per
+    source plus one kernel check. A deposit with V chain of length n costs n + 1 steps. -/
+def c_verify_cost (d : CDeposit) : Nat := d.V.length + 1
+
+/-- For any deposit with at least one provenance source, export costs strictly less
+    than verification. Proved by unfolding and omega — no assumption required. -/
+theorem c_export_cost_lt_verify_cost (d : CDeposit) (h : 0 < d.V.length) :
+    c_export_cost < c_verify_cost d :=
+  Nat.succ_lt_succ h
+
+
 end EpArch.ConcreteModel

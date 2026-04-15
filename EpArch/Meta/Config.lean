@@ -221,19 +221,21 @@ inductive WorldWitness : EnabledWorldCluster → Type 1 where
       WorldWitness .world_partial_observability
   | spoofedV :
       (∀ {PL SL EL PrL : Type}
-        (_ : W_spoofedV (PropLike := PL) (Standard := SL) (ErrorModel := EL) (Provenance := PrL))
-        (d : Deposit PL SL EL PrL) (v : V_Spoofed_State d) (p : PathExists d),
-        is_V_spoofed v → ¬has_path p) →
+        (_W : W_spoofedV (PropLike := PL) (Standard := SL) (ErrorModel := EL) (Provenance := PrL))
+        (d : Deposit PL SL EL PrL) (a : Agent) (p : PathExists d),
+        (EpArch.V_spoof d ∨ EpArch.consultation_suppressed a) → ¬has_path p) →
       WorldWitness .world_spoofed_v
   | liesScale :
-      (∀ (W : W_lies_scale), W.costs.export_cost < W.costs.defense_cost) →
+      (∀ (W : W_lies_scale), W.export_cost < W.defense_cost) →
       WorldWitness .world_lies_scale
   | rolexDdos :
       (∀ (W : W_rolex_ddos), same_structure W.rolex_structure W.ddos_structure) →
       WorldWitness .world_rolex_ddos
   | ddos :
-      (∀ (_ : W_ddos) (a : Agent) (s : DDoSState a) (c : CollapsedState a),
-        some_vector_overwhelmed s → is_collapsed c) →
+      (∀ (_W : W_ddos) (a : Agent),
+        (EpArch.ladder_overloaded a ∨ EpArch.V_channel_exhausted a ∨
+         EpArch.E_field_poisoned a ∨ EpArch.denial_triggered a) →
+        EpArch.verification_collapsed a) →
       WorldWitness .world_ddos
 
 /-- For every world-bundle cluster, deliver its `WorldWitness`. -/
@@ -765,19 +767,21 @@ theorem cluster_world_partial_observability
     (C : WorldCtx) (W : C.W_partial_observability) : ∃ P, C.NotDeterminedByObs P :=
   WorldCtx.partial_obs_no_omniscience C W
 
-/-- Cluster `.world_spoofed_v`: spoofed provenance blocks any verification path. -/
+/-- Cluster `.world_spoofed_v`: spoofed provenance or consultation suppression blocks any
+    verification path. Dispatches the `V_spoof ∨ consultation_suppressed` disjunction. -/
 theorem cluster_world_spoofed_v
     {PropLike Standard ErrorModel Provenance : Type u}
     (W : W_spoofedV (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
     (d : Deposit PropLike Standard ErrorModel Provenance)
-    (v : V_Spoofed_State d) (p : PathExists d) :
-    is_V_spoofed v → ¬has_path p :=
-  spoofed_V_blocks_path_of_W W d v p
+    (a : Agent) (p : PathExists d) :
+    (EpArch.V_spoof d ∨ EpArch.consultation_suppressed a) → ¬has_path p :=
+  spoofed_V_blocks_path_of_W W d a p
 
-/-- Cluster `.world_lies_scale`: lies scale — export cost < defense cost under W_lies_scale. -/
+/-- Cluster `.world_lies_scale`: lies scale — export cost < defense cost under W_lies_scale.
+    Grounded: see `concrete_W_lies_scale` for the non-axiomatic instance. -/
 theorem cluster_world_lies_scale (W : W_lies_scale) :
-    W.costs.export_cost < W.costs.defense_cost :=
+    W.export_cost < W.defense_cost :=
   lies_scale_of_W W
 
 /-- Cluster `.world_rolex_ddos`: individual and population attacks are structurally equivalent. -/
@@ -785,11 +789,14 @@ theorem cluster_world_rolex_ddos (W : W_rolex_ddos) :
     same_structure W.rolex_structure W.ddos_structure :=
   rolex_ddos_structural_equivalence_of_W W
 
-/-- Cluster `.world_ddos`: DDoS causes verification collapse under W_ddos. -/
+/-- Cluster `.world_ddos`: any DDoS vector causes verification collapse under W_ddos.
+    Proof requires genuine 4-way case dispatch in `ddos_causes_verification_collapse_of_W`. -/
 theorem cluster_world_ddos
-    (W : W_ddos) (a : Agent) (s : DDoSState a) (c : CollapsedState a) :
-    some_vector_overwhelmed s → is_collapsed c :=
-  ddos_causes_verification_collapse_of_W W a s c
+    (W : W_ddos) (a : Agent) :
+    (EpArch.ladder_overloaded a ∨ EpArch.V_channel_exhausted a ∨
+     EpArch.E_field_poisoned a ∨ EpArch.denial_triggered a) →
+    EpArch.verification_collapsed a :=
+  ddos_causes_verification_collapse_of_W W a
 
 
 -- ── Constraint-modularity meta-theorems ───────────────────────────────────────
