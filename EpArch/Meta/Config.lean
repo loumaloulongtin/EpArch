@@ -222,8 +222,8 @@ inductive WorldWitness : EnabledWorldCluster → Type 1 where
   | spoofedV :
       (∀ {PL SL EL PrL : Type}
         (_W : W_spoofedV (PropLike := PL) (Standard := SL) (ErrorModel := EL) (Provenance := PrL))
-        (d : Deposit PL SL EL PrL) (a : Agent) (p : PathExists d),
-        (EpArch.V_spoof d ∨ EpArch.consultation_suppressed a) → ¬has_path p) →
+        (d : Deposit PL SL EL PrL) (a : Agent) (_p : PathExists d),
+        (EpArch.V_spoof d ∨ EpArch.consultation_suppressed a) → False) →
       WorldWitness .world_spoofed_v
   | liesScale :
       (∀ (W : W_lies_scale), W.export_cost < W.defense_cost) →
@@ -767,15 +767,16 @@ theorem cluster_world_partial_observability
     (C : WorldCtx) (W : C.W_partial_observability) : ∃ P, C.NotDeterminedByObs P :=
   WorldCtx.partial_obs_no_omniscience C W
 
-/-- Cluster `.world_spoofed_v`: spoofed provenance or consultation suppression blocks any
-    verification path. Dispatches the `V_spoof ∨ consultation_suppressed` disjunction. -/
+/-- Cluster `.world_spoofed_v`: spoofed provenance or consultation suppression contradicts
+    any existing verification path. If a path (PathExists d) exists and V is spoofed or
+    consultation is suppressed, the two assumptions together derive False. -/
 theorem cluster_world_spoofed_v
     {PropLike Standard ErrorModel Provenance : Type u}
     (W : W_spoofedV (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
     (d : Deposit PropLike Standard ErrorModel Provenance)
     (a : Agent) (p : PathExists d) :
-    (EpArch.V_spoof d ∨ EpArch.consultation_suppressed a) → ¬has_path p :=
+    (EpArch.V_spoof d ∨ EpArch.consultation_suppressed a) → False :=
   spoofed_V_blocks_path_of_W W d a p
 
 /-- Cluster `.world_lies_scale`: lies scale — export cost < defense cost under W_lies_scale.

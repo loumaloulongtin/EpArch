@@ -393,48 +393,56 @@ theorem lies_scale_concrete :
     (verification_collapsed, τ_compress) that cannot be reduced to
     CDeposit-level arithmetic.  They are listed as open items below. -/
 
-/-- Concrete W_cheap_validator: a reachable cheap validator always produces a
-    valid path for any non-expired deposit (d.h.τ > 0).  The all-true Bool fields
-    are abstract; `ttl_valid` is discharged by the explicit `h_τ` hypothesis. -/
+/-- Concrete W_cheap_validator: for a non-revoked deposit with positive TTL, a reachable
+    cheap validator produces a PathExists witness with both proof fields derived from
+    preconditions.
+
+    `h_cv : cheap_validator_reachable a d.h.τ` is definitionally `d.h.τ > 0` (grounded
+    def in Base.lean) — used directly as `ttl_valid`. `h_s : d.status ≠ .Revoked` used
+    as `status_live`. No Bool fields; no hand-set values. -/
 def concrete_W_cheap_validator :
     W_cheap_validator (PropLike := CProp) (Standard := CStandard)
       (ErrorModel := CErrorModel) (Provenance := CProvenance) :=
-  { cheap_validator_enables_path := fun _a _τ _d _h_cv h_τ =>
-      ⟨{ provenance_ok := true, constraint_ok := true, ttl_valid := h_τ },
-       ⟨rfl, rfl⟩⟩ }
+  { cheap_validator_enables_path := fun _a _d h_cv h_s =>
+      { ttl_valid := h_cv, status_live := h_s } }
 
-/-- Concrete W_trust_bridge: a pre-established trust bridge provides a valid path
-    for any non-expired deposit (d.h.τ > 0).  The bridge is an out-of-band route;
-    `ttl_valid` is discharged by the explicit `h_τ` hypothesis. -/
+/-- Concrete W_trust_bridge: a pre-established trust bridge provides a PathExists witness
+    for a non-expired, non-revoked deposit. Both proof fields derived from preconditions.
+
+    `h_τ : d.h.τ > 0` used as `ttl_valid`. `h_s : d.status ≠ .Revoked` used as
+    `status_live`. The `_h_tb : trust_bridge_on_hand a` (opaque) cannot be further
+    reduced at the abstract level — the bridge's existence is asserted by the W bundle
+    hypothesis and does not derive from concrete deposit fields. -/
 def concrete_W_trust_bridge :
     W_trust_bridge (PropLike := CProp) (Standard := CStandard)
       (ErrorModel := CErrorModel) (Provenance := CProvenance) :=
-  { trust_bridge_enables_path := fun _a _d _h_tb h_τ =>
-      ⟨{ provenance_ok := true, constraint_ok := true, ttl_valid := h_τ },
-       ⟨rfl, rfl⟩⟩ }
+  { trust_bridge_enables_path := fun _a _d _h_tb h_τ h_s =>
+      { ttl_valid := h_τ, status_live := h_s } }
 
-/-- Concrete W_cheap_constraint: a cheaply testable constraint surface provides
-    a valid path for any non-expired deposit (d.h.τ > 0).  The test is independent
-    of the V chain; `ttl_valid` is discharged by the explicit `h_τ` hypothesis. -/
+/-- Concrete W_cheap_constraint: a cheaply testable constraint surface produces a
+    PathExists witness with both proof fields derived from preconditions.
+
+    `h_ct : constraint_cheaply_testable d` is definitionally `d.h.τ > 0` (grounded
+    def in Base.lean) — used directly as `ttl_valid`. `h_s : d.status ≠ .Revoked`
+    used as `status_live`. No Bool fields; no hand-set values. -/
 def concrete_W_cheap_constraint :
     W_cheap_constraint (PropLike := CProp) (Standard := CStandard)
       (ErrorModel := CErrorModel) (Provenance := CProvenance) :=
-  { cheap_test_enables_path := fun _d _h_ct h_τ =>
-      ⟨{ provenance_ok := true, constraint_ok := true, ttl_valid := h_τ },
-       ⟨rfl, rfl⟩⟩ }
+  { cheap_test_enables_path := fun _d h_ct h_s =>
+      { ttl_valid := h_ct, status_live := h_s } }
 
-/-- Concrete W_reversibility: a reversible deposit (transaction_reversible d = d.h.τ > 0)
-    retains a valid path even after τ compression (t_compressed < t_orig).
+/-- Concrete W_reversibility: a reversible deposit retains a PathExists witness after
+    τ compression, with both proof fields derived from preconditions.
 
-    This is the key grounded witness: `transaction_reversible d` is definitionally
-    `d.h.τ > 0`, which directly discharges `PathExists.ttl_valid`.  The proof field
-    is not constructed by hand — it comes directly from the reversibility hypothesis. -/
+    `h_rev : transaction_reversible d` is definitionally `d.h.τ > 0` (grounded def
+    in Base.lean) — used directly as `ttl_valid`. `h_s : d.status ≠ .Revoked` used
+    as `status_live`. This is the key grounded witness: the path field is not
+    constructed by hand but flows directly from the reversibility hypothesis. -/
 def concrete_W_reversibility :
     W_reversibility (PropLike := CProp) (Standard := CStandard)
       (ErrorModel := CErrorModel) (Provenance := CProvenance) :=
-  { reversibility_survives_τ_compress := fun _t_orig _t_compressed _d h_rev _h_compress =>
-      ⟨{ provenance_ok := true, constraint_ok := true, ttl_valid := h_rev },
-       ⟨rfl, rfl⟩⟩ }
+  { reversibility_survives_τ_compress := fun _t_orig _t_compressed _d h_rev _h_compress h_s =>
+      { ttl_valid := h_rev, status_live := h_s } }
 
 /-! W_E_inclusion concrete witness is not discharged here.
     `E_includes_threat : Agent → Prop` cannot be grounded from the abstract `Agent`

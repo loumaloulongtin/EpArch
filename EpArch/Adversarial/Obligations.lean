@@ -45,60 +45,69 @@ variable {PropLike Standard ErrorModel Provenance : Type u}
     PathExists names the abstract structure of a provenance verification path.
     Used in V-spoofing and consultation-suppression theorems. -/
 
-/-- PathExists: there is a verification path to the constraint surface.
+/-- PathExists: evidence that a verification path exists for deposit d.
 
-    `provenance_ok` and `constraint_ok` are abstract Bool-flags — the concrete
-    model establishes them, but the abstract Deposit type cannot inspect field
-    contents.  `ttl_valid` is a genuine proof obligation tied to the deposit:
-    the verification window must still be open (d.h.τ > 0).
-    This makes PathExists non-trivially constructable: you cannot manufacture a
-    path for an expired deposit. -/
-structure PathExists (d : Deposit PropLike Standard ErrorModel Provenance) where
-  /-- Provenance chain is present (abstract: established by the concrete layer) -/
-  provenance_ok  : Bool
-  /-- Constraint surface is reachable (abstract: established by the concrete layer) -/
-  constraint_ok  : Bool
+    Carries two kernel-verifiable proof obligations:
+    - `ttl_valid`: the deposit's verification window is open (d.h.τ > 0)
+    - `status_live`: the deposit is not revoked (can still be inspected and challenged)
+
+    PathExists is non-trivially constructable: you cannot manufacture a path
+    for an expired deposit OR a revoked deposit. The Bool fields from previous
+    designs are removed. Provenance and constraint properties belong in the
+    W bundle *hypotheses* (cheap_validator_reachable, trust_bridge_on_hand, etc.),
+    not as separate fields here — the abstract Deposit type cannot inspect
+    Provenance or Standard contents.
+
+    PathExists IS the path evidence; there is no separate has_path predicate.
+    The spoofing W bundle claims V_spoof blocks PathExists entirely (¬PathExists d);
+    the defense bundles claim their mitigation produces PathExists d. -/
+structure PathExists (d : Deposit PropLike Standard ErrorModel Provenance) : Prop where
   /-- Deposit TTL is positive: the verification window is open (kernel-verified) -/
-  ttl_valid      : d.h.τ > 0
-
-def has_path (p : PathExists d) : Prop :=
-  p.provenance_ok = true ∧ p.constraint_ok = true
+  ttl_valid   : d.h.τ > 0
+  /-- Deposit is not revoked: it can still be inspected and challenged (kernel-verified) -/
+  status_live : d.status ≠ DepositStatus.Revoked
 
 
 /-! ## W_spoofedV: V spoofing and consultation suppression block the verification path -/
 
 /-- World assumption: either V spoofing or consultation suppression blocks the
-    verification path.
+    verification path entirely.
 
     Uses Base opaques `V_spoof` and `consultation_suppressed` directly — no
     shadow Bool-field types. The two mechanisms are distinct (V_spoof injects
     false provenance; consultation_suppressed blocks real validators) but both
-    close the path to the constraint surface.
+    eliminate the path: V_spoof → ¬PathExists d (the spoofed deposit cannot
+    remain non-revoked once the spoof is acted on); consultation_suppressed
+    similarly closes every path.
 
     Matches `FullStackAttack.attack_succeeds` clause 2: (V_spoofed ∨ consultation_blocked). -/
 structure W_spoofedV where
-  /-- Spoofed provenance blocks any intact provenance path -/
-  spoof_blocks_path : ∀ (d : Deposit PropLike Standard ErrorModel Provenance)
-    (p : PathExists d), EpArch.V_spoof d → ¬has_path p
-  /-- Consultation suppression also blocks the provenance path -/
+  /-- Spoofed provenance blocks the verification path: deposit cannot remain non-revoked -/
+  spoof_blocks_path : ∀ (d : Deposit PropLike Standard ErrorModel Provenance),
+    EpArch.V_spoof d → ¬PathExists d
+  /-- Consultation suppression also blocks the verification path -/
   suppression_blocks_path : ∀ (a : EpArch.Agent)
-    (d : Deposit PropLike Standard ErrorModel Provenance)
-    (p : PathExists d), EpArch.consultation_suppressed a → ¬has_path p
+    (d : Deposit PropLike Standard ErrorModel Provenance),
+    EpArch.consultation_suppressed a → ¬PathExists d
 
-/-- Obligation theorem: V spoofing or consultation suppression blocks the path.
+/-- Obligation theorem: V spoofing or consultation suppression blocks any verification path.
 
-    **Proof strategy:** genuine `rcases` dispatching each mechanism to its W field,
-    matching `FullStackAttack.attack_succeeds` clause 2 exactly. -/
+    **Theorem shape:** If V is spoofed OR consultation is suppressed, then no PathExists
+    witness can exist for deposit d: the attack hypothesis contradicts any path evidence.
+
+    **Proof strategy:** `intro h p` introduces the disjunction and the path evidence, then
+    `cases h` dispatches to `spoof_blocks_path` or `suppression_blocks_path`, each of
+    which has type `→ ¬PathExists d` and is applied to the path evidence `p`. -/
 theorem spoofed_V_blocks_path_of_W
     (W : W_spoofedV (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
     (d : Deposit PropLike Standard ErrorModel Provenance)
     (a : EpArch.Agent) (p : PathExists d) :
-    (EpArch.V_spoof d ∨ EpArch.consultation_suppressed a) → ¬has_path p := by
+    (EpArch.V_spoof d ∨ EpArch.consultation_suppressed a) → False := by
   intro h
   cases h with
-  | inl h_spoof => exact W.spoof_blocks_path d p h_spoof
-  | inr h_supp  => exact W.suppression_blocks_path a d p h_supp
+  | inl h_spoof => exact W.spoof_blocks_path d h_spoof p
+  | inr h_supp  => exact W.suppression_blocks_path a d h_supp p
 
 
 /-! ## W_ddos: DDoS attack causes verification collapse -/
@@ -264,25 +273,34 @@ the decision window, this attack class fails.
 
     The attack (W_spoofedV) says every path is blocked. The countermeasure says
     the cheap validator keeps at least one path open — the attacker has not won.
-    Uses Base opaque `cheap_validator_reachable` directly. -/
-structure W_cheap_validator where
-  /-- Cheap validator enables path: deposit TTL is positive, path fields intact -/
-  cheap_validator_enables_path : ∀ (a : EpArch.Agent) (τ : EpArch.Time)
-    (d : Deposit PropLike Standard ErrorModel Provenance),
-    EpArch.cheap_validator_reachable a τ →
-    d.h.τ > 0 →
-    ∃ (p : PathExists d), has_path p
 
-/-- Obligation theorem: cheap validator maintains a valid path. -/
+    Field uses `cheap_validator_reachable a d.h.τ` — the validator's time budget is
+    tied to the deposit's own TTL window. `cheap_validator_reachable` is grounded
+    as `d.h.τ > 0` (see Base.lean), so `h_cv : d.h.τ > 0` directly discharges
+    `ttl_valid` in PathExists. The `h_s` precondition certifies non-revoked status,
+    discharging `status_live`. -/
+structure W_cheap_validator where
+  /-- Cheap validator enables path: validator reachable within deposit window, deposit not revoked -/
+  cheap_validator_enables_path : ∀ (a : EpArch.Agent)
+    (d : Deposit PropLike Standard ErrorModel Provenance),
+    EpArch.cheap_validator_reachable a d.h.τ →
+    d.status ≠ DepositStatus.Revoked →
+    PathExists d
+
+/-- Obligation theorem: cheap validator maintains a valid verification path.
+
+    **Proof strategy:** `cheap_validator_reachable a d.h.τ` is definitionally
+    `d.h.τ > 0`, which the W field uses directly. Result: PathExists d with
+    ttl_valid = h_cv and status_live = h_s. -/
 theorem cheap_validator_maintains_path_of_W
     (W : W_cheap_validator (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
-    (a : EpArch.Agent) (τ : EpArch.Time)
+    (a : EpArch.Agent)
     (d : Deposit PropLike Standard ErrorModel Provenance)
-    (h_τ : d.h.τ > 0) :
-    EpArch.cheap_validator_reachable a τ →
-    ∃ (p : PathExists d), has_path p :=
-  fun h_cv => W.cheap_validator_enables_path a τ d h_cv h_τ
+    (h_s : d.status ≠ DepositStatus.Revoked) :
+    EpArch.cheap_validator_reachable a d.h.τ →
+    PathExists d :=
+  fun h_cv => W.cheap_validator_enables_path a d h_cv h_s
 
 
 /-! ### W_trust_bridge: Trust bridge maintains path despite V-failure -/
@@ -293,25 +311,28 @@ theorem cheap_validator_maintains_path_of_W
 
     The bridge does not prevent V_spoof from occurring — it opens an
     alternative route so the attack cannot close off all paths.
-    Uses Base opaque `trust_bridge_on_hand` directly. -/
+    `trust_bridge_on_hand` remains opaque (an agent property with no
+    abstract grounding on the Nat-indexed Agent type). -/
 structure W_trust_bridge where
-  /-- Trust bridge enables path: deposit TTL is positive, path fields intact -/
+  /-- Trust bridge enables path: deposit non-expired and non-revoked -/
   trust_bridge_enables_path : ∀ (a : EpArch.Agent)
     (d : Deposit PropLike Standard ErrorModel Provenance),
     EpArch.trust_bridge_on_hand a →
     d.h.τ > 0 →
-    ∃ (p : PathExists d), has_path p
+    d.status ≠ DepositStatus.Revoked →
+    PathExists d
 
-/-- Obligation theorem: trust bridge maintains a valid path. -/
+/-- Obligation theorem: trust bridge maintains a valid verification path. -/
 theorem trust_bridge_maintains_path_of_W
     (W : W_trust_bridge (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
     (a : EpArch.Agent)
     (d : Deposit PropLike Standard ErrorModel Provenance)
-    (h_τ : d.h.τ > 0) :
+    (h_τ : d.h.τ > 0)
+    (h_s : d.status ≠ DepositStatus.Revoked) :
     EpArch.trust_bridge_on_hand a →
-    ∃ (p : PathExists d), has_path p :=
-  fun h_tb => W.trust_bridge_enables_path a d h_tb h_τ
+    PathExists d :=
+  fun h_tb => W.trust_bridge_enables_path a d h_tb h_τ h_s
 
 
 /-! ### W_reversibility: Reversibility maintains path after τ compression -/
@@ -322,25 +343,29 @@ theorem trust_bridge_maintains_path_of_W
 
     The attack (τ_compress) shortens the window, not the recovery capability.
     Reversibility means the post-compress state still has a path for verify-and-undo.
-    Uses Base opaques `transaction_reversible` and `τ_compress` directly. -/
+    `transaction_reversible d` is grounded as `d.h.τ > 0` (Base.lean), directly
+    discharging `ttl_valid` in PathExists. The `h_s` precondition certifies
+    non-revoked status. -/
 structure W_reversibility where
-  /-- Reversibility keeps a path open even after τ compression -/
+  /-- Reversibility keeps a path open even after τ compression, provided deposit not revoked -/
   reversibility_survives_τ_compress : ∀ (t_orig t_compressed : EpArch.Time)
     (d : Deposit PropLike Standard ErrorModel Provenance),
     EpArch.transaction_reversible d →
     EpArch.τ_compress t_orig t_compressed →
-    ∃ (p : PathExists d), has_path p
+    d.status ≠ DepositStatus.Revoked →
+    PathExists d
 
 /-- Obligation theorem: reversibility maintains a path after τ compression. -/
 theorem reversibility_maintains_path_after_τ_compress_of_W
     (W : W_reversibility (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
     (t_orig t_compressed : EpArch.Time)
-    (d : Deposit PropLike Standard ErrorModel Provenance) :
+    (d : Deposit PropLike Standard ErrorModel Provenance)
+    (h_s : d.status ≠ DepositStatus.Revoked) :
     EpArch.transaction_reversible d →
     EpArch.τ_compress t_orig t_compressed →
-    ∃ (p : PathExists d), has_path p :=
-  W.reversibility_survives_τ_compress t_orig t_compressed d
+    PathExists d :=
+  fun h_rev h_compress => W.reversibility_survives_τ_compress t_orig t_compressed d h_rev h_compress h_s
 
 
 /-! ### W_E_inclusion: E-field threat modeling prevents verification collapse -/
@@ -372,25 +397,26 @@ theorem E_inclusion_prevents_collapse_of_W
     redeemability check happens within τ, maintaining a valid path regardless
     of V spoofing or consultation suppression.
 
-    Cheap testability means the constraint surface is independently reachable —
-    the attacker's V-injection cannot close off the redeemability check.
-    Uses Base opaque `constraint_cheaply_testable` directly. -/
+    `constraint_cheaply_testable d` is grounded as `d.h.τ > 0` (Base.lean),
+    directly discharging `ttl_valid` in PathExists. The `h_s` precondition
+    certifies non-revoked status, discharging `status_live`. Together, both
+    PathExists fields are derived from the preconditions — no hand-set Bools. -/
 structure W_cheap_constraint where
-  /-- Cheap testing maintains path: deposit TTL is positive, path fields intact -/
+  /-- Cheap testing enables path: TTL positive (via grounded constraint_cheaply_testable), deposit not revoked -/
   cheap_test_enables_path : ∀ (d : Deposit PropLike Standard ErrorModel Provenance),
     EpArch.constraint_cheaply_testable d →
-    d.h.τ > 0 →
-    ∃ (p : PathExists d), has_path p
+    d.status ≠ DepositStatus.Revoked →
+    PathExists d
 
-/-- Obligation theorem: cheaply testable constraint maintains a valid path. -/
+/-- Obligation theorem: cheaply testable constraint maintains a valid verification path. -/
 theorem cheap_constraint_maintains_path_of_W
     (W : W_cheap_constraint (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
     (d : Deposit PropLike Standard ErrorModel Provenance)
-    (h_τ : d.h.τ > 0) :
+    (h_s : d.status ≠ DepositStatus.Revoked) :
     EpArch.constraint_cheaply_testable d →
-    ∃ (p : PathExists d), has_path p :=
-  fun h_ct => W.cheap_test_enables_path d h_ct h_τ
+    PathExists d :=
+  fun h_ct => W.cheap_test_enables_path d h_ct h_s
 
 
 /-! ## Axiom-to-Obligation Summary (Attack Vectors)
@@ -411,11 +437,11 @@ theorem cheap_constraint_maintains_path_of_W
 
 | Obligation Theorem | World Bundle | Effect asserted |
 |---|---|---|
-| `cheap_validator_maintains_path_of_W` | `W_cheap_validator` | path maintained (∃ p, has_path p) |
-| `trust_bridge_maintains_path_of_W` | `W_trust_bridge` | path maintained (∃ p, has_path p) |
-| `reversibility_maintains_path_after_τ_compress_of_W` | `W_reversibility` | path survives τ compress |
-| `E_inclusion_prevents_collapse_of_W` | `W_E_inclusion` | ¬verification_collapsed |
-| `cheap_constraint_maintains_path_of_W` | `W_cheap_constraint` | path maintained (∃ p, has_path p) |
+| `cheap_validator_maintains_path_of_W` | `W_cheap_validator` | `PathExists d` (ttl_valid + status_live) |
+| `trust_bridge_maintains_path_of_W` | `W_trust_bridge` | `PathExists d` (ttl_valid + status_live) |
+| `reversibility_maintains_path_after_τ_compress_of_W` | `W_reversibility` | `PathExists d` survives τ compress |
+| `E_inclusion_prevents_collapse_of_W` | `W_E_inclusion` | `¬verification_collapsed` |
+| `cheap_constraint_maintains_path_of_W` | `W_cheap_constraint` | `PathExists d` (ttl_valid + status_live) |
 
 -/
 

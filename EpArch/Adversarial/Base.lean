@@ -169,8 +169,11 @@ opaque trust_centralized : Agent → Prop
 
 /-! ## Boundary Conditions (When Attacks Fail) -/
 
-/-- Cheap validator reachable: victim can complete real V within τ. -/
-opaque cheap_validator_reachable : Agent → Time → Prop
+/-- Cheap validator reachable: the agent's time budget is positive (d.h.τ > 0 when τ = d.h.τ),
+    meaning a real V-check can be completed within the remaining window.
+    Grounded as a def: τ > 0 is the concrete condition — a validator is reachable iff
+    the verification window is still open. -/
+def cheap_validator_reachable (_a : Agent) (τ : Time) : Prop := τ > 0
 
 /-- Trust bridge on-hand: victim has pre-established expertise access. -/
 opaque trust_bridge_on_hand : Agent → Prop
@@ -183,8 +186,12 @@ def transaction_reversible (d : Deposit PropLike Standard ErrorModel Provenance)
 /-- E-field includes threat: victim models this attack pattern. -/
 opaque E_includes_threat : Agent → Prop
 
-/-- Constraint surface cheaply testable: quick redeemability possible. -/
-opaque constraint_cheaply_testable : Deposit PropLike Standard ErrorModel Provenance → Prop
+/-- Constraint surface cheaply testable: the deposit's TTL is positive (d.h.τ > 0),
+    meaning a quick redeemability check can complete before expiry.
+    Grounded as a def: TTL positivity is the concrete condition — the constraint
+    surface is reachable iff the verification window is still open. -/
+def constraint_cheaply_testable (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
+  d.h.τ > 0
 
 
 /-! ## Attack Hierarchy -/
