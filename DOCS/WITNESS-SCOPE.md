@@ -51,7 +51,7 @@ They are split across eight modules: `Concrete/Types.lean`, `Concrete/Commitment
 | SEV factorization exists | `concrete_has_factorization8` |
 | Repair path exists | `concrete_has_repair_path8` |
 | Withdrawal requires three gates | `concrete_withdrawal_requires_gates` |
-| Export requires provenance discipline | `concrete_export_needs_provenance` |
+| Export requires revalidation or bridge auth | `concrete_export_requires_auth` |
 | Headerless states are undiagnosable | `concrete_headerless_undiagnosable` |
 
 ---
@@ -71,6 +71,31 @@ These are real results, but **this file is not where they live**.
 | World assumption bundles (`W_*`) | Premise layer | Assumed, not witnessed |
 | Invariants (`C1`–`C8`) | Protocol / spec layer | Requirements, not instantiated here |
 | Abstract health-goal necessity | `EpArch.Health`, `EpArch.Mechanisms` | Derived from definitions, not from one concrete model |
+
+---
+
+## Adversarial Layer Witnesses (Adversarial/Concrete.lean)
+
+`Adversarial/Concrete.lean` is not in `EpArch/Concrete/` but is the adversarial layer's concrete
+witness. It establishes that attack gate conditions fire on concrete type instances.
+
+| Property | Theorem |
+|----------|---------|
+| τ-expiry blocks concrete withdrawal | `τ_expired_not_withdrawable` |
+| V-stripping blocks concrete withdrawal | `V_stripped_not_withdrawable` |
+| Header stripping prevents preservation | `E_stripped_diagnosis_lost` |
+| DDoS channel collapse produces V = [] | `overwhelmed_channel_collapses_V` |
+| DDoS chain blocks concrete withdrawal | `ddos_V_channel_collapse_blocks_withdrawal` |
+| `attack_succeeds` is satisfiable | `concrete_attack_succeeds` |
+| Export absent reval/bridge is blocked | `missing_export_gate_blocks_import` |
+
+These theorems do not prove the full-stack invariant that a deposit blocked at withdrawal
+cannot reach `c_import_deposit`. That requires the caller to check `c_can_withdraw` before
+constructing a `CExportRequest`. Enforcing that ordering commits the architecture to one
+specific protocol topology (withdrawal-then-export) and would rule out trust-bridge atomic
+transfers and delegated export. Invocation order is an agent-layer obligation;
+`Adversarial/Concrete.lean` proves the gates are sound, not that an adversary cannot
+assemble a request without prior withdrawal.
 
 ---
 

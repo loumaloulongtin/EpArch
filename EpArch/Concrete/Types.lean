@@ -126,32 +126,49 @@ def c_can_withdraw (acl : CACL) (agent : CAgent) (bubble : CBubble)
 
 /-! ## Export/Import Protocols -/
 
-/-- Trust bridge: explicit trust relationship between bubbles. -/
+/-- Trust bridge authorization mode.
+    Both paths require an accountable party: byAgent names it directly;
+    byToken names it indirectly as the holder of a credential (email domain,
+    badge, JWT, crypto key — any token the bridge's check function accepts). -/
+inductive CTrustBridgeAuth where
+  | byAgent (a : CAgent)             -- named party; gate checks presenter identity
+  | byToken (token_ok : ByteArray → Bool) -- credential check; gate applies token_ok to auth_token; presenter anonymous
+-- NO deriving Repr (function field in byToken)
+
+/-- Trust bridge: authorization for a cross-bubble claim transfer.
+    auth selects the gate check (.byAgent: named presenter checked by identity;
+    .byToken: predicate applied to auth_token — any credential the deployer chooses).
+    scope is a deployer annotation recording which claim categories this bridge is
+    intended to cover; `c_valid_export` does not inspect it — enforcement is
+    agent-layer policy above the formal model. [] conventionally means all claims. -/
 structure CTrustBridge where
-  source_bubble : String
-  target_bubble : String
-  accountability : String    -- Who is responsible if export fails
-  scope : List String        -- What claims are covered
-  deriving Repr
+  auth  : CTrustBridgeAuth  -- which gate check applies
+  scope : List String       -- deployer annotation: intended claim categories; not enforced by c_valid_export
+-- NO deriving Repr (auth may contain function)
 
 /-- Export request: moving a deposit across bubble boundaries. -/
 structure CExportRequest where
-  deposit : CDeposit
-  source : CBubble
-  target : CBubble
-  via_trust_bridge : Option CTrustBridge
-  revalidated : Bool
-  deriving Repr
+  deposit                : CDeposit
+  source                 : CBubble
+  target                 : CBubble
+  presenting_agent       : CAgent           -- the agent asserting the transfer (used by byAgent path)
+  via_trust_bridge       : Option CTrustBridge
+  revalidated            : Bool
+  auth_token             : Option ByteArray -- credential for byToken path (any bytes the bridge's token_ok accepts); none on agent path
 
 /-- Header mutation on export: V gets extended with export metadata. -/
 def mutate_header_for_export (d : CDeposit) (source : CBubble) : CDeposit :=
   { d with V := d.V ++ [s!"exported from {source.id}"] }
 
-/-- Export is valid if: revalidated OR trust bridge exists. -/
+/-- Export is valid if: revalidated OR the trust bridge gate passes.
+    byAgent:  presenting agent's id matches the bridge's authorized agent.
+    byToken:  req.auth_token is Some tok and token_ok tok returns true. -/
 def c_valid_export (req : CExportRequest) : Bool :=
   req.revalidated ||
-  (req.via_trust_bridge.isSome &&
-   req.via_trust_bridge.any (fun tb => tb.source_bubble == req.source.id))
+  req.via_trust_bridge.any (fun tb =>
+    match tb.auth with
+    | .byAgent a       => a.id == req.presenting_agent.id
+    | .byToken ok => req.auth_token.any ok)
 
 /-- Import a deposit: creates new deposit with mutated header. -/
 def c_import_deposit (req : CExportRequest) : Option CDeposit :=
@@ -195,6 +212,32 @@ def c_fresh (d : CDeposit) (current_time : CTime) : Prop :=
 def c_stale (d : CDeposit) (current_time : CTime) : Prop :=
   d.τ ≤ current_time
 
+
+/-! ## Concrete Audit Channel
+
+    Models finite V-verification throughput as a Nat capacity/volume pair.
+    This is the concrete substrate for the DDoS channel-collapse proofs in
+    EpArch.Adversarial.Concrete: when volume > capacity, c_process_V returns [],
+    making the deposit's V field empty and letting the V gate fire. -/
+
+/-- Concrete audit channel: capacity is the per-round V-check budget;
+    volume is the per-round demand. The gap between them is what DDoS exploits. -/
+structure CAuditChannel where
+  capacity : Nat   -- max V-checks per round
+  volume   : Nat   -- V-checks demanded per round
+  deriving Repr, DecidableEq, Inhabited
+
+/-- The threshold condition for V-channel collapse: once demand exceeds capacity,
+    c_process_V cannot service all pending provenance checks and returns []. -/
+def c_channel_overwhelmed (cc : CAuditChannel) : Prop :=
+  cc.volume > cc.capacity
+
+/-- Route a provenance chain through a channel.
+    Returns the full chain when the channel's capacity covers it; returns the empty
+    list otherwise.  An empty result is the concrete observable outcome of DDoS
+    V-channel exhaustion: the channel never delivered the provenance check result. -/
+def c_process_V (cc : CAuditChannel) (sources : CProvenance) : CProvenance :=
+  if sources.length ≤ cc.capacity then sources else []
 
 
 end EpArch.ConcreteModel

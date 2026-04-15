@@ -135,7 +135,7 @@ any obs-stable, closed endorsement system, grounding the redeemability forcing a
 
 ### `world_assumptions_force_bank_primitives`
 
-**File:** `EpArch/Feasibility.lean`
+**File:** `EpArch/WorldBridges.lean`
 
 ```lean
 theorem world_assumptions_force_bank_primitives (C : WorldCtx)
@@ -155,7 +155,7 @@ forcing argument without a world-level justification.
 
 ### `structurally_forced_is_world_aware`
 
-**File:** `EpArch/Feasibility.lean`
+**File:** `EpArch/WorldBridges.lean`
 
 ```lean
 theorem structurally_forced_is_world_aware (C : WorldCtx) (W : WorkingSystem)

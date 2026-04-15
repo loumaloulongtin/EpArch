@@ -53,18 +53,14 @@ def process_withdraw (acl : CACL) (agent : CAgent) (bubble : CBubble)
     else
       .WithdrawSuccess claim
 
-/-- Process an export request in the concrete model. -/
+/-- Process an export request in the concrete model.
+    Delegates the gate check to `c_valid_export` — the single authoritative
+    definition. Only the outcome string is determined here. -/
 def process_export (req : CExportRequest) : COutcome :=
-  if req.revalidated then
+  if c_valid_export req then
     .ExportSuccess req.deposit.claim req.target.id
-  else match req.via_trust_bridge with
-    | some tb =>
-      if tb.source_bubble = req.source.id then
-        .ExportSuccess req.deposit.claim req.target.id
-      else
-        .ExportDenied "trust bridge mismatch"
-    | none =>
-      .ExportDenied "no revalidation or trust bridge"
+  else
+    .ExportDenied "no revalidation or trust bridge"
 
 /-- Process a challenge in the concrete model. -/
 def process_challenge (ch : CChallenge) : COutcome :=
@@ -96,11 +92,13 @@ theorem concrete_bank_determines_behavior (acl : CACL) (B1 B2 : CBubble) :
 
 /-! ## Grounding Abstract Theorems in Concrete Model -/
 
-/-- Theorem: Export requires headers (grounded version).
+/-- Theorem: Valid export requires revalidation or a trust bridge.
 
-    In the concrete model, valid export requires the deposit to have
-    non-trivial V (provenance) for header mutation to work. -/
-theorem concrete_export_needs_provenance (req : CExportRequest) :
+    In the concrete model, `c_valid_export` implies the request carries
+    either `revalidated = true` (explicit re-run of lifecycle under target
+    bubble's standards) or `via_trust_bridge = some _` (trust-bridge auth
+    path). Unauthenticated cross-bubble export is impossible. -/
+theorem concrete_export_requires_auth (req : CExportRequest) :
     c_valid_export req → (req.revalidated ∨ req.via_trust_bridge.isSome) := by
   -- c_valid_export is Bool, so we need to handle it as a boolean
   unfold c_valid_export
@@ -110,7 +108,8 @@ theorem concrete_export_needs_provenance (req : CExportRequest) :
   | false =>
     simp only [h_rev, Bool.false_or] at h
     cases h_tb : req.via_trust_bridge with
-    | none => simp only [h_tb, Option.isSome, Bool.and_eq_true, Bool.false_and] at h
+    | none =>
+      simp only [h_tb, Option.any] at h
     | some _ => exact Or.inr rfl
 
 /-- Theorem: Withdrawal requires three gates (grounded version).
@@ -200,7 +199,7 @@ end EpArch.ConcreteModel
 
 
 /-! ========================================================================
-    Wire ConcreteLedgerModel as Satisfying Instance
+    Concrete Working System as Satisfying Instance
 
     This section proves the concrete model satisfies all Has* predicates,
     demonstrating that the SystemSpec is not vacuously true.
@@ -214,7 +213,9 @@ open EpArch
 
 The concrete model has ALL Bank features:
 - Bubble separation: CBubble provides scoped trust zones
-- Trust bridges: CTrustBridge enables import-via-trust
+- Trust bridges: CTrustBridge.auth is a sum — byAgent checks presenter identity;
+  byToken applies an arbitrary credential check (email domain, badge, JWT, crypto
+  key — anything ByteArray can carry). Both paths require an accountable party.
 - Headers: CDeposit has S/E/V/τ structure
 - Revocation: CDepositStatus.Revoked exists
 - Shared ledger: CGlobalLedger provides bank functionality

@@ -111,7 +111,7 @@ Layer 3 (Theory):     Commitments, SystemSpec, Invariants, Minimality, Convergen
 Layer 4 (Derived):    Theorems/{Withdrawal,Cases,Headers,Modal,Dissolutions,Pathologies,Strip,Corners,Diagnosability,BehavioralEquivalence}, Health, Semantics/ScopeIrrelevance
 Layer 5 (Agent):      ConditionalPredictions, Mechanisms, Agent/{Constraints, Imposition, Resilience, Corroboration}
 Layer 6 (Witness):    WorldWitness, WorldBridges, Concrete/{Types,Commitments,WorkingSystem,DeficientSystems,NonVacuity}, Concrete/Realizer, Feasibility
-Layer 7 (Adversarial): Adversarial/{Base, Obligations}
+Layer 7 (Adversarial): Adversarial/{Base, Obligations, Concrete}
 Layer 8 (Meta):       Meta/* (incl. Meta/Modular, Meta/Config, Meta/TheoremTransport, Meta/LeanKernel/*)
 ```
 
@@ -154,6 +154,7 @@ import EpArch.Minimality
 import EpArch.Theorems.BehavioralEquivalence
 import EpArch.Convergence
 import EpArch.Adversarial.Base  -- Base types/structures (no axioms)
+import EpArch.Adversarial.Concrete  -- Concrete attack mitigation proofs
 import EpArch.Invariants
 import EpArch.Concrete.WorkedTraces
 import EpArch.ConditionalPredictions

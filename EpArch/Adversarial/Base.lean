@@ -3,21 +3,14 @@ EpArch.Adversarial.Base — Adversarial Base Types and Structures
 
 This module contains the TYPE-LEVEL definitions for adversarial modeling:
 - Attack primitives (opaques)
-- Attack structures
-- Domain configurations
+- Attack structures and attack-success predicate
+- `is_lie_iff` biconditional
 
-NO AXIOMS HERE. Obligation theorems live in EpArch.Adversarial.Obligations;
-structural theorems (identity/unfolding proofs) are co-located here.
-
-## What is "Adversarial" in EpArch?
-
-"Adversarial" doesn't mean malicious intent — it means the model accounts
-for ANY source of epistemic failure: lies, omissions, misobservations,
-forgeries.  Attack structures formalize the SPACE of possible failures
-so that obligation theorems can prove which mechanisms are forced.
-
-See EpArch.Adversarial.Obligations for the conditional obligation theorems
-that use these types.
+"Adversarial" here means any source of epistemic failure — lies, omissions,
+misobservations, forgeries. Attack structures formalize the space of possible
+failures so that the obligation theorems can prove which mechanisms are forced.
+Obligation theorems live in EpArch.Adversarial.Obligations; `is_lie_iff` is the
+only structural theorem co-located here.
 -/
 
 import EpArch.Basic
@@ -173,24 +166,6 @@ opaque verification_collapsed : Agent → Prop
 /-- Trust centralization: agent delegates to single "trusted" authority. -/
 opaque trust_centralized : Agent → Prop
 
-/-- Predicted signature table for DDoS effects. -/
-structure DDoSSignature where
-  signature : String
-  measurable_proxy : String
-  prediction : String
-
-def ddos_signatures : List DDoSSignature := [
-  ⟨"Verification collapse", "Trace density drop",
-   "Fraction of claims with checkable provenance drops under overload"⟩,
-  ⟨"Trust centralization", "Authority concentration index",
-   "Top-N source share rises after collapse"⟩,
-  ⟨"Denial dominance", "Challenge response type ratio",
-   "Field-local repairs decay; meta-deflections rise"⟩,
-  ⟨"Repair loop failure", "Resolution rate decay",
-   "Headerless disputes show lower resolution rates"⟩
-]
-
-
 /-! ## Boundary Conditions (When Attacks Fail) -/
 
 /-- Cheap validator reachable: victim can complete real V within τ. -/
@@ -238,12 +213,6 @@ def attack_level_num : AttackLevel → Nat
     This makes sophistication ordering definitional (no axiom needed). -/
 abbrev attack_sophistication : AttackLevel → Nat := attack_level_num
 
-/-- Attack sophistication is monotonic in attack level (now definitional). -/
-theorem sophistication_monotonic (l1 l2 : AttackLevel) :
-    attack_level_num l1 < attack_level_num l2 →
-    attack_sophistication l1 < attack_sophistication l2 := id
-
-
 /-! ## Lying as Structural Inevitability -/
 
 /-- A lie in model terms: attempted deposit with fabricated V and severed redeemability. -/
@@ -257,18 +226,10 @@ structure Lie where
 def is_lie (l : Lie (PropLike := PropLike)) : Prop :=
   l.fabricated_V ∧ l.severed_redeemability
 
-/-- Why social systems need architecture, not virtue.
-    The existence of lies is independent of norms — lies are structurally possible
-    whenever the Lie type is inhabited, regardless of social conventions.
-    (Tautology: is_lie → is_lie) -/
-theorem sincerity_norms_irrelevant :
-    ∀ (l : Lie (PropLike := PropLike)), is_lie l → is_lie l := fun _ h => h
-
-/-- Architectural observation: norms cannot prevent lie *construction*,
-    only lie *acceptance*. Defense is necessarily receive-side.
-    (Unfolding: is_lie unpacks to its conjuncts) -/
-theorem lies_structurally_possible (l : Lie (PropLike := PropLike)) (h : is_lie l) :
-    l.fabricated_V ∧ l.severed_redeemability := h
+/-- is_lie is a biconditional: a lie is exactly fabricated provenance AND severed redeemability.
+    Both sides are definitionally equal — `is_lie` unfolds directly to the conjunction. -/
+theorem is_lie_iff (l : Lie (PropLike := PropLike)) :
+    is_lie l ↔ l.fabricated_V ∧ l.severed_redeemability := Iff.rfl
 
 /-- Costs for lying scale analysis. -/
 opaque export_cost : Nat
@@ -295,16 +256,6 @@ def constructive_proxy (ps : ProxySubstitution (PropLike := PropLike)) : Prop :=
 def adversarial_proxy (ps : ProxySubstitution (PropLike := PropLike)) : Prop :=
   ps.Q_is_true ∧ ¬ps.transfer_valid
 
-/-- Predicted failure signature: "truthful but mislicensed". -/
-def truthful_but_mislicensed (ps : ProxySubstitution (PropLike := PropLike)) : Prop :=
-  ps.Q_is_true ∧ ¬ps.transfer_valid
-
-/-- Adversarial proxy always yields truthful-but-mislicensed failure. -/
-theorem adversarial_proxy_signature (ps : ProxySubstitution (PropLike := PropLike)) :
-    adversarial_proxy ps → truthful_but_mislicensed ps := by
-  intro h
-  exact h
-
 /-- Domain examples of proxy substitution failures. -/
 inductive ProxyFailureDomain where
   | Medication   -- "this drug is like that drug"
@@ -314,72 +265,5 @@ inductive ProxyFailureDomain where
   | Retail       -- "this product looks equivalent"
   deriving DecidableEq, Repr
 
-
-/-! ## Network Isomorphism -/
-
-/-- Network primitive mappings. -/
-structure NetworkMapping where
-  epistemic_primitive : String
-  network_primitive : String
-  shared_mechanism : String
-
-/-- The isomorphism table. -/
-def network_isomorphism_table : List NetworkMapping := [
-  ⟨"Bubble boundary", "Network segmentation", "Scoped trust zones"⟩,
-  ⟨"Deposit", "Signed artifact", "Trusted record"⟩,
-  ⟨"Withdrawal", "Consumption", "Reliance on trusted data"⟩,
-  ⟨"Export", "Cross-domain trust", "Boundary crossing"⟩,
-  ⟨"Provenance (V)", "Certificates/audit logs", "Source tracking"⟩,
-  ⟨"Error model (E)", "Threat model", "Failure enumeration"⟩,
-  ⟨"Standard (S)", "Security policy", "Acceptance criteria"⟩,
-  ⟨"Hygiene", "Patch management", "Ongoing maintenance"⟩,
-  ⟨"Counterfeit deposit", "Supply-chain attack", "Trusted path exploited"⟩
-]
-
-/-- Transfer status: what ports cleanly vs needs modification. -/
-inductive TransferStatus where
-  | TransfersClearly  -- shared constraint → direct mapping
-  | TransfersWithTwist -- epistemic adds survival/discovery pressure
-  | DoesNotTransfer   -- no network analog (traction gradation)
-  deriving DecidableEq, Repr
-
-/-- Asymmetry boundary: epistemic systems face extra forcing constraints. -/
-structure AsymmetryBoundary where
-  extra_constraint : String
-  why_networks_lack : String
-  consequence : String
-
-def epistemic_asymmetries : List AsymmetryBoundary := [
-  ⟨"Survival under τ", "Networks don't face predation deadlines", "Must act on credit-certainty sometimes"⟩,
-  ⟨"Discovery pressure", "Networks maintain known artifacts", "Must explore before validation exists"⟩
-]
-
-
-/-! ## Convergent Domain Configurations -/
-
-/-- Primitive configurations for specific domains. -/
-structure DomainConfig where
-  domain : String
-  S_config : String
-  E_config : String
-  V_config : String
-  τ_config : String
-  ACL_config : String
-  Redeem_config : String
-
-def convergent_domain_configs : List DomainConfig := [
-  ⟨"Network Security",
-   "Security policy/compliance", "Threat model", "Certificates/audit logs",
-   "Key/cert expiry", "Firewall rules", "Penetration tests"⟩,
-  ⟨"Supply Chains",
-   "Quality standards (ISO, FDA)", "Component failure modes", "Chain-of-custody docs",
-   "Shelf life, batch validity", "Authorized supplier lists", "Incoming inspection"⟩,
-  ⟨"Legal Systems",
-   "Rules of evidence", "Witness reliability, forensic error", "Chain of custody",
-   "Statutes of limitation", "Standing, jurisdiction", "Cross-examination, appeals"⟩,
-  ⟨"Science",
-   "Methodological standards", "Known confounders", "Independent replication",
-   "Replication recency", "Peer review gatekeeping", "Replication studies"⟩
-]
 
 end EpArch
