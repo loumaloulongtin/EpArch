@@ -249,9 +249,10 @@ theorem ddos_V_channel_collapse_blocks_withdrawal
     ========================================================================
 
     CExportRequest packages a deposit with gate metadata (revalidated flag,
-    trust bridge). It carries no agent and no proof of prior withdrawal —
-    the model does not structurally enforce that an agent must successfully
-    withdraw from the source bubble before constructing an export request.
+    trust bridge) and a presenting_agent identity. It carries no proof of
+    prior withdrawal — the model does not structurally enforce that an agent
+    must successfully withdraw from the source bubble before constructing an
+    export request.
 
     This is not a gap, and the delegation is not optional — it is forced by
     two independent constraints that are both foundational to the model.
@@ -375,11 +376,12 @@ theorem missing_export_gate_blocks_import (req : CExportRequest)
     Whether a deposit with V = [] is also un-withdrawable — and therefore the agent
     could not have assembled this export request honestly — is true in practice but
     is an agent-layer invariant, not proved here. Two independent constraints place
-    it there: (a) bounded verification means trust-bridge transfers legitimately
-    bypass the withdrawal-first sequence; (b) bubbles are decentralized — bubble B
-    cannot read bubble A's ledger, so "this was withdrawn from A" is an unverifiable
-    claim regardless of verification capacity. EpArch's claim is: if the request
-    arrives at c_import_deposit without reval or bridge, it is rejected. -/
+    it there: (a) bounded verification means a valid trust-bridge transfer need not
+    reduce to a single withdraw-first shape; (b) bubbles are decentralized — bubble
+    B cannot read bubble A's ledger, so "this was withdrawn from A" is an
+    unverifiable claim regardless of verification capacity. EpArch's claim is: if
+    the request arrives at c_import_deposit without reval or an authorized-agent
+    bridge match, it is rejected. -/
 theorem V_spoof_blocks_cross_bubble_reliance (req : CExportRequest)
     (_h_V : req.deposit.V.length = 0)
     (h_no_reval : req.revalidated = false)

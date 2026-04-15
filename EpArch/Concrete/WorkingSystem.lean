@@ -214,7 +214,8 @@ open EpArch
 
 The concrete model has ALL Bank features:
 - Bubble separation: CBubble provides scoped trust zones
-- Trust bridges: CTrustBridge enables import-via-trust
+- Trust bridges: CTrustBridge is agent-scoped — it is the presenting agent,
+  not the source bubble, that the receiving bubble trusts
 - Headers: CDeposit has S/E/V/τ structure
 - Revocation: CDepositStatus.Revoked exists
 - Shared ledger: CGlobalLedger provides bank functionality
