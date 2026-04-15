@@ -45,7 +45,7 @@ The bridge carries a `token_ok : ByteArray → Bool` predicate. The gate checks
 that the request carries a passing credential:
 
 ```
-tb.auth = .byToken ok  →  gate: ok req.auth_token
+tb.auth = .byToken ok  →  gate: req.auth_token.any ok
 ```
 
 The presenting agent's identity is not part of the gate. Any agent that obtains

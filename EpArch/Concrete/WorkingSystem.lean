@@ -59,10 +59,6 @@ def process_withdraw (acl : CACL) (agent : CAgent) (bubble : CBubble)
 def process_export (req : CExportRequest) : COutcome :=
   if c_valid_export req then
     .ExportSuccess req.deposit.claim req.target.id
-  else if req.revalidated then
-    -- Should not reach here (revalidated = true implies c_valid_export = true),
-    -- but kept for exhaustiveness
-    .ExportSuccess req.deposit.claim req.target.id
   else
     .ExportDenied "no revalidation or trust bridge"
 
@@ -100,8 +96,8 @@ theorem concrete_bank_determines_behavior (acl : CACL) (B1 B2 : CBubble) :
 
     In the concrete model, `c_valid_export` implies the request carries
     either `revalidated = true` (explicit re-run of lifecycle under target
-    bubble's standards) or `via_trust_bridge = some _` (presenter-identity
-    gate). Unauthenticated cross-bubble export is impossible. -/
+    bubble's standards) or `via_trust_bridge = some _` (trust-bridge auth
+    path). Unauthenticated cross-bubble export is impossible. -/
 theorem concrete_export_requires_auth (req : CExportRequest) :
     c_valid_export req → (req.revalidated ∨ req.via_trust_bridge.isSome) := by
   -- c_valid_export is Bool, so we need to handle it as a boolean
