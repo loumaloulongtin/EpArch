@@ -176,24 +176,25 @@ theorem WorldCtx.kernel_redundant_without_lies (C : WorldCtx)
 `Adversarial/Obligations.lean` converts the adversarial axioms from `Adversarial/Base.lean` into conditional obligation theorems using the same `W_*` / `_of_W` pattern.
 
 | Original Axiom | Obligation Theorem | World Bundle |
-|----------------|-------------------|--------------|
+|----------------|-------------------|---------------|
 | `spoofed_V_blocks_path` | `spoofed_V_blocks_path_of_W` | `W_spoofedV` |
 | `ddos_causes_verification_collapse` | `ddos_causes_verification_collapse_of_W` | `W_ddos` |
 | `collapse_causes_centralization` | `collapse_causes_centralization_of_W` | `W_collapse_centralization` |
 | `lies_scale` | `lies_scale_of_W` | `W_lies_scale` |
 | `rolex_ddos_structural_equivalence` | `rolex_ddos_structural_equivalence_of_W` | `W_rolex_ddos` |
-| *(cheap validator)* | `cheap_validator_blocks_V_attack_of_W` | `W_cheap_validator` |
-| *(trust bridge)* | `trust_bridge_blocks_V_attack_of_W` | `W_trust_bridge` |
-| *(reversibility)* | `reversibility_neutralizes_τ_of_W` | `W_reversibility` |
-| *(E-field inclusion)* | `E_inclusion_closes_expertise_gap_of_W` | `W_E_inclusion` |
-| *(cheap constraint)* | `cheap_constraint_blocks_V_spoof_of_W` | `W_cheap_constraint` |
+| *(cheap validator)* | `cheap_validator_maintains_path_of_W` | `W_cheap_validator` |
+| *(trust bridge)* | `trust_bridge_maintains_path_of_W` | `W_trust_bridge` |
+| *(reversibility)* | `reversibility_maintains_path_after_τ_compress_of_W` | `W_reversibility` |
+| *(E-field inclusion)* | `E_inclusion_prevents_collapse_of_W` | `W_E_inclusion` |
+| *(cheap constraint)* | `cheap_constraint_maintains_path_of_W` | `W_cheap_constraint` |
 
 The `ddos_to_centralization_of_W` theorem composes the DDoS and centralization results into the full argument chain: "DDoS vectors → verification collapse → trust centralization."
 
 ```lean
-theorem ddos_to_centralization_of_W (W : W_ddos_full)
-    (a : Agent) (s : DDoSState a) (c : CollapsedState a) (t : CentralizedState a) :
-    some_vector_overwhelmed s → is_centralized t
+theorem ddos_to_centralization_of_W (W : W_ddos_full) (a : Agent) :
+    (EpArch.ladder_overloaded a ∨ EpArch.V_channel_exhausted a ∨
+     EpArch.E_field_poisoned a ∨ EpArch.denial_triggered a) →
+    EpArch.trust_centralized a
 ```
 
 ---
