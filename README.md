@@ -236,6 +236,7 @@ The kernel enforces the observation boundary contract and the mechanism signatur
 | [DOCS/THEOREMS.md](DOCS/THEOREMS.md) | Theorem inventory organized by architectural role |
 | [DOCS/SEMANTICS.md](DOCS/SEMANTICS.md) | Operational proxy definitions and formal interpretations |
 | [DOCS/WORLD.md](DOCS/WORLD.md) | World layer: parametric semantic interface and W_* obligation theorems |
+| [DOCS/TRUST-BRIDGE-DESIGN.md](DOCS/TRUST-BRIDGE-DESIGN.md) | Trust bridge design: two auth modes (byAgent/byToken), multi-hop chains, gate invariants |
 | [DOCS/CORROBORATION.md](DOCS/CORROBORATION.md) | Corroboration module design notes |
 | [DOCS/FEASIBILITY.md](DOCS/FEASIBILITY.md) | Feasibility witness strategy |
 | [DOCS/WITNESS-SCOPE.md](DOCS/WITNESS-SCOPE.md) | What `EpArch/Concrete/` witnesses, what is proved elsewhere, and what is out of scope |

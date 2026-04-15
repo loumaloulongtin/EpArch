@@ -51,7 +51,7 @@ They are split across eight modules: `Concrete/Types.lean`, `Concrete/Commitment
 | SEV factorization exists | `concrete_has_factorization8` |
 | Repair path exists | `concrete_has_repair_path8` |
 | Withdrawal requires three gates | `concrete_withdrawal_requires_gates` |
-| Export requires provenance discipline | `concrete_export_needs_provenance` |
+| Export requires revalidation or bridge auth | `concrete_export_requires_auth` |
 | Headerless states are undiagnosable | `concrete_headerless_undiagnosable` |
 
 ---

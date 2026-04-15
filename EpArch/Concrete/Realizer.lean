@@ -29,7 +29,7 @@ namespace EpArch
 /-- A minimal "system realizer" object: bundles a proof that the
     objective/commitment bundle is satisfiable.
 
-    This is thin by design—we only include what ConcreteLedgerModel
+    This is thin by design—we only include what the concrete model
     already provides. The `commitments` field holds the proof that
     all core commitments are jointly satisfiable. -/
 structure Realizer where
@@ -84,7 +84,7 @@ structure SuccessfulSystem where
   /-- System satisfies all six operational properties -/
   sat : SatisfiesAllProperties W
 
-/-- Canonical witness: the concrete working system from ConcreteLedgerModel.
+/-- Canonical witness: the concrete working system.
 
     This bundles ConcreteWorkingSystem with its structural forcing and
     satisfaction proofs into a single object. -/

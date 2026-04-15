@@ -92,8 +92,13 @@ architecture does not need to collapse it; it enforces accountability at each ho
 
 What matters at each crossing is not whether the chain is long but whether:
 - the presenter is identifiable (`.byAgent`) or carries a valid credential (`.byToken`)
-- the bridge's `scope` covers the claim being transferred
 - the gate check is not vacuous
+
+The `CTrustBridge.scope` field is available for deployers to record which claim categories
+a bridge is intended to cover, but `c_valid_export` does not inspect it — scope enforcement
+is an agent-layer policy obligation, not an architectural gate. The architecture enforces
+presenter identity or credential validity; it does not substitute for the agent's claim routing
+judgment.
 
 ---
 

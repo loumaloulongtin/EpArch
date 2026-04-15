@@ -53,25 +53,18 @@ def process_withdraw (acl : CACL) (agent : CAgent) (bubble : CBubble)
     else
       .WithdrawSuccess claim
 
-/-- Process an export request in the concrete model. -/
+/-- Process an export request in the concrete model.
+    Delegates the gate check to `c_valid_export` — the single authoritative
+    definition. Only the outcome string is determined here. -/
 def process_export (req : CExportRequest) : COutcome :=
-  if req.revalidated then
+  if c_valid_export req then
     .ExportSuccess req.deposit.claim req.target.id
-  else match req.via_trust_bridge with
-    | some tb =>
-      match tb.auth with
-      | .byAgent a =>
-        if a.id = req.presenting_agent.id then
-          .ExportSuccess req.deposit.claim req.target.id
-        else
-          .ExportDenied "trust bridge agent mismatch"
-      | .byToken ok =>
-        match req.auth_token with
-        | some tok => if ok tok then .ExportSuccess req.deposit.claim req.target.id
-                      else .ExportDenied "auth token check failed"
-        | none     => .ExportDenied "auth token required for this bridge"
-    | none =>
-      .ExportDenied "no revalidation or trust bridge"
+  else if req.revalidated then
+    -- Should not reach here (revalidated = true implies c_valid_export = true),
+    -- but kept for exhaustiveness
+    .ExportSuccess req.deposit.claim req.target.id
+  else
+    .ExportDenied "no revalidation or trust bridge"
 
 /-- Process a challenge in the concrete model. -/
 def process_challenge (ch : CChallenge) : COutcome :=
@@ -103,11 +96,13 @@ theorem concrete_bank_determines_behavior (acl : CACL) (B1 B2 : CBubble) :
 
 /-! ## Grounding Abstract Theorems in Concrete Model -/
 
-/-- Theorem: Export requires headers (grounded version).
+/-- Theorem: Valid export requires revalidation or a trust bridge.
 
-    In the concrete model, valid export requires the deposit to have
-    non-trivial V (provenance) for header mutation to work. -/
-theorem concrete_export_needs_provenance (req : CExportRequest) :
+    In the concrete model, `c_valid_export` implies the request carries
+    either `revalidated = true` (explicit re-run of lifecycle under target
+    bubble's standards) or `via_trust_bridge = some _` (presenter-identity
+    gate). Unauthenticated cross-bubble export is impossible. -/
+theorem concrete_export_requires_auth (req : CExportRequest) :
     c_valid_export req → (req.revalidated ∨ req.via_trust_bridge.isSome) := by
   -- c_valid_export is Bool, so we need to handle it as a boolean
   unfold c_valid_export
@@ -208,7 +203,7 @@ end EpArch.ConcreteModel
 
 
 /-! ========================================================================
-    Wire ConcreteLedgerModel as Satisfying Instance
+    Concrete Working System as Satisfying Instance
 
     This section proves the concrete model satisfies all Has* predicates,
     demonstrating that the SystemSpec is not vacuously true.
