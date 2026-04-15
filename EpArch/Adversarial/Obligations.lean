@@ -149,9 +149,9 @@ structure W_ddos where
 
 /-- Obligation theorem: any DDoS vector causes verification collapse.
 
-    **Proof strategy:** genuine 4-way `rcases` dispatching each `DDoSVector` branch
-    to its per-vector W field. Each branch requires a distinct W field — no single
-    field covers all four cases. -/
+    **Proof strategy:** 4-way nested `cases h with` dispatching each `DDoSVector`
+    branch to its per-vector W field. Each branch requires a distinct W field — no
+    single field covers all four cases. -/
 theorem ddos_causes_verification_collapse_of_W
     (W : W_ddos)
     (a : EpArch.Agent) :
@@ -226,6 +226,9 @@ structure ExploitStructure where
   overwhelms_verification : Bool
   forces_suboptimal_acceptance : Bool
 
+/-- Propositional equality of two ExploitStructures: both Bool fields match.
+    Used by `W_rolex_ddos` to assert that individual-scale (Rolex) and
+    population-scale (DDoS) attacks share the same structural blueprint. -/
 def same_structure (e1 e2 : ExploitStructure) : Prop :=
   e1.overwhelms_verification = e2.overwhelms_verification ∧
   e1.forces_suboptimal_acceptance = e2.forces_suboptimal_acceptance

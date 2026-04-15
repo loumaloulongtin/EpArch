@@ -194,15 +194,21 @@ theorem pseudo_deposit_blocked_at_candidate_stage
 
 /-! ### Concrete DDoS V-Channel Collapse -/
 
-/-- overwhelmed_channel_collapses_V: an overwhelmed channel with a capacity deficit
-    for the pending provenance chain returns an empty result.
+/-- overwhelmed_channel_collapses_V: a provenance chain that exceeds channel capacity
+    returns an empty result from c_process_V.
 
-    **Theorem shape:** c_channel_overwhelmed cc → sources.length > cc.capacity
-                       → c_process_V cc sources = [].
+    **Theorem shape:** sources.length > cc.capacity → c_process_V cc sources = [].
 
-    **Proof strategy:** c_process_V fires the else-branch when the if-guard
-    `sources.length ≤ cc.capacity` fails. The guard fails because h_deficit gives
-    `sources.length > cc.capacity`; if_neg + Nat.lt_irrefl close the goal. -/
+    Note: `c_channel_overwhelmed cc` (cc.volume > cc.capacity) is accepted as a
+    parameter for contextual framing — it names the DDoS scenario — but is not
+    used by the proof. The sufficient condition is `h_deficit` alone: the guard
+    `sources.length ≤ cc.capacity` fails, firing the else-branch. The `_` binding
+    reflects that `c_channel_overwhelmed` and `h_deficit` measure different things
+    (`cc.volume` vs `sources.length`); both are relevant to the scenario, but only
+    `h_deficit` participates in the arithmetic.
+
+    **Proof strategy:** `c_process_V` fires the else-branch when the if-guard
+    `sources.length ≤ cc.capacity` fails. `if_neg + Nat.lt_irrefl` close the goal. -/
 theorem overwhelmed_channel_collapses_V (cc : CAuditChannel) (sources : CProvenance)
     (_ : c_channel_overwhelmed cc)
     (h_deficit : sources.length > cc.capacity) :
@@ -219,15 +225,17 @@ theorem overwhelmed_channel_collapses_V (cc : CAuditChannel) (sources : CProvena
                        → ¬c_can_withdraw acl a B d t.
 
     Chain:
-    1. c_channel_overwhelmed cc  — volume > capacity (DDoS active, Nat inequality)
-    2. sources.length > cc.capacity — this deposit's V-check exceeds remaining capacity
-    3. overwhelmed_channel_collapses_V → c_process_V cc sources = []  (channel math)
-    4. h_V bridges channel to deposit: d.V = c_process_V cc sources
-    5. d.V.length = 0 → V_stripped_not_withdrawable closes the goal
+    1. h_deficit : sources.length > cc.capacity — V-check exceeds capacity (sufficient condition)
+    2. overwhelmed_channel_collapses_V → c_process_V cc sources = []  (channel arithmetic)
+    3. h_V bridges channel to deposit: d.V = c_process_V cc sources
+    4. d.V.length = 0 → V_stripped_not_withdrawable closes the goal
 
-    h_V is the modeling bridge: it states that the deposit's V field was populated
-    by routing through channel cc, so the collapsed channel result is what the
-    deposit actually carries when it arrives at the withdrawal gate. -/
+    h_overwhelmed (c_channel_overwhelmed cc) provides scenario framing — it names the DDoS
+    context — but is threaded to overwhelmed_channel_collapses_V where it is also unused in
+    the proof (see that theorem's doc). The active sufficient condition throughout is h_deficit.
+    h_V is the modeling bridge: it states that the deposit's V field was populated by routing
+    through channel cc, so the collapsed channel result is what the deposit actually carries
+    when it arrives at the withdrawal gate. -/
 theorem ddos_V_channel_collapse_blocks_withdrawal
     {acl : CACL} {a : CAgent} {B : CBubble}
     (cc : CAuditChannel)
