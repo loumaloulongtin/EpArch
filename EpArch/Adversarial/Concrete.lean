@@ -88,7 +88,7 @@ example : c_header_stripped fully_stripped_deposit := Or.inl rfl
     With d.τ ≤ t, case-splitting on compute_status branches gives:
     - d.τ = 0 → .Revoked ≠ .Deposited (by decide)
     - d.τ ≤ t → .Stale ≠ .Deposited (by decide)
-    - Remaining branches all have ¬(d.τ ≤ t) contradicting h (by omega). -/
+    - Remaining branches all have ¬(d.τ ≤ t) contradicting h (Nat.lt_irrefl via Nat.lt_of_lt_of_le). -/
 theorem τ_expired_not_withdrawable {acl : CACL} {a : CAgent} {B : CBubble}
     (d : CDeposit) (t : CTime) (h : d.τ ≤ t) :
     ¬c_can_withdraw acl a B d t := by
@@ -109,9 +109,9 @@ theorem τ_expired_not_withdrawable {acl : CACL} {a : CAgent} {B : CBubble}
     **Theorem shape:** d.V.length = 0 → d.τ > t + 10 → ¬c_can_withdraw acl a B d t.
 
     **Proof strategy:** With d.τ > t + 10, the Revoked/Stale/Aging branches are
-    arithmetic contradictions (omega). The Candidate branch fires when d.V.length = 0,
+    arithmetic contradictions (Nat.lt_irrefl via Nat.lt_of_lt_of_le). The Candidate branch fires when d.V.length = 0,
     giving .Candidate ≠ .Deposited (by decide). The .Deposited branch requires
-    d.V.length ≠ 0, contradicting h_V (by omega). -/
+    d.V.length ≠ 0, contradicting h_V (Nat.lt_irrefl 0 after rw). -/
 theorem V_stripped_not_withdrawable {acl : CACL} {a : CAgent} {B : CBubble}
     (d : CDeposit) (t : CTime) (h_V : d.V.length = 0) (h_τ : d.τ > t + 10) :
     ¬c_can_withdraw acl a B d t := by
@@ -137,7 +137,8 @@ theorem V_stripped_not_withdrawable {acl : CACL} {a : CAgent} {B : CBubble}
 
     **Proof strategy:** c_header_stripped is S = 0 ∨ E.length = 0 ∨ V.length = 0;
     c_header_preserved requires S > 0 ∧ E.length > 0 ∧ V.length > 0.
-    Each disjunct omega-contradicts the corresponding positivity hypothesis. -/
+    Each disjunct rewrites the zero-equality into the positivity hypothesis, then
+    Nat.lt_irrefl 0 closes the goal. -/
 theorem E_stripped_diagnosis_lost (d : CDeposit) (h : c_header_stripped d) :
     ¬c_header_preserved d := by
   intro ⟨hS, hE, hV⟩

@@ -244,7 +244,7 @@ def c_process_V (cc : CAuditChannel) (sources : CProvenance) : CProvenance :=
 
     Step-counting model for the export-cost asymmetry argument.
     Publishing a claim = 1 step; verifying provenance = V.length + 1 steps minimum.
-    The cost inequality is proved from definitions by omega — not an axiom. -/
+    The cost inequality is proved by Nat.succ_lt_succ — not an axiom. -/
 
 /-- Concrete export cost: publishing a claim takes 1 computational step.
     Export is structurally cheap: one submission regardless of claim size. -/
