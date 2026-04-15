@@ -159,7 +159,7 @@ The framework has three layers:
 | `Meta/Modular.lean` | Constraint-subset modularity: `PartialWellFormed`, `modular` (∀ S ⊆ constraints, biconditional fragment → forcing projection), `allConstraints`/`noConstraints` |
 | `Meta/ClusterRegistry.lean` | 29-cluster tag registry: `ClusterTag`, `EnabledXxxCluster` inductives, per-family canonical lists, `clusterEnabled`/`clusterDescription` routing |
 | `Meta/Config.lean` | Configurable certification engine: `CertifiedProjection`, `certify`, named proof witnesses for all 29 clusters |
-| `Meta/LeanKernel/World.lean` | Lean kernel self-application — world layer (`LeanKernelCtx`, bundle witnesses, Gettier), architecture layer (`LeanWorkingSystem`, HasX proofs, convergence chain), and OleanStaleness deposit witness; 27 theorems proving the Lean kernel is EpArch-compliant |
+| `Meta/LeanKernel/World.lean` | Lean kernel self-application — world layer (`LeanKernelCtx`, bundle witnesses, Gettier), architecture layer (`LeanWorkingSystem`, HasX proofs, convergence chain), and OleanStaleness deposit witness |
 | `Meta/LeanKernel/SFailure.lean` | Lean kernel S-field failure taxonomy: `LeanAxiomLevel`, `ElabMode`, `LeanStandardCase`, `LeanVacuousStandard`, relational vs. absolute S-failure theorems |
 | `Meta/LeanKernel/OdometerModel.lean` | Concrete minimal sub-bundle: single-bubble append-only system, graceful degradation witness |
 | `Bank/Dynamics.lean` | Behavioral profiling: `success_driven_bypass`, `blast_radius_scales_with_reliance` |
