@@ -355,7 +355,7 @@ theorem full_stack_attack_concrete_blocked (acl : CACL) (a : CAgent) (B : CBubbl
     ========================================================================
 
     c_export_cost = 1 (one submission step), c_verify_cost d = d.V.length + 1.
-    The asymmetry is a Nat inequality proved by omega from definitions —
+    The asymmetry is a Nat inequality proved by Nat.succ_lt_succ —
     no axiom required. This grounds W_lies_scale concretely: the W assumption
     has a machine-checked satisfying instance rather than remaining purely
     hypothetical. -/
@@ -366,9 +366,8 @@ open EpArch.AdversarialObligations
 /-- Concrete W_lies_scale: export costs 1 step; verifying a non-empty provenance
     chain costs V.length + 1 steps, which is strictly more.
 
-    **Proof strategy:** `c_export_cost_lt_verify_cost d h` is proved by omega from
-    the definitions `c_export_cost := 1` and `c_verify_cost d := d.V.length + 1`.
-    No assumption — the inequality is definitionally grounded. -/
+    **Proof strategy:** `c_export_cost_lt_verify_cost d h` is `Nat.succ_lt_succ h`
+    applied to `0 < d.V.length`. No assumption — the inequality is definitionally grounded. -/
 def concrete_W_lies_scale (d : CDeposit) (h : 0 < d.V.length) : W_lies_scale :=
   { export_cost    := c_export_cost
     defense_cost   := c_verify_cost d

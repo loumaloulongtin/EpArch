@@ -255,7 +255,7 @@ def c_export_cost : Nat := 1
 def c_verify_cost (d : CDeposit) : Nat := d.V.length + 1
 
 /-- For any deposit with at least one provenance source, export costs strictly less
-    than verification. Proved by unfolding and omega — no assumption required. -/
+    than verification. Proved by `Nat.succ_lt_succ h` — no assumption required. -/
 theorem c_export_cost_lt_verify_cost (d : CDeposit) (h : 0 < d.V.length) :
     c_export_cost < c_verify_cost d :=
   Nat.succ_lt_succ h
