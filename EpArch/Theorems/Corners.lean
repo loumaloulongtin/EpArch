@@ -129,6 +129,44 @@ theorem frozen_canon_no_revocation
   | repair _ _ _ =>
     -- Repair is contestation
     simp [isContestationAction] at h_not_contest
+  | validate _ _ d_val_idx _ h_cand =>
+    -- Validate: updateDepositStatus to Validated; .Validated ≠ .Revoked
+    cases Nat.decEq d_idx d_val_idx with
+    | isTrue heq =>
+      let ⟨d_c, h_get_c, _⟩ := h_cand
+      have h_upd := get?_updateDepositStatus_eq s.ledger d_val_idx .Validated d_c h_get_c
+      rw [heq] at h_get'
+      rw [h_upd] at h_get'
+      injection h_get' with h_eq'
+      intro h_rev
+      rw [← h_eq'] at h_rev
+      exact DepositStatus.noConfusion h_rev
+    | isFalse hne =>
+      have h_unch := get?_updateDepositStatus_ne s.ledger d_val_idx d_idx .Validated hne
+      rw [h_unch] at h_get'
+      rw [h_get] at h_get'
+      injection h_get' with h_eq'
+      rw [← h_eq']
+      exact h_not_revoked
+  | accept _ _ d_acc_idx _ h_validated =>
+    -- Accept: updateDepositStatus to Deposited; .Deposited ≠ .Revoked
+    cases Nat.decEq d_idx d_acc_idx with
+    | isTrue heq =>
+      let ⟨d_v, h_get_v, _⟩ := h_validated
+      have h_upd := get?_updateDepositStatus_eq s.ledger d_acc_idx .Deposited d_v h_get_v
+      rw [heq] at h_get'
+      rw [h_upd] at h_get'
+      injection h_get' with h_eq'
+      intro h_rev
+      rw [← h_eq'] at h_rev
+      exact DepositStatus.noConfusion h_rev
+    | isFalse hne =>
+      have h_unch := get?_updateDepositStatus_ne s.ledger d_acc_idx d_idx .Deposited hne
+      rw [h_unch] at h_get'
+      rw [h_get] at h_get'
+      injection h_get' with h_eq'
+      rw [← h_eq']
+      exact h_not_revoked
 
 /-- A trace where every action is non-contestation
     (no Challenge, no Revoke, no Repair). -/
@@ -150,7 +188,7 @@ theorem allRestricted_implies_no_revision
     simp only [Trace.hasRevision]
     have h_not_rev : a.isRevision = false := by
       cases a with
-      | Submit _ | Withdraw _ _ _ | Export _ _ _ | Tick =>
+      | Submit _ | Withdraw _ _ _ | Export _ _ _ | Tick | Validate _ _ _ | Accept _ _ _ =>
         simp [Action.isRevision]
       | Challenge _ | Revoke _ | Repair _ _ =>
         simp [isContestationAction] at h_not_contest

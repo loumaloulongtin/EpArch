@@ -275,6 +275,8 @@ def observe_step_action : CAction → Observation
   | .Submit _            => .TimeAdvanced
   | .Repair _ _          => .TimeAdvanced
   | .Revoke _            => .TimeAdvanced
+  | .Validate _ _ _      => .TimeAdvanced
+  | .Accept _ _ _        => .TimeAdvanced
 
 /-! ### Ready States -/
 

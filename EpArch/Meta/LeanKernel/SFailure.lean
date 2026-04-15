@@ -6,7 +6,7 @@ of ways a Lean proof system can satisfy S-field properties vacuously or void-abl
 
 ## Layers Covered
 
-Layer 3 â Kernel-Level S-Field Failure Taxonomy:
+Layer 3 Kernel-Level S-Field Failure Taxonomy:
   Failure modes, void/vacuous witnesses, canonical cases, and the master
   \lean_S_failure_taxonomy\ theorem.
 

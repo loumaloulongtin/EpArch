@@ -50,6 +50,10 @@ structure SystemState (PropLike Standard ErrorModel Provenance : Type u) where
   clock       : Time
   acl_table   : List ACLEntry
   trust_bridges : List (Bubble × Bubble)
+  /-- Bank operators: agents authorized to validate and accept deposits in specific bubbles.
+      An entry (a, B) means agent a may run Validate and Accept for deposits in bubble B.
+      Default: empty — no bank authority granted. -/
+  bank_authority : List (Agent × Bubble) := []
   /-- Per-agent, per-claim Ladder state.  Pass-through on every Step (no Step ever
       modifies it — proved by `step_preserves_ladder_map`).  Default: Ignorance. -/
   ladder_map  : Agent → PropLike → LadderStage := fun _ _ => LadderStage.Ignorance
@@ -76,6 +80,8 @@ inductive Action (PropLike Standard ErrorModel Provenance Reason Evidence : Type
   | Tick
   | Repair (d_idx : Nat) (f : Field)
   | Revoke (d_idx : Nat)
+  | Validate (a : Agent) (B : Bubble) (d_idx : Nat)
+  | Accept (a : Agent) (B : Bubble) (d_idx : Nat)
 
 /-! ## Preconditions -/
 
@@ -93,6 +99,19 @@ def isDeposited (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx
 /-- Check if deposit at index is in Quarantined status. -/
 def isQuarantined (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat) : Prop :=
   ∃ d, s.ledger.get? d_idx = some d ∧ d.status = .Quarantined
+
+/-- Check if deposit at index is in Candidate status. -/
+def isCandidate (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat) : Prop :=
+  ∃ d, s.ledger.get? d_idx = some d ∧ d.status = .Candidate
+
+/-- Check if deposit at index is in Validated status. -/
+def isValidated (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat) : Prop :=
+  ∃ d, s.ledger.get? d_idx = some d ∧ d.status = .Validated
+
+/-- Check if agent has bank operator authority for the given bubble.    Required to run Validate and Accept steps. -/
+def hasBankAuthority (s : SystemState PropLike Standard ErrorModel Provenance)
+    (a : Agent) (B : Bubble) : Prop :=
+  (a, B) ∈ s.bank_authority
 
 /-- Check if trust bridge exists between bubbles. -/
 def hasTrustBridge (s : SystemState PropLike Standard ErrorModel Provenance)
@@ -504,6 +523,32 @@ inductive Step : SystemState PropLike Standard ErrorModel Provenance →
       Step s (.Repair d_idx f)
         { s with ledger := updateDepositStatus s.ledger d_idx .Candidate }
 
+  /-- Validate: bank operator advances a Candidate deposit to Validated.
+
+      Only an authorized bank operator (hasBankAuthority) can run this step.
+      The deposit must be in Candidate status; after this step it is Validated.
+      Validated deposits are pending acceptance — they pass validation but are
+      not yet live in the bank. -/
+  | validate (s : SystemState PropLike Standard ErrorModel Provenance)
+      (a : Agent) (B : Bubble) (d_idx : Nat)
+      (h_auth : hasBankAuthority s a B)
+      (h_candidate : isCandidate s d_idx) :
+      Step s (.Validate a B d_idx)
+        { s with ledger := updateDepositStatus s.ledger d_idx .Validated }
+
+  /-- Accept: bank operator promotes a Validated deposit to Deposited (live).
+
+      Only an authorized bank operator (hasBankAuthority) can run this step.
+      The deposit must be in Validated status; after this step it is Deposited
+      and live in the bank. This is the only Step constructor that can produce
+      a .Deposited status entry — the formal basis of the bank authority theorem. -/
+  | accept (s : SystemState PropLike Standard ErrorModel Provenance)
+      (a : Agent) (B : Bubble) (d_idx : Nat)
+      (h_auth : hasBankAuthority s a B)
+      (h_validated : isValidated s d_idx) :
+      Step s (.Accept a B d_idx)
+        { s with ledger := updateDepositStatus s.ledger d_idx .Deposited }
+
 /-! ## Ladder Invariants
 
 The `ladder_map` field of `SystemState` is never modified by any Step.
@@ -795,6 +840,42 @@ theorem step_non_revision_preserves_non_revoked
         get?_updateDepositStatus_ne s.ledger d_repair_idx d_idx .Candidate hne
       rw [h_get_unchanged] at hd
       exact h_not_revoked d hd h_status
+  | validate _ _ d_val_idx _ h_cand =>
+    -- Validate: updateDepositStatus to Validated at d_val_idx
+    simp only at hd
+    cases Nat.decEq d_idx d_val_idx with
+    | isTrue heq =>
+      -- At the validated index: status is now Validated ≠ Revoked
+      let ⟨d_c, h_get_c, _⟩ := h_cand
+      have h_get_updated := get?_updateDepositStatus_eq s.ledger d_val_idx .Validated d_c h_get_c
+      rw [heq] at hd
+      rw [h_get_updated] at hd
+      cases hd
+      exact DepositStatus.noConfusion h_status
+    | isFalse hne =>
+      have h_get_unchanged : (updateDepositStatus s.ledger d_val_idx .Validated).get? d_idx =
+          s.ledger.get? d_idx :=
+        get?_updateDepositStatus_ne s.ledger d_val_idx d_idx .Validated hne
+      rw [h_get_unchanged] at hd
+      exact h_not_revoked d hd h_status
+  | accept _ _ d_acc_idx _ h_validated =>
+    -- Accept: updateDepositStatus to Deposited at d_acc_idx
+    simp only at hd
+    cases Nat.decEq d_idx d_acc_idx with
+    | isTrue heq =>
+      -- At the accepted index: status is now Deposited ≠ Revoked
+      let ⟨d_v, h_get_v, _⟩ := h_validated
+      have h_get_updated := get?_updateDepositStatus_eq s.ledger d_acc_idx .Deposited d_v h_get_v
+      rw [heq] at hd
+      rw [h_get_updated] at hd
+      cases hd
+      exact DepositStatus.noConfusion h_status
+    | isFalse hne =>
+      have h_get_unchanged : (updateDepositStatus s.ledger d_acc_idx .Deposited).get? d_idx =
+          s.ledger.get? d_idx :=
+        get?_updateDepositStatus_ne s.ledger d_acc_idx d_idx .Deposited hne
+      rw [h_get_unchanged] at hd
+      exact h_not_revoked d hd h_status
 
 /-- Key lemma: traces without revision preserve non-Revoked status.
     Proof by induction on trace. -/
@@ -891,6 +972,44 @@ theorem step_no_revision_preserves_deposited
       have h_unchanged : (updateDepositStatus s.ledger d_repair_idx .Candidate).get? d_idx =
           s.ledger.get? d_idx :=
         get?_updateDepositStatus_ne s.ledger d_repair_idx d_idx .Candidate hne
+      exact ⟨d, h_unchanged ▸ h_get, h_status⟩
+  | validate _ _ d_val_idx _ h_cand =>
+    -- Validate changes d_val_idx from Candidate → Validated.
+    -- Case: d_idx = d_val_idx → deposit was both Deposited (h_dep) and Candidate
+    --   (h_cand), which is a contradiction.
+    -- Case: d_idx ≠ d_val_idx → updateDepositStatus preserves d_idx.
+    cases Nat.decEq d_idx d_val_idx with
+    | isTrue heq =>
+      let ⟨d_c, h_get_c, h_status_c⟩ := h_cand
+      rw [heq] at h_get
+      rw [h_get] at h_get_c
+      cases h_get_c
+      -- d_c = d, so .Deposited = .Candidate — contradiction
+      rw [h_status] at h_status_c
+      exact DepositStatus.noConfusion h_status_c
+    | isFalse hne =>
+      have h_unchanged : (updateDepositStatus s.ledger d_val_idx .Validated).get? d_idx =
+          s.ledger.get? d_idx :=
+        get?_updateDepositStatus_ne s.ledger d_val_idx d_idx .Validated hne
+      exact ⟨d, h_unchanged ▸ h_get, h_status⟩
+  | accept _ _ d_acc_idx _ h_validated =>
+    -- Accept changes d_acc_idx from Validated → Deposited.
+    -- Case: d_idx = d_acc_idx → deposit was both Deposited (h_dep) and Validated
+    --   (h_validated), which is a contradiction.
+    -- Case: d_idx ≠ d_acc_idx → updateDepositStatus preserves d_idx.
+    cases Nat.decEq d_idx d_acc_idx with
+    | isTrue heq =>
+      let ⟨d_v, h_get_v, h_status_v⟩ := h_validated
+      rw [heq] at h_get
+      rw [h_get] at h_get_v
+      cases h_get_v
+      -- d_v = d, so .Deposited = .Validated — contradiction
+      rw [h_status] at h_status_v
+      exact DepositStatus.noConfusion h_status_v
+    | isFalse hne =>
+      have h_unchanged : (updateDepositStatus s.ledger d_acc_idx .Deposited).get? d_idx =
+          s.ledger.get? d_idx :=
+        get?_updateDepositStatus_ne s.ledger d_acc_idx d_idx .Deposited hne
       exact ⟨d, h_unchanged ▸ h_get, h_status⟩
 
 /-- Trace-level version: revision-free traces preserve Deposited status.
@@ -1320,9 +1439,9 @@ theorem all_traces_preserve_invariant
 
 
 /-- Invariant 1: All deposits in the ledger have valid status.
-    (Deposited, Candidate, Quarantined, or Revoked) -/
+    (Deposited, Candidate, Quarantined, Revoked, or Validated) -/
 def inv_valid_status (s : SystemState PropLike Standard ErrorModel Provenance) : Prop :=
-  ∀ d, d ∈ s.ledger → d.status ∈ [.Deposited, .Candidate, .Quarantined, .Revoked]
+  ∀ d, d ∈ s.ledger → d.status ∈ [.Deposited, .Candidate, .Quarantined, .Revoked, .Validated]
 
 /-- Invariant 2: ACL entries reference valid deposit indices.
     (No dangling ACL references) -/
@@ -1486,8 +1605,50 @@ theorem repair_preserves_valid_status
   | inr h_mod =>
     let ⟨d_orig, _, h_eq⟩ := h_mod
     rw [← h_eq]
-    -- Candidate is in [.Deposited, .Candidate, .Quarantined, .Revoked]
+    -- Candidate is in [.Deposited, .Candidate, .Quarantined, .Revoked, .Validated]
     exact List.Mem.tail _ (List.Mem.head _)
+
+/-- Valid status is preserved by validate (Candidate → Validated). -/
+theorem validate_preserves_valid_status
+    (s : SystemState PropLike Standard ErrorModel Provenance)
+    (d_idx : Nat)
+    (h_inv : inv_valid_status s) :
+    inv_valid_status { s with ledger := updateDepositStatus s.ledger d_idx .Validated } := by
+  unfold inv_valid_status at *
+  intro d hd
+  unfold updateDepositStatus at hd
+  have h_or := mem_modifyAt s.ledger d_idx (fun d => { d with status := .Validated }) d hd
+  cases h_or with
+  | inl h_orig =>
+    let ⟨d', hd'_mem, hd'_eq⟩ := h_orig
+    rw [← hd'_eq]
+    exact h_inv d' hd'_mem
+  | inr h_mod =>
+    let ⟨d_orig, _, h_eq⟩ := h_mod
+    rw [← h_eq]
+    -- Validated is in [.Deposited, .Candidate, .Quarantined, .Revoked, .Validated]
+    exact List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _))))
+
+/-- Valid status is preserved by accept (Validated → Deposited). -/
+theorem accept_preserves_valid_status
+    (s : SystemState PropLike Standard ErrorModel Provenance)
+    (d_idx : Nat)
+    (h_inv : inv_valid_status s) :
+    inv_valid_status { s with ledger := updateDepositStatus s.ledger d_idx .Deposited } := by
+  unfold inv_valid_status at *
+  intro d hd
+  unfold updateDepositStatus at hd
+  have h_or := mem_modifyAt s.ledger d_idx (fun d => { d with status := .Deposited }) d hd
+  cases h_or with
+  | inl h_orig =>
+    let ⟨d', hd'_mem, hd'_eq⟩ := h_orig
+    rw [← hd'_eq]
+    exact h_inv d' hd'_mem
+  | inr h_mod =>
+    let ⟨d_orig, _, h_eq⟩ := h_mod
+    rw [← h_eq]
+    -- Deposited is in [.Deposited, .Candidate, .Quarantined, .Revoked, .Validated]
+    exact List.Mem.head _
 
 /-- Export preserves valid status (appends Candidate). -/
 theorem export_preserves_valid_status
@@ -1544,6 +1705,10 @@ theorem step_preserves_valid_status
     exact revoke_preserves_valid_status s d_idx h_inv
   case repair d_idx f _ =>
     exact repair_preserves_valid_status s d_idx h_inv
+  case validate a_val B_val d_val_idx _ _ =>
+    exact validate_preserves_valid_status s d_val_idx h_inv
+  case accept a_acc B_acc d_acc_idx _ _ =>
+    exact accept_preserves_valid_status s d_acc_idx h_inv
 
 /-- TRACE PRESERVATION:
     Invariants preserved by single steps are preserved by traces. -/
