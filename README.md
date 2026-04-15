@@ -1,5 +1,7 @@
 # EpArch — Machine-Checked Epistemic Architecture
 
+> **Work in progress.** This formalization has not undergone peer review. Proofs and documentation are subject to change.
+
 Standalone Lean 4 framework for reasoning about bounded epistemic systems under adversarial pressure.
 
 > **Scope note.** EpArch is a framework for determining which architectural mechanisms are *required* under recognizable constraint and goal profiles — the kinds of real-world operational regimes we actually build epistemic systems for. It is not a claim that every conceivable world or system must instantiate the same mechanisms.

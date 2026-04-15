@@ -138,10 +138,12 @@ inductive CTrustBridgeAuth where
 /-- Trust bridge: authorization for a cross-bubble claim transfer.
     auth selects the gate check (.byAgent: named presenter checked by identity;
     .byToken: predicate applied to auth_token — any credential the deployer chooses).
-    scope restricts which claims are covered; [] means all. -/
+    scope is a deployer annotation recording which claim categories this bridge is
+    intended to cover; `c_valid_export` does not inspect it — enforcement is
+    agent-layer policy above the formal model. [] conventionally means all claims. -/
 structure CTrustBridge where
   auth  : CTrustBridgeAuth  -- which gate check applies
-  scope : List String       -- which claims are covered; [] = all
+  scope : List String       -- deployer annotation: intended claim categories; not enforced by c_valid_export
 -- NO deriving Repr (auth may contain function)
 
 /-- Export request: moving a deposit across bubble boundaries. -/
