@@ -394,50 +394,47 @@ theorem lies_scale_concrete :
     CDeposit-level arithmetic.  They are listed as open items below. -/
 
 /-- Concrete W_cheap_validator: a reachable cheap validator always produces a
-    valid path.  Provenance is intact through the cheap validator regardless of
-    what the attacker injected into V.
-
-    The all-true PathExists is constructable for any Deposit: PathExists fields are
-    three independent Bools that do not reference deposit contents. -/
+    valid path for any non-expired deposit (d.h.τ > 0).  The all-true Bool fields
+    are abstract; `ttl_valid` is discharged by the explicit `h_τ` hypothesis. -/
 def concrete_W_cheap_validator :
     W_cheap_validator (PropLike := CProp) (Standard := CStandard)
       (ErrorModel := CErrorModel) (Provenance := CProvenance) :=
-  { cheap_validator_enables_path := fun _a _τ _d _h =>
-      ⟨{ provenance_intact := true, reaches_constraint := true, verifiable := true },
-       ⟨rfl, rfl, rfl⟩⟩ }
+  { cheap_validator_enables_path := fun _a _τ _d _h_cv h_τ =>
+      ⟨{ provenance_ok := true, constraint_ok := true, ttl_valid := h_τ },
+       ⟨rfl, rfl⟩⟩ }
 
-/-- Concrete W_trust_bridge: a pre-established trust bridge always provides a
-    valid alternative path.  The bridge is an out-of-band provenance route that
-    V spoofing cannot reach. -/
+/-- Concrete W_trust_bridge: a pre-established trust bridge provides a valid path
+    for any non-expired deposit (d.h.τ > 0).  The bridge is an out-of-band route;
+    `ttl_valid` is discharged by the explicit `h_τ` hypothesis. -/
 def concrete_W_trust_bridge :
     W_trust_bridge (PropLike := CProp) (Standard := CStandard)
       (ErrorModel := CErrorModel) (Provenance := CProvenance) :=
-  { trust_bridge_enables_path := fun _a _d _h =>
-      ⟨{ provenance_intact := true, reaches_constraint := true, verifiable := true },
-       ⟨rfl, rfl, rfl⟩⟩ }
+  { trust_bridge_enables_path := fun _a _d _h_tb h_τ =>
+      ⟨{ provenance_ok := true, constraint_ok := true, ttl_valid := h_τ },
+       ⟨rfl, rfl⟩⟩ }
 
-/-- Concrete W_cheap_constraint: a cheaply testable constraint surface always
-    yields a valid path.  The test is independent of the V chain, so V spoofing
-    cannot prevent it from succeeding. -/
+/-- Concrete W_cheap_constraint: a cheaply testable constraint surface provides
+    a valid path for any non-expired deposit (d.h.τ > 0).  The test is independent
+    of the V chain; `ttl_valid` is discharged by the explicit `h_τ` hypothesis. -/
 def concrete_W_cheap_constraint :
     W_cheap_constraint (PropLike := CProp) (Standard := CStandard)
       (ErrorModel := CErrorModel) (Provenance := CProvenance) :=
-  { cheap_test_enables_path := fun _d _h =>
-      ⟨{ provenance_intact := true, reaches_constraint := true, verifiable := true },
-       ⟨rfl, rfl, rfl⟩⟩ }
+  { cheap_test_enables_path := fun _d _h_ct h_τ =>
+      ⟨{ provenance_ok := true, constraint_ok := true, ttl_valid := h_τ },
+       ⟨rfl, rfl⟩⟩ }
 
-/-- Concrete W_reversibility: a reversible deposit (d.h.τ > 0) retains a valid
-    verification path even after τ compression (t_compressed < t_orig).
+/-- Concrete W_reversibility: a reversible deposit (transaction_reversible d = d.h.τ > 0)
+    retains a valid path even after τ compression (t_compressed < t_orig).
 
-    The deposit's positive TTL means the verify-and-undo path is still reachable.
-    PathExists fields are independent Bools; the all-true instance is always
-    constructable regardless of the remaining TTL amount. -/
+    This is the key grounded witness: `transaction_reversible d` is definitionally
+    `d.h.τ > 0`, which directly discharges `PathExists.ttl_valid`.  The proof field
+    is not constructed by hand — it comes directly from the reversibility hypothesis. -/
 def concrete_W_reversibility :
     W_reversibility (PropLike := CProp) (Standard := CStandard)
       (ErrorModel := CErrorModel) (Provenance := CProvenance) :=
-  { reversibility_survives_τ_compress := fun _t_orig _t_compressed _d _h_rev _h_compress =>
-      ⟨{ provenance_intact := true, reaches_constraint := true, verifiable := true },
-       ⟨rfl, rfl, rfl⟩⟩ }
+  { reversibility_survives_τ_compress := fun _t_orig _t_compressed _d h_rev _h_compress =>
+      ⟨{ provenance_ok := true, constraint_ok := true, ttl_valid := h_rev },
+       ⟨rfl, rfl⟩⟩ }
 
 /-! W_E_inclusion concrete witness is not discharged here.
     `E_includes_threat : Agent → Prop` cannot be grounded from the abstract `Agent`

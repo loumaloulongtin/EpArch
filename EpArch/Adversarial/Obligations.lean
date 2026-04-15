@@ -47,17 +47,22 @@ variable {PropLike Standard ErrorModel Provenance : Type u}
 
 /-- PathExists: there is a verification path to the constraint surface.
 
-    A path exists when:
-    1. The provenance chain is intact (V not spoofed)
-    2. The chain leads to a constraint surface contact
-    3. The contact can be verified within available resources -/
+    `provenance_ok` and `constraint_ok` are abstract Bool-flags — the concrete
+    model establishes them, but the abstract Deposit type cannot inspect field
+    contents.  `ttl_valid` is a genuine proof obligation tied to the deposit:
+    the verification window must still be open (d.h.τ > 0).
+    This makes PathExists non-trivially constructable: you cannot manufacture a
+    path for an expired deposit. -/
 structure PathExists (d : Deposit PropLike Standard ErrorModel Provenance) where
-  provenance_intact : Bool
-  reaches_constraint : Bool
-  verifiable : Bool
+  /-- Provenance chain is present (abstract: established by the concrete layer) -/
+  provenance_ok  : Bool
+  /-- Constraint surface is reachable (abstract: established by the concrete layer) -/
+  constraint_ok  : Bool
+  /-- Deposit TTL is positive: the verification window is open (kernel-verified) -/
+  ttl_valid      : d.h.τ > 0
 
 def has_path (p : PathExists d) : Prop :=
-  p.provenance_intact ∧ p.reaches_constraint ∧ p.verifiable
+  p.provenance_ok = true ∧ p.constraint_ok = true
 
 
 /-! ## W_spoofedV: V spoofing and consultation suppression block the verification path -/
@@ -261,10 +266,11 @@ the decision window, this attack class fails.
     the cheap validator keeps at least one path open — the attacker has not won.
     Uses Base opaque `cheap_validator_reachable` directly. -/
 structure W_cheap_validator where
-  /-- Cheap validator enables path: at least one valid path exists -/
+  /-- Cheap validator enables path: deposit TTL is positive, path fields intact -/
   cheap_validator_enables_path : ∀ (a : EpArch.Agent) (τ : EpArch.Time)
     (d : Deposit PropLike Standard ErrorModel Provenance),
     EpArch.cheap_validator_reachable a τ →
+    d.h.τ > 0 →
     ∃ (p : PathExists d), has_path p
 
 /-- Obligation theorem: cheap validator maintains a valid path. -/
@@ -272,10 +278,11 @@ theorem cheap_validator_maintains_path_of_W
     (W : W_cheap_validator (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
     (a : EpArch.Agent) (τ : EpArch.Time)
-    (d : Deposit PropLike Standard ErrorModel Provenance) :
+    (d : Deposit PropLike Standard ErrorModel Provenance)
+    (h_τ : d.h.τ > 0) :
     EpArch.cheap_validator_reachable a τ →
     ∃ (p : PathExists d), has_path p :=
-  W.cheap_validator_enables_path a τ d
+  fun h_cv => W.cheap_validator_enables_path a τ d h_cv h_τ
 
 
 /-! ### W_trust_bridge: Trust bridge maintains path despite V-failure -/
@@ -288,10 +295,11 @@ theorem cheap_validator_maintains_path_of_W
     alternative route so the attack cannot close off all paths.
     Uses Base opaque `trust_bridge_on_hand` directly. -/
 structure W_trust_bridge where
-  /-- Trust bridge enables path: at least one valid path exists -/
+  /-- Trust bridge enables path: deposit TTL is positive, path fields intact -/
   trust_bridge_enables_path : ∀ (a : EpArch.Agent)
     (d : Deposit PropLike Standard ErrorModel Provenance),
     EpArch.trust_bridge_on_hand a →
+    d.h.τ > 0 →
     ∃ (p : PathExists d), has_path p
 
 /-- Obligation theorem: trust bridge maintains a valid path. -/
@@ -299,10 +307,11 @@ theorem trust_bridge_maintains_path_of_W
     (W : W_trust_bridge (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
     (a : EpArch.Agent)
-    (d : Deposit PropLike Standard ErrorModel Provenance) :
+    (d : Deposit PropLike Standard ErrorModel Provenance)
+    (h_τ : d.h.τ > 0) :
     EpArch.trust_bridge_on_hand a →
     ∃ (p : PathExists d), has_path p :=
-  W.trust_bridge_enables_path a d
+  fun h_tb => W.trust_bridge_enables_path a d h_tb h_τ
 
 
 /-! ### W_reversibility: Reversibility maintains path after τ compression -/
@@ -367,19 +376,21 @@ theorem E_inclusion_prevents_collapse_of_W
     the attacker's V-injection cannot close off the redeemability check.
     Uses Base opaque `constraint_cheaply_testable` directly. -/
 structure W_cheap_constraint where
-  /-- Cheap testing maintains path: at least one valid path exists -/
+  /-- Cheap testing maintains path: deposit TTL is positive, path fields intact -/
   cheap_test_enables_path : ∀ (d : Deposit PropLike Standard ErrorModel Provenance),
     EpArch.constraint_cheaply_testable d →
+    d.h.τ > 0 →
     ∃ (p : PathExists d), has_path p
 
 /-- Obligation theorem: cheaply testable constraint maintains a valid path. -/
 theorem cheap_constraint_maintains_path_of_W
     (W : W_cheap_constraint (PropLike := PropLike) (Standard := Standard)
          (ErrorModel := ErrorModel) (Provenance := Provenance))
-    (d : Deposit PropLike Standard ErrorModel Provenance) :
+    (d : Deposit PropLike Standard ErrorModel Provenance)
+    (h_τ : d.h.τ > 0) :
     EpArch.constraint_cheaply_testable d →
     ∃ (p : PathExists d), has_path p :=
-  W.cheap_test_enables_path d
+  fun h_ct => W.cheap_test_enables_path d h_ct h_τ
 
 
 /-! ## Axiom-to-Obligation Summary (Attack Vectors)
