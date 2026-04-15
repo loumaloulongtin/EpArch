@@ -1,8 +1,8 @@
 /-
 EpArch.Adversarial.Concrete — Concrete Attack Mitigation Proofs
 
-Three-step demonstration connecting the abstract attack vocabulary
-(AdversarialBase) to the concrete kernel model (ConcreteLedgerModel):
+Four-step demonstration connecting the abstract attack vocabulary
+(AdversarialBase) to the concrete kernel model (Concrete.Types):
 
 - Step 1: The CDeposit type has four independent exploit-surface dimensions
   (V, τ, S, E). No structural constraint prevents attack-susceptible values;
@@ -13,8 +13,13 @@ Three-step demonstration connecting the abstract attack vocabulary
   and that header stripping prevents c_header_preserved from holding.
 
 - Step 3: Each attack type from AdversarialBase is named against the gate
-  that blocks it. A concrete FullStackAttack witness satisfies attack_succeeds;
-  the matching CDeposit-level conditions are blocked by the step-2 gates.
+  that blocks it. The DDoS V-channel collapse is proved as a genuine
+  derivation chain through CAuditChannel (capacity arithmetic → V = [] →
+  V gate fires). A concrete FullStackAttack witness satisfies attack_succeeds.
+
+- Step 4: The export gate: stripped deposits cannot cross bubble boundaries
+  without revalidation or a pre-established trust bridge. c_valid_export
+  returns false absent both, and c_import_deposit returns none.
 -/
 
 import EpArch.Adversarial.Base
@@ -180,18 +185,119 @@ theorem pseudo_deposit_blocked_at_candidate_stage
     ¬c_can_withdraw acl a B d t :=
   V_stripped_not_withdrawable d t h_V h_τ
 
-/-- ddos_blocked_via_V_gate: DDoS-induced V-channel exhaustion is blocked at the V gate.
+/-! ### Concrete DDoS V-Channel Collapse -/
 
-    A DDoS attack (AttackLevel.DDoS) overwhelms the audit channel so provenance
-    checking cannot complete. The concrete outcome is d.V = [] (verification collapse).
-    Any such deposit is blocked at .Candidate stage. The hypothesis
-    `channel_overwhelmed c` makes the connection to AdversarialBase explicit. -/
-theorem ddos_blocked_via_V_gate
+/-- overwhelmed_channel_collapses_V: an overwhelmed channel with a capacity deficit
+    for the pending provenance chain returns an empty result.
+
+    **Theorem shape:** c_channel_overwhelmed cc → sources.length > cc.capacity
+                       → c_process_V cc sources = [].
+
+    **Proof strategy:** c_process_V fires the else-branch when the if-guard
+    `sources.length ≤ cc.capacity` fails. The guard fails because h_deficit gives
+    `sources.length > cc.capacity`; if_neg + Nat.lt_irrefl close the goal. -/
+theorem overwhelmed_channel_collapses_V (cc : CAuditChannel) (sources : CProvenance)
+    (_ : c_channel_overwhelmed cc)
+    (h_deficit : sources.length > cc.capacity) :
+    c_process_V cc sources = [] := by
+  unfold c_process_V
+  rw [if_neg (fun h_le =>
+    Nat.lt_irrefl cc.capacity (Nat.lt_of_lt_of_le h_deficit h_le))]
+
+/-- ddos_V_channel_collapse_blocks_withdrawal: DDoS V-channel overload is traced
+    all the way through to a blocked withdrawal at the concrete V gate.
+
+    **Theorem shape:** c_channel_overwhelmed cc → sources.length > cc.capacity
+                       → d.V = c_process_V cc sources → d.τ > t + 10
+                       → ¬c_can_withdraw acl a B d t.
+
+    Chain:
+    1. c_channel_overwhelmed cc  — volume > capacity (DDoS active, Nat inequality)
+    2. sources.length > cc.capacity — this deposit's V-check exceeds remaining capacity
+    3. overwhelmed_channel_collapses_V → c_process_V cc sources = []  (channel math)
+    4. h_V bridges channel to deposit: d.V = c_process_V cc sources
+    5. d.V.length = 0 → V_stripped_not_withdrawable closes the goal
+
+    h_V is the modeling bridge: it states that the deposit's V field was populated
+    by routing through channel cc, so the collapsed channel result is what the
+    deposit actually carries when it arrives at the withdrawal gate. -/
+theorem ddos_V_channel_collapse_blocks_withdrawal
     {acl : CACL} {a : CAgent} {B : CBubble}
-    (c : AuditChannel) (_ : channel_overwhelmed c)
-    (d : CDeposit) (t : CTime) (h_V : d.V.length = 0) (h_τ : d.τ > t + 10) :
-    ¬c_can_withdraw acl a B d t :=
-  V_stripped_not_withdrawable d t h_V h_τ
+    (cc : CAuditChannel)
+    (h_overwhelmed : c_channel_overwhelmed cc)
+    (sources : CProvenance) (h_deficit : sources.length > cc.capacity)
+    (d : CDeposit) (t : CTime)
+    (h_V : d.V = c_process_V cc sources)
+    (h_τ : d.τ > t + 10) :
+    ¬c_can_withdraw acl a B d t := by
+  have h_empty : c_process_V cc sources = [] :=
+    overwhelmed_channel_collapses_V cc sources h_overwhelmed h_deficit
+  have h_d_V : d.V.length = 0 := by rw [h_V, h_empty]; rfl
+  exact V_stripped_not_withdrawable d t h_d_V h_τ
+
+/-! ========================================================================
+    STEP 4 — EXPORT GATE: STRIPPED DEPOSITS CANNOT CROSS BUBBLE BOUNDARIES
+    ========================================================================
+
+    c_valid_export requires either:
+    (a) req.revalidated = true (deposit re-checked at destination), or
+    (b) a trust bridge exists whose source matches the exporting bubble.
+
+    V-spoofing and DDoS V-channel collapse produce deposits with V = [], which
+    cannot be revalidated without re-running provenance checks from scratch.
+    Absent both gates, c_valid_export = false and c_import_deposit = none. -/
+
+/-- invalid_export_requires_reval_or_bridge: absent both revalidation and trust bridge,
+    c_valid_export returns false.
+
+    **Theorem shape:** req.revalidated = false → req.via_trust_bridge = none
+                       → c_valid_export req = false.
+
+    **Proof strategy:** c_valid_export unfolds to a || / && Boolean expression.
+    Substituting false and none causes all components to evaluate to false; rfl
+    closes via definitional reduction. -/
+theorem invalid_export_requires_reval_or_bridge (req : CExportRequest)
+    (h_no_reval : req.revalidated = false)
+    (h_no_bridge : req.via_trust_bridge = none) :
+    c_valid_export req = false := by
+  unfold c_valid_export
+  rw [h_no_reval, h_no_bridge]
+  -- false || (none.isSome && none.any f) reduces to false = false definitionally
+  rfl
+
+/-- missing_export_gate_blocks_import: when c_valid_export returns false,
+    c_import_deposit returns none — the deposit is not admitted to the target bubble.
+
+    **Proof strategy:** c_import_deposit is if-then-else on c_valid_export; the false
+    branch evaluates to none. rfl after rw [h] closes the goal. -/
+theorem missing_export_gate_blocks_import (req : CExportRequest)
+    (h : c_valid_export req = false) :
+    c_import_deposit req = none := by
+  unfold c_import_deposit
+  -- c_valid_export req : Bool; case-split to reduce the if-then-else
+  cases hb : c_valid_export req with
+  | false => rfl
+  | true  => exact absurd h (by rw [hb]; decide)
+
+/-- V_spoof_blocks_cross_bubble_reliance: a deposit whose provenance was spoofed or
+    DDoS-collapsed (V = []) cannot cross bubble boundaries without pre-established
+    trust infrastructure.
+
+    Attack surface: V-spoofing and DDoS V-channel collapse both produce deposits
+    with empty V fields. Absent a trust bridge and without revalidation, the export
+    gate (c_valid_export) returns false and c_import_deposit returns none.
+
+    h_V names the V-spoofing / collapse surface. The proof flows through the
+    reval / bridge gate because c_valid_export does not inspect V directly — it
+    enforces the meta-level protocol gates (revalidation, trust bridge) that are
+    supposed to compensate for potentially stripped provenance. -/
+theorem V_spoof_blocks_cross_bubble_reliance (req : CExportRequest)
+    (_h_V : req.deposit.V.length = 0)
+    (h_no_reval : req.revalidated = false)
+    (h_no_bridge : req.via_trust_bridge = none) :
+    c_import_deposit req = none :=
+  missing_export_gate_blocks_import req
+    (invalid_export_requires_reval_or_bridge req h_no_reval h_no_bridge)
 
 /-! ## Full-Stack Attack Witness -/
 
