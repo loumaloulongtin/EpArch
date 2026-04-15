@@ -17,9 +17,17 @@ Four-step demonstration connecting the abstract attack vocabulary
   derivation chain through CAuditChannel (capacity arithmetic → V = [] →
   V gate fires). A concrete FullStackAttack witness satisfies attack_succeeds.
 
-- Step 4: The export gate: stripped deposits cannot cross bubble boundaries
-  without revalidation or a pre-established trust bridge. c_valid_export
-  returns false absent both, and c_import_deposit returns none.
+- Step 4: The export gate conditions: c_valid_export requires revalidation or a
+  trust bridge. Absent both, c_import_deposit returns none. Invocation order
+  ("withdrawal must precede export") cannot be enforced architecturally for two
+  independent reasons: (a) bounded verification — CAuditChannel capacity is finite,
+  so trust-bridge transfers are legitimate and bypass the withdrawal-first sequence;
+  (b) decentralization — bubble B has no read access to bubble A's withdrawal
+  ledger; the claim "this was withdrawn from A" arrives only as content of the
+  CExportRequest the agent constructs, and an agent could fabricate that content
+  entirely. Both constraints are foundational, not relaxable. The delegation to the
+  agent layer is therefore theorem-backed, not a design shortcut.
+  EpArch proves the gate conditions are un-bypassable when invoked.
 -/
 
 import EpArch.Adversarial.Base
@@ -236,16 +244,92 @@ theorem ddos_V_channel_collapse_blocks_withdrawal
   exact V_stripped_not_withdrawable d t h_d_V h_τ
 
 /-! ========================================================================
-    STEP 4 — EXPORT GATE: STRIPPED DEPOSITS CANNOT CROSS BUBBLE BOUNDARIES
+    STEP 4 — EXPORT GATE CONDITIONS
     ========================================================================
 
-    c_valid_export requires either:
+    CExportRequest packages a deposit with gate metadata (revalidated flag,
+    trust bridge). It carries no agent and no proof of prior withdrawal —
+    the model does not structurally enforce that an agent must successfully
+    withdraw from the source bubble before constructing an export request.
+
+    This is not a gap, and the delegation is not optional — it is forced by
+    two independent constraints that are both foundational to the model.
+
+    REASON 1 — BOUNDED VERIFICATION:
+    (1) Verification capacity is bounded. CAuditChannel models a finite
+        capacity/volume pair; the DDoS proofs in Step 3 use exactly this
+        arithmetic. This is a foundational constraint of the model.
+    (2) Full re-verification on every cross-bubble transfer is therefore not
+        always possible. A received deposit may reference provenance sources
+        that are no longer reachable, or revalidation cost may exceed available
+        channel capacity.
+    (3) The trust-bridge path in c_valid_export is the architecture's required
+        response to (1)–(2). Epistemic equivalence certified by a mutually
+        trusted party is legitimate precisely because full re-verification is
+        not always available — not a shortcut.
+    (4) A valid trust-bridge transfer need not reduce to a single
+        withdraw-first protocol shape, so enforcing "withdrawal must precede
+        export" as a universal structural invariant would rule out legitimate
+        transfer topologies.
+
+    REASON 2 — DECENTRALIZATION:
+    (5) Bubbles are independent ledgers. Each bubble owns its own state;
+        there is no shared cross-bubble withdrawal registry.
+    (6) Bubble B has no read access to bubble A's ledger. The only evidence
+        bubble B receives about events in bubble A is what the agent presents
+        in the CExportRequest — specifically, the deposit value and gate flags.
+    (7) An agent could therefore construct a CExportRequest carrying a deposit
+        that was never withdrawn from A, labelling it with whatever provenance
+        chain it chooses. "Deposit d was withdrawn from bubble A" is not a
+        verifiable fact at the architecture level; it is an assertion by the
+        agent.
+    (8) Even infinite verification capacity does not resolve (5)–(7): the
+        problem is not that verification is expensive, it is that the
+        withdrawal record is not accessible to the receiving bubble at all.
+        "Withdrawal must precede export" is unverifiable cross-bubble except
+        in the degenerate case of a single-bubble system — which has no
+        cross-bubble transfer to enforce.
+
+    Both reasons independently force the same conclusion: invocation order
+    must be delegated to the agent layer. EpArch's claim is therefore precise:
+    the gate conditions themselves are un-bypassable. c_valid_export requires:
     (a) req.revalidated = true (deposit re-checked at destination), or
     (b) a trust bridge exists whose source matches the exporting bubble.
+    Absent both, c_valid_export = false and c_import_deposit = none.
 
-    V-spoofing and DDoS V-channel collapse produce deposits with V = [], which
-    cannot be revalidated without re-running provenance checks from scratch.
-    Absent both gates, c_valid_export = false and c_import_deposit = none. -/
+    Several legitimate engineering approaches can implement the agent-layer
+    obligation — EpArch does not endorse or prohibit any of them. What it
+    does establish is where each one sits in the stack:
+    - A daemon or event-relay watching bubble A and writing withdrawal events
+      into bubble B is a sound design choice. EpArch classifies it as an agent:
+      it holds claims about A's state and asserts them into B's context, so the
+      bank's gate conditions apply to its deposits. The invocation-order
+      guarantee is now the daemon's protocol responsibility, not the bank's.
+    - Replication is a sound design choice for availability, but it does not
+      substitute for validation. A replication mechanism that copies epistemic
+      state as-is propagates V, τ, and E faithfully — including malformed or
+      fabricated values. Distinguishing valid from fabricated requires running
+      the gate conditions, which is exactly what the replicating agent is
+      responsible for doing before or after replication.
+    - Merging bubbles A and B into a single bubble is a sound design choice
+      when the accountability boundary between them is not needed. It removes
+      the cross-bubble transfer problem by removing the boundary. The agent-
+      layer obligation reappears as soon as a second bubble is introduced.
+    - A cryptographic signature from bubble A certifying "d was withdrawn" is
+      a sound design choice and a natural fit for the trust-bridge path. The
+      entity that holds the verification key, checks revocation, and asserts
+      "this signature is valid and was produced under the correct withdrawal
+      conditions" is performing the epistemic act EpArch assigns to an agent.
+      The crypto layer is the mechanism; the agent is the entity accountable
+      for its correct use. EpArch does not specify which mechanism agents must
+      use — that is precisely what it delegates.
+
+    The bubble boundary is the epistemic accountability boundary. The agent
+    layer is the right place for these decisions because agents have the
+    deployment-specific context — topology, key infrastructure, replication
+    strategy — that the architecture deliberately does not carry. EpArch
+    proves the gates are sound regardless of which mechanism the agent uses
+    to satisfy them. -/
 
 /-- invalid_export_requires_reval_or_bridge: absent both revalidation and trust bridge,
     c_valid_export returns false.
@@ -279,18 +363,22 @@ theorem missing_export_gate_blocks_import (req : CExportRequest)
   | false => rfl
   | true  => exact absurd h (by rw [hb]; decide)
 
-/-- V_spoof_blocks_cross_bubble_reliance: a deposit whose provenance was spoofed or
-    DDoS-collapsed (V = []) cannot cross bubble boundaries without pre-established
-    trust infrastructure.
+/-- V_spoof_blocks_cross_bubble_reliance: absent revalidation and trust bridge,
+    c_import_deposit returns none — the export gate condition is not met.
 
-    Attack surface: V-spoofing and DDoS V-channel collapse both produce deposits
-    with empty V fields. Absent a trust bridge and without revalidation, the export
-    gate (c_valid_export) returns false and c_import_deposit returns none.
+    _h_V names the V-spoofing / collapse surface, but c_valid_export does not inspect
+    V directly. It enforces the meta-level protocol gates (revalidation, trust bridge)
+    that are supposed to compensate for potentially stripped provenance. V = [] is the
+    motivation for why those gates matter, not a direct input to the gate check.
 
-    h_V names the V-spoofing / collapse surface. The proof flows through the
-    reval / bridge gate because c_valid_export does not inspect V directly — it
-    enforces the meta-level protocol gates (revalidation, trust bridge) that are
-    supposed to compensate for potentially stripped provenance. -/
+    Whether a deposit with V = [] is also un-withdrawable — and therefore the agent
+    could not have assembled this export request honestly — is true in practice but
+    is an agent-layer invariant, not proved here. Two independent constraints place
+    it there: (a) bounded verification means trust-bridge transfers legitimately
+    bypass the withdrawal-first sequence; (b) bubbles are decentralized — bubble B
+    cannot read bubble A's ledger, so "this was withdrawn from A" is an unverifiable
+    claim regardless of verification capacity. EpArch's claim is: if the request
+    arrives at c_import_deposit without reval or bridge, it is rejected. -/
 theorem V_spoof_blocks_cross_bubble_reliance (req : CExportRequest)
     (_h_V : req.deposit.V.length = 0)
     (h_no_reval : req.revalidated = false)
