@@ -384,14 +384,10 @@ theorem lies_scale_concrete :
     STEP 5B — CONCRETE BOUNDARY-CONDITION WITNESSES
     ========================================================================
 
-    Three boundary-condition W bundles can be concretely discharged by
-    constructing an explicit PathExists with all fields true.  The `full_path`
-    helper shows that any Deposit type admits such a path — PathExists is a
-    record of three Bools, none of which references the deposit's contents.
-
-    W_E_inclusion and W_reversibility carry opaque predicates
-    (verification_collapsed, τ_compress) that cannot be reduced to
-    CDeposit-level arithmetic.  They are listed as open items below. -/
+    Four boundary-condition W bundles are concretely discharged by deriving
+    both PathExists proof fields (ttl_valid, status_live) from hypotheses.
+    No Bool fields; no hand-set values.  W_E_inclusion remains undischarged
+    (see open items at end of file). -/
 
 /-- Concrete W_cheap_validator: for a non-revoked deposit with positive TTL, a reachable
     cheap validator produces a PathExists witness with both proof fields derived from
@@ -444,10 +440,7 @@ def concrete_W_reversibility :
   { reversibility_survives_τ_compress := fun _t_orig _t_compressed _d h_rev _h_compress h_s =>
       { ttl_valid := h_rev, status_live := h_s } }
 
-/-! W_E_inclusion concrete witness is not discharged here.
-    `E_includes_threat : Agent → Prop` cannot be grounded from the abstract `Agent`
-    type (which is `Nat`-indexed with no E field). Grounding it requires either adding
-    a capability field to abstract `Agent` or a separate predicate-bridge layer. -/
+
 
 /-! ========================================================================
     STEP 5C — CONCRETE DDoS V-CHANNEL EXHAUSTION NAMED THEOREM
@@ -486,5 +479,68 @@ theorem concrete_V_channel_exhaustion_obligation
   ddos_V_channel_collapse_blocks_withdrawal cc h_overwhelmed sources h_deficit d t h_V h_τ
 
 end ConcreteObligationWitnesses
+
+
+/-! ========================================================================
+    OPEN ITEMS — PERMANENT EXTENSION POINTS
+    ========================================================================
+
+    The items below are intentionally left open in this repository.  They are
+    not bugs or planned work — they mark the boundary where the abstract
+    Deposit/Agent kernel ends and richer agent models begin.  Each one is an
+    entry point for anyone interested in extending the formalization with
+    concrete agent structure.
+
+    ### 1. `E_includes_threat` remains opaque (Base.lean)
+
+    `E_includes_threat : Agent → Prop` cannot be grounded as a `def` because
+    the abstract `Agent` type is `Nat`-indexed with no capability or
+    expertise field.  Grounding it requires either:
+    - adding a capability/expertise field to abstract `Agent`, or
+    - a separate predicate-bridge layer that maps `Agent` to a richer type
+      carrying an E-field.
+    Either route changes the agent model beyond what this kernel commits to.
+    `W_E_inclusion` therefore has no concrete witness in this file.
+
+    ### 2. `collapse_causes_centralization_of_W` is a field projection
+
+    The obligation theorem `collapse_causes_centralization_of_W` extracts
+    `W_collapse_centralization.exhaustion_triggers_delegation` directly.
+    Both `verification_collapsed` and `trust_centralized` are opaque
+    agent-level predicates — the abstract kernel cannot define what
+    "verification collapse" or "trust centralization" look like internally.
+    A concrete discharge requires an agent model that specifies when an
+    agent's verification capacity is exhausted and when it delegates.
+
+    ### 3. `lies_scale_of_W` is a field projection (with concrete satisfier)
+
+    The obligation theorem `lies_scale_of_W` extracts
+    `W_lies_scale.asymmetry_holds`.  Unlike item 2, this bundle *does* have
+    a concrete satisfier: `concrete_W_lies_scale` in Step 5A above grounds
+    the cost asymmetry via `c_export_cost_lt_verify_cost` with real Nat
+    arithmetic.  The theorem body is still a field return, but the bundle
+    is non-vacuously inhabited at the concrete layer.
+
+    ### 4. `concrete_V_channel_exhaustion_obligation` is a named restatement
+
+    The concrete DDoS V-channel exhaustion theorem (Step 5C) names the same
+    chain as `ddos_V_channel_collapse_blocks_withdrawal` (Step 3).  It is
+    not a deeper end-to-end discharge of the full abstract `W_ddos` bundle;
+    it covers only the `V_exhaustion_collapses` vector.  The other three
+    vectors (`ladder_overloaded`, `E_field_poisoned`, `denial_triggered`)
+    remain opaque agent-level predicates.  Concretely discharging them
+    requires an agent model that specifies traction formation, E-field
+    noise thresholds, and trust-import dynamics respectively.
+
+    ────────────────────────────────────────────────────────────────────────
+    All four items converge on the same design boundary: the abstract kernel
+    treats agents as unscripted (`Agent := Nat`-indexed, no internal fields).
+    Any extension that adds agent-internal structure (expertise fields,
+    verification budgets, traction dynamics, trust-delegation rules) can
+    ground one or more of these items without changing the existing proof
+    surface.  The modular architecture (Meta/Config.lean, ClusterRegistry)
+    supports registering new clusters for such extensions.
+    ======================================================================== -/
+
 
 end EpArch.Adversarial.Concrete
