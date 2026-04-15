@@ -482,6 +482,40 @@ def LeanGroundedRedeemabilityStrict : GroundedRedeemabilityStrict :=
   GroundedRedeemabilityStrict.mk' LeanGroundedRedeemability
 
 
+/-! ### Authorization: Kernel Agents vs User Code -/
+
+/-- Two agent kinds in the Lean kernel authorization model.
+    The kernel's elaboration engine has unrestricted access to all primitives;
+    user code can only access exported declarations. -/
+private inductive LeanAuthAgentKind where
+  | kernel   -- the Lean elaboration engine
+  | userCode -- user-authored declarations
+  deriving DecidableEq
+
+/-- Two claim kinds in the Lean kernel authorization model. -/
+private inductive LeanAuthClaimKind where
+  | kernelPrimitive -- a built-in kernel primitive (e.g., `Nat.rec`)
+  | userDecl        -- a user-declared definition
+  deriving DecidableEq
+
+/-- Authorization predicate: kernel can access everything; user code can only access userDecl. -/
+private def leanAuthorize : LeanAuthAgentKind → LeanAuthClaimKind → Prop :=
+  fun a _ => a = .kernel
+
+/-- Authorization evidence: `userCode` cannot access `kernelPrimitive` directly.
+
+    The restriction holds: `leanAuthorize .userCode .kernelPrimitive = (.userCode = .kernel) = False`,
+    which means a uniform authorization policy (all agents authorized) contradicts
+    the known kernel-primitive restriction. -/
+def LeanGroundedAuthorization : GroundedAuthorization where
+  Agent            := LeanAuthAgentKind
+  Claim            := LeanAuthClaimKind
+  authorize        := leanAuthorize
+  restricted_agent := .userCode
+  restricted_claim := .kernelPrimitive
+  restriction_holds := fun h => nomatch h
+
+
 /-! ### Full Grounded Spec -/
 
 /-- All-false base: every `true` in `toSystemSpec` comes from evidence. -/
@@ -492,16 +526,18 @@ private def leanZeroSpec : SystemSpec where
   has_revocation        := false
   has_shared_ledger     := false
   has_redeemability     := false
+  has_granular_acl      := false
 
-/-- The Lean kernel's `GroundedSystemSpec`: all six Bank features backed by evidence.
-    | Feature        | Evidence                                                     |
-    |----------------|--------------------------------------------------------------|
-    | `bubbles`      | Nat vs Int namespaces disagree on `add` (LeanName data)      |
-    | `trust_bridges`| Init declarations available downstream via `import`          |
-    | `headers`      | `Nat.succ` type sig preserved through identity export        |
-    | `revocation`   | sorry-tainted terms quarantined by the kernel TCB            |
-    | `bank`         | Shared `Environment`: Init produces, user consumes           |
-    | `redeemability`| `#print axioms` provides the audit path for any claim        | -/
+/-- The Lean kernel's `GroundedSystemSpec`: all seven Bank features backed by evidence.
+    | Feature           | Evidence                                                         |
+    |-------------------|------------------------------------------------------------------|
+    | `bubbles`         | Nat vs Int namespaces disagree on `add` (LeanName data)          |
+    | `trust_bridges`   | Init declarations available downstream via `import`              |
+    | `headers`         | `Nat.succ` type sig preserved through identity export            |
+    | `revocation`      | sorry-tainted terms quarantined by the kernel TCB                |
+    | `bank`            | Shared `Environment`: Init produces, user consumes               |
+    | `redeemability`   | `#print axioms` provides the audit path for any claim            |
+    | `authorization`   | Kernel agent has privileged access; user code is restricted      | -/
 def LeanGroundedSystemSpec : GroundedSystemSpec where
   bubbles       := LeanGroundedBubbles
   trust_bridges := LeanGroundedTrustBridges
@@ -509,20 +545,22 @@ def LeanGroundedSystemSpec : GroundedSystemSpec where
   revocation    := LeanGroundedRevocation
   bank          := LeanGroundedBank
   redeemability := LeanGroundedRedeemability
+  authorization := LeanGroundedAuthorization
   base          := leanZeroSpec
 
 
-/-- `LeanGroundedBehavior`: evidence for all six behavioral capabilities,
+/-- `LeanGroundedBehavior`: evidence for all seven behavioral capabilities,
     one per architectural forcing dimension.
 
-    | WorkingSystem field  | Evidence                  | Kernel basis                              |
-    |----------------------|---------------------------|-------------------------------------------|
-    | `bubbles_ev`         | `LeanGroundedBubbles`     | Nat vs Int namespaces disagree on `add`   |
-    | `bridges_ev`         | `LeanGroundedTrustBridges`| Init declarations relied on via import    |
-    | `headers_ev`         | `LeanGroundedHeaders`     | Type sig preserved through identity export|
-    | `revocation_ev`      | `LeanGroundedRevocation`  | sorry-tainted terms can be quarantined    |
-    | `bank_ev`            | `LeanGroundedBank`        | InitDef accumulated in Env, consumed      |
-    | `redeemability_ev`   | `LeanGroundedRedeemability`| `#print axioms` provides the audit path  | -/
+    | WorkingSystem field  | Evidence                     | Kernel basis                                |
+    |----------------------|------------------------------|---------------------------------------------|
+    | `bubbles_ev`         | `LeanGroundedBubbles`        | Nat vs Int namespaces disagree on `add`     |
+    | `bridges_ev`         | `LeanGroundedTrustBridges`   | Init declarations relied on via import      |
+    | `headers_ev`         | `LeanGroundedHeaders`        | Type sig preserved through identity export  |
+    | `revocation_ev`      | `LeanGroundedRevocation`     | sorry-tainted terms can be quarantined      |
+    | `bank_ev`            | `LeanGroundedBank`           | InitDef accumulated in Env, consumed        |
+    | `redeemability_ev`   | `LeanGroundedRedeemability`  | `#print axioms` provides the audit path     |
+    | `authorization_ev`   | `LeanGroundedAuthorization`  | Kernel agent privileged; user code restricted | -/
 def LeanGroundedBehavior : GroundedBehavior where
   bubbles       := LeanGroundedBubbles
   trust_bridges := LeanGroundedTrustBridges
@@ -530,6 +568,7 @@ def LeanGroundedBehavior : GroundedBehavior where
   revocation    := LeanGroundedRevocation
   bank          := LeanGroundedBank
   redeemability := LeanGroundedRedeemability
+  authorization := LeanGroundedAuthorization
 
 /-- `LeanWorkingSystem`: the Lean kernel modeled as an EpArch `WorkingSystem`.
 
@@ -545,15 +584,13 @@ def LeanGroundedBehavior : GroundedBehavior where
     | `revocation_ev`                | `some (LeanGroundedRevocation.toStrict)`                |
     | `bank_ev`                      | `some (LeanGroundedBank.toStrict)`                      |
     | `redeemability_ev`             | `some (LeanGroundedRedeemability.toStrict)`             |
+    | `authorization_ev`             | `some (LeanGroundedAuthorization.toStrict)`             |
 
-    Because each `_ev` field is `some`, `Option.isSome = true` and all six
+    Because each `_ev` field is `some`, `Option.isSome = true` and all seven
     `handles_*` predicates hold (`SatisfiesAllProperties`).
 
-    All six `HasX` predicates are satisfied via `grounded_spec_contains_all
-    LeanGroundedSystemSpec`, which reads the corresponding `SystemSpec` fields
-    (`has_bubble_separation`, `has_trust_bridges`, `preserves_headers`,
-    `has_revocation`, `has_shared_ledger`, `has_redeemability`) set to `true`
-    by `LeanGroundedSystemSpec.toSystemSpec`. -/
+    All seven `HasX` predicates are satisfied via `grounded_spec_contains_all
+    LeanGroundedSystemSpec`. -/
 def LeanWorkingSystem : WorkingSystem :=
   WorkingSystem.withGroundedBehavior LeanGroundedBehavior
     { spec               := LeanGroundedSystemSpec.toSystemSpec
@@ -593,12 +630,16 @@ theorem lean_has_bank : HasBank LeanWorkingSystem := by
 
 theorem lean_has_redeemability : HasRedeemability LeanWorkingSystem := by
   unfold HasRedeemability LeanWorkingSystem
-  exact (grounded_spec_contains_all LeanGroundedSystemSpec).2.2.2.2.2
+  exact (grounded_spec_contains_all LeanGroundedSystemSpec).2.2.2.2.2.1
+
+theorem lean_has_granular_acl : HasGranularACL LeanWorkingSystem := by
+  unfold HasGranularACL LeanWorkingSystem
+  exact (grounded_spec_contains_all LeanGroundedSystemSpec).2.2.2.2.2.2
 
 
 /-! ## Direct Implementation: Bank Primitives by Construction -/
 
-/-- `LeanWorkingSystem` directly implements all six Bank primitives.
+/-- `LeanWorkingSystem` directly implements all seven Bank primitives.
 
     This is the *direct* route — independent of the convergence theorem.
     It does not say "any system handling X must have Y, and this system
@@ -610,14 +651,15 @@ theorem lean_has_redeemability : HasRedeemability LeanWorkingSystem := by
     spec are set by `GroundedSystemSpec.toSystemSpec`, which requires each
     `GroundedX` witness to have been supplied.
 
-    | HasX primitive      | Evidence basis                                        |
-    |---------------------|-------------------------------------------------------|
+    | HasX primitive      | Evidence basis                                          |
+    |---------------------|---------------------------------------------------------|
     | `HasBubbles`        | `LeanGroundedBubbles` (Nat vs Int namespace disagreement) |
     | `HasTrustBridges`   | `LeanGroundedTrustBridges` (`import Init` trust bridge) |
-    | `HasHeaders`        | `LeanGroundedHeaders` (`Nat.succ` type sig preserved)  |
-    | `HasRevocation`     | `LeanGroundedRevocation` (sorry-tainted → quarantine)  |
-    | `HasBank`           | `LeanGroundedBank` (InitDef produced and consumed)     |
-    | `HasRedeemability`  | `LeanGroundedRedeemability` (`#print axioms` audit path)| -/
+    | `HasHeaders`        | `LeanGroundedHeaders` (`Nat.succ` type sig preserved)   |
+    | `HasRevocation`     | `LeanGroundedRevocation` (sorry-tainted → quarantine)   |
+    | `HasBank`           | `LeanGroundedBank` (InitDef produced and consumed)      |
+    | `HasRedeemability`  | `LeanGroundedRedeemability` (`#print axioms` audit path)|
+    | `HasGranularACL`    | `LeanGroundedAuthorization` (kernel/user ACL boundary)  | -/
 theorem lean_implements_bank_primitives : containsBankPrimitives LeanWorkingSystem := by
   intro P
   cases P
@@ -627,6 +669,7 @@ theorem lean_implements_bank_primitives : containsBankPrimitives LeanWorkingSyst
   · exact lean_has_revocation
   · exact lean_has_bank
   · exact lean_has_redeemability
+  · exact lean_has_granular_acl
 
 /-- `LeanWorkingSystem` is partially well-formed at all constraints: stored
     evidence fields ↔ architectural features.
@@ -763,6 +806,7 @@ def lean_forcing_embedding : ForcingEmbedding LeanWorkingSystem where
     | .revocation    => Or.inl lean_has_revocation
     | .bank          => Or.inl lean_has_bank
     | .redeemability => Or.inl lean_has_redeemability
+    | .authorization => Or.inl lean_has_granular_acl
 
 /-- `LeanWorkingSystem` is structurally forced — derived from the
     forcing embedding via the generic translation layer. -/

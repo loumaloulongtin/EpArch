@@ -274,7 +274,54 @@ def GroundedRedeemability.toStrict (G : GroundedRedeemability) : GroundedRedeema
   has_constrained_redeemable_witness := ⟨G.witness, G.is_constrained, G.has_path⟩
 
 
-/-! ## GroundedSystemSpec: All Six Features from Evidence -/
+/-! ## GroundedAuthorization -/
+
+/-- Evidence that a system has a granular authorization surface.
+
+    A granular ACL requires: some agent is demonstrably restricted from
+    some claim (`¬authorize restricted_agent restricted_claim`).  This
+    witnesses that the authorization surface is non-trivial — not all
+    agents are uniformly authorized. -/
+structure GroundedAuthorization where
+  /-- The agent type. -/
+  Agent            : Type
+  /-- The claim type. -/
+  Claim            : Type
+  /-- The authorization predicate. -/
+  authorize        : Agent → Claim → Prop
+  /-- An agent that should be restricted. -/
+  restricted_agent : Agent
+  /-- A claim they cannot access. -/
+  restricted_claim : Claim
+  /-- The restriction holds: this agent is not authorized for this claim. -/
+  restriction_holds : ¬authorize restricted_agent restricted_claim
+
+/-- Build a `SystemSpec` with `has_granular_acl = true` from evidence. -/
+def SystemSpec.withGroundedAuthorization (G : GroundedAuthorization) (rest : SystemSpec) : SystemSpec :=
+  let _ev := G.restriction_holds
+  { rest with has_granular_acl := true }
+
+theorem grounded_authorization_justified (G : GroundedAuthorization) (rest : SystemSpec) :
+    spec_has_granular_acl (SystemSpec.withGroundedAuthorization G rest) := by
+  unfold spec_has_granular_acl SystemSpec.withGroundedAuthorization
+  rfl
+
+/-- `GroundedAuthorization` augmented with the uniform-access impossibility.
+    `no_uniform_access` states that a policy authorizing ALL agents to ALL claims
+    cannot coexist with the known restriction — granular ACL is non-vacuous. -/
+structure GroundedAuthorizationStrict where
+  base             : GroundedAuthorization
+  /-- A uniform authorization policy (all agents authorized) is impossible
+      given the known restriction. -/
+  no_uniform_access : ¬∀ (a : base.Agent) (P : base.Claim), base.authorize a P
+
+/-- Derive `GroundedAuthorizationStrict` from base evidence. -/
+def GroundedAuthorization.toStrict (G : GroundedAuthorization) : GroundedAuthorizationStrict where
+  base := G
+  no_uniform_access := fun h_all => G.restriction_holds (h_all G.restricted_agent G.restricted_claim)
+
+
+/-! ## GroundedSystemSpec: All Seven Features from Evidence -/
 
 /-- A fully grounded system specification: all six EpArch features backed by
     domain evidence rather than declared Boolean flags.
@@ -293,6 +340,7 @@ structure GroundedSystemSpec where
   revocation    : GroundedRevocation
   bank          : GroundedBank
   redeemability : GroundedRedeemability
+  authorization : GroundedAuthorization
   base          : SystemSpec
 
 /-- Convert a `GroundedSystemSpec` to a concrete `SystemSpec`.
@@ -301,12 +349,13 @@ structure GroundedSystemSpec where
     all six applications every field is `true`, but each `true` was set by
     construction from evidence — not by writing `true` in a record literal. -/
 def GroundedSystemSpec.toSystemSpec (G : GroundedSystemSpec) : SystemSpec :=
-  SystemSpec.withGroundedRedeemability G.redeemability
-    (SystemSpec.withGroundedBank G.bank
-      (SystemSpec.withGroundedRevocation G.revocation
-        (SystemSpec.withGroundedHeaders G.headers
-          (SystemSpec.withGroundedTrustBridges G.trust_bridges
-            (SystemSpec.withGroundedBubbles G.bubbles G.base)))))
+  SystemSpec.withGroundedAuthorization G.authorization
+    (SystemSpec.withGroundedRedeemability G.redeemability
+      (SystemSpec.withGroundedBank G.bank
+        (SystemSpec.withGroundedRevocation G.revocation
+          (SystemSpec.withGroundedHeaders G.headers
+            (SystemSpec.withGroundedTrustBridges G.trust_bridges
+              (SystemSpec.withGroundedBubbles G.bubbles G.base))))))
 
 /-- A fully grounded spec satisfies `containsAllFeatures` — and the proof
     does not depend on any manually set `Bool` flag.  Every `spec_has_X` holds
@@ -314,11 +363,12 @@ def GroundedSystemSpec.toSystemSpec (G : GroundedSystemSpec) : SystemSpec :=
 theorem grounded_spec_contains_all (G : GroundedSystemSpec) :
     containsAllFeatures (G.toSystemSpec) := by
   unfold containsAllFeatures GroundedSystemSpec.toSystemSpec
-         SystemSpec.withGroundedRedeemability SystemSpec.withGroundedBank
-         SystemSpec.withGroundedRevocation SystemSpec.withGroundedHeaders
-         SystemSpec.withGroundedTrustBridges SystemSpec.withGroundedBubbles
+         SystemSpec.withGroundedAuthorization SystemSpec.withGroundedRedeemability
+         SystemSpec.withGroundedBank SystemSpec.withGroundedRevocation
+         SystemSpec.withGroundedHeaders SystemSpec.withGroundedTrustBridges
+         SystemSpec.withGroundedBubbles
          spec_has_bubbles spec_has_trust_bridges spec_has_headers
-         spec_has_revocation spec_has_bank spec_has_redeemability
+         spec_has_revocation spec_has_bank spec_has_redeemability spec_has_granular_acl
   simp
 
 end EpArch

@@ -232,6 +232,7 @@ def concreteSystemSpec : SystemSpec where
   has_revocation := true          -- CDepositStatus.Revoked
   has_shared_ledger := true       -- CGlobalLedger
   has_redeemability := true       -- CConstraintSurface
+  has_granular_acl := true        -- CACL provides agent-specific access control
 
 /-! ## Concrete GroundedX Witnesses
 
@@ -308,7 +309,21 @@ private def concRedeemability : GroundedRedeemability where
   is_constrained := rfl
   has_path       := True.intro
 
-/-- The concrete working system: all six proof-carrying option fields set
+/-- Concrete authorization evidence: `.restricted` cannot access `.authorized` claims.
+
+    Two agent kinds: `.authorized` (full access) and `.restricted` (no access).
+    The restriction holds trivially by `decide`. -/
+private inductive ConcAuthKind where | authorized | restricted deriving DecidableEq
+
+private def concAuthorization : GroundedAuthorization where
+  Agent            := ConcAuthKind
+  Claim            := ConcAuthKind
+  authorize        := fun a _ => a = .authorized
+  restricted_agent := .restricted
+  restricted_claim := .authorized
+  restriction_holds := by decide
+
+/-- The concrete working system: all seven proof-carrying option fields set
     from concrete domain evidence. -/
 def ConcreteWorkingSystem : WorkingSystem where
   spec             := concreteSystemSpec
@@ -318,6 +333,7 @@ def ConcreteWorkingSystem : WorkingSystem where
   revocation_ev    := some concRevocation.toStrict
   bank_ev          := some concBank.toStrict
   redeemability_ev := some concRedeemability.toStrict
+  authorization_ev := some concAuthorization.toStrict
 
 
 /-! ## Has* Predicates Hold for Concrete Model
@@ -348,6 +364,10 @@ theorem concrete_has_redeemability : HasRedeemability ConcreteWorkingSystem := b
   unfold HasRedeemability ConcreteWorkingSystem concreteSystemSpec
   rfl
 
+theorem concrete_has_granular_acl : HasGranularACL ConcreteWorkingSystem := by
+  unfold HasGranularACL ConcreteWorkingSystem concreteSystemSpec
+  rfl
+
 /-- Concrete model contains all Bank primitives.
     This is the consistency proof: the spec is satisfiable. -/
 theorem concrete_contains_bank_primitives :
@@ -360,19 +380,21 @@ theorem concrete_contains_bank_primitives :
   · exact concrete_has_revocation
   · exact concrete_has_bank
   · exact concrete_has_redeemability
+  · exact concrete_has_granular_acl
 
 
 /-! ## Operational Properties Hold
 
 The concrete model also satisfies the handles_* predicates. -/
 
-/-- Concrete model satisfies ALL six operational properties. -/
+/-- Concrete model satisfies ALL seven operational properties. -/
 theorem concrete_satisfies_all_properties :
     SatisfiesAllProperties ConcreteWorkingSystem := by
   intro P; cases P <;>
   simp [handles_pressure, handles_distributed_agents, handles_bounded_audit,
         handles_export, handles_adversarial, handles_coordination,
-        handles_truth_pressure, ConcreteWorkingSystem, Option.isSome]
+        handles_truth_pressure, handles_multi_agent,
+        ConcreteWorkingSystem, Option.isSome]
 
 
 /-! ## ForcingEmbedding Instance
@@ -395,6 +417,7 @@ def concrete_forcing_embedding : ForcingEmbedding ConcreteWorkingSystem where
     | .revocation    => Or.inl concrete_has_revocation
     | .bank          => Or.inl concrete_has_bank
     | .redeemability => Or.inl concrete_has_redeemability
+    | .authorization => Or.inl concrete_has_granular_acl
 
 /-- The concrete model is structurally forced.
     Reads the stored `GroundedXStrict` witnesses from `ConcreteWorkingSystem`
@@ -409,6 +432,7 @@ theorem concrete_structurally_forced : StructurallyForced ConcreteWorkingSystem 
     | .revocation    => concrete_has_revocation
     | .bank          => concrete_has_bank
     | .redeemability => concrete_has_redeemability
+    | .authorization => concrete_has_granular_acl
   evidence := {
     scope_consequence := fun G heq => by
       have hrfl : ConcreteWorkingSystem.bubbles_ev = some concBubbles.toStrict := rfl
@@ -433,7 +457,11 @@ theorem concrete_structurally_forced : StructurallyForced ConcreteWorkingSystem 
     redeemability_consequence := fun G heq => by
       have hrfl : ConcreteWorkingSystem.redeemability_ev = some concRedeemability.toStrict := rfl
       rw [hrfl] at heq; injection heq with hG; subst hG
-      exact concRedeemability.toStrict.has_constrained_redeemable_witness }
+      exact concRedeemability.toStrict.has_constrained_redeemable_witness
+    authorization_consequence := fun G heq => by
+      have hrfl : ConcreteWorkingSystem.authorization_ev = some concAuthorization.toStrict := rfl
+      rw [hrfl] at heq; injection heq with hG; subst hG
+      exact concAuthorization.toStrict.no_uniform_access }
 
 /-- Structural convergence applies to the concrete model.
     Full chain: ForcingEmbedding → StructurallyForced → convergence. -/

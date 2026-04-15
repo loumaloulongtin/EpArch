@@ -533,8 +533,108 @@ bundles, but the `Represents*` instances and their bridge hypotheses are
 W-specific data that cannot be derived from W_* bundles alone.  A future
 bridge layer may close that gap; for now they are supplied explicitly. -/
 
-/-- Bundled witnesses for the three purely architectural dimensions:
-    scope (disagreement), headers (discriminating import), bank (coordination).
+/-! ### Scenario 7: Uniform Access (Multi-Agent → Granular ACL)
+
+When distinct agents with different epistemic access rights exist, a system
+cannot treat all agents uniformly.  A uniform authorization policy (all agents
+authorized) cannot coexist with a known access restriction.
+
+`RepresentsUniformAccess` enriches a `WorkingSystem` with a concrete restriction
+witness: an agent that should not be authorized for a specific claim.  When
+`¬HasGranularACL`, the system is in the `UniformAccessScenario`. -/
+
+/-- A system represents a uniform access scenario if it carries evidence that
+    some agent is restricted from some claim, but absent granular ACL, all
+    agents are uniformly authorized.
+
+    The structural point: without a non-trivial ACL, authorization is open —
+    every agent gets every claim.  `uniform_access_impossible` proves this
+    contradicts any known restriction. -/
+structure RepresentsUniformAccess (W : WorkingSystem) where
+  /-- The agent type. -/
+  Agent            : Type
+  /-- The claim type. -/
+  Claim            : Type
+  /-- The authorization predicate. -/
+  authorize        : Agent → Claim → Prop
+  /-- An agent that is restricted from some claim. -/
+  restricted_agent : Agent
+  /-- The claim they cannot access. -/
+  restricted_claim : Claim
+  /-- The restriction holds: this agent is not authorized for this claim. -/
+  restriction_holds : ¬authorize restricted_agent restricted_claim
+  /-- Without granular ACL, all agents are uniformly authorized. -/
+  uniform_without_acl : ¬HasGranularACL W → ∀ (a : Agent) (P : Claim), authorize a P
+
+/-- Extract `UniformAccessScenario` from a system that `RepresentsUniformAccess`
+    and lacks granular ACL. -/
+def RepresentsUniformAccess.toScenario {W : WorkingSystem}
+    (R : RepresentsUniformAccess W) : UniformAccessScenario where
+  Agent            := R.Agent
+  Claim            := R.Claim
+  authorize        := R.authorize
+  restricted_agent := R.restricted_agent
+  restricted_claim := R.restricted_claim
+  has_restriction  := R.restriction_holds
+
+/-- **Right-branch embedding (authorization direction).**
+
+    A system representing uniform access without granular ACL is in the
+    `UniformAccessScenario`: `uniform_access_impossible` fires because
+    the uniform policy contradicts the known restriction. -/
+theorem uniform_access_without_acl_embeds
+    (W : WorkingSystem)
+    (R : RepresentsUniformAccess W)
+    (h_no_acl : ¬HasGranularACL W) :
+    False :=
+  uniform_access_impossible R.toScenario (R.uniform_without_acl h_no_acl)
+
+/-- **Per-dimension structural forcing (authorization).**
+
+    Any system carrying a `RepresentsUniformAccess` witness is forced to have
+    granular ACL.  No `handles_multi_agent W` required. -/
+theorem uniform_access_forces_acl
+    (W : WorkingSystem) (R : RepresentsUniformAccess W) :
+    HasGranularACL W := by
+  by_cases h : HasGranularACL W
+  · exact h
+  · exact (uniform_access_without_acl_embeds W R h).elim
+
+/-- **Right-branch embedding (authorization direction):** for a system with uniform
+    access representation, uses the right branch when ¬HasGranularACL.
+
+    The `uniform_without_acl` field provides the bridge condition. -/
+theorem uniform_access_acl_embed
+    (W : WorkingSystem) (R : RepresentsUniformAccess W) :
+    handles_multi_agent W →
+    HasGranularACL W ∨
+    (∃ M : UniformAccessScenario, ∀ (a : M.Agent) (P : M.Claim), M.authorize a P) := by
+  intro _
+  by_cases h : HasGranularACL W
+  · exact Or.inl h
+  · exact Or.inr ⟨R.toScenario, R.uniform_without_acl h⟩
+
+
+/-! ## Bundled Witness Packages
+
+Two structures replace the 20+ loose parameters of the all-six forcing theorem
+with named records, separated by the nature of the evidence they carry.
+
+**`SystemOperationalBundle W`** — the four *architectural* dimensions:
+scope disagreement, discriminating import, private coordination, uniform access.
+These are purely operational/topological facts about the system.  They have no
+world-semantic counterpart in `WorldCtx`.
+
+**`WorldBridgeBundle W`** — the three *world-adjacent* dimensions:
+monotonic lifecycle (revocation), bounded verification (trust), closed
+endorsement (redeemability).  These correspond semantically to the W_* world
+bundles, but the `Represents*` instances and their bridge hypotheses are
+W-specific data that cannot be derived from W_* bundles alone.  A future
+bridge layer may close that gap; for now they are supplied explicitly. -/
+
+/-- Bundled witnesses for the four purely architectural dimensions:
+    scope (disagreement), headers (discriminating import), bank (coordination),
+    authorization (uniform access).
 
     Each field group is: a `Represents*` structural witness followed by the
     per-dimension bridge hypothesis that makes the impossible scenario
@@ -562,6 +662,8 @@ structure SystemOperationalBundle (W : WorkingSystem) where
   shared_deposit : ¬HasBank W → Rp.Deposit
   h_access₁      : ∀ h, Rp.has_access Rp.a₁ (shared_deposit h)
   h_access₂      : ∀ h, Rp.has_access Rp.a₂ (shared_deposit h)
+  /-- Authorization dimension: a uniform access scenario witness. -/
+  Ra : RepresentsUniformAccess W
 
 /-- Bundled witnesses for the three world-adjacent dimensions:
     revocation (adversarial/lies), trust (bounded verification),

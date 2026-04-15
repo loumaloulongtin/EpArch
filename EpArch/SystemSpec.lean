@@ -46,6 +46,10 @@ structure SystemSpec where
   /-- System has redeemability paths (constraint-surface contact).
       Forced by: Truth pressure constraint. -/
   has_redeemability : Bool
+
+  /-- System has granular access-control (non-trivial ACL differentiating agents).
+      Forced by: Multi-agent heterogeneous access constraint. -/
+  has_granular_acl : Bool := false
   deriving DecidableEq, Repr
 
 
@@ -72,6 +76,9 @@ def spec_has_bank (spec : SystemSpec) : Prop := spec.has_shared_ledger = true
 /-- Predicate: spec has redeemability. -/
 def spec_has_redeemability (spec : SystemSpec) : Prop := spec.has_redeemability = true
 
+/-- Predicate: spec has granular access-control. -/
+def spec_has_granular_acl (spec : SystemSpec) : Prop := spec.has_granular_acl = true
+
 
 /-! ## Decidability Instances
 
@@ -97,6 +104,9 @@ instance : DecidablePred spec_has_bank := fun spec =>
 instance : DecidablePred spec_has_redeemability := fun spec =>
   if h : spec.has_redeemability = true then isTrue h else isFalse h
 
+instance : DecidablePred spec_has_granular_acl := fun spec =>
+  if h : spec.has_granular_acl = true then isTrue h else isFalse h
+
 
 /-! ## Full Spec Predicate
 
@@ -105,7 +115,8 @@ A system has "all Bank primitives" iff all six features are present. -/
 /-- A system specification contains all Bank primitives. -/
 def containsAllFeatures (spec : SystemSpec) : Prop :=
   spec_has_bubbles spec ∧ spec_has_trust_bridges spec ∧ spec_has_headers spec ∧
-  spec_has_revocation spec ∧ spec_has_bank spec ∧ spec_has_redeemability spec
+  spec_has_revocation spec ∧ spec_has_bank spec ∧ spec_has_redeemability spec ∧
+  spec_has_granular_acl spec
 
 /-- The "full Bank spec" — a spec with all features enabled. -/
 def fullBankSpec : SystemSpec where
@@ -115,11 +126,13 @@ def fullBankSpec : SystemSpec where
   has_revocation := true
   has_shared_ledger := true
   has_redeemability := true
+  has_granular_acl := true
 
 /-- Full spec has all features. -/
 theorem fullBankSpec_contains_all : containsAllFeatures fullBankSpec := by
   simp [containsAllFeatures, spec_has_bubbles, spec_has_trust_bridges, spec_has_headers,
-        spec_has_revocation, spec_has_bank, spec_has_redeemability, fullBankSpec]
+        spec_has_revocation, spec_has_bank, spec_has_redeemability, spec_has_granular_acl,
+        fullBankSpec]
 
 
 /-! ## Minimal Specs (for impossibility witnesses)
@@ -134,6 +147,7 @@ def specWithoutBubbles : SystemSpec where
   has_revocation := true
   has_shared_ledger := true
   has_redeemability := true
+  has_granular_acl := true
 
 /-- Spec missing trust bridges. -/
 def specWithoutBridges : SystemSpec where
@@ -143,6 +157,7 @@ def specWithoutBridges : SystemSpec where
   has_revocation := true
   has_shared_ledger := true
   has_redeemability := true
+  has_granular_acl := true
 
 /-- Spec missing headers. -/
 def specWithoutHeaders : SystemSpec where
@@ -152,6 +167,7 @@ def specWithoutHeaders : SystemSpec where
   has_revocation := true
   has_shared_ledger := true
   has_redeemability := true
+  has_granular_acl := true
 
 /-- Spec missing revocation. -/
 def specWithoutRevocation : SystemSpec where
@@ -161,6 +177,7 @@ def specWithoutRevocation : SystemSpec where
   has_revocation := false
   has_shared_ledger := true
   has_redeemability := true
+  has_granular_acl := true
 
 /-- Spec missing shared ledger (bank). -/
 def specWithoutBank : SystemSpec where
@@ -170,6 +187,7 @@ def specWithoutBank : SystemSpec where
   has_revocation := true
   has_shared_ledger := false
   has_redeemability := true
+  has_granular_acl := true
 
 /-- Spec missing redeemability. -/
 def specWithoutRedeemability : SystemSpec where
@@ -179,6 +197,7 @@ def specWithoutRedeemability : SystemSpec where
   has_revocation := true
   has_shared_ledger := true
   has_redeemability := false
+  has_granular_acl := true
 
 
 /-! ## Witness theorems: each minimal spec lacks its feature -/
@@ -189,5 +208,17 @@ theorem specWithoutHeaders_lacks_headers : ¬spec_has_headers specWithoutHeaders
 theorem specWithoutRevocation_lacks_revocation : ¬spec_has_revocation specWithoutRevocation := by decide
 theorem specWithoutBank_lacks_bank : ¬spec_has_bank specWithoutBank := by decide
 theorem specWithoutRedeemability_lacks_redeemability : ¬spec_has_redeemability specWithoutRedeemability := by decide
+
+/-- Spec missing granular ACL. -/
+def specWithoutGranularACL : SystemSpec where
+  has_bubble_separation := true
+  has_trust_bridges := true
+  preserves_headers := true
+  has_revocation := true
+  has_shared_ledger := true
+  has_redeemability := true
+  has_granular_acl := false
+
+theorem specWithoutGranularACL_lacks_granular_acl : ¬spec_has_granular_acl specWithoutGranularACL := by decide
 
 end EpArch

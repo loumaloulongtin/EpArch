@@ -63,6 +63,9 @@ structure EvidenceConsequences (W : WorkingSystem) : Prop where
   /-- Redeemability forcing: a constrained-and-redeemable witness is known. -/
   redeemability_consequence : ∀ G : GroundedRedeemabilityStrict, W.redeemability_ev = some G →
       ∃ c : G.base.Claim, G.base.constrained c ∧ G.base.redeemable c
+  /-- Authorization forcing: a uniform-access policy is impossible given the known restriction. -/
+  authorization_consequence : ∀ G : GroundedAuthorizationStrict, W.authorization_ev = some G →
+      ¬∀ (a : G.base.Agent) (P : G.base.Claim), G.base.authorize a P
 
 /-- A system is structurally forced: for every pressure dimension, handling
     the capability implies the forced architectural feature.
@@ -188,6 +191,15 @@ def BridgeRedeemability (_W : WorkingSystem) : Prop :=
 theorem bridge_redeemability_impossible (_W : WorkingSystem) : ¬BridgeRedeemability _W :=
   fun ⟨M, c, hc⟩ => closed_system_unfalsifiable M ⟨c, hc⟩
 
+/-- A system is bridge-committed on authorization: a uniform access policy covers all agents. -/
+def BridgeAuthorization (_W : WorkingSystem) : Prop :=
+  ∃ M : UniformAccessScenario, ∀ (a : M.Agent) (P : M.Claim), M.authorize a P
+
+/-- The authorization bridge scenario is universally impossible: a uniform-access policy
+    cannot coexist with a known restriction. -/
+theorem bridge_authorization_impossible (_W : WorkingSystem) : ¬BridgeAuthorization _W :=
+  fun ⟨M, h_all⟩ => uniform_access_impossible M h_all
+
 
 /-- Maps each `Pressure` dimension to its bridge-scenario predicate.
     Used as the right disjunct in `ForcingEmbedding.embed`. -/
@@ -198,6 +210,7 @@ def bridge_scenario (W : WorkingSystem) : Pressure → Prop
   | .revocation    => BridgeRevocation W
   | .bank          => BridgeBank W
   | .redeemability => BridgeRedeemability W
+  | .authorization => BridgeAuthorization W
 
 /-- Every bridge scenario is universally impossible: committing to the
     impossible scenario for any dimension yields `False`.
@@ -210,6 +223,7 @@ theorem all_bridges_impossible (W : WorkingSystem) (P : Pressure) : ¬bridge_sce
   · exact bridge_revocation_impossible W
   · exact bridge_bank_impossible W
   · exact bridge_redeemability_impossible W
+  · exact bridge_authorization_impossible W
 
 /-- Forcing embeddings: connects a `WorkingSystem` to the abstract
     structural models via an auditable disjunction, indexed by `Pressure`.
@@ -249,7 +263,8 @@ theorem embedding_to_structurally_forced (W : WorkingSystem) (E : ForcingEmbeddi
     headers_consequence       := fun G _h_ev => G.routing_invariant
     revocation_consequence    := fun G _h_ev => G.has_invalid_revocable_witness
     bank_consequence          := fun G _h_ev => G.has_shared_entry
-    redeemability_consequence := fun G _h_ev => G.has_constrained_redeemable_witness }
+    redeemability_consequence := fun G _h_ev => G.has_constrained_redeemable_witness
+    authorization_consequence := fun G _h_ev => G.no_uniform_access }
 
 
 /-! ## Convergence and Impossibility (Structural Versions) -/
@@ -291,8 +306,10 @@ theorem grounded_evidence_consequences (W : WorkingSystem)
     (∃ G : GroundedBankStrict, W.bank_ev = some G ∧
         ∃ e : G.base.Entry, G.base.agent₁_produces e ∧ G.base.agent₂_consumes e) ∧
     (∃ G : GroundedRedeemabilityStrict, W.redeemability_ev = some G ∧
-        ∃ c : G.base.Claim, G.base.constrained c ∧ G.base.redeemable c) := by
-  refine ⟨convergence_structural W h_sf h_sat, ?_, ?_, ?_, ?_, ?_, ?_⟩
+        ∃ c : G.base.Claim, G.base.constrained c ∧ G.base.redeemable c) ∧
+    (∃ G : GroundedAuthorizationStrict, W.authorization_ev = some G ∧
+        ¬∀ (a : G.base.Agent) (P : G.base.Claim), G.base.authorize a P) := by
+  refine ⟨convergence_structural W h_sf h_sat, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   -- Each goal: none-branch contradicted via Bool.noConfusion h2;
   -- some G branch closed via h_sf.evidence.X_consequence G h_ev.
   · have h2 : W.bubbles_ev.isSome = true := by
@@ -331,6 +348,12 @@ theorem grounded_evidence_consequences (W : WorkingSystem)
     cases h_ev : W.redeemability_ev with
     | none   => rw [h_ev] at h2; exact Bool.noConfusion h2
     | some G => exact ⟨G, rfl, h_sf.evidence.redeemability_consequence G h_ev⟩
+  · have h2 : W.authorization_ev.isSome = true := by
+      have h := h_sat .authorization
+      simp only [handles_pressure, handles_multi_agent] at h; exact h
+    cases h_ev : W.authorization_ev with
+    | none   => rw [h_ev] at h2; exact Bool.noConfusion h2
+    | some G => exact ⟨G, rfl, h_sf.evidence.authorization_consequence G h_ev⟩
 
 
 end EpArch

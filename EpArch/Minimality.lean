@@ -46,6 +46,8 @@ structure WorkingSystem where
   bank_ev          : Option GroundedBankStrict
   /-- Redeemability evidence: constrained claim with audit path + existential consequence. -/
   redeemability_ev : Option GroundedRedeemabilityStrict
+  /-- Authorization evidence: restricted-agent witness + no-uniform-access consequence. -/
+  authorization_ev : Option GroundedAuthorizationStrict := none
 
 /-! ## Forced Feature Predicates
 
@@ -76,6 +78,10 @@ def HasBank (W : WorkingSystem) : Prop := W.spec.has_shared_ledger = true
 /-- Predicate: system has redeemability (constraint-surface contact).
     Forced by: Truth pressure -/
 def HasRedeemability (W : WorkingSystem) : Prop := W.spec.has_redeemability = true
+
+/-- Predicate: system has granular access-control (non-trivial ACL).
+    Forced by: Multi-agent heterogeneous access -/
+def HasGranularACL (W : WorkingSystem) : Prop := W.spec.has_granular_acl = true
 
 
 /-! ## Six Operational Properties
@@ -113,6 +119,11 @@ def handles_coordination (W : WorkingSystem) : Prop :=
 def handles_truth_pressure (W : WorkingSystem) : Prop :=
   W.redeemability_ev.isSome = true
 
+/-- System handles multi-agent heterogeneous access: has authorization evidence.
+    Required when: Distinct agents exist with different access rights. -/
+def handles_multi_agent (W : WorkingSystem) : Prop :=
+  W.authorization_ev.isSome = true
+
 
 /-! ## Pressure: The Canonical Dimension Index
 
@@ -127,7 +138,7 @@ exhaustiveness: adding a seventh dimension requires adding a seventh
 constructor here, which would break every existing `cases P` proof
 until the new forcing chain is supplied. -/
 
-/-- The six architectural pressure dimensions of EpArch. -/
+/-- The seven architectural pressure dimensions of EpArch. -/
 inductive Pressure where
   | scope         -- Distributed agents → Bubbles
   | trust         -- Bounded audit → TrustBridges
@@ -135,6 +146,7 @@ inductive Pressure where
   | revocation    -- Adversarial → Revocation
   | bank          -- Coordination → Bank
   | redeemability -- Truth pressure → Redeemability
+  | authorization -- Multi-agent heterogeneous access → GranularACL
   deriving DecidableEq, Repr
 
 /-- Maps each `Pressure` dimension to its capability predicate. -/
@@ -145,6 +157,7 @@ def handles_pressure (W : WorkingSystem) : Pressure → Prop
   | .revocation    => handles_adversarial W
   | .bank          => handles_coordination W
   | .redeemability => handles_truth_pressure W
+  | .authorization => handles_multi_agent W
 
 /-- Maps each `Pressure` dimension to its forced architectural feature. -/
 def forced_feature (W : WorkingSystem) : Pressure → Prop
@@ -154,6 +167,7 @@ def forced_feature (W : WorkingSystem) : Pressure → Prop
   | .revocation    => HasRevocation W
   | .bank          => HasBank W
   | .redeemability => HasRedeemability W
+  | .authorization => HasGranularACL W
 
 /-- A working system satisfies ALL six operational properties — indexed by `Pressure`.
     The six-ness is machine-checked: `cases P` in any proof is
@@ -183,13 +197,14 @@ structure ConstraintSubset where
   adversarial    : Bool
   coordination   : Bool
   truth_pressure : Bool
+  multi_agent    : Bool
 
-/-- The full set of all six constraints. `PartialWellFormed W allConstraints` requires
-    all six biconditionals — the strongest subset. -/
-def allConstraints : ConstraintSubset := ⟨true, true, true, true, true, true⟩
+/-- The full set of all seven constraints. `PartialWellFormed W allConstraints` requires
+    all seven biconditionals — the strongest subset. -/
+def allConstraints : ConstraintSubset := ⟨true, true, true, true, true, true, true⟩
 
 /-- The empty subset. `PartialWellFormed W noConstraints` holds trivially. -/
-def noConstraints : ConstraintSubset := ⟨false, false, false, false, false, false⟩
+def noConstraints : ConstraintSubset := ⟨false, false, false, false, false, false, false⟩
 
 /-- `PartialWellFormed W S` captures the forcing biconditionals for
     the constraint subset S.
@@ -198,7 +213,7 @@ def noConstraints : ConstraintSubset := ⟨false, false, false, false, false, fa
     - If `S.X = true`,  the biconditional `handles_X W ↔ HasFeature_X W` is required.
     - If `S.X = false`, nothing is required for X.
 
-    Requiring all six (S = allConstraints) is the strongest form. -/
+    Requiring all seven (S = allConstraints) is the strongest form. -/
 structure PartialWellFormed (W : WorkingSystem) (S : ConstraintSubset) : Prop where
   wf_distributed    : S.distributed    = true → (handles_distributed_agents W ↔ HasBubbles W)
   wf_bounded_audit  : S.bounded_audit  = true → (handles_bounded_audit W ↔ HasTrustBridges W)
@@ -206,6 +221,7 @@ structure PartialWellFormed (W : WorkingSystem) (S : ConstraintSubset) : Prop wh
   wf_adversarial    : S.adversarial    = true → (handles_adversarial W ↔ HasRevocation W)
   wf_coordination   : S.coordination   = true → (handles_coordination W ↔ HasBank W)
   wf_truth_pressure : S.truth_pressure = true → (handles_truth_pressure W ↔ HasRedeemability W)
+  wf_multi_agent    : S.multi_agent    = true → (handles_multi_agent W ↔ HasGranularACL W)
 
 
 /-! ## Grounded Behavioral Evidence
@@ -239,6 +255,8 @@ structure GroundedBehavior where
   bank          : GroundedBank
   /-- Redeemability: a constrained claim has an audit path to truth contact. -/
   redeemability : GroundedRedeemability
+  /-- Authorization: a restricted-agent witness demonstrates granular ACL. -/
+  authorization : GroundedAuthorization
 
 /-- Build a `WorkingSystem` with all six proof-carrying option fields set from evidence. -/
 def WorkingSystem.withGroundedBehavior (B : GroundedBehavior) (base : WorkingSystem) : WorkingSystem :=
@@ -248,7 +266,8 @@ def WorkingSystem.withGroundedBehavior (B : GroundedBehavior) (base : WorkingSys
     headers_ev       := some B.headers.toStrict
     revocation_ev    := some B.revocation.toStrict
     bank_ev          := some B.bank.toStrict
-    redeemability_ev := some B.redeemability.toStrict }
+    redeemability_ev := some B.redeemability.toStrict
+    authorization_ev := some B.authorization.toStrict }
 
 /-- A `WorkingSystem` built from `GroundedBehavior` satisfies all six operational
     properties. -/
@@ -257,7 +276,8 @@ theorem grounded_behavior_satisfies_all (B : GroundedBehavior) (W : WorkingSyste
   intro P; cases P <;>
   simp [handles_pressure, handles_distributed_agents, handles_bounded_audit,
         handles_export, handles_adversarial, handles_coordination,
-        handles_truth_pressure, WorkingSystem.withGroundedBehavior, Option.isSome]
+        handles_truth_pressure, handles_multi_agent,
+        WorkingSystem.withGroundedBehavior, Option.isSome]
 
 /-- `SatisfiesAllProperties` implies all six evidence option fields are present.
     Extracts the six `isSome = true` facts from the property predicate. -/
@@ -267,8 +287,9 @@ theorem satisfies_all_fixes_flags (W : WorkingSystem) (h : SatisfiesAllPropertie
     W.headers_ev.isSome       = true ∧
     W.revocation_ev.isSome    = true ∧
     W.bank_ev.isSome          = true ∧
-    W.redeemability_ev.isSome = true :=
-  ⟨h .scope, h .trust, h .headers, h .revocation, h .bank, h .redeemability⟩
+    W.redeemability_ev.isSome = true ∧
+    W.authorization_ev.isSome = true :=
+  ⟨h .scope, h .trust, h .headers, h .revocation, h .bank, h .redeemability, h .authorization⟩
 
 /-- A `WorkingSystem` built from both `GroundedBehavior` and `GroundedSystemSpec`
     satisfies `PartialWellFormed W allConstraints`.
@@ -300,7 +321,10 @@ theorem grounded_partial_wellformed (B : GroundedBehavior) (G : GroundedSystemSp
     ⟨fun _ => (grounded_spec_contains_all G).2.2.2.2.1,
      fun _ => rfl⟩
   wf_truth_pressure := fun _ =>
-    ⟨fun _ => (grounded_spec_contains_all G).2.2.2.2.2,
+    ⟨fun _ => (grounded_spec_contains_all G).2.2.2.2.2.1,
+     fun _ => rfl⟩
+  wf_multi_agent    := fun _ =>
+    ⟨fun _ => (grounded_spec_contains_all G).2.2.2.2.2.2,
      fun _ => rfl⟩ }
 
 
@@ -313,9 +337,9 @@ theorem grounded_partial_wellformed (B : GroundedBehavior) (G : GroundedSystemSp
     witnesses satisfies it by case analysis on `P`. -/
 theorem all_features_constitute_bank (W : WorkingSystem) :
   HasBubbles W → HasTrustBridges W → HasHeaders W →
-  HasRevocation W → HasBank W → HasRedeemability W →
+  HasRevocation W → HasBank W → HasRedeemability W → HasGranularACL W →
   containsBankPrimitives W := by
-  intro h1 h2 h3 h4 h5 h6 P
+  intro h1 h2 h3 h4 h5 h6 h7 P
   cases P <;> assumption
 
 
@@ -338,8 +362,9 @@ from that structure alone — no biconditionals needed.
 | 4 | Adversarial | `MonotonicLifecycle` | `monotonic_no_exit` | Without revocation, accepted state is absorbing |
 | 5 | Coordination | `PrivateOnlyStorage` | `private_storage_no_sharing` | Isolated storage blocks collective reliance |
 | 6 | Truth pressure | `ClosedEndorsement` | `closed_system_unfalsifiable` | Without external contact, consensus is unfalsifiable |
+| 7 | Authorization | `UniformAccessScenario` | `uniform_access_impossible` | Uniform authorization contradicts known restriction |
 
-After the six models, the convergence proof machinery (`StructurallyForced`,
+After the seven models, the convergence proof machinery (`StructurallyForced`,
 `ForcingEmbedding`, Bridge predicates, Scenario predicates,
 `convergence_structural`) lives in EpArch.Convergence.
 -/
@@ -1299,6 +1324,40 @@ theorem partial_contestation_hard_forced (M : PartialContestation) :
   partial_contestation_closed_on_endorsed M
 
 
+/-! ### 7. Multi-Agent Heterogeneous Access → Granular ACL
+
+**Argument.**  When distinct agents exist with different epistemic access
+rights, a system cannot treat all agents uniformly.  If every agent were
+uniformly authorized to access every claim, the known restriction on
+some agent would be violated.  A non-trivial (granular) ACL is forced.
+
+**Proof technique.**  Direct: `uniform_access ⇒ authorize restricted_agent restricted_claim`,
+which contradicts `has_restriction`. -/
+
+/-- A scenario where some agent should NOT be authorized, capturing the
+    structural tension between uniform access and access restrictions. -/
+structure UniformAccessScenario where
+  Agent            : Type
+  Claim            : Type
+  /-- The system's authorization predicate. -/
+  authorize        : Agent → Claim → Prop
+  /-- An agent that must be restricted from some claim. -/
+  restricted_agent : Agent
+  /-- The claim they must not access. -/
+  restricted_claim : Claim
+  /-- The restriction holds: this agent is not authorized for this claim. -/
+  has_restriction  : ¬authorize restricted_agent restricted_claim
+
+/-- A uniform authorization policy (all agents authorized) contradicts
+    any known restriction.
+
+    Consequence: granular access-control (non-trivial ACL) is structurally forced
+    when distinct agents with different access rights exist. -/
+theorem uniform_access_impossible (M : UniformAccessScenario)
+    (h_uniform : ∀ (a : M.Agent) (P : M.Claim), M.authorize a P) : False :=
+  M.has_restriction (h_uniform M.restricted_agent M.restricted_claim)
+
+
 /-! ## §7. GroundedX ↔ Impossibility Bridges
 
 Each `GroundedX` structure is isomorphic to the *input* of the corresponding
@@ -1415,6 +1474,29 @@ theorem groundedRedeemability_refutes_closure (G : GroundedRedeemability)
 /-- Thin alias for `G.toStrict`.  Cite `groundedRedeemability_refutes_closure` directly
     when a proof must explicitly name the closure-refutation route. -/
 def GroundedRedeemabilityStrict.mk' (G : GroundedRedeemability) : GroundedRedeemabilityStrict :=
+  G.toStrict
+
+
+/-! ### §7.7  Authorization ↔ UniformAccessScenario -/
+
+/-- Convert `GroundedAuthorization` to `UniformAccessScenario`. -/
+def groundedAuthorization_to_scenario (G : GroundedAuthorization) : UniformAccessScenario where
+  Agent            := G.Agent
+  Claim            := G.Claim
+  authorize        := G.authorize
+  restricted_agent := G.restricted_agent
+  restricted_claim := G.restricted_claim
+  has_restriction  := G.restriction_holds
+
+/-- A uniform authorization policy contradicts the known restriction.
+    Invokes `uniform_access_impossible` via the bridge conversion. -/
+theorem groundedAuthorization_uniform_impossible (G : GroundedAuthorization) :
+    ¬∀ (a : G.Agent) (P : G.Claim), G.authorize a P :=
+  fun h_all => uniform_access_impossible (groundedAuthorization_to_scenario G) h_all
+
+/-- Thin alias for `G.toStrict`.  Cite `groundedAuthorization_uniform_impossible` directly
+    when a proof must explicitly name the uniform-access impossibility route. -/
+def GroundedAuthorizationStrict.mk' (G : GroundedAuthorization) : GroundedAuthorizationStrict :=
   G.toStrict
 
 
