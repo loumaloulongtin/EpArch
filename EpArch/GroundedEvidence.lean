@@ -276,33 +276,39 @@ def GroundedRedeemability.toStrict (G : GroundedRedeemability) : GroundedRedeema
 
 /-! ## GroundedAuthorization -/
 
-/-- Evidence that a system has a granular authorization surface.
+/-- Evidence that a system has a staged authorization surface: a submission tier
+    open to all agents and a restricted commit tier.  The two tiers are witnessed
+    by `may_propose` (submitter can propose), `cannot_commit` (submitter cannot
+    commit), and `may_commit` (committer can commit — commit tier is non-vacuous).
 
-    A granular ACL requires: some agent is demonstrably restricted from
-    some claim (`¬authorize restricted_agent restricted_claim`).  This
-    witnesses that the authorization surface is non-trivial — not all
-    agents are uniformly authorized. -/
+    This establishes that no single flat authorization predicate can faithfully
+    represent both tiers: structural tension between the two tiers is the
+    evidence that granular ACL is non-trivial. -/
 structure GroundedAuthorization where
   /-- The agent type. -/
-  Agent            : Type
+  Agent         : Type
   /-- The claim type. -/
-  Claim            : Type
-  /-- The authorization predicate. -/
-  authorize        : Agent → Claim → Prop
-  /-- An agent that IS authorized for the restricted claim — the positive witness. -/
-  privileged_agent : Agent
-  /-- An agent that should be restricted. -/
-  restricted_agent : Agent
-  /-- A claim they cannot access (and that the privileged agent CAN access). -/
-  restricted_claim : Claim
-  /-- The privileged agent has access — contrast with `restriction_holds`. -/
-  access_granted   : authorize privileged_agent restricted_claim
-  /-- The restriction holds: this agent is not authorized for this claim. -/
-  restriction_holds : ¬authorize restricted_agent restricted_claim
+  Claim         : Type
+  /-- The open submission tier: agents that may propose/submit. -/
+  can_propose   : Agent → Claim → Prop
+  /-- The restricted commit tier: agents that may merge/commit. -/
+  can_commit    : Agent → Claim → Prop
+  /-- An agent in the submission tier but not the commit tier. -/
+  submitter     : Agent
+  /-- An agent in the commit tier — establishes the commit tier is non-vacuous. -/
+  committer     : Agent
+  /-- The claim on which the two tiers differ. -/
+  tier_claim    : Claim
+  /-- The submitter can propose the tier claim. -/
+  may_propose   : can_propose submitter tier_claim
+  /-- The submitter cannot commit the tier claim. -/
+  cannot_commit : ¬can_commit submitter tier_claim
+  /-- The committer can commit the tier claim — the commit tier is non-vacuous. -/
+  may_commit    : can_commit committer tier_claim
 
 /-- Build a `SystemSpec` with `has_granular_acl = true` from evidence. -/
 def SystemSpec.withGroundedAuthorization (G : GroundedAuthorization) (rest : SystemSpec) : SystemSpec :=
-  let _ev := G.restriction_holds
+  let _ev := G.cannot_commit
   { rest with has_granular_acl := true }
 
 theorem grounded_authorization_justified (G : GroundedAuthorization) (rest : SystemSpec) :
@@ -310,40 +316,30 @@ theorem grounded_authorization_justified (G : GroundedAuthorization) (rest : Sys
   unfold spec_has_granular_acl SystemSpec.withGroundedAuthorization
   rfl
 
-/-- `GroundedAuthorization` augmented with two impossibility consequences.
+/-- `GroundedAuthorization` augmented with its impossibility consequence.
 
-    `no_uniform_access` — the direct negation: the specific restricted pair
-    violates any all-true authorization policy.
+    `no_flat_tier` — the architectural consequence: no single flat authorization
+    predicate can faithfully represent both the submission tier and the commit tier.
+    If one existed, routing `may_propose` through both iffs would force the submitter
+    into the commit tier, contradicting `cannot_commit`.
 
-    `no_agent_uniform_policy` — the architectural consequence: no agent-uniform
-    authorization is faithful to the authorization surface.  Two agents exist
-    with strictly different authorization for the same claim — so any policy of
-    the form `∀ a b P, authorize a P ↔ authorize b P` contradicts the evidence.
-    This is the authorization analog of `no_flat_resolver` for scope: it derives
-    the contradiction from the interaction between BOTH `access_granted` and
-    `restriction_holds`, not from either field alone. -/
+    This is the authorization analog of `no_flat_resolver` for scope. -/
 structure GroundedAuthorizationStrict where
-  base             : GroundedAuthorization
-  /-- A uniform authorization policy (all agents authorized) is impossible
-      given the known restriction. -/
-  no_uniform_access : ¬∀ (a : base.Agent) (P : base.Claim), base.authorize a P
-  /-- Agent-uniform authorization is impossible: the privileged and restricted agents
-      have different authorization for the restricted claim.  No policy of the form
-      `∀ a b P, authorize a P ↔ authorize b P` can coexist with both
-      `access_granted` and `restriction_holds`. -/
-  no_agent_uniform_policy : ¬∀ (a b : base.Agent) (P : base.Claim),
-      base.authorize a P ↔ base.authorize b P
+  base         : GroundedAuthorization
+  /-- No flat predicate represents both tiers: the structural impossibility consequence. -/
+  no_flat_tier : ¬∃ (f : base.Agent → base.Claim → Prop),
+      (∀ a c, f a c ↔ base.can_propose a c) ∧
+      (∀ a c, f a c ↔ base.can_commit a c)
 
-/-- Derive `GroundedAuthorizationStrict` from base evidence. -/
+/-- Derive `GroundedAuthorizationStrict` from base evidence.
+    Proves `no_flat_tier` inline: a flat `f` routes `may_propose` through both
+    iffs to force `can_commit submitter tier_claim`, contradicting `cannot_commit`.
+    Parallel to `no_flat_resolver` for scope. -/
 def GroundedAuthorization.toStrict (G : GroundedAuthorization) : GroundedAuthorizationStrict where
   base := G
-  no_uniform_access := fun h_all =>
-    G.restriction_holds (h_all G.restricted_agent G.restricted_claim)
-  -- Uses BOTH access_granted and restriction_holds — structural interaction between
-  -- the positive and negative witnesses, parallel to no_flat_resolver for scope.
-  no_agent_uniform_policy := fun h_unif =>
-    G.restriction_holds
-      ((h_unif G.privileged_agent G.restricted_agent G.restricted_claim).mp G.access_granted)
+  no_flat_tier := fun ⟨f, hprop, hcommit⟩ =>
+    G.cannot_commit ((hcommit G.submitter G.tier_claim).mp
+      ((hprop G.submitter G.tier_claim).mpr G.may_propose))
 
 
 /-! ## GroundedSystemSpec: All Seven Features from Evidence -/

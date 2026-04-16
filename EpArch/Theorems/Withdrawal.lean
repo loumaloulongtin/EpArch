@@ -91,9 +91,9 @@ theorem repair_enforces_revalidation
     The Step.submit constructor explicitly sets status := .Candidate. -/
 theorem submit_enforces_revalidation
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
-    (d : Deposit PropLike Standard ErrorModel Provenance)
+    (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance)
     (h_step : Step (Reason := Reason) (Evidence := Evidence)
-      s (.Submit d) s') :
+      s (.Submit a d) s') :
     ∃ d', d' ∈ s'.ledger ∧ d'.status = .Candidate := by
   cases h_step
   -- s'.ledger = s.ledger ++ [{ d with status := .Candidate }]

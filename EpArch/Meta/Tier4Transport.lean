@@ -213,14 +213,14 @@ theorem lts_theorems_step_universal {Reason Evidence : Type} :
          s (StepSemantics.Action.Repair d_idx f) s' →
        StepSemantics.isQuarantined s d_idx) ∧
     (∀ (s s' : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
-       (d : Deposit PropLike Standard ErrorModel Provenance),
+       (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance),
        StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
-         s (StepSemantics.Action.Submit d) s' →
+         s (StepSemantics.Action.Submit a d) s' →
        ∃ d', d' ∈ s'.ledger ∧ d'.status = DepositStatus.Candidate) :=
   ⟨fun s s' B a d_idx h => withdrawal_gates s s' B a d_idx h,
    fun s s' d_idx f h => repair_enforces_revalidation s s' d_idx f h,
    fun s s' d_idx f h => repair_requires_prior_challenge s s' d_idx f h,
-   fun s s' d h      => submit_enforces_revalidation s s' d h⟩
+   fun s s' a d h    => submit_enforces_revalidation s s' a d h⟩
 
 
 /-! ## §3c  All Five Health Goals Transport Through ConcreteBankModel

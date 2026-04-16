@@ -300,9 +300,9 @@ inductive Tier4Witness : EnabledTier4Cluster → Type 1 where
              s (StepSemantics.Action.Repair d_idx f) s' →
            StepSemantics.isQuarantined s d_idx) ∧
         (∀ (s s' : StepSemantics.SystemState PL SL EL PrL)
-           (d : Deposit PL SL EL PrL),
+           (a : Agent) (d : Deposit PL SL EL PrL),
            StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
-             s (StepSemantics.Action.Submit d) s' →
+             s (StepSemantics.Action.Submit a d) s' →
            ∃ d', d' ∈ s'.ledger ∧ d'.status = DepositStatus.Candidate)) →
       Tier4Witness .tier4_lts_universal
   | bankGoalsCompat :
@@ -662,6 +662,11 @@ theorem cluster_forcing_coordination :
 theorem cluster_forcing_truth :
     ∀ W : WorkingSystem, StructurallyForced W → handles_truth_pressure W → HasRedeemability W :=
   fun _W sf => sf.forcing .redeemability
+
+/-- Cluster `.forcing_multi_agent`: multi-agent heterogeneous access forces HasGranularACL. -/
+theorem cluster_forcing_multi_agent :
+    ∀ W : WorkingSystem, StructurallyForced W → handles_multi_agent W → HasGranularACL W :=
+  fun _W sf => sf.forcing .authorization
 
 -- ── Tier 3 goal transport ────────────────────────────────────────────────
 

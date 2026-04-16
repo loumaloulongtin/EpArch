@@ -272,11 +272,10 @@ def observe_step_action : CAction → Observation
   | .Export   _ B2 d_idx => .ExportSuccess d_idx B2.toNat
   | .Challenge _         => .ChallengeProcessed "quarantined"
   | .Tick                => .TimeAdvanced
-  | .Submit _            => .TimeAdvanced
+  | .Submit _ _          => .TimeAdvanced
   | .Repair _ _          => .TimeAdvanced
   | .Revoke _            => .TimeAdvanced
-  | .Validate _ _ _      => .TimeAdvanced
-  | .Accept _ _ _        => .TimeAdvanced
+  | .Promote _ _ _       => .TimeAdvanced
   | .Inspect _ _ _       => .TimeAdvanced
 
 /-! ### Ready States -/

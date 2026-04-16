@@ -505,18 +505,20 @@ private def leanAuthorize : LeanAuthAgentKind → LeanAuthClaimKind → Prop :=
 /-- Authorization evidence: `userCode` cannot access `kernelPrimitive` directly,
     while the `kernel` agent CAN access `kernelPrimitive`.
 
-    Two witnesses: `access_granted` (`.kernel` authorized) and `restriction_holds`
-    (`userCode` not authorized).  Agent-uniform authorization would require kernel
-    and userCode to have identical access rights — contradicted by both fields. -/
+    Two-tier structure: any code can propose user-level declarations (`can_propose = True`),
+    but only the `kernel` agent can use kernel primitives (`can_commit = leanAuthorize`).
+    The `cannot_commit` field establishes that `userCode` is excluded from the commit tier. -/
 def LeanGroundedAuthorization : GroundedAuthorization where
-  Agent            := LeanAuthAgentKind
-  Claim            := LeanAuthClaimKind
-  authorize        := leanAuthorize
-  privileged_agent := .kernel
-  restricted_agent := .userCode
-  restricted_claim := .kernelPrimitive
-  access_granted   := rfl
-  restriction_holds := fun h => nomatch h
+  Agent         := LeanAuthAgentKind
+  Claim         := LeanAuthClaimKind
+  can_propose   := fun _ _ => True
+  can_commit    := leanAuthorize
+  submitter     := .userCode
+  committer     := .kernel
+  tier_claim    := .kernelPrimitive
+  may_propose   := trivial
+  cannot_commit := fun h => nomatch h
+  may_commit    := rfl
 
 
 /-! ### Full Grounded Spec -/

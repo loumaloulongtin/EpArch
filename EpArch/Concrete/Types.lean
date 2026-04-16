@@ -64,10 +64,9 @@ structure CGlobalLedger where
 /-! ## Lifecycle States -/
 
 /-- Deposit lifecycle status.
-    Candidate → Validated → Deposited → (Aging/Stale/Revoked) -/
+    Candidate → Deposited → (Aging/Stale/Revoked) -/
 inductive CDepositStatus
-  | Candidate   -- Proposed but not yet validated
-  | Validated   -- Passed S/E/V checks, awaiting acceptance
+  | Candidate   -- Proposed, pending bank operator promotion
   | Deposited   -- Accepted into bubble, withdrawable
   | Aging       -- Still valid but approaching τ expiry
   | Stale       -- τ expired, needs refresh

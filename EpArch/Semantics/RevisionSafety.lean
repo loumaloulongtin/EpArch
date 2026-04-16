@@ -59,7 +59,7 @@ for the formalization's core architectural claims. Extensions must preserve all 
 
 **Bank Primitives (submission/revision cycle):**
 5. `deposit_header` — Extract header from deposit
-6. `submit` — Submit a deposit for acceptance (Candidate → Validated path)
+6. `submit` — Submit a deposit for acceptance (Candidate → Deposited path)
 7. `revise` — Revise a deposit in response to challenge (Repair_B semantics)
 
 **Capability Predicates:**

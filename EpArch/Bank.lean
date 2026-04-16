@@ -45,7 +45,7 @@ structure Bank where
 
 /-- Deposited: `d` is currently an active, authorized ledger entry in bubble B.
     Grounded in the deposit's own fields:
-    - `d.status = .Deposited` — the lifecycle gate has been cleared (Candidate → Validated → Deposited)
+    - `d.status = .Deposited` — the lifecycle gate has been cleared (Candidate → Deposited)
     - `d.bubble = B`          — the entry is scoped to this bubble
 
     The same deposit object may be active in one bubble and not another.
@@ -133,25 +133,17 @@ def consensus (_B : Bubble) (_P : PropLike) : Prop := True
 -- Each operator has explicit preconditions (as comments) and a status-transition
 -- axiom below.
 
-/-- Validate_B: Candidate → Validated(S,E,V)
-    Precondition: evidence bundle exists; error model chosen; provenance traceable
-    Postcondition: header attached; last_validated timestamp set
-    Note: The acceptance step is split into Validate_B (evidence → header)
-    and Accept_B (header → ledger entry) for finer-grained lifecycle control.
+/-- Promote_B: Candidate → Deposited
+    Precondition: deposit is in Candidate status
+    Postcondition: deposit is live in the bank (Deposited), withdrawable
     Grounded: guards on d.status = .Candidate — only transitions when the precondition
-    holds, returning d unchanged otherwise. -/
-def Validate_B (_B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
+    holds, returning d unchanged otherwise.
+    Note: Implementations may use multi-stage internal validation pipelines
+    (e.g., multiple approvals, evidence checks) between submission and promotion;
+    this operator represents the minimal architectural boundary. -/
+def Promote_B (_B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
     Deposit PropLike Standard ErrorModel Provenance :=
-  if d.status = .Candidate then { d with status := .Validated } else d
-
-/-- Accept_B: Validated → Deposited(meta)
-    Precondition: bubble acceptance function satisfied
-    Postcondition: ledger entry created; ACL instantiated; export class assigned
-    Grounded: guards on d.status = .Validated — only transitions to Deposited when the
-    deposit has passed validation; returns d unchanged otherwise. -/
-def Accept_B (_B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
-    Deposit PropLike Standard ErrorModel Provenance :=
-  if d.status = .Validated then { d with status := .Deposited } else d
+  if d.status = .Candidate then { d with status := .Deposited } else d
 
 /-- Challenge_B: Deposited → Quarantined(field)
     Precondition: contestation channel open; challenger specifies field
@@ -213,18 +205,12 @@ def Import_C (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) 
 -- They establish satisfiability of the specification interface, not a full
 -- reconstruction of the underlying operational semantics (which lives in StepSemantics).
 
-/-- Status after validation: the if-guard in Validate_B is activated by h.
+/-- Status after promotion: the if-guard in Promote_B is activated by h.
     if_pos h selects the then-branch; rfl closes the resulting equality. -/
-theorem validate_produces_validated (B : Bubble)
+theorem promote_produces_deposited (B : Bubble)
     (d : Deposit PropLike Standard ErrorModel Provenance) :
-    d.status = .Candidate → (Validate_B B d).status = .Validated := by
-  intro h; unfold Validate_B; rw [if_pos h]
-
-/-- Status after acceptance: the precondition gates the if-branch in Accept_B. -/
-theorem accept_produces_deposited (B : Bubble)
-    (d : Deposit PropLike Standard ErrorModel Provenance) :
-    d.status = .Validated → (Accept_B B d).status = .Deposited := by
-  intro h; unfold Accept_B; rw [if_pos h]
+    d.status = .Candidate → (Promote_B B d).status = .Deposited := by
+  intro h; unfold Promote_B; rw [if_pos h]
 
 /-- Status after challenge: the precondition gates the if-branch in Challenge_B. -/
 theorem challenge_produces_quarantined (B : Bubble)
@@ -258,13 +244,13 @@ theorem restore_produces_candidate (B : Bubble)
 -- sequence is internally consistent. Each step's postcondition is exactly the next
 -- step's precondition.
 
-/-- Validation pipeline: Candidate → Validated → Deposited.
-    Composes validate_produces_validated with accept_produces_deposited:
-    the Validated postcondition of Validate_B is precisely the precondition of Accept_B. -/
-theorem validate_accept_pipeline (B : Bubble)
+/-- Promotion pipeline: Candidate → Deposited.
+    Direct application of promote_produces_deposited:
+    Promote_B takes a Candidate deposit to Deposited in one step. -/
+theorem promote_pipeline (B : Bubble)
     (d : Deposit PropLike Standard ErrorModel Provenance) :
-    d.status = .Candidate → (Accept_B B (Validate_B B d)).status = .Deposited :=
-  fun h => accept_produces_deposited B (Validate_B B d) (validate_produces_validated B d h)
+    d.status = .Candidate → (Promote_B B d).status = .Deposited :=
+  fun h => promote_produces_deposited B d h
 
 /-- Challenge-repair pipeline: Deposited → Quarantined → Candidate.
     Composes challenge_produces_quarantined with repair_produces_candidate:
@@ -274,15 +260,15 @@ theorem challenge_repair_pipeline (B : Bubble)
     d.status = .Deposited → (Repair_B B (Challenge_B B d f)).status = .Candidate :=
   fun h => Repair_B_produces_candidate B (Challenge_B B d f) (challenge_produces_quarantined B d f h)
 
-/-- Full contested-deposit pipeline: Candidate → Validated → Deposited → Quarantined → Candidate.
-    Composes validate_accept_pipeline with challenge_repair_pipeline over the complete
-    four-operator lifecycle sequence. -/
+/-- Full contested-deposit pipeline: Candidate → Deposited → Quarantined → Candidate.
+    Composes promote_pipeline with challenge_repair_pipeline over the complete
+    three-operator lifecycle sequence. -/
 theorem full_lifecycle_pipeline (B : Bubble)
     (d : Deposit PropLike Standard ErrorModel Provenance) (f : Field) :
     d.status = .Candidate →
-    (Repair_B B (Challenge_B B (Accept_B B (Validate_B B d)) f)).status = .Candidate :=
-  fun h => challenge_repair_pipeline B (Accept_B B (Validate_B B d)) f
-             (validate_accept_pipeline B d h)
+    (Repair_B B (Challenge_B B (Promote_B B d) f)).status = .Candidate :=
+  fun h => challenge_repair_pipeline B (Promote_B B d) f
+             (promote_pipeline B d h)
 
 
 /-! ## Bubble Hygiene -/

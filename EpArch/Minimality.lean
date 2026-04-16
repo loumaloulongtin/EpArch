@@ -362,7 +362,7 @@ from that structure alone — no biconditionals needed.
 | 4 | Adversarial | `MonotonicLifecycle` | `monotonic_no_exit` | Without revocation, accepted state is absorbing |
 | 5 | Coordination | `PrivateOnlyStorage` | `private_storage_no_sharing` | Isolated storage blocks collective reliance |
 | 6 | Truth pressure | `ClosedEndorsement` | `closed_system_unfalsifiable` | Without external contact, consensus is unfalsifiable |
-| 7 | Authorization | `UniformAccessScenario` | `uniform_access_impossible` | Uniform authorization contradicts known restriction |
+| 7 | Authorization | `TwoTierAccess` | `flat_authorization_impossible` | No flat predicate can represent both the submission and commit tiers |
 
 After the seven models, the convergence proof machinery (`StructurallyForced`,
 `ForcingEmbedding`, Bridge predicates, Scenario predicates,
@@ -1326,80 +1326,106 @@ theorem partial_contestation_hard_forced (M : PartialContestation) :
 
 /-! ### 7. Multi-Agent Heterogeneous Access → Granular ACL
 
-**Argument.**  When distinct agents exist with different epistemic access
-rights, a system cannot treat all agents uniformly.  A privileged agent has
-access that a restricted agent does not.  Any authorization policy that
-treats all agents identically — making every agent’s authorization equivalent
-for every claim — contradicts this differentiation.  A non-trivial (granular)
-ACL is forced.
+**Argument.**  When a system has a staged access surface — an open submission
+tier and a restricted commit tier — no single authorization predicate can
+faithfully represent both tiers simultaneously.  Suppose it could: then the
+flat function agrees with the open tier (so the submitter is authorized under
+it), and it also agrees with the commit tier (so the submitter has commit
+rights) — contradicting the submitter’s known restriction on the commit tier.
+Granular ACL, which keeps the two tiers distinct, is structurally forced.
 
-**Proof technique.**  Agent uniformity: if all agents have equivalent
-authorization (`∀ a b P, authorize a P ↔ authorize b P`), then
-`must_allow` (for privileged_agent) implies `authorize restricted_agent restricted_claim`,
-contradicting `has_restriction`.  The impossibility uses BOTH the positive
-(`must_allow`) and negative (`has_restriction`) witnesses. -/
+Examples: a GitHub repository has open PRs (submission) but maintainer-gated
+merges (commit); a bank has open deposits (submission) but ACL-gated withdrawals
+(commit); a corporate intranet may have a fully closed commit tier where even
+submission requires clearance — in that case both tiers are equally restricted,
+no `TwoTierAccess` certificate exists, and `S.multi_agent = false` is correct.
 
-/-- A scenario where one agent has access and another does not, capturing the
-    structural tension between agent-differentiated and uniform authorization. -/
-structure UniformAccessScenario where
-  Agent            : Type
-  Claim            : Type
-  /-- The system's authorization predicate. -/
-  authorize        : Agent → Claim → Prop
-  /-- An agent that IS authorized for the restricted claim — the positive witness. -/
-  privileged_agent : Agent
-  /-- An agent that must be restricted from some claim. -/
-  restricted_agent : Agent
-  /-- The claim where the two agents have different authorization. -/
-  restricted_claim : Claim
-  /-- The positive witness: the privileged agent IS authorized. -/
-  must_allow       : authorize privileged_agent restricted_claim
-  /-- The negative witness: the restricted agent is NOT authorized. -/
-  has_restriction  : ¬authorize restricted_agent restricted_claim
+**Proof technique.**  Exact structural parallel to `flat_scope_impossible`.
+Two predicates (`can_propose`, `can_commit`) disagree on a witness (`submitter`
+for `tier_claim`).  A flat function faithful to both routes `may_propose`
+through the proposal iff and then through the commit iff to
+`can_commit submitter tier_claim`, contradicting `cannot_commit`.  The proof
+uses all three witnesses: `may_propose`, `cannot_commit`, and `may_commit`
+(the last establishes that the commit tier is non-vacuous and structurally
+distinct from the proposal tier). -/
 
-/-- Agent-uniform authorization (all agents have equivalent access for every claim)
-    contradicts the known differentiation between privileged and restricted agents.
+/-- A staged-access scenario: one agent can submit but cannot commit; another
+    agent can commit.  No single authorization predicate can faithfully represent
+    both the submission tier and the commit tier simultaneously.
 
-    The proof uses BOTH `must_allow` and `has_restriction` — genuine structural
-    interaction between two fields, parallel to `flat_scope_impossible` for scope.
+    Structural parallel to `AgentDisagreement` for scope: both have two predicates
+    on the same type and a witness on which they disagree. -/
+structure TwoTierAccess where
+  Agent         : Type
+  Claim         : Type
+  /-- The open submission tier: agents that may propose/submit. -/
+  can_propose   : Agent → Claim → Prop
+  /-- The restricted commit tier: agents that may merge/commit. -/
+  can_commit    : Agent → Claim → Prop
+  /-- An agent in the submission tier but not the commit tier. -/
+  submitter     : Agent
+  /-- An agent in the commit tier — establishes the commit tier is non-vacuous. -/
+  committer     : Agent
+  /-- The claim on which the two tiers differ. -/
+  tier_claim    : Claim
+  /-- The submitter can propose the tier claim. -/
+  may_propose   : can_propose submitter tier_claim
+  /-- The submitter cannot commit the tier claim. -/
+  cannot_commit : ¬can_commit submitter tier_claim
+  /-- The committer can commit the tier claim — the commit tier is non-vacuous. -/
+  may_commit    : can_commit committer tier_claim
 
-    Consequence: granular access-control (non-trivial ACL) is structurally forced
-    when distinct agents with different access rights exist. -/
-theorem uniform_access_impossible (M : UniformAccessScenario)
-    (h_unif : ∀ (a b : M.Agent) (P : M.Claim), M.authorize a P ↔ M.authorize b P) : False :=
-  M.has_restriction ((h_unif M.privileged_agent M.restricted_agent M.restricted_claim).mp M.must_allow)
+/-- No flat authorization predicate can faithfully represent both the submission
+    tier and the commit tier of a two-tier access scenario.
+
+    Proof: a flat `f` faithful to both tiers routes `may_propose` through
+    `f submitter tier_claim` (via the proposal iff) and then to
+    `can_commit submitter tier_claim` (via the commit iff) — contradicting
+    `cannot_commit`.
+
+    Exact structural parallel to `flat_scope_impossible`: two predicates that
+    disagree on a witness; no flat function can represent both.
+
+    Consequence: granular ACL is structurally forced — the two access surfaces
+    cannot be collapsed into a single authorization predicate. -/
+theorem flat_authorization_impossible (M : TwoTierAccess)
+    (h_flat : ∃ (f : M.Agent → M.Claim → Prop),
+      (∀ a c, f a c ↔ M.can_propose a c) ∧
+      (∀ a c, f a c ↔ M.can_commit a c)) : False :=
+  let ⟨f, hprop, hcommit⟩ := h_flat
+  M.cannot_commit ((hcommit M.submitter M.tier_claim).mp
+    ((hprop M.submitter M.tier_claim).mpr M.may_propose))
 
 
-/-! ### 7b. Alternative Authorization Mechanisms Reduce to UniformAccessScenario
+/-! ### 7b. Alternative Authorization Mechanisms Reduce to TwoTierAccess
 
 A reviewer may ask: do RBAC (role-based ACL), capability-token systems, or
-attribute-based ACL escape `uniform_access_impossible`?
+attribute-based ACL escape `flat_authorization_impossible`?
 
 This section instantiates each alternative, then shows it directly supplies
 a `GroundedAuthorization` instance (with both a positive and a negative witness).
-`GroundedAuthorizationStrict.no_agent_uniform_policy` then fires directly, or
-equivalently, `uniform_access_impossible` fires via `groundedAuthorization_to_scenario`.
+`GroundedAuthorizationStrict.`GroundedAuthorizationStrict.no_flat_tier` then fires directly, or
+equivalently, `flat_authorization_impossible` fires via `groundedAuthorization_to_scenario`.
 
-**RBAC.**  Agents are assigned roles; permissions are attached to roles;
-authorization is role-derived.  The restricted agent's role lacks permission;
-the privileged agent's role has permission.  Both witnesses are required to
-derive `no_agent_uniform_policy`.
+**RBAC.**  The commit tier is role-derived authorization; the submission tier is
+open (any agent may submit).  The restricted agent's role lacks commit permission;
+the privileged agent's role has it.  `cannot_commit` and `may_commit` are both
+required to derive `no_flat_tier`.
 
-**Capability-token system.**  An agent is authorized for a claim iff it holds
-a token that grants that claim.  The restricted agent holds no such token;
-the privileged agent holds one.  Again a direct `GroundedAuthorization` instance.
+**Capability-token system.**  The commit tier is token-based authorization; the
+submission tier is open.  The restricted agent holds no commit token; the privileged
+agent holds one.  Again a direct `GroundedAuthorization` instance.
 
-**Attribute-based ACL.**  Authorization requires the agent to have every attribute
-demanded by the claim.  The restricted agent lacks a required attribute; the
+**Attribute-based ACL.**  The commit tier requires all demanded attributes; the
+submission tier is open.  The restricted agent lacks a required attribute; the
 privileged agent has all required attributes.  Again a direct `GroundedAuthorization`
 instance.
 
 **Conclusion.**  All three alternatives instantiate `GroundedAuthorization` with
-both `access_granted` (positive) and `restriction_holds` (negative).  The
-impossibility fires via `GroundedAuthorizationStrict.no_agent_uniform_policy` —
-the authorization pressure requires structural tension between two agents, not
-a single restriction alone.  The forcing is insensitive to the ACL mechanism
-chosen. -/
+both `may_commit` and `cannot_commit`.  The impossibility fires via
+`GroundedAuthorizationStrict.no_flat_tier` — the authorization pressure requires
+structural tension between the two tiers, not a single restriction alone.  The
+forcing is insensitive to the ACL mechanism chosen. -/
 
 /-- RBAC authorization surface: agents carry roles, roles carry permissions,
     authorization is role-derived.  Two witnesses: the restricted agent's role
@@ -1422,24 +1448,27 @@ structure RBACAuthSurface where
   role_lacks_perm  : ¬perm (role_of restricted_agent) restricted_claim
 
 /-- An RBAC surface with differentiated roles directly instantiates `GroundedAuthorization`.
-    Both `access_granted` (privileged) and `restriction_holds` (restricted) are derived
-    from the role-permission equivalence. -/
+    `may_commit` (privileged role has permission) and `cannot_commit` (restricted role
+    lacks permission) are derived from the role-permission equivalence. -/
 def rbac_to_grounded (M : RBACAuthSurface) : GroundedAuthorization where
-  Agent            := M.Agent
-  Claim            := M.Claim
-  authorize        := M.authorize
-  privileged_agent := M.privileged_agent
-  restricted_agent := M.restricted_agent
-  restricted_claim := M.restricted_claim
-  access_granted   := (M.derives_from_rbac M.privileged_agent M.restricted_claim).mpr M.role_has_perm
-  restriction_holds := fun h =>
+  Agent         := M.Agent
+  Claim         := M.Claim
+  can_propose   := fun _ _ => True
+  can_commit    := M.authorize
+  submitter     := M.restricted_agent
+  committer     := M.privileged_agent
+  tier_claim    := M.restricted_claim
+  may_propose   := trivial
+  cannot_commit := fun h =>
     M.role_lacks_perm ((M.derives_from_rbac M.restricted_agent M.restricted_claim).mp h)
+  may_commit    := (M.derives_from_rbac M.privileged_agent M.restricted_claim).mpr M.role_has_perm
 
-/-- Agent-uniform authorization is impossible in any RBAC surface with differentiated roles:
-    `no_agent_uniform_policy` fires via `rbac_to_grounded.toStrict`. -/
-theorem rbac_uniform_impossible (M : RBACAuthSurface)
-    (h_unif : ∀ a b P, M.authorize a P ↔ M.authorize b P) : False :=
-  (rbac_to_grounded M).toStrict.no_agent_uniform_policy h_unif
+/-- No flat authorization predicate can represent both the open submission tier and
+    the role-restricted commit tier: `no_flat_tier` fires via `rbac_to_grounded.toStrict`. -/
+theorem rbac_two_tier_impossible (M : RBACAuthSurface) :
+    ¬∃ (f : M.Agent → M.Claim → Prop),
+      (∀ a c, f a c ↔ True) ∧ (∀ a c, f a c ↔ M.authorize a c) :=
+  (rbac_to_grounded M).toStrict.no_flat_tier
 
 /-- Capability-token authorization: an agent is authorized for a claim iff it
     holds a token that grants that claim.  Two witnesses: the restricted agent
@@ -1463,28 +1492,32 @@ structure CapabilityTokenAuth where
   /-- The restricted agent holds no token that grants the restricted claim. -/
   no_token         : ∀ t, holds_token restricted_agent t → ¬token_grants t restricted_claim
 
-/-- A capability-token surface with differentiated token ownership directly instantiates
-    `GroundedAuthorization`.  Both `access_granted` and `restriction_holds` are derived
-    from the token-capability semantics. -/
+/-- A capability-token surface with differentiated token ownership directly
+    instantiates `GroundedAuthorization`.  `may_commit` (privileged agent has a
+    granting token) and `cannot_commit` (restricted agent has no granting token)
+    are derived from the token-capability semantics. -/
 def capability_token_to_grounded (M : CapabilityTokenAuth) : GroundedAuthorization where
-  Agent            := M.Agent
-  Claim            := M.Claim
-  authorize        := M.authorize
-  privileged_agent := M.privileged_agent
-  restricted_agent := M.restricted_agent
-  restricted_claim := M.restricted_claim
-  access_granted   := (M.derives_from_caps M.privileged_agent M.restricted_claim).mpr
-      ⟨M.priv_token, M.holds_priv, M.priv_grants⟩
-  restriction_holds := fun h =>
+  Agent         := M.Agent
+  Claim         := M.Claim
+  can_propose   := fun _ _ => True
+  can_commit    := M.authorize
+  submitter     := M.restricted_agent
+  committer     := M.privileged_agent
+  tier_claim    := M.restricted_claim
+  may_propose   := trivial
+  cannot_commit := fun h =>
     let ⟨t, h_holds, h_grants⟩ :=
       (M.derives_from_caps M.restricted_agent M.restricted_claim).mp h
     M.no_token t h_holds h_grants
+  may_commit    := (M.derives_from_caps M.privileged_agent M.restricted_claim).mpr
+      ⟨M.priv_token, M.holds_priv, M.priv_grants⟩
 
-/-- Agent-uniform authorization is impossible in any capability-token surface
-    with differentiated ownership: `no_agent_uniform_policy` fires via the bridge. -/
-theorem capability_token_uniform_impossible (M : CapabilityTokenAuth)
-    (h_unif : ∀ a b P, M.authorize a P ↔ M.authorize b P) : False :=
-  (capability_token_to_grounded M).toStrict.no_agent_uniform_policy h_unif
+/-- No flat authorization predicate can represent both the open submission tier and
+    the token-restricted commit tier: `no_flat_tier` fires via the bridge. -/
+theorem capability_token_two_tier_impossible (M : CapabilityTokenAuth) :
+    ¬∃ (f : M.Agent → M.Claim → Prop),
+      (∀ a c, f a c ↔ True) ∧ (∀ a c, f a c ↔ M.authorize a c) :=
+  (capability_token_to_grounded M).toStrict.no_flat_tier
 
 /-- Attribute-based ACL: authorization requires the agent to hold all attributes
     demanded by the claim.  Two witnesses: the restricted agent lacks a required
@@ -1507,25 +1540,28 @@ structure AttributeBasedAuth where
   missing_attr      : ∃ attr, requires restricted_claim attr ∧ ¬has_attr restricted_agent attr
 
 /-- An attribute-based ACL surface with differentiated attribute ownership directly
-    instantiates `GroundedAuthorization`.  Both `access_granted` and `restriction_holds`
+    instantiates `GroundedAuthorization`.  `may_commit` and `cannot_commit`
     are derived from the attribute-satisfaction semantics. -/
 def attribute_based_to_grounded (M : AttributeBasedAuth) : GroundedAuthorization where
-  Agent            := M.Agent
-  Claim            := M.Claim
-  authorize        := M.authorize
-  privileged_agent := M.privileged_agent
-  restricted_agent := M.restricted_agent
-  restricted_claim := M.restricted_claim
-  access_granted   := (M.derives_from_attrs M.privileged_agent M.restricted_claim).mpr M.has_all_req
-  restriction_holds := fun h =>
+  Agent         := M.Agent
+  Claim         := M.Claim
+  can_propose   := fun _ _ => True
+  can_commit    := M.authorize
+  submitter     := M.restricted_agent
+  committer     := M.privileged_agent
+  tier_claim    := M.restricted_claim
+  may_propose   := trivial
+  cannot_commit := fun h =>
     let ⟨attr, h_req, h_no_attr⟩ := M.missing_attr
     h_no_attr ((M.derives_from_attrs M.restricted_agent M.restricted_claim).mp h attr h_req)
+  may_commit    := (M.derives_from_attrs M.privileged_agent M.restricted_claim).mpr M.has_all_req
 
-/-- Agent-uniform authorization is impossible in any attribute-based ACL surface
-    with a missing required attribute: `no_agent_uniform_policy` fires via the bridge. -/
-theorem attribute_based_uniform_impossible (M : AttributeBasedAuth)
-    (h_unif : ∀ a b P, M.authorize a P ↔ M.authorize b P) : False :=
-  (attribute_based_to_grounded M).toStrict.no_agent_uniform_policy h_unif
+/-- No flat authorization predicate can represent both the open submission tier and
+    the attribute-restricted commit tier: `no_flat_tier` fires via the bridge. -/
+theorem attribute_based_two_tier_impossible (M : AttributeBasedAuth) :
+    ¬∃ (f : M.Agent → M.Claim → Prop),
+      (∀ a c, f a c ↔ True) ∧ (∀ a c, f a c ↔ M.authorize a c) :=
+  (attribute_based_to_grounded M).toStrict.no_flat_tier
 
 
 /-! ## §7. GroundedX ↔ Impossibility Bridges
@@ -1647,29 +1683,33 @@ def GroundedRedeemabilityStrict.mk' (G : GroundedRedeemability) : GroundedRedeem
   G.toStrict
 
 
-/-! ### §7.7  Authorization ↔ UniformAccessScenario -/
+/-! ### §7.7  Authorization ↔ TwoTierAccess -/
 
-/-- Convert `GroundedAuthorization` to `UniformAccessScenario`.
-    Both the positive (`access_granted`) and negative (`restriction_holds`) witnesses
-    map directly to `must_allow` and `has_restriction`. -/
-def groundedAuthorization_to_scenario (G : GroundedAuthorization) : UniformAccessScenario where
-  Agent            := G.Agent
-  Claim            := G.Claim
-  authorize        := G.authorize
-  privileged_agent := G.privileged_agent
-  restricted_agent := G.restricted_agent
-  restricted_claim := G.restricted_claim
-  must_allow       := G.access_granted
-  has_restriction  := G.restriction_holds
+/-- Convert `GroundedAuthorization` to `TwoTierAccess`.
+    The fields map directly: `can_propose`/`can_commit`/`submitter`/`committer`/`tier_claim`
+    and their proof witnesses `may_propose`/`cannot_commit`/`may_commit`. -/
+def groundedAuthorization_to_scenario (G : GroundedAuthorization) : TwoTierAccess where
+  Agent         := G.Agent
+  Claim         := G.Claim
+  can_propose   := G.can_propose
+  can_commit    := G.can_commit
+  submitter     := G.submitter
+  committer     := G.committer
+  tier_claim    := G.tier_claim
+  may_propose   := G.may_propose
+  cannot_commit := G.cannot_commit
+  may_commit    := G.may_commit
 
-/-- Agent-uniform authorization contradicts the two-witness differentiation.
-    Invokes `uniform_access_impossible` via the bridge conversion. -/
-theorem groundedAuthorization_uniform_impossible (G : GroundedAuthorization) :
-    ¬∀ (a b : G.Agent) (P : G.Claim), G.authorize a P ↔ G.authorize b P :=
-  fun h_unif => uniform_access_impossible (groundedAuthorization_to_scenario G) h_unif
+/-- No flat authorization predicate can faithfully represent both tiers of a
+    `GroundedAuthorization`.  Invokes `flat_authorization_impossible` via the bridge. -/
+theorem groundedAuthorization_flat_impossible (G : GroundedAuthorization) :
+    ¬∃ (f : G.Agent → G.Claim → Prop),
+      (∀ a c, f a c ↔ G.can_propose a c) ∧
+      (∀ a c, f a c ↔ G.can_commit a c) :=
+  flat_authorization_impossible (groundedAuthorization_to_scenario G)
 
-/-- Thin alias for `G.toStrict`.  Cite `groundedAuthorization_uniform_impossible` directly
-    when a proof must explicitly name the uniform-access impossibility route. -/
+/-- Thin alias for `G.toStrict`.  Cite `groundedAuthorization_flat_impossible` directly
+    when a proof must explicitly name the two-tier impossibility route. -/
 def GroundedAuthorizationStrict.mk' (G : GroundedAuthorization) : GroundedAuthorizationStrict :=
   G.toStrict
 

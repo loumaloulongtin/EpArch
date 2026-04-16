@@ -94,23 +94,6 @@ theorem w_partial_obs_forces_redeemability (C : @EpArch.WorldCtx.{0})
   exact ⟨P, w0, fun endorsed obs_stable closed h_end =>
     (h_bic.mp (closed w0 P h_end)) (closed w1 P (obs_stable P w0 w1 h_obs h_end))⟩
 
-/-- W_lies_possible and W_multi_agent_heterogeneous are incompatible.
-
-    W_lies_possible.unrestricted_utterance asserts every agent can utter every claim.
-    W_multi_agent_heterogeneous.secrets_exist asserts some agent cannot utter some claim.
-    These are direct contradictions.
-
-    Architectural consequence: a world under full adversarial pressure (W_lies_possible,
-    unrestricted submission) cannot simultaneously protect secrets (W_multi_agent_heterogeneous).
-    Equivalently, to protect secrets, the authorization surface must be gated — open-mode
-    ACL is only sound when secrets are not a requirement. -/
-theorem w_lies_multi_agent_incompatible (C : @EpArch.WorldCtx.{0})
-    (W_lies : C.W_lies_possible)
-    (W_multi : C.W_multi_agent_heterogeneous) : False := by
-  have ⟨a, P, h_no_utter⟩ := W_multi.secrets_exist
-  exact h_no_utter (W_lies.unrestricted_utterance a P)
-
-
 /-! ## World-Grounded Convergence -/
 
 /-- A working system is world-aware with respect to WorldCtx C if its structural
@@ -129,12 +112,11 @@ theorem w_lies_multi_agent_incompatible (C : @EpArch.WorldCtx.{0})
 
     Why authorization is unconditional rather than gated on W_multi_agent_heterogeneous:
     (1) W_multi_agent_heterogeneous is formally incompatible with W_lies_possible
-        (proven in WorldCtx.w_lies_multi_agent_incompatible and
-        w_lies_multi_agent_incompatible), so it cannot be added as a guard here
-        alongside Wl without making this theorem vacuously provable from contradictory
-        premises.
+        (proven in WorldCtx.w_lies_multi_agent_incompatible), so it cannot be added
+        as a guard here alongside Wl without making this theorem vacuously provable
+        from contradictory premises.
     (2) The authorization forcing is self-certifying: GroundedAuthorizationStrict carries
-        restriction_holds and no_agent_uniform_policy, both derived from the system's
+        no_flat_tier, derived from the system's
         own authorization evidence without any world-semantic premise.  The parallel is
         exact: scope forcing is also self-certifying (AgentDisagreement is internal to
         the system), and scope is unconditional for the same reason. -/
@@ -191,7 +173,7 @@ theorem world_assumptions_force_bank_primitives (C : @EpArch.WorldCtx.{0})
         revocation_consequence    := fun G _h_ev => G.has_invalid_revocable_witness
         bank_consequence          := fun G _h_ev => G.has_shared_entry
         redeemability_consequence := fun G _h_ev => G.has_constrained_redeemable_witness
-        authorization_consequence := fun G _h_ev => G.no_agent_uniform_policy } }
+        authorization_consequence := fun G _h_ev => G.no_flat_tier } }
   exact (grounded_evidence_consequences W h_sf h_sat).1
 
 /-- Any StructurallyForced system satisfies WorldAwareSystem for any WorldCtx.
@@ -258,7 +240,7 @@ theorem kernel_world_forces_bank_primitives :
     | Bank          | `RepresentsPrivateCoordination`  | absent ledger, both agents access the same deposit   |
     | Redeemability | `RepresentsClosedEndorsement`    | absent redeemability, endorsed claim is falsifiable  |
 
-    | Authorization | `RepresentsUniformAccess`        | absent granular ACL, all agents are uniformly authorized |
+    | Authorization | `RepresentsUniformAccess`        | absent granular ACL, a flat predicate represents both the submission and commit tiers |
 
     All seven `ForcingEmbedding` fields are constructed inline from the witnesses —
     none are stated as opaque system-design axioms.  `embedding_to_structurally_forced`
@@ -295,8 +277,9 @@ theorem grounded_world_and_structure_force_bank_primitives
     (c_re : Re.Claim)
     (h_endorsed : Re.endorsed c_re)
     (h_fals : ¬HasRedeemability W → Re.externally_falsifiable c_re)
-    -- Authorization: absent granular ACL, all agents are uniformly authorized
-    (h_no_acl_uniform : ¬HasGranularACL W → ∀ (a : Ra.Agent) (P : Ra.Claim), Ra.authorize a P)
+    -- Authorization: absent granular ACL, a flat predicate represents both tiers
+    (h_no_acl_flat : ¬HasGranularACL W → ∃ f : Ra.Agent → Ra.Claim → Prop,
+        (∀ a c, f a c ↔ Ra.can_propose a c) ∧ (∀ a c, f a c ↔ Ra.can_commit a c))
     (h_sat : SatisfiesAllProperties W) :
     containsBankPrimitives W := by
   -- Construct h_sf from the seven Represents* scenario witnesses.
@@ -326,7 +309,7 @@ theorem grounded_world_and_structure_force_bank_primitives
       · exact Or.inl hre
       · exact Or.inr ⟨Re.toClosed hre, c_re, h_endorsed, h_fals hre⟩
     · -- authorization: use uniform_access_acl_embed from Scenarios
-      exact uniform_access_acl_embed W Ra h_no_acl_uniform h
+      exact uniform_access_acl_embed W Ra h_no_acl_flat h
   -- .1 extracts containsBankPrimitives.
   exact (grounded_evidence_consequences W h_sf h_sat).1
 
@@ -371,7 +354,7 @@ theorem bundled_structure_forces_bank_primitives
     B.n_rev B.h_rev_escape
     O.shared_deposit O.h_access₁ O.h_access₂
     B.c_re B.h_endorsed B.h_fals
-    O.h_no_acl_uniform
+    O.h_no_acl_flat
     h_sat
 
 end EpArch.WorldBridges

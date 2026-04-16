@@ -2,14 +2,14 @@
 EpArch.Convergence — Convergence Theorem and Structural Proof Machinery
 
 The central convergence theorem: any WorkingSystem that is StructurallyForced
-and satisfies all six operational properties necessarily contains Bank primitives.
+and satisfies all seven forcing dimensions necessarily contains Bank primitives.
 
 Key exports:
 - StructurallyForced (forward-only forcing implications, capability → feature)
 - ForcingEmbedding (auditable disjunction connecting WorkingSystems to
   structural models; embedding_to_structurally_forced derives
   StructurallyForced constructively)
-- Bridge predicates (BridgeBubbles … BridgeRedeemability) and
+- Bridge predicates (BridgeBubbles … BridgeAuthorization) and
   bridge_*_impossible theorems (system-independent impossibility)
 - convergence_structural (the central theorem)
 - structural_impossibility (missing any feature blocks all-property satisfaction)
@@ -25,7 +25,7 @@ namespace EpArch
 
 /-! ## StructurallyForced: Forward-Direction Forcing
 
-`StructurallyForced` packages the six `handles_X → HasY` forcing implications
+`StructurallyForced` packages the seven `handles_X → HasY` forcing implications
 as a single universally-quantified field indexed by `Pressure`.  Pattern-matching
 on `Pressure` is machine-exhaustive: if a new dimension is added, every `cases P`
 proof requires a new case.
@@ -33,12 +33,12 @@ proof requires a new case.
 Each `handles_pressure W P → forced_feature W P` instance is independently
 justified by a structural impossibility model in EpArch.Minimality. -/
 
-/-- The six structural impossibility consequences readable from a `WorkingSystem`'s
+/-- The seven structural impossibility consequences readable from a `WorkingSystem`'s
     stored `GroundedXStrict` evidence.
 
     Separated from `StructurallyForced` so that the forcing interface and the
     evidence-readout bundle remain conceptually distinct.  When strict evidence
-    is present the consequence is already carried by the value — these six fields
+    is present the consequence is already carried by the value — these seven fields
     simply expose it. -/
 structure EvidenceConsequences (W : WorkingSystem) : Prop where
   /-- Scope separation is structurally forced: no flat resolver can represent both scopes. -/
@@ -63,9 +63,10 @@ structure EvidenceConsequences (W : WorkingSystem) : Prop where
   /-- Redeemability forcing: a constrained-and-redeemable witness is known. -/
   redeemability_consequence : ∀ G : GroundedRedeemabilityStrict, W.redeemability_ev = some G →
       ∃ c : G.base.Claim, G.base.constrained c ∧ G.base.redeemable c
-  /-- Authorization forcing: agent-uniform authorization is impossible given the two-witness differentiation. -/
+  /-- Authorization forcing: no flat predicate can represent both the submission and commit tiers. -/
   authorization_consequence : ∀ G : GroundedAuthorizationStrict, W.authorization_ev = some G →
-      ¬∀ (a b : G.base.Agent) (P : G.base.Claim), G.base.authorize a P ↔ G.base.authorize b P
+      ¬∃ (f : G.base.Agent → G.base.Claim → Prop),
+          (∀ a c, f a c ↔ G.base.can_propose a c) ∧ (∀ a c, f a c ↔ G.base.can_commit a c)
 
 /-- A system is structurally forced: for every pressure dimension, handling
     the capability implies the forced architectural feature.
@@ -191,18 +192,19 @@ def BridgeRedeemability (_W : WorkingSystem) : Prop :=
 theorem bridge_redeemability_impossible (_W : WorkingSystem) : ¬BridgeRedeemability _W :=
   fun ⟨M, c, hc⟩ => closed_system_unfalsifiable M ⟨c, hc⟩
 
-/-- A system is bridge-committed on authorization: all agents have equivalent authorization
-    for every claim (agent-uniform access).  The commitment that `uniform_access_impossible`
-    proves is universally impossible: the scenario already carries two witnesses with
-    strictly different authorization for the same claim. -/
+/-- A system is bridge-committed on authorization: a single flat predicate represents
+    both the submission tier and the commit tier simultaneously.  The commitment that
+    lat_authorization_impossible proves is universally impossible: the scenario
+    already carries a submitter that can propose but not commit. -/
 def BridgeAuthorization (_W : WorkingSystem) : Prop :=
-  ∃ M : UniformAccessScenario, ∀ (a b : M.Agent) (P : M.Claim), M.authorize a P ↔ M.authorize b P
+  ∃ M : TwoTierAccess, ∃ f : M.Agent → M.Claim → Prop,
+    (∀ a c, f a c ↔ M.can_propose a c) ∧ (∀ a c, f a c ↔ M.can_commit a c)
 
-/-- The authorization bridge scenario is universally impossible: agent-uniform authorization
-    contradicts the two-witness differentiation carried by `UniformAccessScenario`.
-    Proof: passes the agent-uniform hypothesis directly to `uniform_access_impossible`. -/
+/-- The authorization bridge scenario is universally impossible: no flat predicate
+    can represent both tiers of a TwoTierAccess scenario.
+    Proof: passes the flat predicate hypothesis directly to lat_authorization_impossible. -/
 theorem bridge_authorization_impossible (_W : WorkingSystem) : ¬BridgeAuthorization _W :=
-  fun ⟨M, h⟩ => uniform_access_impossible M h
+  fun ⟨M, h_flat⟩ => flat_authorization_impossible M h_flat
 
 
 /-- Maps each `Pressure` dimension to its bridge-scenario predicate.
@@ -268,7 +270,7 @@ theorem embedding_to_structurally_forced (W : WorkingSystem) (E : ForcingEmbeddi
     revocation_consequence    := fun G _h_ev => G.has_invalid_revocable_witness
     bank_consequence          := fun G _h_ev => G.has_shared_entry
     redeemability_consequence := fun G _h_ev => G.has_constrained_redeemable_witness
-    authorization_consequence := fun G _h_ev => G.no_agent_uniform_policy }
+    authorization_consequence := fun G _h_ev => G.no_flat_tier }
 
 
 /-! ## Convergence and Impossibility (Structural Versions) -/
@@ -312,7 +314,8 @@ theorem grounded_evidence_consequences (W : WorkingSystem)
     (∃ G : GroundedRedeemabilityStrict, W.redeemability_ev = some G ∧
         ∃ c : G.base.Claim, G.base.constrained c ∧ G.base.redeemable c) ∧
     (∃ G : GroundedAuthorizationStrict, W.authorization_ev = some G ∧
-        ¬∀ (a b : G.base.Agent) (P : G.base.Claim), G.base.authorize a P ↔ G.base.authorize b P) := by
+        ¬∃ (f : G.base.Agent → G.base.Claim → Prop),
+            (∀ a c, f a c ↔ G.base.can_propose a c) ∧ (∀ a c, f a c ↔ G.base.can_commit a c)) := by
   refine ⟨convergence_structural W h_sf h_sat, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   -- Each goal: none-branch contradicted via Bool.noConfusion h2;
   -- some G branch closed via h_sf.evidence.X_consequence G h_ev.

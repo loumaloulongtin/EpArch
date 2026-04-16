@@ -309,21 +309,24 @@ private def concRedeemability : GroundedRedeemability where
   is_constrained := rfl
   has_path       := True.intro
 
-/-- Concrete authorization evidence: `.restricted` cannot access `.authorized` claims.
+/-- Concrete authorization evidence: two-tier access model.
 
-    Two agent kinds: `.authorized` (full access) and `.restricted` (no access).
-    The restriction holds trivially by `decide`. -/
+    Two agent kinds: `.authorized` (commit tier) and `.restricted` (submission tier only).
+    The `.restricted` agent may propose (`can_propose = True`) but cannot commit.
+    Proven by `decide` on the `ConcAuthKind` inductive with `DecidableEq`. -/
 private inductive ConcAuthKind where | authorized | restricted deriving DecidableEq
 
 private def concAuthorization : GroundedAuthorization where
-  Agent            := ConcAuthKind
-  Claim            := ConcAuthKind
-  authorize        := fun a _ => a = .authorized
-  privileged_agent := .authorized
-  restricted_agent := .restricted
-  restricted_claim := .authorized
-  access_granted   := rfl
-  restriction_holds := by decide
+  Agent         := ConcAuthKind
+  Claim         := ConcAuthKind
+  can_propose   := fun _ _ => True
+  can_commit    := fun a _ => a = .authorized
+  submitter     := .restricted
+  committer     := .authorized
+  tier_claim    := .authorized
+  may_propose   := trivial
+  cannot_commit := by decide
+  may_commit    := rfl
 
 /-- The concrete working system: all seven proof-carrying option fields set
     from concrete domain evidence. -/
@@ -463,7 +466,7 @@ theorem concrete_structurally_forced : StructurallyForced ConcreteWorkingSystem 
     authorization_consequence := fun G heq => by
       have hrfl : ConcreteWorkingSystem.authorization_ev = some concAuthorization.toStrict := rfl
       rw [hrfl] at heq; injection heq with hG; subst hG
-      exact concAuthorization.toStrict.no_agent_uniform_policy }
+      exact concAuthorization.toStrict.no_flat_tier }
 
 /-- Structural convergence applies to the concrete model.
     Full chain: ForcingEmbedding → StructurallyForced → convergence. -/
