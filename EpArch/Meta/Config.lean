@@ -392,20 +392,29 @@ def latticeWitness : (c : EnabledLatticeCluster) → LatticeWitness c
 
 /-! ## §4g  Cluster Validity
 
-`clusterValid c = True` for every cluster `c`.  All 30 clusters are machine-proved;
-the typed Lean propositions live in:
-- `constraintSpec c` (Tier 2: forcing propositions + proofs)
-- `goalWitness c`, `worldWitness c`, `tier4Witness c`, `metaModularWitness c`,
-  `latticeWitness c` (indexed proof carriers, §4c–§4e')
-- `cluster_*` named theorems (§5b: one per cluster, callable by name)
+`clusterValid c` holds for every cluster `c`.  For the seven Tier 2 forcing clusters
+it IS the forcing proposition itself — `(constraintSpec ec).witness.statement` — which
+is machine-proved by `(constraintSpec ec).witness.proof`.  For all other families
+it is `True`.
 
-Keeping `clusterValid = True` avoids universe-polymorphism complications
-(the indexed witnesses reference `ExtModel : Type u`); the certification
-value is provided by `CertifiedProjection`'s indexed witness fields. -/
+The Tier 2 forcing clusters are the only family where `clusterValid` carries
+the actual forcing content through this interface.  The remaining 23 clusters
+are certified by the indexed witness fields of `CertifiedProjection`
+(`goalWitnesses`, `worldWitnesses`, `tier4Witnesses`, `metaModularWitnesses`,
+`latticeWitnesses`) and by the `cluster_*` named gallery in §5b — outside
+the scope of a single `ClusterTag → Prop` function due to universe constraints
+on `GoalWitness` / `WorldWitness` (they reference `ExtModel : Type u`). -/
 
-/-- Every cluster is valid: holds unconditionally.
-    Typed proof content for each cluster is in the `cluster_*` gallery (§5b). -/
-def clusterValid : ClusterTag → Prop := fun _ => True
+/-- A cluster is valid.
+    For Tier 2 forcing clusters: `clusterValid c` is the actual forcing proposition
+    `(constraintSpec ec).witness.statement`, machine-proved by
+    `(constraintSpec ec).witness.proof`.
+    For all other clusters: `True` (certified by the indexed witnesses in
+    `CertifiedProjection` and the `cluster_*` gallery). -/
+def clusterValid (c : ClusterTag) : Prop :=
+  match constraintClusterOfTag? c with
+  | some ec => (constraintSpec ec).witness.statement
+  | none    => True
 
 
 /-! ## §4f  Correspondence Lemmas (support lemmas)
@@ -479,11 +488,19 @@ private theorem enabledLatticeCluster_mem_all (c : EnabledLatticeCluster) :
 
 /-! ## §5  Soundness: `clusterEnabled cfg c = true → clusterValid c` -/
 
-/-- `clusterEnabled` is sound: every cluster it marks enabled is machine-proved.
-    `clusterValid c = True` universally; the proof is `trivial`.
-    For the typed proposition of cluster `c`, use `#check cluster_<name>` (§5b). -/
+/-- `clusterEnabled` is sound: every cluster it marks enabled satisfies `clusterValid`.
+    For Tier 2 forcing clusters, `clusterValid c` IS the forcing proposition
+    `(constraintSpec ec).witness.statement` — proved by `(constraintSpec ec).witness.proof`.
+    For all other clusters, `clusterValid c = True` — proved by `trivial`.
+    The typed proposition and proof for cluster `c` is available as `cluster_<name>` in §5b. -/
 theorem clusterEnabled_sound (cfg : EpArchConfig) (c : ClusterTag)
-    (_h : clusterEnabled cfg c = true) : clusterValid c := trivial
+    (_h : clusterEnabled cfg c = true) : clusterValid c := by
+  unfold clusterValid
+  split
+  · -- Tier 2 forcing cluster: the witness proof closes the goal
+    exact (constraintSpec _).witness.proof
+  · -- All other clusters: unconditional
+    trivial
 
 
 /-! ## §6  Certified Projection
@@ -511,7 +528,9 @@ structure CertifiedProjection (cfg : EpArchConfig) where
   enabled                   : List ClusterTag
   /-- Faithfully mirrors `explainConfig`. -/
   complete                  : enabled = explainConfig cfg
-  /-- Every enabled cluster is machine-proved (`clusterValid c = True`). -/
+  /-- Every enabled cluster satisfies `clusterValid`: for Tier 2 forcing clusters,
+      this IS the forcing proposition (machine-proved by `constraintSpec`); for all
+      other clusters it is `True`. -/
   sound                     : ∀ c, c ∈ enabled → clusterValid c
   /-- Tier 2 proof carriers (all seven, config-independent).
       `constraintWitnesses c` delivers the real proposition and proof for
@@ -547,7 +566,10 @@ structure CertifiedProjection (cfg : EpArchConfig) where
 def certify (cfg : EpArchConfig) : CertifiedProjection cfg where
   enabled             := explainConfig cfg
   complete            := rfl
-  sound               := fun _ _ => trivial
+  sound               := fun c _ => by
+    unfold clusterValid; split
+    · exact (constraintSpec _).witness.proof
+    · trivial
   constraintWitnesses := constraintProof
   enabledConstraintWitnesses :=
     allConstraintClusters.filterMap fun c =>
