@@ -140,7 +140,10 @@ def constraintSpec (c : EnabledConstraintCluster) : ConstraintClusterSpec :=
           proof     := fun _W sf => sf.forcing .bank }
       | .forcing_truth => {
           statement := ∀ W : WorkingSystem, StructurallyForced W → handles_truth_pressure W → HasRedeemability W
-          proof     := fun _W sf => sf.forcing .redeemability } }
+          proof     := fun _W sf => sf.forcing .redeemability }
+      | .forcing_multi_agent => {
+          statement := ∀ W : WorkingSystem, StructurallyForced W → handles_multi_agent W → HasGranularACL W
+          proof     := fun _W sf => sf.forcing .authorization } }
 
 /-- Extract the proof carrier for constraint cluster `c` from `constraintSpec`. -/
 def constraintProof (c : EnabledConstraintCluster) : ConstraintProof := (constraintSpec c).witness
@@ -500,7 +503,7 @@ structure CertifiedProjection (cfg : EpArchConfig) where
   complete                  : enabled = explainConfig cfg
   /-- Every enabled cluster is machine-proved (`clusterValid c = True`). -/
   sound                     : ∀ c, c ∈ enabled → clusterValid c
-  /-- Tier 2 proof carriers (all six, config-independent).
+  /-- Tier 2 proof carriers (all seven, config-independent).
       `constraintWitnesses c` delivers the real proposition and proof for
       forcing cluster `c` regardless of which constraints `cfg` enables. -/
   constraintWitnesses        : (c : EnabledConstraintCluster) → ConstraintProof
@@ -807,8 +810,8 @@ theorem cluster_world_ddos
 
 -- ── Constraint-modularity meta-theorems ───────────────────────────────────────
 
-/-- Cluster `.meta_modular`: the six EpArch constraints are independent modules.
-    Any subset S of the six constraints defines a self-consistent configuration:
+/-- Cluster `.meta_modular`: the seven EpArch constraints are independent modules.
+    Any subset S of the seven constraints defines a self-consistent configuration:
     if W partially satisfies S, the forcing theorems for every constraint in S hold. -/
 theorem cluster_meta_modular (S : ConstraintSubset) (W : WorkingSystem)
     (pwf : PartialWellFormed W S) : projection_valid S W :=
@@ -846,10 +849,11 @@ theorem cluster_lattice_pack :
 
 Uncomment `#eval` lines to inspect routing interactively. -/
 
-/-- Full EpArch configuration: all six constraints, all five goals, all eight worlds. -/
+/-- Full EpArch configuration: all seven constraints, all five goals, all eight worlds. -/
 def fullConfig : EpArchConfig where
   constraints := [.distributed_agents, .bounded_audit, .export_across_boundaries,
-                  .adversarial_pressure, .coordination_need, .truth_pressure]
+                  .adversarial_pressure, .coordination_need, .truth_pressure,
+                  .multi_agent_access]
   goals       := [.safeWithdrawal, .reliableExport, .corrigibleLedger,
                   .soundDeposits, .selfCorrection]
   worlds      := [.lies_possible, .bounded_verification, .partial_observability,
