@@ -451,10 +451,11 @@ def MySpec : PartialGroundedSpec MyConstraints where
   revocation := fun _ => { Claim := MyEvent, valid := ..., revocable := ...,
                            witness := ..., witness_is_invalid := ..., can_revoke := ... }
   -- Inactive: vacuously inhabited (no obligation)
-  trust_bridges := fun h => absurd h (by decide)
-  headers       := fun h => absurd h (by decide)
-  bank          := fun h => absurd h (by decide)
-  redeemability := fun h => absurd h (by decide)
+  trust_bridges   := fun h => absurd h (by decide)
+  headers         := fun h => absurd h (by decide)
+  bank            := fun h => absurd h (by decide)
+  redeemability   := fun h => absurd h (by decide)
+  authorization   := fun h => absurd h (by decide)
 ```
 
 **Step 3 — Compile**
@@ -468,12 +469,13 @@ def MySpec : PartialGroundedSpec MyConstraints where
 
 | `ConstraintSubset` field | EpArch constraint    | Required evidence type  | Key fields                                                |
 |--------------------------|----------------------|-------------------------|-----------------------------------------------------------|
-| `distributed`            | Distributed agents   | `GroundedBubbles`       | `scope₁`, `scope₂`, `witness`, disagree proof             |
-| `bounded_audit`          | Bounded audit        | `GroundedTrustBridges`  | `upstream_accepts`, `downstream_via_bridge`               |
-| `export_across`          | Export across bounds | `GroundedHeaders`       | `extract`, `export_datum`, `header_preserved`             |
-| `adversarial`            | Adversarial pressure | `GroundedRevocation`    | `valid`, `revocable`, `witness_is_invalid`, `can_revoke`  |
-| `coordination`           | Coordination need    | `GroundedBank`          | `agent₁_produces`, `agent₂_consumes`                      |
-| `truth_pressure`         | Truth pressure       | `GroundedRedeemability` | `constrained`, `redeemable`, `has_path`                   |
+| `distributed`            | Distributed agents        | `GroundedBubbles`         | `scope₁`, `scope₂`, `witness`, disagree proof             |
+| `bounded_audit`          | Bounded audit             | `GroundedTrustBridges`    | `upstream_accepts`, `downstream_via_bridge`               |
+| `export_across`          | Export across bounds      | `GroundedHeaders`         | `extract`, `export_datum`, `header_preserved`             |
+| `adversarial`            | Adversarial pressure      | `GroundedRevocation`      | `valid`, `revocable`, `witness_is_invalid`, `can_revoke`  |
+| `coordination`           | Coordination need         | `GroundedBank`            | `agent₁_produces`, `agent₂_consumes`                      |
+| `truth_pressure`         | Truth pressure            | `GroundedRedeemability`   | `constrained`, `redeemable`, `has_path`                   |
+| `multi_agent`            | Multi-agent authorization | `GroundedAuthorization`   | `submitter`, `committer`, `tier_claim`, `may_propose`, `cannot_commit`, `may_commit` |
 
 ### Proof Chain
 
