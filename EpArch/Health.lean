@@ -76,6 +76,25 @@ def SoundDepositsGoal (M : CoreModel) : Prop :=
 def SelfCorrectionGoal (M : CoreModel) : Prop :=
   ∀ B : M.sig.Bubble, M.ops.selfCorrects B → M.ops.hasRevision B
 
+/-- AuthorizedWithdrawalGoal: deposit certification is agent-differentiated.
+
+    In a multi-agent system where secrets exist, the certification surface
+    (who can submit / certify claims into the shared ledger) must be
+    non-uniform.  This goal holds when there exist two agents with different
+    submission access — at least one agent cannot certify at least one
+    (bubble, deposit) pair that another agent can.
+
+    This is the abstract health goal corresponding to "ACL is non-trivial
+    at the operational level."  SafeWithdrawalGoal (revision capability) is
+    orthogonal: both can hold independently.
+
+    Only relevant in the multi-agent collaboration case.  A single agent
+    managing their own bank trivially fails this goal (no second agent exists)
+    and does not need to satisfy it. -/
+def AuthorizedWithdrawalGoal (M : CoreModel) : Prop :=
+  ∃ (a₁ a₂ : M.sig.Agent), ∃ (B : M.sig.Bubble) (d : M.sig.Deposit),
+    M.ops.submit a₁ B d ∧ ¬M.ops.submit a₂ B d
+
 /-- SelfCorrectingSystem: A system that ACTIVELY self-corrects.
 
     Combines SelfCorrectionGoal (the conditional: selfCorrects → hasRevision)
@@ -149,6 +168,21 @@ theorem sound_deposits_needs_verification (M : CoreModel)
     have h_verify := h_sound B d h_truth
     exact ⟨B, d, M.ops.effectiveTime B, h_verify⟩
 
+/-- Authorized withdrawal goal forces agent-differentiated certification.
+
+    **PROVED**: If certification must be agent-differentiated, two distinct agents
+    exist with different submit access.  Distinctness follows by contradiction:
+    if a₁ = a₂, then h_sub and h_no_sub apply to the same agent — absurd. -/
+theorem authorized_withdrawal_needs_differentiation (M : CoreModel)
+    (h : AuthorizedWithdrawalGoal M) :
+    ∃ (a₁ a₂ : M.sig.Agent), a₁ ≠ a₂ ∧
+      ∃ (B : M.sig.Bubble) (d : M.sig.Deposit),
+        M.ops.submit a₁ B d ∧ ¬M.ops.submit a₂ B d := by
+  have ⟨a₁, a₂, B, d, h_sub, h_no_sub⟩ := h
+  by_cases h_eq : a₁ = a₂
+  · exact absurd (h_eq ▸ h_sub) h_no_sub
+  · exact ⟨a₁, a₂, h_eq, B, d, h_sub, h_no_sub⟩
+
 
 /-! ## Combined System Health (Definitional) -/
 
@@ -174,16 +208,23 @@ the two names refer to the same predicate; no bridge theorem is needed. -/
 
 The health predicates connect to the architectural invariants:
 
-| Health Goal | Necessary Capability | Core Operation |
-|-------------|----------------------|----------------|
-| SafeWithdrawalGoal | Authorization | `submit` |
-| ReliableExportGoal | Revalidation | `hasRevision`, `truth` |
-| CorrigibleLedgerGoal | Revision | `revise`, `hasRevision` |
-| SoundDepositsGoal | Verification | `verifyWithin`, `effectiveTime` |
-| SelfCorrectionGoal | Revision | `hasRevision` (= RevisionGate) |
+| Health Goal | Necessary Capability | Core Operation | Context |
+|-------------|----------------------|----------------|---------|
+| SafeWithdrawalGoal | Revision capability | `submit`, `hasRevision` | All systems |
+| ReliableExportGoal | Revalidation | `hasRevision`, `truth` | Multi-bubble |
+| CorrigibleLedgerGoal | Revision | `revise`, `hasRevision` | All systems |
+| SoundDepositsGoal | Verification | `verifyWithin`, `effectiveTime` | All systems |
+| SelfCorrectionGoal | Revision | `hasRevision` (= RevisionGate) | All systems |
+| AuthorizedWithdrawalGoal | Agent-differentiated certification | `submit` | Multi-agent only |
 
 Health goals ARE definitional predicates over CoreOps.
 Necessity theorems follow from what health MEANS.
+
+AuthorizedWithdrawalGoal is not part of FullSystemHealth because it is
+only meaningful in the multi-agent collaboration case.  A single agent
+managing their own bank does not satisfy it and does not need to.  The
+world-level forcing story lives in WorldCtx.W_multi_agent_heterogeneous
+and the bridge theorem w_multi_agent_forces_authorization_need in WorldBridges.
 -/
 
 end EpArch

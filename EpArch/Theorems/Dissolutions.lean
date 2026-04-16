@@ -51,7 +51,7 @@ structure closure_puzzle where
   bank_auto_propagates : Bool := false
   /-- Structural invariant: bank_auto_propagates is always false.
       Construction-time constraint: encodes that the Step vocabulary has no
-      entailment-inference constructor (no `Step.Entail` among the 8 constructors). -/
+      entailment-inference constructor (no `Step.Entail` among the 10 constructors). -/
   bank_no_entailment : bank_auto_propagates = false
 
 /-- Certainty closes under known entailment (Ladder operation). -/
@@ -69,7 +69,7 @@ def deposits_auto_propagate (c : closure_puzzle (PropLike := PropLike)) : Prop :
 
     **Ladder side**: `h_ladder` — certainty closes under known entailment.
     Grounded by `certainty_closes_lts_grounded` (see below): the `ladder_map`
-    field is preserved under all 8 Step constructors.
+    field is preserved under all 10 Step constructors.
     **Bank side**: derived from `c.bank_no_entailment` via `Bool.noConfusion` —
     `h.symm.trans c.bank_no_entailment : true = false` closes the negation.  The
     structural invariant encodes that the Step vocabulary is closed and contains

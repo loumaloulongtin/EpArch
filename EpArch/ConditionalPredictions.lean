@@ -68,7 +68,7 @@ variable {PropLike Standard ErrorModel Provenance : Type u}
 
 /-- Import channel gating: the bubble's admission policy for agent a on claim P
     blocks disconfirming deposits from outside the approved provenance chains.
-    Operationally, the bubble's Bank.Accept function acts as a whitelist filter;
+    Operationally, the bubble's Bank.Promote function acts as a whitelist filter;
     grounding this fully requires a richer policy model of Bank.Accept.
     Named opaque: this is the import-side trust boundary. -/
 opaque import_gated (a : Agent) (B : Bubble) (P : Claim) : Prop

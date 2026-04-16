@@ -1,20 +1,21 @@
 /-
 EpArch.Scenarios — Scenario Enrichment Predicates for Structural Convergence
 
-Six Represents* structures that enrich a WorkingSystem with concrete scenario data,
+Seven Represents* structures that enrich a WorkingSystem with concrete scenario data,
 enabling the abstract structural impossibility models from EpArch.Minimality to fire
 on specific systems.  Also defines the bundled witness packages used by Feasibility.
 
-Six scenarios:
+Seven scenarios:
   1. RepresentsDisagreement         (scope / bubbles dimension)
   2. RepresentsPrivateCoordination  (bank dimension)
   3. RepresentsMonotonicLifecycle   (revocation dimension)
   4. RepresentsDiscriminatingImport (headers dimension)
   5. RepresentsBoundedVerification  (trust bridges dimension)
   6. RepresentsClosedEndorsement    (redeemability dimension)
+  7. RepresentsUniformAccess        (authorization / granular ACL dimension)
 
 Bundled packages:
-  SystemOperationalBundle -- scope + headers + bank dimensions
+  SystemOperationalBundle -- scope + headers + bank + authorization dimensions
   WorldBridgeBundle       -- revocation + trust + redeemability dimensions
 
 Consumers: EpArch.Feasibility, EpArch.Concrete.DeficientSystems.
@@ -516,14 +517,115 @@ theorem closed_endorsement_forces_redeemability
   · exact (closed_endorsement_without_redeemability_embeds W R h c h_end (h_fals h)).elim
 
 
+
+
+/-! ### Scenario 7: Two-Tier Access (Multi-Agent → Granular ACL)
+
+When a system has a staged access surface — a submission tier open to all agents
+and a commit tier restricted to authorized agents — no single flat authorization
+predicate can faithfully represent both tiers simultaneously.
+
+`RepresentsUniformAccess` enriches a `WorkingSystem` with a concrete two-tier
+access witness: a submitter that may propose but not commit, and a committer
+that may commit.  The bridge condition ("without granular ACL, a flat predicate
+represents both tiers") lives in `SystemOperationalBundle` as `h_no_acl_flat`. -/
+
+/-- A system represents a two-tier access scenario: a submission tier open to
+    all agents and a restricted commit tier.  The three-witness structure carries
+    a submitter (can propose, cannot commit), a committer (can commit), and the
+    tier_claim on which they differ.
+
+    The bridge condition ("without granular ACL, a flat predicate represents both
+    tiers") lives in SystemOperationalBundle as h_no_acl_flat, following the
+    same pattern as `flat_accept`, `f_import`, `shared_deposit` etc. -/
+structure RepresentsUniformAccess (W : WorkingSystem) where
+  /-- The agent type. -/
+  Agent         : Type
+  /-- The claim type. -/
+  Claim         : Type
+  /-- The open submission tier. -/
+  can_propose   : Agent → Claim → Prop
+  /-- The restricted commit tier. -/
+  can_commit    : Agent → Claim → Prop
+  /-- An agent in the submission tier but not the commit tier. -/
+  submitter     : Agent
+  /-- An agent in the commit tier — establishes the commit tier is non-vacuous. -/
+  committer     : Agent
+  /-- The claim on which the tiers differ. -/
+  tier_claim    : Claim
+  /-- The submitter can propose the tier claim. -/
+  may_propose   : can_propose submitter tier_claim
+  /-- The submitter cannot commit the tier claim. -/
+  cannot_commit : ¬can_commit submitter tier_claim
+  /-- The committer can commit the tier claim. -/
+  may_commit    : can_commit committer tier_claim
+
+/-- Extract `TwoTierAccess` from a `RepresentsUniformAccess` witness.
+    The fields map directly. -/
+def RepresentsUniformAccess.toScenario {W : WorkingSystem}
+    (R : RepresentsUniformAccess W) : TwoTierAccess where
+  Agent         := R.Agent
+  Claim         := R.Claim
+  can_propose   := R.can_propose
+  can_commit    := R.can_commit
+  submitter     := R.submitter
+  committer     := R.committer
+  tier_claim    := R.tier_claim
+  may_propose   := R.may_propose
+  cannot_commit := R.cannot_commit
+  may_commit    := R.may_commit
+
+/-- **Right-branch embedding (authorization direction).**
+
+    When absent granular ACL there exists a flat predicate representing both tiers,
+    the scenario is impossible by `flat_authorization_impossible. -/
+theorem uniform_access_without_acl_embeds
+    (W : WorkingSystem)
+    (R : RepresentsUniformAccess W)
+    (_h_no_acl : ¬HasGranularACL W)
+    (h_flat : ∃ f : R.Agent → R.Claim → Prop,
+        (∀ a c, f a c ↔ R.can_propose a c) ∧ (∀ a c, f a c ↔ R.can_commit a c)) :
+    False :=
+  flat_authorization_impossible R.toScenario h_flat
+
+/-- **Per-dimension structural forcing (authorization).**
+
+    Any system carrying a `RepresentsUniformAccess` witness is forced to have
+    granular ACL.  No `handles_multi_agent W` required. -/
+theorem uniform_access_forces_acl
+    (W : WorkingSystem) (R : RepresentsUniformAccess W)
+    (h_no_acl_flat : ¬HasGranularACL W → ∃ f : R.Agent → R.Claim → Prop,
+        (∀ a c, f a c ↔ R.can_propose a c) ∧ (∀ a c, f a c ↔ R.can_commit a c)) :
+    HasGranularACL W := by
+  by_cases h : HasGranularACL W
+  · exact h
+  · exact (uniform_access_without_acl_embeds W R h (h_no_acl_flat h)).elim
+
+/-- **Right-branch embedding (authorization direction):** for a system with two-tier
+    access representation, uses the right branch when ¬HasGranularACL.
+    The h_no_acl_flat field provides the bridge condition. -/
+theorem uniform_access_acl_embed
+    (W : WorkingSystem) (R : RepresentsUniformAccess W)
+    (h_no_acl_flat : ¬HasGranularACL W → ∃ f : R.Agent → R.Claim → Prop,
+        (∀ a c, f a c ↔ R.can_propose a c) ∧ (∀ a c, f a c ↔ R.can_commit a c)) :
+    handles_multi_agent W →
+    HasGranularACL W ∨
+    (∃ M : TwoTierAccess, ∃ f : M.Agent → M.Claim → Prop,
+        (∀ a c, f a c ↔ M.can_propose a c) ∧ (∀ a c, f a c ↔ M.can_commit a c)) := by
+  intro _
+  by_cases h : HasGranularACL W
+  · exact Or.inl h
+  · exact Or.inr ⟨R.toScenario, h_no_acl_flat h⟩
+
+
 /-! ## Bundled Witness Packages
 
-Two structures replace the 20+ loose parameters of the all-six forcing theorem
+Two structures replace the 20+ loose parameters of the all-seven forcing theorem
 with named records, separated by the nature of the evidence they carry.
 
-**`SystemOperationalBundle W`** — the three *architectural* dimensions:
-scope disagreement, discriminating import, private coordination.  These are
-purely operational/topological facts about the system.  They have no
+**`SystemOperationalBundle W`** — the four *architectural* dimensions:
+scope disagreement, discriminating import, private coordination, uniform access.
+These are purely operational/topological facts about the system.  They have no
 world-semantic counterpart in `WorldCtx`.
 
 **`WorldBridgeBundle W`** — the three *world-adjacent* dimensions:
@@ -533,8 +635,9 @@ bundles, but the `Represents*` instances and their bridge hypotheses are
 W-specific data that cannot be derived from W_* bundles alone.  A future
 bridge layer may close that gap; for now they are supplied explicitly. -/
 
-/-- Bundled witnesses for the three purely architectural dimensions:
-    scope (disagreement), headers (discriminating import), bank (coordination).
+/-- Bundled witnesses for the four purely architectural dimensions:
+    scope (disagreement), headers (discriminating import), bank (coordination),
+    authorization (uniform access).
 
     Each field group is: a `Represents*` structural witness followed by the
     per-dimension bridge hypothesis that makes the impossible scenario
@@ -562,6 +665,14 @@ structure SystemOperationalBundle (W : WorkingSystem) where
   shared_deposit : ¬HasBank W → Rp.Deposit
   h_access₁      : ∀ h, Rp.has_access Rp.a₁ (shared_deposit h)
   h_access₂      : ∀ h, Rp.has_access Rp.a₂ (shared_deposit h)
+  /-- Authorization dimension: a two-tier access scenario witness. -/
+  Ra : RepresentsUniformAccess W
+  /-- Without granular ACL, a flat predicate represents both the submission and commit tiers.
+      Architecturally parallel to `flat_accept for scope, `f_import for headers,
+      shared_deposit for bank: the bridge condition lives in the bundle, not in
+      the structural witness record. -/
+  h_no_acl_flat : ¬HasGranularACL W → ∃ f : Ra.Agent → Ra.Claim → Prop,
+      (∀ a c, f a c ↔ Ra.can_propose a c) ∧ (∀ a c, f a c ↔ Ra.can_commit a c)
 
 /-- Bundled witnesses for the three world-adjacent dimensions:
     revocation (adversarial/lies), trust (bounded verification),

@@ -1,6 +1,6 @@
 # Operational Semantics Documentation
 
-This document describes the canonical operational semantics for the EpArch formalization. Every deposit lifecycle step — submission, withdrawal, export, challenge, repair, revocation — is modeled as a typed transition with explicit preconditions. Safety properties follow by induction over `Trace` sequences using the `generic_invariant_preservation` template; invariants are maintained by construction, not checked ex-post.
+This document describes the canonical operational semantics for the EpArch formalization. Every deposit lifecycle step — submission, withdrawal, export, challenge, repair, revocation, promotion, inspection — is modeled as a typed transition with explicit preconditions. Safety properties follow by induction over `Trace` sequences using the `generic_invariant_preservation` template; invariants are maintained by construction, not checked ex-post.
 
 **Design choice:** Preconditions are encoded directly into the `Step` constructors rather than checked at runtime. This means the type system enforces the three-gate withdrawal model (`ACL ∧ Deposited ∧ τ-valid`) and export header-preservation statically — a violation is a type error, not a runtime failure.
 
@@ -28,20 +28,23 @@ structure SystemState (PropLike Standard ErrorModel Provenance : Type u) where
 
 ```lean
 inductive Action (PropLike Standard ErrorModel Provenance Reason Evidence : Type u) where
-  | Submit (d : Deposit PropLike Standard ErrorModel Provenance)
+  | Submit (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance)
   | Withdraw (a : Agent) (B : Bubble) (d_idx : Nat)
   | Export (B1 B2 : Bubble) (d_idx : Nat)
   | Challenge (c : EpArch.Challenge PropLike Reason Evidence)
   | Tick
   | Repair (d_idx : Nat) (f : Field)
   | Revoke (d_idx : Nat)
+  | Promote (a : Agent) (B : Bubble) (d_idx : Nat)
+  | Inspect (a : Agent) (B : Bubble) (d_idx : Nat)
 ```
 
 #### Step Relation
 
 ```lean
 inductive Step : SystemState → Action → SystemState → Prop where
-  | submit : (s : SystemState) → (d : Deposit) → Step s (.Submit d) s'
+  | submit : (s : SystemState) → (a : Agent) → (d : Deposit) →
+      hasSubmitPermission s a → Step s (.Submit a d) s'
   | withdraw : (s : SystemState) → (a : Agent) → (B : Bubble) → (d_idx : Nat) →
       hasACLPermission s a B d_idx → isCurrentDeposit s d_idx → isDeposited s d_idx →
       Step s (.Withdraw a B d_idx) s
@@ -58,6 +61,12 @@ inductive Step : SystemState → Action → SystemState → Prop where
       isQuarantined s d_idx → Step s (.Repair d_idx f) s'
   | revoke : (s : SystemState) → (d_idx : Nat) →
       isQuarantined s d_idx → Step s (.Revoke d_idx) s'
+  | promote : (s : SystemState) → (a : Agent) → (B : Bubble) → (d_idx : Nat) →
+      hasBankAuthority s a B → isCandidate s d_idx →
+      Step s (.Promote a B d_idx) s'
+  | inspect : (s : SystemState) → (a : Agent) → (B : Bubble) → (d_idx : Nat) →
+      hasACLPermission s a B d_idx → isDeposited s d_idx →
+      Step s (.Inspect a B d_idx) s
 ```
 
 ### Trace Type (Multi-Step Reachability)
@@ -97,11 +106,14 @@ Key insight: Most safety properties are **encoded as preconditions** on Step con
 
 | Action | Key Preconditions |
 |--------|-------------------|
+| `Submit` | `hasSubmitPermission` |
 | `Withdraw` | `hasACLPermission`, `isDeposited`, `isCurrentDeposit` |
 | `Export` | `hasTrustBridge` OR revalidation, `depositHasHeader` |
 | `Challenge` | `isDeposited` |
 | `Repair` | `isQuarantined` |
 | `Revoke` | `isQuarantined` |
+| `Promote` | `hasBankAuthority`, `isCandidate` |
+| `Inspect` | `hasACLPermission`, `isDeposited` |
 
 This structural encoding means invariants are **maintained by construction**.
 
@@ -115,6 +127,9 @@ Because preconditions are structural rather than checked post-hoc, the encoding 
 |-----------|----------------------|
 | `Withdraw` | Cannot exist unless ACL permission, deposited status, and τ-validity all hold |
 | `Export` | Cannot exist unless header-preservation discipline holds (with or without a trust bridge) |
+| `Submit` | Cannot exist unless the agent has submit permission (open ACL or explicit entry) |
+| `Promote` | Cannot exist unless the agent has bank authority in the target bubble and the deposit is a Candidate |
+| `Inspect` | Cannot exist unless the agent has ACL permission and the deposit is present |
 | `Repair` / `Revoke` | Cannot fire unless the deposit is already quarantined |
 | `Challenge` | Cannot fire on a deposit that is not present in the ledger |
 
@@ -138,4 +153,4 @@ Because preconditions are structural rather than checked post-hoc, the encoding 
 This file specifies the canonical operational semantics: transition structure, precondition encoding, and the trace-level safety pattern. It is about structural preconditions and preservation, not runtime implementation details or empirical systems. Core proofs live in `Semantics/StepSemantics.lean`; containment arguments live in `Agent/Resilience.lean` and transport back via simulation.
 
 One companion file lives in the same `Semantics/` folder and shares the same base import:
-- `Semantics/LinkingAxioms.lean`: proves that Step preconditions *force* the six architectural features (operational groundings for linking theorems in Minimality.lean/Commitments.lean).
+- `Semantics/LinkingAxioms.lean`: proves that Step preconditions *force* the seven architectural features (operational groundings for linking theorems in Minimality.lean/Commitments.lean).

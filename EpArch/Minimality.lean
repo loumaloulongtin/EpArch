@@ -11,7 +11,7 @@ implementations can differ.
 
 Key exports:
 - WorkingSystem (record wrapping SystemSpec configuration flags)
-- Six structural impossibility models and their impossibility theorems
+- Seven structural impossibility models and their impossibility theorems
 -/
 
 import EpArch.Basic
@@ -46,6 +46,8 @@ structure WorkingSystem where
   bank_ev          : Option GroundedBankStrict
   /-- Redeemability evidence: constrained claim with audit path + existential consequence. -/
   redeemability_ev : Option GroundedRedeemabilityStrict
+  /-- Authorization evidence: restricted-agent witness + no-uniform-access consequence. -/
+  authorization_ev : Option GroundedAuthorizationStrict := none
 
 /-! ## Forced Feature Predicates
 
@@ -77,8 +79,12 @@ def HasBank (W : WorkingSystem) : Prop := W.spec.has_shared_ledger = true
     Forced by: Truth pressure -/
 def HasRedeemability (W : WorkingSystem) : Prop := W.spec.has_redeemability = true
 
+/-- Predicate: system has granular access-control (non-trivial ACL).
+    Forced by: Multi-agent heterogeneous access -/
+def HasGranularACL (W : WorkingSystem) : Prop := W.spec.has_granular_acl = true
 
-/-! ## Six Operational Properties
+
+/-! ## Seven Operational Properties
 
 These are the functional requirements that working systems must satisfy.
 Each maps to one constraint in the table. -/
@@ -113,21 +119,26 @@ def handles_coordination (W : WorkingSystem) : Prop :=
 def handles_truth_pressure (W : WorkingSystem) : Prop :=
   W.redeemability_ev.isSome = true
 
+/-- System handles multi-agent heterogeneous access: has authorization evidence.
+    Required when: Distinct agents exist with different access rights. -/
+def handles_multi_agent (W : WorkingSystem) : Prop :=
+  W.authorization_ev.isSome = true
+
 
 /-! ## Pressure: The Canonical Dimension Index
 
-`Pressure` is the machine-exhaustive index of EpArch's six architectural
+`Pressure` is the machine-exhaustive index of EpArch's seven architectural
 forcing dimensions.  Using it as the canonical index for `handles_pressure`,
 `forced_feature`, `SatisfiesAllProperties`, and `containsBankPrimitives`
-means the coverage of the framework — exactly these six and no others —
+means the coverage of the framework — exactly these seven and no others —
 is a typed fact, not a counting convention.
 
 A proof that pattern-matches on `Pressure` is checked by Lean for
-exhaustiveness: adding a seventh dimension requires adding a seventh
+exhaustiveness: adding an eighth dimension requires adding an eighth
 constructor here, which would break every existing `cases P` proof
 until the new forcing chain is supplied. -/
 
-/-- The six architectural pressure dimensions of EpArch. -/
+/-- The seven architectural pressure dimensions of EpArch. -/
 inductive Pressure where
   | scope         -- Distributed agents → Bubbles
   | trust         -- Bounded audit → TrustBridges
@@ -135,6 +146,7 @@ inductive Pressure where
   | revocation    -- Adversarial → Revocation
   | bank          -- Coordination → Bank
   | redeemability -- Truth pressure → Redeemability
+  | authorization -- Multi-agent heterogeneous access → GranularACL
   deriving DecidableEq, Repr
 
 /-- Maps each `Pressure` dimension to its capability predicate. -/
@@ -145,6 +157,7 @@ def handles_pressure (W : WorkingSystem) : Pressure → Prop
   | .revocation    => handles_adversarial W
   | .bank          => handles_coordination W
   | .redeemability => handles_truth_pressure W
+  | .authorization => handles_multi_agent W
 
 /-- Maps each `Pressure` dimension to its forced architectural feature. -/
 def forced_feature (W : WorkingSystem) : Pressure → Prop
@@ -154,9 +167,10 @@ def forced_feature (W : WorkingSystem) : Pressure → Prop
   | .revocation    => HasRevocation W
   | .bank          => HasBank W
   | .redeemability => HasRedeemability W
+  | .authorization => HasGranularACL W
 
-/-- A working system satisfies ALL six operational properties — indexed by `Pressure`.
-    The six-ness is machine-checked: `cases P` in any proof is
+/-- A working system satisfies ALL seven operational properties — indexed by `Pressure`.
+    The seven-ness is machine-checked: `cases P` in any proof is
     exhaustiveness-verified by Lean. -/
 def SatisfiesAllProperties (W : WorkingSystem) : Prop :=
   ∀ P : Pressure, handles_pressure W P
@@ -169,13 +183,13 @@ def containsBankPrimitives (W : WorkingSystem) : Prop :=
 
 /-! ## Constraint Subset and Partial Well-Formedness -/
 
-/-- A subset of the six EpArch operational constraints, represented as a
-    6-boolean vector. `true` = constraint included; `false` = dropped.
+/-- A subset of the seven EpArch operational constraints, represented as a
+    7-boolean vector. `true` = constraint included; `false` = dropped.
 
     Examples:
-    - `allConstraints`  — all six included (strongest case)
+    - `allConstraints`  — all seven included (strongest case)
     - `noConstraints`   — none included (no forcing theorems claimed)
-    - `⟨true, false, false, false, true, false⟩` — only distributed + coordination -/
+    - `⟨true, false, false, false, true, false, false⟩` — only distributed + coordination -/
 structure ConstraintSubset where
   distributed    : Bool
   bounded_audit  : Bool
@@ -183,13 +197,14 @@ structure ConstraintSubset where
   adversarial    : Bool
   coordination   : Bool
   truth_pressure : Bool
+  multi_agent    : Bool
 
-/-- The full set of all six constraints. `PartialWellFormed W allConstraints` requires
-    all six biconditionals — the strongest subset. -/
-def allConstraints : ConstraintSubset := ⟨true, true, true, true, true, true⟩
+/-- The full set of all seven constraints. `PartialWellFormed W allConstraints` requires
+    all seven biconditionals — the strongest subset. -/
+def allConstraints : ConstraintSubset := ⟨true, true, true, true, true, true, true⟩
 
 /-- The empty subset. `PartialWellFormed W noConstraints` holds trivially. -/
-def noConstraints : ConstraintSubset := ⟨false, false, false, false, false, false⟩
+def noConstraints : ConstraintSubset := ⟨false, false, false, false, false, false, false⟩
 
 /-- `PartialWellFormed W S` captures the forcing biconditionals for
     the constraint subset S.
@@ -198,7 +213,7 @@ def noConstraints : ConstraintSubset := ⟨false, false, false, false, false, fa
     - If `S.X = true`,  the biconditional `handles_X W ↔ HasFeature_X W` is required.
     - If `S.X = false`, nothing is required for X.
 
-    Requiring all six (S = allConstraints) is the strongest form. -/
+    Requiring all seven (S = allConstraints) is the strongest form. -/
 structure PartialWellFormed (W : WorkingSystem) (S : ConstraintSubset) : Prop where
   wf_distributed    : S.distributed    = true → (handles_distributed_agents W ↔ HasBubbles W)
   wf_bounded_audit  : S.bounded_audit  = true → (handles_bounded_audit W ↔ HasTrustBridges W)
@@ -206,11 +221,12 @@ structure PartialWellFormed (W : WorkingSystem) (S : ConstraintSubset) : Prop wh
   wf_adversarial    : S.adversarial    = true → (handles_adversarial W ↔ HasRevocation W)
   wf_coordination   : S.coordination   = true → (handles_coordination W ↔ HasBank W)
   wf_truth_pressure : S.truth_pressure = true → (handles_truth_pressure W ↔ HasRedeemability W)
+  wf_multi_agent    : S.multi_agent    = true → (handles_multi_agent W ↔ HasGranularACL W)
 
 
 /-! ## Grounded Behavioral Evidence
 
-The six capability witnesses correspond exactly to the six `GroundedX` structures:
+The seven capability witnesses correspond exactly to the seven `GroundedX` structures:
 
 | WorkingSystem field  | GroundedXStrict type            | Forcing dimension                                     |
 |----------------------|---------------------------------|-------------------------------------------------------|
@@ -219,9 +235,10 @@ The six capability witnesses correspond exactly to the six `GroundedX` structure
 | `headers_ev`         | `GroundedHeadersStrict`         | Export across boundaries — header preservation        |
 | `revocation_ev`      | `GroundedRevocationStrict`      | Adversarial pressure — revocation                     |
 | `bank_ev`            | `GroundedBankStrict`            | Coordination need — shared ledger                     |
-| `redeemability_ev`   | `GroundedRedeemabilityStrict`   | Truth pressure — redeemability                        | -/
+| `redeemability_ev`   | `GroundedRedeemabilityStrict`   | Truth pressure — redeemability                        |
+| `authorization_ev`   | `GroundedAuthorizationStrict`   | Multi-agent access — granular ACL                     | -/
 
-/-- Evidence for all six behavioral capabilities of a `WorkingSystem`.
+/-- Evidence for all seven behavioral capabilities of a `WorkingSystem`.
 
     One `GroundedX` field per forcing dimension.  Supplying a `GroundedBehavior`
     to `withGroundedBehavior` sets each `Option GroundedX` field in `WorkingSystem`
@@ -239,8 +256,10 @@ structure GroundedBehavior where
   bank          : GroundedBank
   /-- Redeemability: a constrained claim has an audit path to truth contact. -/
   redeemability : GroundedRedeemability
+  /-- Authorization: a restricted-agent witness demonstrates granular ACL. -/
+  authorization : GroundedAuthorization
 
-/-- Build a `WorkingSystem` with all six proof-carrying option fields set from evidence. -/
+/-- Build a `WorkingSystem` with all seven proof-carrying option fields set from evidence. -/
 def WorkingSystem.withGroundedBehavior (B : GroundedBehavior) (base : WorkingSystem) : WorkingSystem :=
   { base with
     bubbles_ev       := some B.bubbles.toStrict
@@ -248,27 +267,30 @@ def WorkingSystem.withGroundedBehavior (B : GroundedBehavior) (base : WorkingSys
     headers_ev       := some B.headers.toStrict
     revocation_ev    := some B.revocation.toStrict
     bank_ev          := some B.bank.toStrict
-    redeemability_ev := some B.redeemability.toStrict }
+    redeemability_ev := some B.redeemability.toStrict
+    authorization_ev := some B.authorization.toStrict }
 
-/-- A `WorkingSystem` built from `GroundedBehavior` satisfies all six operational
+/-- A `WorkingSystem` built from `GroundedBehavior` satisfies all seven operational
     properties. -/
 theorem grounded_behavior_satisfies_all (B : GroundedBehavior) (W : WorkingSystem) :
     SatisfiesAllProperties (WorkingSystem.withGroundedBehavior B W) := by
   intro P; cases P <;>
   simp [handles_pressure, handles_distributed_agents, handles_bounded_audit,
         handles_export, handles_adversarial, handles_coordination,
-        handles_truth_pressure, WorkingSystem.withGroundedBehavior, Option.isSome]
+        handles_truth_pressure, handles_multi_agent,
+        WorkingSystem.withGroundedBehavior, Option.isSome]
 
-/-- `SatisfiesAllProperties` implies all six evidence option fields are present.
-    Extracts the six `isSome = true` facts from the property predicate. -/
+/-- `SatisfiesAllProperties` implies all seven evidence option fields are present.
+    Extracts the seven `isSome = true` facts from the property predicate. -/
 theorem satisfies_all_fixes_flags (W : WorkingSystem) (h : SatisfiesAllProperties W) :
     W.bubbles_ev.isSome       = true ∧
     W.bridges_ev.isSome       = true ∧
     W.headers_ev.isSome       = true ∧
     W.revocation_ev.isSome    = true ∧
     W.bank_ev.isSome          = true ∧
-    W.redeemability_ev.isSome = true :=
-  ⟨h .scope, h .trust, h .headers, h .revocation, h .bank, h .redeemability⟩
+    W.redeemability_ev.isSome = true ∧
+    W.authorization_ev.isSome = true :=
+  ⟨h .scope, h .trust, h .headers, h .revocation, h .bank, h .redeemability, h .authorization⟩
 
 /-- A `WorkingSystem` built from both `GroundedBehavior` and `GroundedSystemSpec`
     satisfies `PartialWellFormed W allConstraints`.
@@ -300,22 +322,25 @@ theorem grounded_partial_wellformed (B : GroundedBehavior) (G : GroundedSystemSp
     ⟨fun _ => (grounded_spec_contains_all G).2.2.2.2.1,
      fun _ => rfl⟩
   wf_truth_pressure := fun _ =>
-    ⟨fun _ => (grounded_spec_contains_all G).2.2.2.2.2,
+    ⟨fun _ => (grounded_spec_contains_all G).2.2.2.2.2.1,
+     fun _ => rfl⟩
+  wf_multi_agent    := fun _ =>
+    ⟨fun _ => (grounded_spec_contains_all G).2.2.2.2.2.2,
      fun _ => rfl⟩ }
 
 
 /-! ## Global Impossibility and Convergence -/
 
-/-- All six forced features together constitute Bank-like architecture.
+/-- All seven forced features together constitute Bank-like architecture.
 
     This is a definitional theorem: `containsBankPrimitives W` is
-    `∀ P : Pressure, forced_feature W P` — providing the six `Has*`
+    `∀ P : Pressure, forced_feature W P` — providing the seven `Has*`
     witnesses satisfies it by case analysis on `P`. -/
 theorem all_features_constitute_bank (W : WorkingSystem) :
   HasBubbles W → HasTrustBridges W → HasHeaders W →
-  HasRevocation W → HasBank W → HasRedeemability W →
+  HasRevocation W → HasBank W → HasRedeemability W → HasGranularACL W →
   containsBankPrimitives W := by
-  intro h1 h2 h3 h4 h5 h6 P
+  intro h1 h2 h3 h4 h5 h6 h7 P
   cases P <;> assumption
 
 
@@ -338,8 +363,9 @@ from that structure alone — no biconditionals needed.
 | 4 | Adversarial | `MonotonicLifecycle` | `monotonic_no_exit` | Without revocation, accepted state is absorbing |
 | 5 | Coordination | `PrivateOnlyStorage` | `private_storage_no_sharing` | Isolated storage blocks collective reliance |
 | 6 | Truth pressure | `ClosedEndorsement` | `closed_system_unfalsifiable` | Without external contact, consensus is unfalsifiable |
+| 7 | Authorization | `TwoTierAccess` | `flat_authorization_impossible` | No flat predicate can represent both the submission and commit tiers |
 
-After the six models, the convergence proof machinery (`StructurallyForced`,
+After the seven models, the convergence proof machinery (`StructurallyForced`,
 `ForcingEmbedding`, Bridge predicates, Scenario predicates,
 `convergence_structural`) lives in EpArch.Convergence.
 -/
@@ -1231,7 +1257,7 @@ theorem soft_closed_when_universal (M : SoftFalsifiability)
 
 /-! ### §6c. Forcing Stratification: Hard vs Soft Forcing for Truth Pressure
 
-The six forcing dimensions do not all have the same tightness.
+The seven forcing dimensions do not all have the same tightness.
 
 Hard forcing: impossibility follows from the structure alone, without additional
 behavioral coverage assumptions.  Scope, revocation, bank, and partial contestation
@@ -1299,6 +1325,246 @@ theorem partial_contestation_hard_forced (M : PartialContestation) :
   partial_contestation_closed_on_endorsed M
 
 
+/-! ### 7. Multi-Agent Heterogeneous Access → Granular ACL
+
+**Argument.**  When a system has a staged access surface — an open submission
+tier and a restricted commit tier — no single authorization predicate can
+faithfully represent both tiers simultaneously.  Suppose it could: then the
+flat function agrees with the open tier (so the submitter is authorized under
+it), and it also agrees with the commit tier (so the submitter has commit
+rights) — contradicting the submitter’s known restriction on the commit tier.
+Granular ACL, which keeps the two tiers distinct, is structurally forced.
+
+Examples: a GitHub repository has open PRs (submission) but maintainer-gated
+merges (commit); a bank has open deposits (submission) but ACL-gated withdrawals
+(commit); a corporate intranet may have a fully closed commit tier where even
+submission requires clearance — in that case both tiers are equally restricted,
+no `TwoTierAccess` certificate exists, and `S.multi_agent = false` is correct.
+
+**Proof technique.**  Exact structural parallel to `flat_scope_impossible`.
+Two predicates (`can_propose`, `can_commit`) disagree on a witness (`submitter`
+for `tier_claim`).  A flat function faithful to both routes `may_propose`
+through the proposal iff and then through the commit iff to
+`can_commit submitter tier_claim`, contradicting `cannot_commit`.  The proof
+uses all three witnesses: `may_propose`, `cannot_commit`, and `may_commit`
+(the last establishes that the commit tier is non-vacuous and structurally
+distinct from the proposal tier). -/
+
+/-- A staged-access scenario: one agent can submit but cannot commit; another
+    agent can commit.  No single authorization predicate can faithfully represent
+    both the submission tier and the commit tier simultaneously.
+
+    Structural parallel to `AgentDisagreement` for scope: both have two predicates
+    on the same type and a witness on which they disagree. -/
+structure TwoTierAccess where
+  Agent         : Type
+  Claim         : Type
+  /-- The open submission tier: agents that may propose/submit. -/
+  can_propose   : Agent → Claim → Prop
+  /-- The restricted commit tier: agents that may merge/commit. -/
+  can_commit    : Agent → Claim → Prop
+  /-- An agent in the submission tier but not the commit tier. -/
+  submitter     : Agent
+  /-- An agent in the commit tier — establishes the commit tier is non-vacuous. -/
+  committer     : Agent
+  /-- The claim on which the two tiers differ. -/
+  tier_claim    : Claim
+  /-- The submitter can propose the tier claim. -/
+  may_propose   : can_propose submitter tier_claim
+  /-- The submitter cannot commit the tier claim. -/
+  cannot_commit : ¬can_commit submitter tier_claim
+  /-- The committer can commit the tier claim — the commit tier is non-vacuous. -/
+  may_commit    : can_commit committer tier_claim
+
+/-- No flat authorization predicate can faithfully represent both the submission
+    tier and the commit tier of a two-tier access scenario.
+
+    Proof: a flat `f` faithful to both tiers routes `may_propose` through
+    `f submitter tier_claim` (via the proposal iff) and then to
+    `can_commit submitter tier_claim` (via the commit iff) — contradicting
+    `cannot_commit`.
+
+    Exact structural parallel to `flat_scope_impossible`: two predicates that
+    disagree on a witness; no flat function can represent both.
+
+    Consequence: granular ACL is structurally forced — the two access surfaces
+    cannot be collapsed into a single authorization predicate. -/
+theorem flat_authorization_impossible (M : TwoTierAccess)
+    (h_flat : ∃ (f : M.Agent → M.Claim → Prop),
+      (∀ a c, f a c ↔ M.can_propose a c) ∧
+      (∀ a c, f a c ↔ M.can_commit a c)) : False :=
+  let ⟨_f, hprop, hcommit⟩ := h_flat
+  M.cannot_commit ((hcommit M.submitter M.tier_claim).mp
+    ((hprop M.submitter M.tier_claim).mpr M.may_propose))
+
+
+/-! ### 7b. Alternative Authorization Mechanisms Reduce to TwoTierAccess
+
+A reviewer may ask: do RBAC (role-based ACL), capability-token systems, or
+attribute-based ACL escape `flat_authorization_impossible`?
+
+This section instantiates each alternative, then shows it directly supplies
+a `GroundedAuthorization` instance (with both a positive and a negative witness).
+`GroundedAuthorizationStrict.no_flat_tier` then fires directly, or
+equivalently, `flat_authorization_impossible` fires via `groundedAuthorization_to_scenario`.
+
+**RBAC.**  The commit tier is role-derived authorization; the submission tier is
+open (any agent may submit).  The restricted agent's role lacks commit permission;
+the privileged agent's role has it.  `cannot_commit` and `may_commit` are both
+required to derive `no_flat_tier`.
+
+**Capability-token system.**  The commit tier is token-based authorization; the
+submission tier is open.  The restricted agent holds no commit token; the privileged
+agent holds one.  Again a direct `GroundedAuthorization` instance.
+
+**Attribute-based ACL.**  The commit tier requires all demanded attributes; the
+submission tier is open.  The restricted agent lacks a required attribute; the
+privileged agent has all required attributes.  Again a direct `GroundedAuthorization`
+instance.
+
+**Conclusion.**  All three alternatives instantiate `GroundedAuthorization` with
+both `may_commit` and `cannot_commit`.  The impossibility fires via
+`GroundedAuthorizationStrict.no_flat_tier` — the authorization pressure requires
+structural tension between the two tiers, not a single restriction alone.  The
+forcing is insensitive to the ACL mechanism chosen. -/
+
+/-- RBAC authorization surface: agents carry roles, roles carry permissions,
+    authorization is role-derived.  Two witnesses: the restricted agent's role
+    lacks permission; the privileged agent's role has permission. -/
+structure RBACAuthSurface where
+  Agent            : Type
+  Claim            : Type
+  Role             : Type
+  role_of          : Agent → Role
+  perm             : Role → Claim → Prop
+  authorize        : Agent → Claim → Prop
+  /-- Authorization is exactly role-derived permission. -/
+  derives_from_rbac : ∀ a P, authorize a P ↔ perm (role_of a) P
+  privileged_agent : Agent
+  restricted_agent : Agent
+  restricted_claim : Claim
+  /-- The privileged agent's role HAS permission — the positive witness. -/
+  role_has_perm    : perm (role_of privileged_agent) restricted_claim
+  /-- The restricted agent's role lacks permission — the negative witness. -/
+  role_lacks_perm  : ¬perm (role_of restricted_agent) restricted_claim
+
+/-- An RBAC surface with differentiated roles directly instantiates `GroundedAuthorization`.
+    `may_commit` (privileged role has permission) and `cannot_commit` (restricted role
+    lacks permission) are derived from the role-permission equivalence. -/
+def rbac_to_grounded (M : RBACAuthSurface) : GroundedAuthorization where
+  Agent         := M.Agent
+  Claim         := M.Claim
+  can_propose   := fun _ _ => True
+  can_commit    := M.authorize
+  submitter     := M.restricted_agent
+  committer     := M.privileged_agent
+  tier_claim    := M.restricted_claim
+  may_propose   := trivial
+  cannot_commit := fun h =>
+    M.role_lacks_perm ((M.derives_from_rbac M.restricted_agent M.restricted_claim).mp h)
+  may_commit    := (M.derives_from_rbac M.privileged_agent M.restricted_claim).mpr M.role_has_perm
+
+/-- No flat authorization predicate can represent both the open submission tier and
+    the role-restricted commit tier: `no_flat_tier` fires via `rbac_to_grounded.toStrict`. -/
+theorem rbac_two_tier_impossible (M : RBACAuthSurface) :
+    ¬∃ (f : M.Agent → M.Claim → Prop),
+      (∀ a c, f a c ↔ True) ∧ (∀ a c, f a c ↔ M.authorize a c) :=
+  (rbac_to_grounded M).toStrict.no_flat_tier
+
+/-- Capability-token authorization: an agent is authorized for a claim iff it
+    holds a token that grants that claim.  Two witnesses: the restricted agent
+    holds no such token; the privileged agent holds one. -/
+structure CapabilityTokenAuth where
+  Agent         : Type
+  Claim         : Type
+  Token         : Type
+  holds_token   : Agent → Token → Prop
+  token_grants  : Token → Claim → Prop
+  authorize     : Agent → Claim → Prop
+  /-- Authorization is exactly token-based capability. -/
+  derives_from_caps : ∀ a P, authorize a P ↔ ∃ t, holds_token a t ∧ token_grants t P
+  privileged_agent    : Agent
+  restricted_agent    : Agent
+  restricted_claim    : Claim
+  /-- A token held by the privileged agent that grants the restricted claim. -/
+  priv_token          : Token
+  holds_priv          : holds_token privileged_agent priv_token
+  priv_grants         : token_grants priv_token restricted_claim
+  /-- The restricted agent holds no token that grants the restricted claim. -/
+  no_token         : ∀ t, holds_token restricted_agent t → ¬token_grants t restricted_claim
+
+/-- A capability-token surface with differentiated token ownership directly
+    instantiates `GroundedAuthorization`.  `may_commit` (privileged agent has a
+    granting token) and `cannot_commit` (restricted agent has no granting token)
+    are derived from the token-capability semantics. -/
+def capability_token_to_grounded (M : CapabilityTokenAuth) : GroundedAuthorization where
+  Agent         := M.Agent
+  Claim         := M.Claim
+  can_propose   := fun _ _ => True
+  can_commit    := M.authorize
+  submitter     := M.restricted_agent
+  committer     := M.privileged_agent
+  tier_claim    := M.restricted_claim
+  may_propose   := trivial
+  cannot_commit := fun h =>
+    let ⟨t, h_holds, h_grants⟩ :=
+      (M.derives_from_caps M.restricted_agent M.restricted_claim).mp h
+    M.no_token t h_holds h_grants
+  may_commit    := (M.derives_from_caps M.privileged_agent M.restricted_claim).mpr
+      ⟨M.priv_token, M.holds_priv, M.priv_grants⟩
+
+/-- No flat authorization predicate can represent both the open submission tier and
+    the token-restricted commit tier: `no_flat_tier` fires via the bridge. -/
+theorem capability_token_two_tier_impossible (M : CapabilityTokenAuth) :
+    ¬∃ (f : M.Agent → M.Claim → Prop),
+      (∀ a c, f a c ↔ True) ∧ (∀ a c, f a c ↔ M.authorize a c) :=
+  (capability_token_to_grounded M).toStrict.no_flat_tier
+
+/-- Attribute-based ACL: authorization requires the agent to hold all attributes
+    demanded by the claim.  Two witnesses: the restricted agent lacks a required
+    attribute; the privileged agent has all required attributes. -/
+structure AttributeBasedAuth where
+  Agent             : Type
+  Claim             : Type
+  Attr              : Type
+  has_attr          : Agent → Attr → Prop
+  requires          : Claim → Attr → Prop
+  authorize         : Agent → Claim → Prop
+  /-- Authorization is exactly attribute satisfaction. -/
+  derives_from_attrs : ∀ a P, authorize a P ↔ ∀ attr, requires P attr → has_attr a attr
+  privileged_agent  : Agent
+  restricted_agent  : Agent
+  restricted_claim  : Claim
+  /-- The privileged agent has all attributes required by the restricted claim. -/
+  has_all_req       : ∀ attr, requires restricted_claim attr → has_attr privileged_agent attr
+  /-- The restricted agent lacks at least one attribute required by the restricted claim. -/
+  missing_attr      : ∃ attr, requires restricted_claim attr ∧ ¬has_attr restricted_agent attr
+
+/-- An attribute-based ACL surface with differentiated attribute ownership directly
+    instantiates `GroundedAuthorization`.  `may_commit` and `cannot_commit`
+    are derived from the attribute-satisfaction semantics. -/
+def attribute_based_to_grounded (M : AttributeBasedAuth) : GroundedAuthorization where
+  Agent         := M.Agent
+  Claim         := M.Claim
+  can_propose   := fun _ _ => True
+  can_commit    := M.authorize
+  submitter     := M.restricted_agent
+  committer     := M.privileged_agent
+  tier_claim    := M.restricted_claim
+  may_propose   := trivial
+  cannot_commit := fun h =>
+    let ⟨attr, h_req, h_no_attr⟩ := M.missing_attr
+    h_no_attr ((M.derives_from_attrs M.restricted_agent M.restricted_claim).mp h attr h_req)
+  may_commit    := (M.derives_from_attrs M.privileged_agent M.restricted_claim).mpr M.has_all_req
+
+/-- No flat authorization predicate can represent both the open submission tier and
+    the attribute-restricted commit tier: `no_flat_tier` fires via the bridge. -/
+theorem attribute_based_two_tier_impossible (M : AttributeBasedAuth) :
+    ¬∃ (f : M.Agent → M.Claim → Prop),
+      (∀ a c, f a c ↔ True) ∧ (∀ a c, f a c ↔ M.authorize a c) :=
+  (attribute_based_to_grounded M).toStrict.no_flat_tier
+
+
 /-! ## §7. GroundedX ↔ Impossibility Bridges
 
 Each `GroundedX` structure is isomorphic to the *input* of the corresponding
@@ -1308,7 +1574,7 @@ explicit: given any `GroundedX` witness, the matching impossibility result fires
 `GroundedXStrict` packages the base evidence with its impossibility consequence —
 the non-trivial `Prop` that falls out of the bridge.
 
-**Relation to WorkingSystem.**  `WorkingSystem` carries six `Option GroundedXStrict`
+**Relation to WorkingSystem.**  `WorkingSystem` carries seven `Option GroundedXStrict`
 fields.  The `GroundedXStrict` structures are defined in EpArch.SystemSpec (where
 they only depend on `GroundedX` fields).
 
@@ -1415,6 +1681,37 @@ theorem groundedRedeemability_refutes_closure (G : GroundedRedeemability)
 /-- Thin alias for `G.toStrict`.  Cite `groundedRedeemability_refutes_closure` directly
     when a proof must explicitly name the closure-refutation route. -/
 def GroundedRedeemabilityStrict.mk' (G : GroundedRedeemability) : GroundedRedeemabilityStrict :=
+  G.toStrict
+
+
+/-! ### §7.7  Authorization ↔ TwoTierAccess -/
+
+/-- Convert `GroundedAuthorization` to `TwoTierAccess`.
+    The fields map directly: `can_propose`/`can_commit`/`submitter`/`committer`/`tier_claim`
+    and their proof witnesses `may_propose`/`cannot_commit`/`may_commit`. -/
+def groundedAuthorization_to_scenario (G : GroundedAuthorization) : TwoTierAccess where
+  Agent         := G.Agent
+  Claim         := G.Claim
+  can_propose   := G.can_propose
+  can_commit    := G.can_commit
+  submitter     := G.submitter
+  committer     := G.committer
+  tier_claim    := G.tier_claim
+  may_propose   := G.may_propose
+  cannot_commit := G.cannot_commit
+  may_commit    := G.may_commit
+
+/-- No flat authorization predicate can faithfully represent both tiers of a
+    `GroundedAuthorization`.  Invokes `flat_authorization_impossible` via the bridge. -/
+theorem groundedAuthorization_flat_impossible (G : GroundedAuthorization) :
+    ¬∃ (f : G.Agent → G.Claim → Prop),
+      (∀ a c, f a c ↔ G.can_propose a c) ∧
+      (∀ a c, f a c ↔ G.can_commit a c) :=
+  flat_authorization_impossible (groundedAuthorization_to_scenario G)
+
+/-- Thin alias for `G.toStrict`.  Cite `groundedAuthorization_flat_impossible` directly
+    when a proof must explicitly name the two-tier impossibility route. -/
+def GroundedAuthorizationStrict.mk' (G : GroundedAuthorization) : GroundedAuthorizationStrict :=
   G.toStrict
 
 

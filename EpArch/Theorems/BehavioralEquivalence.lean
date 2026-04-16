@@ -135,7 +135,7 @@ inductive Observation where
 
 /-- The observation produced by a grounded system on a given input.
 
-    `B : GroundedBehavior` is the type-level certificate that all six features
+    `B : GroundedBehavior` is the type-level certificate that all seven features
     exist — not a runtime-inspected flag.  It is the authority under which the
     success outcomes below are admissible: because `B` witnesses a functional
     bank, trust bridges, and revocation mechanism, every input has a well-defined
@@ -272,9 +272,11 @@ def observe_step_action : CAction → Observation
   | .Export   _ B2 d_idx => .ExportSuccess d_idx B2.toNat
   | .Challenge _         => .ChallengeProcessed "quarantined"
   | .Tick                => .TimeAdvanced
-  | .Submit _            => .TimeAdvanced
+  | .Submit _ _          => .TimeAdvanced
   | .Repair _ _          => .TimeAdvanced
   | .Revoke _            => .TimeAdvanced
+  | .Promote _ _ _       => .TimeAdvanced
+  | .Inspect _ _ _       => .TimeAdvanced
 
 /-! ### Ready States -/
 
@@ -316,7 +318,7 @@ def withdraw_ready_state (B : GroundedBehavior) (a_n b_n d_idx : Nat) :
   let _ := B.bank.produced        -- certificate field present: bank typechecks
   let _ := B.trust_bridges.downstream_via_bridge  -- certificate field present: trust_bridges typechecks
   have h_acl : hasACLPermission s (.mk a_n) (.mk b_n) d_idx :=
-    ⟨_, List.Mem.head _, rfl, rfl, rfl⟩
+    Or.inr ⟨_, List.Mem.head _, rfl, rfl, rfl⟩
   have h_current : isCurrentDeposit s d_idx :=
     ⟨canonDeposit, canonLedger_get d_idx d_idx (Nat.lt_succ_self d_idx),
      Nat.le_refl 0⟩

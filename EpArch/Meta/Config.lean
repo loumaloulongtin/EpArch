@@ -31,7 +31,7 @@ EpArch.Meta.Config (this file) — proof-carrying layer:
   `metaModularWitness`, `latticeWitness`: one indexed inductive per family,
   constructors store the real transport theorem as a Prop-valued argument.
 - **Named witnesses** — `cluster_*` in §5b: universe-polymorphic standalone theorems
-  for all 29 clusters, the authoritative typed form.
+  for all 30 clusters, the authoritative typed form.
 
 ## Usage
 
@@ -85,12 +85,12 @@ universe u
 
 /-! ## §4  Cluster Validity
 
-`clusterValid c := True` unconditionally: all 29 clusters are machine-proved.
+`clusterValid c := True` unconditionally: all 30 clusters are machine-proved.
 The routing layer uses this so `certify` type-checks without universe complications;
 typed proof content lives in the indexed witnesses (§4b–§4e') and `cluster_*`
 witnesses (§5b). -/
 
-/-- Every cluster is valid: holds unconditionally (all 29 are machine-proved).
+/-- Every cluster is valid: holds unconditionally (all 30 are machine-proved).
     See the `cluster_*` witnesses in §5b for real typed propositions. -/
 @[simp] def clusterValid : ClusterTag → Prop := fun _ => True
 
@@ -140,7 +140,10 @@ def constraintSpec (c : EnabledConstraintCluster) : ConstraintClusterSpec :=
           proof     := fun _W sf => sf.forcing .bank }
       | .forcing_truth => {
           statement := ∀ W : WorkingSystem, StructurallyForced W → handles_truth_pressure W → HasRedeemability W
-          proof     := fun _W sf => sf.forcing .redeemability } }
+          proof     := fun _W sf => sf.forcing .redeemability }
+      | .forcing_multi_agent => {
+          statement := ∀ W : WorkingSystem, StructurallyForced W → handles_multi_agent W → HasGranularACL W
+          proof     := fun _W sf => sf.forcing .authorization } }
 
 /-- Extract the proof carrier for constraint cluster `c` from `constraintSpec`. -/
 def constraintProof (c : EnabledConstraintCluster) : ConstraintProof := (constraintSpec c).witness
@@ -300,9 +303,9 @@ inductive Tier4Witness : EnabledTier4Cluster → Type 1 where
              s (StepSemantics.Action.Repair d_idx f) s' →
            StepSemantics.isQuarantined s d_idx) ∧
         (∀ (s s' : StepSemantics.SystemState PL SL EL PrL)
-           (d : Deposit PL SL EL PrL),
+           (a : Agent) (d : Deposit PL SL EL PrL),
            StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
-             s (StepSemantics.Action.Submit d) s' →
+             s (StepSemantics.Action.Submit a d) s' →
            ∃ d', d' ∈ s'.ledger ∧ d'.status = DepositStatus.Candidate)) →
       Tier4Witness .tier4_lts_universal
   | bankGoalsCompat :
@@ -480,11 +483,11 @@ cluster and holds machine-checked evidence that each one is valid. -/
 
 /-- A certified bundle: the enabled clusters for `cfg`, with proofs.
 
-    **Layer 1 (routing):** `enabled`, `complete`, `sound` — all 29 cluster tags,
+    **Layer 1 (routing):** `enabled`, `complete`, `sound` — all 30 cluster tags,
     routing only, `clusterValid c = True`.
 
     **Layer 2 (constraint proofs):** `constraintWitnesses` — full `ConstraintProof`
-    for all six Tier 2 forcing clusters (total, config-independent).
+    for all seven Tier 2 forcing clusters (total, config-independent).
     `enabledConstraintWitnesses` — filtered to only the clusters enabled by `cfg`.
 
     **Layer 3 (indexed witnesses):** `goalWitnesses`, `worldWitnesses`, `tier4Witnesses`
@@ -492,7 +495,7 @@ cluster and holds machine-checked evidence that each one is valid. -/
     `enabledGoalWitnesses`, `enabledWorldWitnesses`, `enabledTier4Witnesses` — filtered
     to only the clusters enabled by `cfg` (using dependent pairs `Σ c, WitnessType c`).
 
-    **Layer 4 (proof-content):** `cluster_*` witnesses in §5b cover all 29 clusters. -/
+    **Layer 4 (proof-content):** `cluster_*` witnesses in §5b cover all 30 clusters. -/
 structure CertifiedProjection (cfg : EpArchConfig) where
   /-- The list of enabled clusters (equal to `explainConfig cfg`). -/
   enabled                   : List ClusterTag
@@ -500,7 +503,7 @@ structure CertifiedProjection (cfg : EpArchConfig) where
   complete                  : enabled = explainConfig cfg
   /-- Every enabled cluster is machine-proved (`clusterValid c = True`). -/
   sound                     : ∀ c, c ∈ enabled → clusterValid c
-  /-- Tier 2 proof carriers (all six, config-independent).
+  /-- Tier 2 proof carriers (all seven, config-independent).
       `constraintWitnesses c` delivers the real proposition and proof for
       forcing cluster `c` regardless of which constraints `cfg` enables. -/
   constraintWitnesses        : (c : EnabledConstraintCluster) → ConstraintProof
@@ -663,6 +666,11 @@ theorem cluster_forcing_truth :
     ∀ W : WorkingSystem, StructurallyForced W → handles_truth_pressure W → HasRedeemability W :=
   fun _W sf => sf.forcing .redeemability
 
+/-- Cluster `.forcing_multi_agent`: multi-agent heterogeneous access forces HasGranularACL. -/
+theorem cluster_forcing_multi_agent :
+    ∀ W : WorkingSystem, StructurallyForced W → handles_multi_agent W → HasGranularACL W :=
+  fun _W sf => sf.forcing .authorization
+
 -- ── Tier 3 goal transport ────────────────────────────────────────────────
 
 /-- Cluster `.goal_safeWithdrawal`: SafeWithdrawalGoal is Compatible-transport-safe. -/
@@ -802,8 +810,8 @@ theorem cluster_world_ddos
 
 -- ── Constraint-modularity meta-theorems ───────────────────────────────────────
 
-/-- Cluster `.meta_modular`: the six EpArch constraints are independent modules.
-    Any subset S of the six constraints defines a self-consistent configuration:
+/-- Cluster `.meta_modular`: the seven EpArch constraints are independent modules.
+    Any subset S of the seven constraints defines a self-consistent configuration:
     if W partially satisfies S, the forcing theorems for every constraint in S hold. -/
 theorem cluster_meta_modular (S : ConstraintSubset) (W : WorkingSystem)
     (pwf : PartialWellFormed W S) : projection_valid S W :=
@@ -841,10 +849,11 @@ theorem cluster_lattice_pack :
 
 Uncomment `#eval` lines to inspect routing interactively. -/
 
-/-- Full EpArch configuration: all six constraints, all five goals, all eight worlds. -/
+/-- Full EpArch configuration: all seven constraints, all five goals, all eight worlds. -/
 def fullConfig : EpArchConfig where
   constraints := [.distributed_agents, .bounded_audit, .export_across_boundaries,
-                  .adversarial_pressure, .coordination_need, .truth_pressure]
+                  .adversarial_pressure, .coordination_need, .truth_pressure,
+                  .multi_agent_access]
   goals       := [.safeWithdrawal, .reliableExport, .corrigibleLedger,
                   .soundDeposits, .selfCorrection]
   worlds      := [.lies_possible, .bounded_verification, .partial_observability,

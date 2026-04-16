@@ -240,23 +240,6 @@ def SoundDepositsGoal_PRP
     (depositsVerified : Prop) (withinBudget : Prop) : Prop :=
   depositsVerified ∧ withinBudget
 
-/-- PRP + Corrigibility → Needs Revision Operator.
-
-    If you want a corrigible ledger under PRP, you NEED revision operators.
-
-    Proof: immediate — CorrigibleLedgerGoal and HasRevisionOperator
-    are definitionally equivalent, so the goal hypothesis suffices. -/
-theorem PRP_corrigibility_needs_revision {Agent Claim : Type u}
-    (prp : PRP Agent Claim) (_a : Agent)
-    (_h_prp_active : ∀ t : TimeIdx, ∃ t', t' > t ∧ (prp.challengeStream t').isSome)
-    (canRepairWithRevision : Prop)
-    (_revision_enables_repair : HasRevisionOperator canRepairWithRevision → canRepairWithRevision)
-    (h_goal : CorrigibleLedgerGoal canRepairWithRevision) :
-    HasRevisionOperator canRepairWithRevision := by
-  -- If we can repair, we need the mechanism that enables repair
-  -- The goal says repair is possible, so the mechanism must exist
-  exact h_goal
-
 /-- PRP + Sound Deposits → Needs Scoped Redeemability.
 
     Global redeemability is impossible under PRP (by prp_incompatible_with_global).
@@ -351,30 +334,6 @@ structure AgentCompatible (E : AgentExtSig) (C : AgentCoreSig) where
   agent_eq : E.Agent = C.Agent
   /-- Projection on Claim is identity -/
   claim_eq : E.Claim = C.Claim
-
-/-- Agent constraint properties are stable under identity projection.
-
-    Placeholder establishing the pattern: extending agents with extra
-    metadata does not affect AgentCoreOps predicates. The current
-    statement is trivial (P eOps → P eOps); a non-trivial version
-    would involve forgetAgentOps. -/
-theorem agent_constraints_project {Agent Claim : Type u}
-    (eOps : AgentCoreOps ⟨Agent, Claim⟩)
-    (P : AgentCoreOps ⟨Agent, Claim⟩ → Prop)
-    (h_P : P eOps) :
-    P eOps :=
-  h_P
-
-/-- PRP is independent of extra agent state.
-
-    Adding an auxiliary type parameter does not alter PRP,
-    because PRP only mentions Agent, Claim, and TimeIdx. -/
-theorem prp_projects {Agent Claim : Type u}
-    (prp : PRP Agent Claim)
-    (_extra : Type u) :  -- The extra type doesn't affect PRP
-    PRP Agent Claim :=
-  prp  -- PRP is unchanged—it only mentions core types
-
 
 /-! ## Agent Layer and RevisionSafety.Compatible
 

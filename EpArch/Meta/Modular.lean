@@ -1,20 +1,20 @@
 /-
 EpArch.Meta.Modular — Machine-Certified Modularity Meta-Theorem
 
-Answers the question: "Is EpArch modular on its six operational constraints —
+Answers the question: "Is EpArch modular on its seven operational constraints —
 can you drop any constraint and have the remaining forcing theorems still hold?"
 
-Scope: this file covers the six constraints in EpArch.Minimality only.
+Scope: this file covers the seven constraints in EpArch.Minimality only.
 Health-goal modularity (∀-transport of SafeWithdrawal, ReliableExport, etc.)
 is proved separately in EpArch.Meta.TheoremTransport and EpArch.Meta.Tier4Transport.
 
 This file provides two pieces:
 
   (1) `PartialWellFormed W S` — a biconditional-subset type parameterized by a subset S of
-      the six constraints. You only supply the biconditionals for the constraints
+      the seven constraints. You only supply the biconditionals for the constraints
       you care about; the rest are not required.
 
-  (2) `projection_valid S W` — the named target predicate: the conjunction of six
+  (2) `projection_valid S W` — the named target predicate: the conjunction of seven
       guarded forcing implications, each guarded by "S selects this constraint."
 
   (3) `modular` — the universally-quantified meta-theorem:
@@ -24,7 +24,7 @@ This file provides two pieces:
 
 ## Relationship to PartialWellFormed
 
-  `PartialWellFormed W allConstraints` — all six biconditionals required,
+  `PartialWellFormed W allConstraints` — all seven biconditionals required,
   the strongest subset — is the natural replacement for the former `WellFormed`
   predicate (which has been removed).  Every existing `WellFormed`-gated proof
   can be re-stated as `PartialWellFormed W allConstraints`.
@@ -59,7 +59,8 @@ theorem partial_no_constraints (W : WorkingSystem) : PartialWellFormed W noConst
     wf_export         := fun h => absurd h (by decide)
     wf_adversarial    := fun h => absurd h (by decide)
     wf_coordination   := fun h => absurd h (by decide)
-    wf_truth_pressure := fun h => absurd h (by decide) }
+    wf_truth_pressure := fun h => absurd h (by decide)
+    wf_multi_agent    := fun h => absurd h (by decide) }
 
 
 /-! ## The Modularity Target Predicate -/
@@ -78,14 +79,15 @@ def projection_valid (S : ConstraintSubset) (W : WorkingSystem) : Prop :=
   (S.export_across  = true → handles_export W → HasHeaders W) ∧
   (S.adversarial    = true → handles_adversarial W → HasRevocation W) ∧
   (S.coordination   = true → handles_coordination W → HasBank W) ∧
-  (S.truth_pressure = true → handles_truth_pressure W → HasRedeemability W)
+  (S.truth_pressure = true → handles_truth_pressure W → HasRedeemability W) ∧
+  (S.multi_agent    = true → handles_multi_agent W → HasGranularACL W)
 
 
 /-! ## The Modularity Meta-Theorem -/
 
 /-- **`modular` — the EpArch constraint-modularity meta-theorem.**
 
-    For any subset S of the six constraints, any system with `PartialWellFormed W S`
+    For any subset S of the seven constraints, any system with `PartialWellFormed W S`
     satisfies `projection_valid S W`: the forcing theorem holds for each constraint
     in S, and no claim is made about constraints outside S.
 
@@ -101,7 +103,8 @@ theorem modular (S : ConstraintSubset) (W : WorkingSystem)
    fun he h => (pwf.wf_export          he).mp h,
    fun ha h => (pwf.wf_adversarial     ha).mp h,
    fun hc h => (pwf.wf_coordination    hc).mp h,
-   fun ht h => (pwf.wf_truth_pressure  ht).mp h⟩
+   fun ht h => (pwf.wf_truth_pressure  ht).mp h,
+   fun hm h => (pwf.wf_multi_agent     hm).mp h⟩
 
 
 /-! ## PartialGroundedSpec — Minimal User-Facing Compliance API
@@ -125,7 +128,8 @@ Inactive constraints (S.X = false) require only `fun h => absurd h (by decide)`.
 | `export_across`  | Export across bounds    | `GroundedHeaders`          |
 | `adversarial`    | Adversarial pressure    | `GroundedRevocation`       |
 | `coordination`   | Coordination need       | `GroundedBank`             |
-| `truth_pressure` | Truth pressure          | `GroundedRedeemability`    | -/
+| `truth_pressure` | Truth pressure          | `GroundedRedeemability`    |
+| `multi_agent`    | Multi-agent access      | `GroundedAuthorization`    | -/
 
 /-- The compliance form: evidence for each EpArch constraint in S.
 
@@ -139,7 +143,8 @@ Inactive constraints (S.X = false) require only `fun h => absurd h (by decide)`.
     def MyConstraints : ConstraintSubset :=
       { distributed := true, adversarial := true,
         bounded_audit := false, export_across := false,
-        coordination := false, truth_pressure := false }
+        coordination := false, truth_pressure := false,
+        multi_agent := false }
 
     def MySpec : PartialGroundedSpec MyConstraints where
       bubbles       := fun _ => MyGroundedBubbles    -- real domain evidence
@@ -148,6 +153,7 @@ Inactive constraints (S.X = false) require only `fun h => absurd h (by decide)`.
       headers       := fun h => absurd h (by decide)
       bank          := fun h => absurd h (by decide)
       redeemability := fun h => absurd h (by decide)
+      authorization := fun h => absurd h (by decide)
 
     -- If this compiles, your design is EpArch-compliant for MyConstraints:
     #check (partial_modular MyConstraints MySpec)
@@ -165,6 +171,8 @@ structure PartialGroundedSpec (S : ConstraintSubset) where
   bank          : S.coordination   = true → GroundedBank
   /-- Redeemability evidence (required iff S.truth_pressure = true) -/
   redeemability : S.truth_pressure = true → GroundedRedeemability
+  /-- Authorization evidence (required iff S.multi_agent = true) -/
+  authorization : S.multi_agent    = true → GroundedAuthorization
 
 
 /-- Build a `WorkingSystem` from partial evidence.
@@ -187,6 +195,8 @@ def PartialGroundedSpec.toWorkingSystem (S : ConstraintSubset)
       if h : S.coordination   = true then let _ev := pgs.bank h;          true else false
     has_redeemability     :=
       if h : S.truth_pressure = true then let _ev := pgs.redeemability h; true else false
+    has_granular_acl      :=
+      if h : S.multi_agent    = true then let _ev := pgs.authorization h; true else false
   }
   bubbles_ev       := if h : S.distributed    = true then some (pgs.bubbles h).toStrict       else none
   bridges_ev       := if h : S.bounded_audit  = true then some (pgs.trust_bridges h).toStrict else none
@@ -194,6 +204,7 @@ def PartialGroundedSpec.toWorkingSystem (S : ConstraintSubset)
   revocation_ev    := if h : S.adversarial    = true then some (pgs.revocation h).toStrict    else none
   bank_ev          := if h : S.coordination   = true then some (pgs.bank h).toStrict          else none
   redeemability_ev := if h : S.truth_pressure = true then some (pgs.redeemability h).toStrict else none
+  authorization_ev := if h : S.multi_agent    = true then some (pgs.authorization h).toStrict else none
 
 
 /-- A `WorkingSystem` built by `toWorkingSystem` satisfies `PartialWellFormed W S`.
@@ -218,6 +229,9 @@ theorem partial_grounded_is_partial_wellformed (S : ConstraintSubset)
     simp [handles_coordination, HasBank, PartialGroundedSpec.toWorkingSystem, h, Option.isSome]
   wf_truth_pressure := fun h => by
     simp [handles_truth_pressure, HasRedeemability, PartialGroundedSpec.toWorkingSystem, h,
+          Option.isSome]
+  wf_multi_agent    := fun h => by
+    simp [handles_multi_agent, HasGranularACL, PartialGroundedSpec.toWorkingSystem, h,
           Option.isSome] }
 
 

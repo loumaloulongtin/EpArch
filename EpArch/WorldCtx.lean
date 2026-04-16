@@ -144,6 +144,45 @@ structure WorldCtx.W_asymmetric_costs (C : WorldCtx) where
   defense_cost : Nat
   asymmetry : export_cost < defense_cost
 
+/-- Bundle for "multiple agents with heterogeneous epistemic access" assumption.
+
+    Models the multi-agent collaboration case: distinct agents exist, lying
+    pressure is real (false propositions exist), but not every agent has
+    unrestricted access to every claim — secrets exist.
+
+    This bundle is INCOMPATIBLE with W_lies_possible, which requires
+    unrestricted utterance for all agents.  The incompatibility is the
+    forcing argument: to maintain secrets under adversarial lying pressure,
+    the authorization surface must be non-trivial (ACL cannot be open).
+
+    Contrast with the single-agent case: one person managing their own bank
+    under adversarial pressure from others does not need this bundle — they
+    are the sole authority and open-mode ACL is correct for their bubble. -/
+structure WorldCtx.W_multi_agent_heterogeneous (C : WorldCtx) where
+  /-- At least two distinct agents exist -/
+  distinct_agents : ∃ a₁ a₂ : C.Agent, a₁ ≠ a₂
+  /-- False propositions exist (adversarial content pressure remains) -/
+  some_false : ∃ w P, ¬C.Truth w P
+  /-- Some agent cannot utter some claim — secrets / restricted access exists.
+      This is the direct negation of W_lies_possible.unrestricted_utterance. -/
+  secrets_exist : ∃ (a : C.Agent) (P : C.Claim), ¬C.Utter a P
+
+/-- W_lies_possible and W_multi_agent_heterogeneous are mutually incompatible.
+
+    W_lies_possible asserts unrestricted utterance for all agents.
+    W_multi_agent_heterogeneous asserts some agent lacks utterance capability.
+    They cannot both hold simultaneously.
+
+    Forcing corollary (contrapositive): if secrets must be protected
+    (W_multi_agent_heterogeneous holds), then the world cannot be fully
+    adversarially open (W_lies_possible fails).  The authorization surface
+    must be non-trivial to maintain the separation. -/
+theorem WorldCtx.w_lies_multi_agent_incompatible (C : WorldCtx)
+    (W_lies : C.W_lies_possible)
+    (W_multi : C.W_multi_agent_heterogeneous) : False := by
+  have ⟨a, P, h_no_utter⟩ := W_multi.secrets_exist
+  exact h_no_utter (W_lies.unrestricted_utterance a P)
+
 
 /-! ## Obligation Theorems (Context-Parametric)
 

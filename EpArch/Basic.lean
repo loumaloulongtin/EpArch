@@ -202,23 +202,21 @@ def Entrenched (a : Agent) (P : Claim) : Prop :=
 /-! ## Deposit Status
 
 A deposit goes through a lifecycle in the Bank:
-Candidate → Validated → Deposited → (Quarantined → Revoked or Repaired).
+Candidate → Deposited → (Quarantined → Revoked or Repaired).
 Repaired deposits loop back to Candidate for revalidation, not to Deposited.
 These statuses control what operations are available. For example, only
 Deposited claims can be withdrawn (relied upon), and only Quarantined
 claims can be repaired or revoked. See EpArch.Semantics.StepSemantics for the
 operational transition system that enforces these rules.
 
-Note: Some descriptions list only four statuses (Candidate, Deposited,
-Quarantined, Revoked). The formalization adds a `Validated` intermediate
-between Candidate and Deposited, splitting the acceptance step into
-Validate_B + Accept_B for finer-grained lifecycle control. -/
+The four minimal states are the architectural boundary: implementations
+may use internal multi-stage pipelines between Candidate and Deposited,
+but the architecture does not prescribe or observe those intermediate stages. -/
 
 /-- Status of a deposit in the Bank lifecycle. -/
 inductive DepositStatus where
-  | Candidate    -- submitted, not yet validated
-  | Validated    -- passed validation, not yet accepted as deposited
-  | Deposited    -- active in the bank
+  | Candidate    -- submitted, pending bank operator promotion
+  | Deposited    -- live in the bank, withdrawable
   | Quarantined  -- suspended pending challenge resolution
   | Revoked      -- permanently withdrawn from circulation
   deriving DecidableEq, Repr

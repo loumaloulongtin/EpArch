@@ -81,7 +81,7 @@ def attack_succeeds (a : FullStackAttack (PropLike := PropLike)
 
 /-! ## Pseudo-Deposit -/
 
-/-- Pseudo-deposit: deposit that passed Accept_B on spoofed inputs.
+/-- Pseudo-deposit: deposit that passed Promote_B on spoofed inputs.
 
     The deposit is Committed in the victim's bubble, but:
     - V was forged (no valid provenance path)

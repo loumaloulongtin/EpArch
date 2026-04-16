@@ -9,8 +9,8 @@ is paired with:
   - a `GroundedXStrict` augmentation adding an impossibility/forcing consequence
   - a `GroundedX.toStrict` derivation constructing the Strict variant automatically
 
-`GroundedSystemSpec` bundles all six witnesses and `toSystemSpec` chains the
-six builders to produce a fully grounded spec.
+`GroundedSystemSpec` bundles all seven witnesses and `toSystemSpec` chains the
+seven builders to produce a fully grounded spec.
 -/
 
 import EpArch.SystemSpec
@@ -274,18 +274,86 @@ def GroundedRedeemability.toStrict (G : GroundedRedeemability) : GroundedRedeema
   has_constrained_redeemable_witness := ⟨G.witness, G.is_constrained, G.has_path⟩
 
 
-/-! ## GroundedSystemSpec: All Six Features from Evidence -/
+/-! ## GroundedAuthorization -/
 
-/-- A fully grounded system specification: all six EpArch features backed by
+/-- Evidence that a system has a staged authorization surface: a submission tier
+    open to all agents and a restricted commit tier.  The two tiers are witnessed
+    by `may_propose` (submitter can propose), `cannot_commit` (submitter cannot
+    commit), and `may_commit` (committer can commit — commit tier is non-vacuous).
+
+    This establishes that no single flat authorization predicate can faithfully
+    represent both tiers: structural tension between the two tiers is the
+    evidence that granular ACL is non-trivial. -/
+structure GroundedAuthorization where
+  /-- The agent type. -/
+  Agent         : Type
+  /-- The claim type. -/
+  Claim         : Type
+  /-- The open submission tier: agents that may propose/submit. -/
+  can_propose   : Agent → Claim → Prop
+  /-- The restricted commit tier: agents that may merge/commit. -/
+  can_commit    : Agent → Claim → Prop
+  /-- An agent in the submission tier but not the commit tier. -/
+  submitter     : Agent
+  /-- An agent in the commit tier — establishes the commit tier is non-vacuous. -/
+  committer     : Agent
+  /-- The claim on which the two tiers differ. -/
+  tier_claim    : Claim
+  /-- The submitter can propose the tier claim. -/
+  may_propose   : can_propose submitter tier_claim
+  /-- The submitter cannot commit the tier claim. -/
+  cannot_commit : ¬can_commit submitter tier_claim
+  /-- The committer can commit the tier claim — the commit tier is non-vacuous. -/
+  may_commit    : can_commit committer tier_claim
+
+/-- Build a `SystemSpec` with `has_granular_acl = true` from evidence. -/
+def SystemSpec.withGroundedAuthorization (G : GroundedAuthorization) (rest : SystemSpec) : SystemSpec :=
+  let _ev := G.cannot_commit
+  { rest with has_granular_acl := true }
+
+theorem grounded_authorization_justified (G : GroundedAuthorization) (rest : SystemSpec) :
+    spec_has_granular_acl (SystemSpec.withGroundedAuthorization G rest) := by
+  unfold spec_has_granular_acl SystemSpec.withGroundedAuthorization
+  rfl
+
+/-- `GroundedAuthorization` augmented with its impossibility consequence.
+
+    `no_flat_tier` — the architectural consequence: no single flat authorization
+    predicate can faithfully represent both the submission tier and the commit tier.
+    If one existed, routing `may_propose` through both iffs would force the submitter
+    into the commit tier, contradicting `cannot_commit`.
+
+    This is the authorization analog of `no_flat_resolver` for scope. -/
+structure GroundedAuthorizationStrict where
+  base         : GroundedAuthorization
+  /-- No flat predicate represents both tiers: the structural impossibility consequence. -/
+  no_flat_tier : ¬∃ (f : base.Agent → base.Claim → Prop),
+      (∀ a c, f a c ↔ base.can_propose a c) ∧
+      (∀ a c, f a c ↔ base.can_commit a c)
+
+/-- Derive `GroundedAuthorizationStrict` from base evidence.
+    Proves `no_flat_tier` inline: a flat `f` routes `may_propose` through both
+    iffs to force `can_commit submitter tier_claim`, contradicting `cannot_commit`.
+    Parallel to `no_flat_resolver` for scope. -/
+def GroundedAuthorization.toStrict (G : GroundedAuthorization) : GroundedAuthorizationStrict where
+  base := G
+  no_flat_tier := fun ⟨f, hprop, hcommit⟩ =>
+    G.cannot_commit ((hcommit G.submitter G.tier_claim).mp
+      ((hprop G.submitter G.tier_claim).mpr G.may_propose))
+
+
+/-! ## GroundedSystemSpec: All Seven Features from Evidence -/
+
+/-- A fully grounded system specification: all seven EpArch features backed by
     domain evidence rather than declared Boolean flags.
 
     A `GroundedSystemSpec` contains one `GroundedX` witness per feature, plus a
     base spec (conventionally all-false: every `true` comes from evidence).
 
-    `toSystemSpec` chains the six `withGroundedX` applications; each call sets
+    `toSystemSpec` chains the seven `withGroundedX` applications; each call sets
     exactly one `Bool` field to `true` because the corresponding evidence was
     supplied.  A system that can provide a `GroundedSystemSpec` has *proven*
-    — not merely declared — that it satisfies all six Bank primitives. -/
+    — not merely declared — that it satisfies all seven Bank primitives. -/
 structure GroundedSystemSpec where
   bubbles       : GroundedBubbles
   trust_bridges : GroundedTrustBridges
@@ -293,20 +361,22 @@ structure GroundedSystemSpec where
   revocation    : GroundedRevocation
   bank          : GroundedBank
   redeemability : GroundedRedeemability
+  authorization : GroundedAuthorization
   base          : SystemSpec
 
 /-- Convert a `GroundedSystemSpec` to a concrete `SystemSpec`.
 
-    The six `withGroundedX` calls are chained innermost-to-outermost.  After
-    all six applications every field is `true`, but each `true` was set by
+    The seven `withGroundedX` calls are chained innermost-to-outermost.  After
+    all seven applications every field is `true`, but each `true` was set by
     construction from evidence — not by writing `true` in a record literal. -/
 def GroundedSystemSpec.toSystemSpec (G : GroundedSystemSpec) : SystemSpec :=
-  SystemSpec.withGroundedRedeemability G.redeemability
-    (SystemSpec.withGroundedBank G.bank
-      (SystemSpec.withGroundedRevocation G.revocation
-        (SystemSpec.withGroundedHeaders G.headers
-          (SystemSpec.withGroundedTrustBridges G.trust_bridges
-            (SystemSpec.withGroundedBubbles G.bubbles G.base)))))
+  SystemSpec.withGroundedAuthorization G.authorization
+    (SystemSpec.withGroundedRedeemability G.redeemability
+      (SystemSpec.withGroundedBank G.bank
+        (SystemSpec.withGroundedRevocation G.revocation
+          (SystemSpec.withGroundedHeaders G.headers
+            (SystemSpec.withGroundedTrustBridges G.trust_bridges
+              (SystemSpec.withGroundedBubbles G.bubbles G.base))))))
 
 /-- A fully grounded spec satisfies `containsAllFeatures` — and the proof
     does not depend on any manually set `Bool` flag.  Every `spec_has_X` holds
@@ -314,11 +384,12 @@ def GroundedSystemSpec.toSystemSpec (G : GroundedSystemSpec) : SystemSpec :=
 theorem grounded_spec_contains_all (G : GroundedSystemSpec) :
     containsAllFeatures (G.toSystemSpec) := by
   unfold containsAllFeatures GroundedSystemSpec.toSystemSpec
-         SystemSpec.withGroundedRedeemability SystemSpec.withGroundedBank
-         SystemSpec.withGroundedRevocation SystemSpec.withGroundedHeaders
-         SystemSpec.withGroundedTrustBridges SystemSpec.withGroundedBubbles
+         SystemSpec.withGroundedAuthorization SystemSpec.withGroundedRedeemability
+         SystemSpec.withGroundedBank SystemSpec.withGroundedRevocation
+         SystemSpec.withGroundedHeaders SystemSpec.withGroundedTrustBridges
+         SystemSpec.withGroundedBubbles
          spec_has_bubbles spec_has_trust_bridges spec_has_headers
-         spec_has_revocation spec_has_bank spec_has_redeemability
+         spec_has_revocation spec_has_bank spec_has_redeemability spec_has_granular_acl
   simp
 
 end EpArch

@@ -57,7 +57,7 @@ structure Header (Standard ErrorModel Provenance : Type u) where
     - P: the claim itself
     - h: the validation header (S, E, V, τ, acl, redeemability)
     - bubble: the scoped authorization zone it lives in
-    - status: current lifecycle stage (Candidate → Validated → Deposited → Quarantined → Revoked) -/
+    - status: current lifecycle stage (Candidate → Deposited → Quarantined → Revoked) -/
 structure Deposit (PropLike Standard ErrorModel Provenance : Type u) where
   P      : PropLike
   h      : Header Standard ErrorModel Provenance
