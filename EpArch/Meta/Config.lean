@@ -84,7 +84,6 @@ universe u
 
 
 -- clusterValid is defined in §4g, after all indexed witness inductives.
--- See §4g below (after latticeWitness) for the real predicate.
 
 
 /-! ## §4b  Constraint Proof Carrier
@@ -390,24 +389,97 @@ def latticeWitness : (c : EnabledLatticeCluster) → LatticeWitness c
   | .lattice_pack       => .pack      modularity_pack
 
 
-/-! ## §4g  Cluster Validity — Inline Proposition Match
+/-! ## §4g-pre  Universe-grounded cluster propositions (private)
 
-`clusterValid c` is the machine-proved proposition for cluster `c` where that
-proposition can be expressed without a free universe variable.  For 15 clusters
-whose propositions quantify over `ExtModel : Type u`, `CoreModel`, or `WorldCtx`
-(all containing the module's universe variable `u`), `clusterValid c = True`;
-their proof content lives in the `xWitness` indexed families and `cluster_*` gallery.
+Each `prop_*` def stores one blocked cluster's theorem statement with every
+universe-polymorphic type pinned to `.{0}`.  With all universes concrete,
+no free universe variable appears and the def compiles as a plain `Prop`.
+These serve as the match-arm values in `clusterValid` for the 15 clusters
+whose proposition types live at `Type (u+1)` (Goal, WorldCtx, Tier4-bank,
+Lattice families). -/
 
-**Universe constraint:** Lean 4.3.0 rejects arms of a `ClusterTag → Prop` match
-that assign a proposition involving a free universe variable `u`, regardless of
-indirection through a wrapper type.  The 15 affected clusters are: Goal (6, use
-`ExtModel`/`CoreModel`), Tier 4 `bank_goals` (2, use `ExtModel`), WorldCtx (4,
-fields involve `Type u`), and Lattice (3, use `CoreModel`/`ExtModel`).
+private def prop_goal_safeWithdrawal : Prop :=
+  ∀ (E : ExtModel.{0}) (C : CoreModel.{0}),
+    Compatible.{0} E C → SafeWithdrawalGoal.{0} C → SafeWithdrawalGoal.{0} (forget.{0} E)
+private def prop_goal_reliableExport : Prop :=
+  ∀ (E : ExtModel.{0}) (C : CoreModel.{0}),
+    Compatible.{0} E C → ReliableExportGoal.{0} C → ReliableExportGoal.{0} (forget.{0} E)
+private def prop_goal_soundDeposits : Prop :=
+  ∀ (E : ExtModel.{0}) (C : CoreModel.{0}),
+    Compatible.{0} E C → SoundDepositsGoal.{0} C → SoundDepositsGoal.{0} (forget.{0} E)
+private def prop_goal_selfCorrection : Prop :=
+  ∀ (E : ExtModel.{0}) (C : CoreModel.{0}),
+    Compatible.{0} E C → SelfCorrectionGoal.{0} C → SelfCorrectionGoal.{0} (forget.{0} E)
+private def prop_goal_corrigible_universal : Prop :=
+  ∀ (E : ExtModel.{0, 0}) (C : CoreModel.{0}),
+    Compatible.{0, 0, 0} E C → CorrigibleLedgerGoal.{0} C →
+    ∀ (B_E : (forget.{0, 0} E).sig.Bubble), (forget.{0, 0} E).ops.hasRevision B_E →
+    ∀ (d_E d'_E : (forget.{0, 0} E).sig.Deposit),
+    (forget.{0, 0} E).ops.revise B_E d_E d'_E → (forget.{0, 0} E).ops.truth B_E d'_E
+private def prop_goal_corrigible_full : Prop :=
+  ∀ (E : ExtModel.{0}) (C : CoreModel.{0}),
+    SurjectiveCompatible.{0} E C → CorrigibleLedgerGoal.{0} C →
+    CorrigibleLedgerGoal.{0} (forget.{0} E)
+private def prop_tier4_bank_goals_compat : Prop :=
+  ∀ (E : ExtModel.{0, 0}) (C : CoreModel.{0}),
+    Compatible.{0, 0, 0} E C →
+    SafeWithdrawalGoal.{0} C → ReliableExportGoal.{0} C →
+    SoundDepositsGoal.{0} C → SelfCorrectionGoal.{0} C →
+    CorrigibleLedgerGoal.{0} C →
+    SafeWithdrawalGoal.{0} (forget.{0, 0} E) ∧ ReliableExportGoal.{0} (forget.{0, 0} E) ∧
+    SoundDepositsGoal.{0} (forget.{0, 0} E) ∧ SelfCorrectionGoal.{0} (forget.{0, 0} E) ∧
+    (∀ B_E : (forget.{0, 0} E).sig.Bubble, (forget.{0, 0} E).ops.hasRevision B_E →
+     ∀ d_E d'_E : (forget.{0, 0} E).sig.Deposit,
+     (forget.{0, 0} E).ops.revise B_E d_E d'_E → (forget.{0, 0} E).ops.truth B_E d'_E)
+private def prop_tier4_bank_goals_surj : Prop :=
+  ∀ (E : ExtModel.{0, 0}) (C : CoreModel.{0}),
+    SurjectiveCompatible.{0, 0, 0} E C →
+    SafeWithdrawalGoal.{0} C → ReliableExportGoal.{0} C →
+    SoundDepositsGoal.{0} C → SelfCorrectionGoal.{0} C →
+    CorrigibleLedgerGoal.{0} C →
+    SafeWithdrawalGoal.{0} (forget.{0, 0} E) ∧ ReliableExportGoal.{0} (forget.{0, 0} E) ∧
+    SoundDepositsGoal.{0} (forget.{0, 0} E) ∧ SelfCorrectionGoal.{0} (forget.{0, 0} E) ∧
+    CorrigibleLedgerGoal.{0} (forget.{0, 0} E)
+private def prop_world_lies_possible : Prop :=
+  ∀ (C : WorldCtx.{0}) (_ : C.W_lies_possible), ∃ w a P, C.Lie w a P
+private def prop_world_bounded_audit : Prop :=
+  ∀ (C : WorldCtx.{0}) (w : C.World) (P : C.Claim) (k t : Nat),
+    C.RequiresSteps w P k → t < k → ¬C.VerifyWithin w P t
+private def prop_world_asymmetric_costs : Prop :=
+  ∀ (C : WorldCtx.{0}) (W : C.W_asymmetric_costs), W.export_cost < W.defense_cost
+private def prop_world_partial_observability : Prop :=
+  ∀ (C : WorldCtx.{0}) (_ : C.W_partial_observability), ∃ P, C.NotDeterminedByObs P
+private def prop_lattice_graceful : Prop :=
+  ∀ (M : CoreModel.{0}), NoSelfCorrection.{0} M → RevisionGate.{0} M
+private def prop_lattice_sub_safety : Prop :=
+  ∀ (S : SubBundle.{0}) (E : ExtModel.{0}),
+    Compatible.{0} E S.model → RevisionGate.{0} S.model → RevisionGate.{0} (forget.{0} E)
+private def prop_lattice_pack : Prop :=
+  (∀ (M : CoreModel.{0}), NoSelfCorrection.{0} M → RevisionGate.{0} M) ∧
+  (∀ (S : SubBundle.{0}) (E : ExtModel.{0}),
+     Compatible.{0} E S.model → RevisionGate.{0} S.model → RevisionGate.{0} (forget.{0} E)) ∧
+  (∀ (C : CoreModel.{0}) (R : RevisionSafeExtension.{0} C),
+     RevisionGate.{0} C → RevisionGate.{0} (forget.{0} R.ext))
 
-The 15 wired-in clusters carry their actual machine-proved propositions inline. -/
 
-/-- A cluster is valid: `clusterValid c` is the actual machine-proved proposition
-    for 15 of the 30 clusters; the remaining 15 resolve to `True` (see §4g). -/
+/-! ## §4g  Cluster Validity — All 30 Clusters Wired
+
+`clusterValid c` is the machine-proved proposition for all 30 clusters.
+- Tier 2 (7): inline forcing propositions via `constraintSpec`.
+- Tier 3 Goal (6): `prop_goal_*` — the transport theorem at universe 0.
+- Tier 4 (3 inline + 2 via `prop_tier4_bank_goals_*`).
+- World (4 inline adversarial + 4 via `prop_world_*`).
+- Meta (1): inline.
+- Lattice (3): `prop_lattice_*` — the lattice theorem at universe 0.
+
+**Universe escape hatch:** the 15 blocked clusters use private `prop_*` defs
+(§4g-pre) where every universe-polymorphic type is explicitly pinned to `.{0}`.
+This eliminates all free universe variables, allowing the defs to appear as
+match-arm values of `clusterValid : ClusterTag → Prop`. -/
+
+/-- A cluster is valid: `clusterValid c` is the machine-proved proposition for all
+    30 clusters.  Tier 2 and the 8 inline Tier 4/World/Meta clusters use raw
+    propositions; the remaining 15 use `prop_*` defs pinned at universe 0 (see §4g). -/
 def clusterValid (c : ClusterTag) : Prop :=
   match c with
   -- Tier 2 (7): forcing propositions via constraintSpec
@@ -418,9 +490,13 @@ def clusterValid (c : ClusterTag) : Prop :=
   | .forcing_coordination       => (constraintSpec .forcing_coordination).witness.statement
   | .forcing_truth              => (constraintSpec .forcing_truth).witness.statement
   | .forcing_multi_agent        => (constraintSpec .forcing_multi_agent).witness.statement
-  -- Tier 3 Goal (6): ExtModel/CoreModel → True (proof content in goalWitness / cluster_goal_*)
-  | .goal_safeWithdrawal | .goal_reliableExport | .goal_soundDeposits
-  | .goal_selfCorrection | .goal_corrigible_universal | .goal_corrigible_full => True
+  -- Tier 3 Goal (6): transport theorems at universe 0
+  | .goal_safeWithdrawal       => prop_goal_safeWithdrawal
+  | .goal_reliableExport       => prop_goal_reliableExport
+  | .goal_soundDeposits        => prop_goal_soundDeposits
+  | .goal_selfCorrection       => prop_goal_selfCorrection
+  | .goal_corrigible_universal => prop_goal_corrigible_universal
+  | .goal_corrigible_full      => prop_goal_corrigible_full
   -- Tier 4 (3 safe + 2 unsafe)
   | .tier4_commitments       =>
       ∀ {PL SL EL PrL : Type},
@@ -461,11 +537,14 @@ def clusterValid (c : ClusterTag) : Prop :=
            StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
              s (StepSemantics.Action.Submit a d) s' →
            ∃ d', d' ∈ s'.ledger ∧ d'.status = DepositStatus.Candidate)
-  -- Tier 4 bank_goals: ExtModel → True (proof content in tier4Witness)
-  | .tier4_bank_goals_compat | .tier4_bank_goals_surj => True
-  -- World (4 unsafe WorldCtx + 4 safe adversarial)
-  | .world_lies_possible | .world_bounded_audit
-  | .world_asymmetric_costs | .world_partial_observability => True
+  -- Tier 4 bank_goals (2): theorems at universe 0
+  | .tier4_bank_goals_compat => prop_tier4_bank_goals_compat
+  | .tier4_bank_goals_surj   => prop_tier4_bank_goals_surj
+  -- World (4 WorldCtx via prop_* + 4 inline adversarial)
+  | .world_lies_possible        => prop_world_lies_possible
+  | .world_bounded_audit        => prop_world_bounded_audit
+  | .world_asymmetric_costs     => prop_world_asymmetric_costs
+  | .world_partial_observability => prop_world_partial_observability
   | .world_spoofed_v  =>
       ∀ {PL SL EL PrL : Type}
         (_W : W_spoofedV (PropLike := PL) (Standard := SL)
@@ -482,8 +561,10 @@ def clusterValid (c : ClusterTag) : Prop :=
   -- Meta (1): safe (WorkingSystem, ConstraintSubset are Type 0)
   | .meta_modular      => ∀ (S : ConstraintSubset) (W : WorkingSystem),
         PartialWellFormed W S → projection_valid S W
-  -- Lattice (3): CoreModel/ExtModel → True (proof content in latticeWitness)
-  | .lattice_graceful | .lattice_sub_safety | .lattice_pack => True
+  -- Lattice (3): theorems at universe 0
+  | .lattice_graceful  => prop_lattice_graceful
+  | .lattice_sub_safety => prop_lattice_sub_safety
+  | .lattice_pack      => prop_lattice_pack
 
 
 
@@ -559,8 +640,9 @@ private theorem enabledLatticeCluster_mem_all (c : EnabledLatticeCluster) :
 /-! ## §5  Soundness: `clusterEnabled cfg c = true → clusterValid c` -/
 
 /-- `clusterEnabled` is sound: every cluster it marks enabled satisfies `clusterValid`.
-    For the 15 wired-in clusters `clusterValid c` is the actual machine-proved proposition,
-    closed by the corresponding proof term.  For the 15 `True` arms, `trivial` suffices. -/
+    All 30 clusters are non-trivially closed: Tier 2 by `constraintSpec.witness.proof`,
+    inline Tier 4/World/Meta clusters by the corresponding theorem, and the 15
+    `prop_*`-wrapped clusters by the corresponding transport/lattice/world theorem. -/
 theorem clusterEnabled_sound (cfg : EpArchConfig) (c : ClusterTag)
     (_h : clusterEnabled cfg c = true) : clusterValid c := by
   unfold clusterValid
@@ -572,20 +654,41 @@ theorem clusterEnabled_sound (cfg : EpArchConfig) (c : ClusterTag)
   | .forcing_coordination       => exact (constraintSpec .forcing_coordination).witness.proof
   | .forcing_truth              => exact (constraintSpec .forcing_truth).witness.proof
   | .forcing_multi_agent        => exact (constraintSpec .forcing_multi_agent).witness.proof
-  | .goal_safeWithdrawal | .goal_reliableExport | .goal_soundDeposits
-  | .goal_selfCorrection | .goal_corrigible_universal | .goal_corrigible_full => trivial
+  | .goal_safeWithdrawal        => exact transport_safe_withdrawal
+  | .goal_reliableExport        => exact transport_reliable_export
+  | .goal_soundDeposits         => exact transport_sound_deposits
+  | .goal_selfCorrection        => exact transport_self_correction
+  | .goal_corrigible_universal  => exact transport_corrigible_universal
+  | .goal_corrigible_full       => exact transport_corrigible_ledger
   | .tier4_commitments          => exact @commitments_pack
   | .tier4_structural           => exact @structural_theorems_unconditional
   | .tier4_lts_universal        => exact @lts_theorems_step_universal
-  | .tier4_bank_goals_compat | .tier4_bank_goals_surj => trivial
-  | .world_lies_possible | .world_bounded_audit
-  | .world_asymmetric_costs | .world_partial_observability => trivial
+  | .tier4_bank_goals_compat    =>
+      exact fun E C h h_sw h_re h_sd h_sc h_cl =>
+        ⟨transport_safe_withdrawal E C h h_sw,
+         transport_reliable_export E C h h_re,
+         transport_sound_deposits E C h h_sd,
+         transport_self_correction E C h h_sc,
+         transport_corrigible_universal E C h h_cl⟩
+  | .tier4_bank_goals_surj =>
+      exact fun E C h h_sw h_re h_sd h_sc h_cl =>
+        ⟨transport_safe_withdrawal E C h.toCompatible h_sw,
+         transport_reliable_export E C h.toCompatible h_re,
+         transport_sound_deposits E C h.toCompatible h_sd,
+         transport_self_correction E C h.toCompatible h_sc,
+         transport_corrigible_ledger E C h h_cl⟩
+  | .world_lies_possible        => exact WorldCtx.lie_possible_of_W
+  | .world_bounded_audit        => exact WorldCtx.bounded_audit_fails
+  | .world_asymmetric_costs     => exact WorldCtx.cost_asymmetry_of_W
+  | .world_partial_observability => exact WorldCtx.partial_obs_no_omniscience
   | .world_spoofed_v            => exact @spoofed_V_blocks_path_of_W
   | .world_lies_scale           => exact lies_scale_of_W
   | .world_rolex_ddos           => exact rolex_ddos_structural_equivalence_of_W
   | .world_ddos                 => exact ddos_causes_verification_collapse_of_W
   | .meta_modular               => exact modular
-  | .lattice_graceful | .lattice_sub_safety | .lattice_pack => trivial
+  | .lattice_graceful           => exact graceful_degradation
+  | .lattice_sub_safety         => exact sub_revision_safety
+  | .lattice_pack               => exact modularity_pack
 
 
 /-! ## §6  Certified Projection
@@ -595,8 +698,8 @@ cluster and holds machine-checked evidence that each one is valid. -/
 
 /-- A certified bundle: the enabled clusters for `cfg`, with proofs.
 
-    **Layer 1 (routing):** `enabled`, `complete`, `sound` — all 30 cluster tags,
-    routing only, `clusterValid c = True`.
+    **Layer 1 (routing):** `enabled`, `complete`, `sound` — all 30 cluster tags.
+    `sound` proves `clusterValid c` non-trivially for every enabled cluster.
 
     **Layer 2 (constraint proofs):** `constraintWitnesses` — full `ConstraintProof`
     for all seven Tier 2 forcing clusters (total, config-independent).
@@ -613,8 +716,9 @@ structure CertifiedProjection (cfg : EpArchConfig) where
   enabled                   : List ClusterTag
   /-- Faithfully mirrors `explainConfig`. -/
   complete                  : enabled = explainConfig cfg
-  /-- Every enabled cluster satisfies `clusterValid`, which for all 30 clusters
-      IS the machine-proved proposition for that cluster. -/
+  /-- Every enabled cluster satisfies `clusterValid`. For Tier 2 and the 8 inline
+      clusters this is the raw proposition; for the 15 `prop_*`-wrapped clusters
+      this is the theorem statement pinned at universe 0 (see §4g). -/
   sound                     : ∀ c, c ∈ enabled → clusterValid c
   /-- Tier 2 proof carriers (all seven, config-independent).
       `constraintWitnesses c` delivers the real proposition and proof for
