@@ -319,8 +319,10 @@ private def concAuthorization : GroundedAuthorization where
   Agent            := ConcAuthKind
   Claim            := ConcAuthKind
   authorize        := fun a _ => a = .authorized
+  privileged_agent := .authorized
   restricted_agent := .restricted
   restricted_claim := .authorized
+  access_granted   := rfl
   restriction_holds := by decide
 
 /-- The concrete working system: all seven proof-carrying option fields set

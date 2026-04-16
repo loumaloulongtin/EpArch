@@ -196,9 +196,12 @@ def BridgeAuthorization (_W : WorkingSystem) : Prop :=
   ∃ M : UniformAccessScenario, ∀ (a : M.Agent) (P : M.Claim), M.authorize a P
 
 /-- The authorization bridge scenario is universally impossible: a uniform-access policy
-    cannot coexist with a known restriction. -/
+    (all agents authorized) cannot coexist with the known agent differentiation.
+    Proof: `∀ a P, authorize a P` implies `∀ a b P, authorize a P ↔ authorize b P`
+    (trivially, since both sides hold), which contradicts `uniform_access_impossible`. -/
 theorem bridge_authorization_impossible (_W : WorkingSystem) : ¬BridgeAuthorization _W :=
-  fun ⟨M, h_all⟩ => uniform_access_impossible M h_all
+  fun ⟨M, h_all⟩ =>
+    uniform_access_impossible M (fun a b P => ⟨fun _ => h_all b P, fun _ => h_all a P⟩)
 
 
 /-- Maps each `Pressure` dimension to its bridge-scenario predicate.

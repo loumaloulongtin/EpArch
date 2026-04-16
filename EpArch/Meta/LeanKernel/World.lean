@@ -502,17 +502,20 @@ private inductive LeanAuthClaimKind where
 private def leanAuthorize : LeanAuthAgentKind → LeanAuthClaimKind → Prop :=
   fun a _ => a = .kernel
 
-/-- Authorization evidence: `userCode` cannot access `kernelPrimitive` directly.
+/-- Authorization evidence: `userCode` cannot access `kernelPrimitive` directly,
+    while the `kernel` agent CAN access `kernelPrimitive`.
 
-    The restriction holds: `leanAuthorize .userCode .kernelPrimitive = (.userCode = .kernel) = False`,
-    which means a uniform authorization policy (all agents authorized) contradicts
-    the known kernel-primitive restriction. -/
+    Two witnesses: `access_granted` (`.kernel` authorized) and `restriction_holds`
+    (`userCode` not authorized).  Agent-uniform authorization would require kernel
+    and userCode to have identical access rights — contradicted by both fields. -/
 def LeanGroundedAuthorization : GroundedAuthorization where
   Agent            := LeanAuthAgentKind
   Claim            := LeanAuthClaimKind
   authorize        := leanAuthorize
+  privileged_agent := .kernel
   restricted_agent := .userCode
   restricted_claim := .kernelPrimitive
+  access_granted   := rfl
   restriction_holds := fun h => nomatch h
 
 

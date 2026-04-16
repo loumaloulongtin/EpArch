@@ -289,10 +289,14 @@ structure GroundedAuthorization where
   Claim            : Type
   /-- The authorization predicate. -/
   authorize        : Agent → Claim → Prop
+  /-- An agent that IS authorized for the restricted claim — the positive witness. -/
+  privileged_agent : Agent
   /-- An agent that should be restricted. -/
   restricted_agent : Agent
-  /-- A claim they cannot access. -/
+  /-- A claim they cannot access (and that the privileged agent CAN access). -/
   restricted_claim : Claim
+  /-- The privileged agent has access — contrast with `restriction_holds`. -/
+  access_granted   : authorize privileged_agent restricted_claim
   /-- The restriction holds: this agent is not authorized for this claim. -/
   restriction_holds : ¬authorize restricted_agent restricted_claim
 
@@ -311,31 +315,35 @@ theorem grounded_authorization_justified (G : GroundedAuthorization) (rest : Sys
     `no_uniform_access` — the direct negation: the specific restricted pair
     violates any all-true authorization policy.
 
-    `no_faithful_uniform_policy` — the architectural consequence: no agent-uniform
-    policy faithfully represents the restricted authorization surface.  Any policy
-    that authorizes all agents for all claims must disagree with `authorize` on at
-    least one (agent, claim) pair.  This is the authorization analog of
-    `no_flat_resolver` for scope: it says the authorization surface is provably
-    non-uniform relative to any uniform reference policy. -/
+    `no_agent_uniform_policy` — the architectural consequence: no agent-uniform
+    authorization is faithful to the authorization surface.  Two agents exist
+    with strictly different authorization for the same claim — so any policy of
+    the form `∀ a b P, authorize a P ↔ authorize b P` contradicts the evidence.
+    This is the authorization analog of `no_flat_resolver` for scope: it derives
+    the contradiction from the interaction between BOTH `access_granted` and
+    `restriction_holds`, not from either field alone. -/
 structure GroundedAuthorizationStrict where
   base             : GroundedAuthorization
   /-- A uniform authorization policy (all agents authorized) is impossible
       given the known restriction. -/
   no_uniform_access : ¬∀ (a : base.Agent) (P : base.Claim), base.authorize a P
-  /-- No uniform policy faithfully represents the restricted authorization surface:
-      any policy that authorizes all agents for all claims must disagree with
-      `authorize` on at least one (agent, claim) pair. -/
-  no_faithful_uniform_policy : ¬∃ (pol : base.Agent → base.Claim → Prop),
-      (∀ a P, pol a P) ∧ (∀ a P, pol a P ↔ base.authorize a P)
+  /-- Agent-uniform authorization is impossible: the privileged and restricted agents
+      have different authorization for the restricted claim.  No policy of the form
+      `∀ a b P, authorize a P ↔ authorize b P` can coexist with both
+      `access_granted` and `restriction_holds`. -/
+  no_agent_uniform_policy : ¬∀ (a b : base.Agent) (P : base.Claim),
+      base.authorize a P ↔ base.authorize b P
 
 /-- Derive `GroundedAuthorizationStrict` from base evidence. -/
 def GroundedAuthorization.toStrict (G : GroundedAuthorization) : GroundedAuthorizationStrict where
   base := G
   no_uniform_access := fun h_all =>
     G.restriction_holds (h_all G.restricted_agent G.restricted_claim)
-  no_faithful_uniform_policy := fun ⟨_pol, h_unif, h_iff⟩ =>
-    G.restriction_holds ((h_iff G.restricted_agent G.restricted_claim).mp
-      (h_unif G.restricted_agent G.restricted_claim))
+  -- Uses BOTH access_granted and restriction_holds — structural interaction between
+  -- the positive and negative witnesses, parallel to no_flat_resolver for scope.
+  no_agent_uniform_policy := fun h_unif =>
+    G.restriction_holds
+      ((h_unif G.privileged_agent G.restricted_agent G.restricted_claim).mp G.access_granted)
 
 
 /-! ## GroundedSystemSpec: All Seven Features from Evidence -/

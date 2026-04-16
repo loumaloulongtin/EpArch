@@ -134,7 +134,7 @@ theorem w_lies_multi_agent_incompatible (C : @EpArch.WorldCtx.{0})
         alongside Wl without making this theorem vacuously provable from contradictory
         premises.
     (2) The authorization forcing is self-certifying: GroundedAuthorizationStrict carries
-        restriction_holds and no_faithful_uniform_policy, both derived from the system's
+        restriction_holds and no_agent_uniform_policy, both derived from the system's
         own authorization evidence without any world-semantic premise.  The parallel is
         exact: scope forcing is also self-certifying (AgentDisagreement is internal to
         the system), and scope is unconditional for the same reason. -/
@@ -258,7 +258,9 @@ theorem kernel_world_forces_bank_primitives :
     | Bank          | `RepresentsPrivateCoordination`  | absent ledger, both agents access the same deposit   |
     | Redeemability | `RepresentsClosedEndorsement`    | absent redeemability, endorsed claim is falsifiable  |
 
-    All six `ForcingEmbedding` fields are constructed inline from the witnesses —
+    | Authorization | `RepresentsUniformAccess`        | absent granular ACL, all agents are uniformly authorized |
+
+    All seven `ForcingEmbedding` fields are constructed inline from the witnesses —
     none are stated as opaque system-design axioms.  `embedding_to_structurally_forced`
     and `convergence_structural` then close the proof mechanically. -/
 theorem grounded_world_and_structure_force_bank_primitives
@@ -293,6 +295,8 @@ theorem grounded_world_and_structure_force_bank_primitives
     (c_re : Re.Claim)
     (h_endorsed : Re.endorsed c_re)
     (h_fals : ¬HasRedeemability W → Re.externally_falsifiable c_re)
+    -- Authorization: absent granular ACL, all agents are uniformly authorized
+    (h_no_acl_uniform : ¬HasGranularACL W → ∀ (a : Ra.Agent) (P : Ra.Claim), Ra.authorize a P)
     (h_sat : SatisfiesAllProperties W) :
     containsBankPrimitives W := by
   -- Construct h_sf from the seven Represents* scenario witnesses.
@@ -322,7 +326,7 @@ theorem grounded_world_and_structure_force_bank_primitives
       · exact Or.inl hre
       · exact Or.inr ⟨Re.toClosed hre, c_re, h_endorsed, h_fals hre⟩
     · -- authorization: use uniform_access_acl_embed from Scenarios
-      exact uniform_access_acl_embed W Ra h
+      exact uniform_access_acl_embed W Ra h_no_acl_uniform h
   -- .1 extracts containsBankPrimitives.
   exact (grounded_evidence_consequences W h_sf h_sat).1
 
@@ -367,6 +371,7 @@ theorem bundled_structure_forces_bank_primitives
     B.n_rev B.h_rev_escape
     O.shared_deposit O.h_access₁ O.h_access₂
     B.c_re B.h_endorsed B.h_fals
+    O.h_no_acl_uniform
     h_sat
 
 end EpArch.WorldBridges

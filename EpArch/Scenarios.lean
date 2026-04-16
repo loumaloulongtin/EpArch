@@ -543,13 +543,14 @@ authorized) cannot coexist with a known access restriction.
 witness: an agent that should not be authorized for a specific claim.  When
 `¬HasGranularACL`, the system is in the `UniformAccessScenario`. -/
 
-/-- A system represents a uniform access scenario if it carries evidence that
-    some agent is restricted from some claim, but absent granular ACL, all
-    agents are uniformly authorized.
+/-- A system represents a uniform access scenario if it carries evidence of
+    agent-differentiated authorization: a privileged agent IS authorized, and
+    a restricted agent is NOT authorized, for the same claim.
 
-    The structural point: without a non-trivial ACL, authorization is open —
-    every agent gets every claim.  `uniform_access_impossible` proves this
-    contradicts any known restriction. -/
+    This captures the structural tension between two witnesses.  The bridge
+    condition ("without granular ACL, all agents are uniformly authorized")
+    lives in `SystemOperationalBundle` as `h_no_acl_uniform`, following the
+    same pattern as `flat_accept`, `f_import`, `shared_deposit` etc. -/
 structure RepresentsUniformAccess (W : WorkingSystem) where
   /-- The agent type. -/
   Agent            : Type
@@ -557,62 +558,70 @@ structure RepresentsUniformAccess (W : WorkingSystem) where
   Claim            : Type
   /-- The authorization predicate. -/
   authorize        : Agent → Claim → Prop
-  /-- An agent that is restricted from some claim. -/
+  /-- An agent that IS authorized for the restricted claim — the positive witness. -/
+  privileged_agent : Agent
+  /-- An agent that is restricted from the claim — the negative witness. -/
   restricted_agent : Agent
-  /-- The claim they cannot access. -/
+  /-- The claim where the two agents differ. -/
   restricted_claim : Claim
-  /-- The restriction holds: this agent is not authorized for this claim. -/
+  /-- The positive witness: the privileged agent is authorized. -/
+  must_allow       : authorize privileged_agent restricted_claim
+  /-- The negative witness: the restricted agent is not authorized. -/
   restriction_holds : ¬authorize restricted_agent restricted_claim
-  /-- Without granular ACL, all agents are uniformly authorized. -/
-  uniform_without_acl : ¬HasGranularACL W → ∀ (a : Agent) (P : Claim), authorize a P
 
-/-- Extract `UniformAccessScenario` from a system that `RepresentsUniformAccess`
-    and lacks granular ACL. -/
+/-- Extract `UniformAccessScenario` from a `RepresentsUniformAccess` witness.
+    Both the positive and negative witnesses map directly. -/
 def RepresentsUniformAccess.toScenario {W : WorkingSystem}
     (R : RepresentsUniformAccess W) : UniformAccessScenario where
   Agent            := R.Agent
   Claim            := R.Claim
   authorize        := R.authorize
+  privileged_agent := R.privileged_agent
   restricted_agent := R.restricted_agent
   restricted_claim := R.restricted_claim
+  must_allow       := R.must_allow
   has_restriction  := R.restriction_holds
 
 /-- **Right-branch embedding (authorization direction).**
 
-    A system representing uniform access without granular ACL is in the
-    `UniformAccessScenario`: `uniform_access_impossible` fires because
-    the uniform policy contradicts the known restriction. -/
+    When absent granular ACL the authorization function is uniform and the
+    scenario witness has both positive and negative authorization, the scenario
+    is impossible by `uniform_access_impossible`. -/
 theorem uniform_access_without_acl_embeds
     (W : WorkingSystem)
     (R : RepresentsUniformAccess W)
-    (h_no_acl : ¬HasGranularACL W) :
+    (_h_no_acl : ¬HasGranularACL W)
+    (h_uniform : ∀ (a : R.Agent) (P : R.Claim), R.authorize a P) :
     False :=
-  uniform_access_impossible R.toScenario (R.uniform_without_acl h_no_acl)
+  uniform_access_impossible R.toScenario
+    (fun a b P => ⟨fun _ => h_uniform b P, fun _ => h_uniform a P⟩)
 
 /-- **Per-dimension structural forcing (authorization).**
 
     Any system carrying a `RepresentsUniformAccess` witness is forced to have
     granular ACL.  No `handles_multi_agent W` required. -/
 theorem uniform_access_forces_acl
-    (W : WorkingSystem) (R : RepresentsUniformAccess W) :
+    (W : WorkingSystem) (R : RepresentsUniformAccess W)
+    (h_no_acl_uniform : ¬HasGranularACL W → ∀ (a : R.Agent) (P : R.Claim), R.authorize a P) :
     HasGranularACL W := by
   by_cases h : HasGranularACL W
   · exact h
-  · exact (uniform_access_without_acl_embeds W R h).elim
+  · exact (uniform_access_without_acl_embeds W R h (h_no_acl_uniform h)).elim
 
 /-- **Right-branch embedding (authorization direction):** for a system with uniform
     access representation, uses the right branch when ¬HasGranularACL.
 
     The `uniform_without_acl` field provides the bridge condition. -/
 theorem uniform_access_acl_embed
-    (W : WorkingSystem) (R : RepresentsUniformAccess W) :
+    (W : WorkingSystem) (R : RepresentsUniformAccess W)
+    (h_no_acl_uniform : ¬HasGranularACL W → ∀ (a : R.Agent) (P : R.Claim), R.authorize a P) :
     handles_multi_agent W →
     HasGranularACL W ∨
     (∃ M : UniformAccessScenario, ∀ (a : M.Agent) (P : M.Claim), M.authorize a P) := by
   intro _
   by_cases h : HasGranularACL W
   · exact Or.inl h
-  · exact Or.inr ⟨R.toScenario, R.uniform_without_acl h⟩
+  · exact Or.inr ⟨R.toScenario, h_no_acl_uniform h⟩
 
 
 /-! ## Bundled Witness Packages
@@ -662,8 +671,13 @@ structure SystemOperationalBundle (W : WorkingSystem) where
   shared_deposit : ¬HasBank W → Rp.Deposit
   h_access₁      : ∀ h, Rp.has_access Rp.a₁ (shared_deposit h)
   h_access₂      : ∀ h, Rp.has_access Rp.a₂ (shared_deposit h)
-  /-- Authorization dimension: a uniform access scenario witness. -/
+  /-- Authorization dimension: a uniform access scenario witness (two-agent differentiation). -/
   Ra : RepresentsUniformAccess W
+  /-- Without granular ACL, all agents are uniformly authorized.
+      Architecturally parallel to `flat_accept` for scope, `f_import` for headers,
+      `shared_deposit` for bank: the bridge condition lives in the bundle, not in
+      the structural witness record. -/
+  h_no_acl_uniform : ¬HasGranularACL W → ∀ (a : Ra.Agent) (P : Ra.Claim), Ra.authorize a P
 
 /-- Bundled witnesses for the three world-adjacent dimensions:
     revocation (adversarial/lies), trust (bounded verification),
