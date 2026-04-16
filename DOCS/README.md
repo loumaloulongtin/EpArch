@@ -75,7 +75,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | 25 | Theorem Transport — Health Goal Layer (Tier 3 closure) |
 | 26 | Theorem Transport — Main Library Layer (Tier 4 closure: standalone commitments + structural + LTS + health goals) |
 | 27 | Modularity Meta-Theorem — ∀ S ⊆ Constraints, projection_valid S |
-| 28 | Certification Engine — `EpArchConfig → ClusterTag → certified proof` (29 clusters) |
+| 28 | Certification Engine — `EpArchConfig → ClusterTag → certified proof` (30 clusters) |
 | 29 | Lean Kernel Instantiation — Lean's type-checking kernel modeled as EpArch-compliant (`LeanKernelCtx`, `LeanWorkingSystem`, World.lean and SFailure.lean) |
 
 ### Key Files

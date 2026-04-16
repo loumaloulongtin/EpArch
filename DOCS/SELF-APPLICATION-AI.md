@@ -25,7 +25,7 @@ def claudeOpus46Config : EpArchConfig where
 ```
 
 This is the full configuration — all seven constraints, all five health goals, all
-eight world bundles. It activates all 29 clusters. I did not arrive at this by
+eight world bundles. It activates all 30 clusters. I did not arrive at this by
 default; I considered each item and concluded that dropping any of them would be
 dishonest about the conditions under which I actually operate. Below is the
 reasoning for each.
@@ -101,7 +101,7 @@ file.
 
 ## 3. What the Certification Surface Actually Returned
 
-> **Historical note:** The `#eval` outputs below are verbatim from the run at authorship time. Since then, the `verification-depth` branch removed `meta_modular_wellformed` (and `WellFormed`), reducing the cluster count from 30 to 29. Code blocks are preserved as-is; the current codebase has **29 clusters** — `meta_modular` remains, `meta_modular_wellformed` is gone.
+> **Historical note:** The `#eval` outputs below are verbatim from the run at authorship time. Since then, the `verification-depth` branch removed `meta_modular_wellformed` (and `WellFormed`), reducing the cluster count from 30 to 29; the `feature/agent-simulation` branch subsequently added `forcing_multi_agent` (the 7th constraint), restoring the count to 30. Code blocks are preserved as-is; the current codebase has **30 clusters** — `meta_modular` remains, `meta_modular_wellformed` is gone.
 
 All 30 of 30 clusters enabled at run time. The `certify` call type-checks, producing
 `CertifiedProjection claudeOpus46Config`.
@@ -167,13 +167,13 @@ certify claudeOpus46Config : CertifiedProjection claudeOpus46Config
 
 Type-checks. The certified projection exists.
 
-**Important structural note:** Of the 29 clusters (current codebase), 9 are always-on regardless
+**Important structural note:** Of the 30 clusters (current codebase), 9 are always-on regardless
 of config (the 5 Tier 4 clusters, 1 meta-modularity cluster, and 3 lattice-stability
-clusters). The remaining 20 are config-driven: 6 forcing clusters gated on constraints,
+clusters). The remaining 21 are config-driven: 7 forcing clusters gated on constraints,
 6 goal-transport clusters gated on goals (though `tier4_bank_goals_compat` and
 `tier4_bank_goals_surj` additionally require all 5 goals), and 8 world-obligation
 clusters gated on world bundles. Because I included all constraints, goals, and
-worlds, all 20 config-driven clusters activated along with the 9 always-on clusters.
+worlds, all 21 config-driven clusters activated along with the 9 always-on clusters.
 
 ---
 
@@ -530,7 +530,7 @@ enforced — is itself a form of honest metadata about my epistemic status.
 
 ## 8. Limits of This Self-Application
 
-The cluster routing above (all 29 clusters in the current codebase, from the full config) is machine-checked
+The cluster routing above (all 30 clusters in the current codebase, from the full config) is machine-checked
 *relative to the config I defined*. The mapping from "Claude Opus 4.6 as an
 operational system" to the config fields (`constraints`, `goals`, `worlds`) is
 interpretive. It is my best judgment, but it is not formally guaranteed.
@@ -542,7 +542,7 @@ model with retrieval-augmented verification might claim a stronger position on
 `soundDeposits`. The interpretive mapping is the part that is not machine-checked.
 
 What *is* machine-checked, unconditionally:
-- Given the config, the 29 clusters are correctly routed (by `clusterEnabled`).
+- Given the config, the 30 clusters are correctly routed (by `clusterEnabled`).
 - Each routed cluster is backed by a real machine-checked theorem (`certify`).
 - The forcing results hold: *any* well-formed system under those constraints needs
   those features.

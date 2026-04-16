@@ -4,7 +4,7 @@ This document catalogs the proved theorems in the formalization, organized by ar
 
 **What the architecture claims:** Decentralized epistemic authorization requires specific structural mechanisms — a lifecycle with type-separated stages, header-preserving export, a revision loop, temporal validity, and a Bank substrate. These aren't design preferences; they are forced by the combination of agent constraints and system health goals.
 
-**What this document is:** A bucketed theorem index (Buckets 1–29), grouped by the architectural claim each cluster supports. Each bucket names the Lean file, the key theorems, and the claim each cluster establishes. This file covers the full proof burden distribution across the repo. For deeper exposition of any area, the standalone DOCS files are the right place. For the modularity story — what survives disabling a constraint, health goal, or world bundle, and by what formal mechanism — see [MODULARITY.md](MODULARITY.md).
+**What this document is:** A bucketed theorem index (Buckets 1–30), grouped by the architectural claim each cluster supports. Each bucket names the Lean file, the key theorems, and the claim each cluster establishes. This file covers the full proof burden distribution across the repo. For deeper exposition of any area, the standalone DOCS files are the right place. For the modularity story — what survives disabling a constraint, health goal, or world bundle, and by what formal mechanism — see [MODULARITY.md](MODULARITY.md).
 
 **Tier labels:** **A** = proved unconditionally, **B** = conditional on a W-bundle premise, **C** = design commitment (context-bundled structural assumption).
 
@@ -1364,8 +1364,8 @@ other selected constraints remain live implications backed by the required bicon
 
 ## Bucket 28: Configurable Certification Engine — `EpArchConfig → ClusterTag → certified proof`
 
-**Role:** Closes the claim that all 29 theorem clusters are individually certified:
-25 clusters (constraint, goal, Tier 4, world) are user-selectable via `EpArchConfig`;
+**Role:** Closes the claim that all 30 theorem clusters are individually certified:
+26 clusters (constraint, goal, Tier 4, world) are user-selectable via `EpArchConfig`;
 the remaining 4 (1 constraint-modularity meta-theorem cluster + 3 lattice-stability
 clusters) are always enabled because they depend on no config gate. Given any
 `EpArchConfig`, the engine computes exactly which clusters apply and provides
@@ -1392,18 +1392,18 @@ for each cluster.
 **Three-layer architecture:**
 1. **Routing layer** — `clusterEnabled`, `enabled`, `complete`, `sound` (all clusters, routing only, `clusterValid := True`)
 2. **Constraint proof layer** — `constraintProof`/`constraintWitnesses` (Tier 2 forcing clusters: real `ConstraintProof` with genuine proposition + proof; possible because `WorkingSystem` is monomorphic)
-3. **Proof-content layer** — `cluster_*` universe-polymorphic theorems (all 29 clusters; goal/Tier4/world/meta-modular/lattice clusters reference universe-polymorphic types and live in `Meta/Config.lean`)
+3. **Proof-content layer** — `cluster_*` universe-polymorphic theorems (all 30 clusters; goal/Tier4/world/meta-modular/lattice clusters reference universe-polymorphic types and live in `Meta/Config.lean`)
 
 ### Definitions / Configuration Language
 
 | Definition | File | Purpose |
 |------------|------|---------|
-| `ConstraintTag` | Meta/Config.lean | 6 constraint tags (distributed_agents … truth_pressure) |
+| `ConstraintTag` | Meta/Config.lean | 7 constraint tags (distributed_agents … multi_agent_access) |
 | `GoalTag` | Meta/Config.lean | 5 health-goal tags (safeWithdrawal … selfCorrection) |
 | `WorldTag` | Meta/Config.lean | 8 world-bundle tags (lies_possible … ddos) |
 | `EpArchConfig` | Meta/Config.lean | User-supplied config: lists of active constraints/goals/worlds |
-| `ClusterTag` | Meta/ClusterRegistry.lean | 29 cluster tags spanning Tiers 2–4, world obligations, constraint-modularity, and lattice-stability |
-| `EnabledConstraintCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 6 Tier 2 forcing cluster tags |
+| `ClusterTag` | Meta/ClusterRegistry.lean | 30 cluster tags spanning Tiers 2–4, world obligations, constraint-modularity, and lattice-stability |
+| `EnabledConstraintCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 7 Tier 2 forcing cluster tags |
 | `EnabledGoalCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 6 Tier 3 health-goal transport cluster tags |
 | `EnabledTier4Cluster` | Meta/ClusterRegistry.lean | Sub-inductive: 5 Tier 4 library cluster tags |
 | `EnabledWorldCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 8 world-bundle cluster tags |
@@ -1415,13 +1415,13 @@ for each cluster.
 | `EnabledWorldCluster.toClusterTag` | Meta/ClusterRegistry.lean | Embed world sub-tag into `ClusterTag` |
 | `EnabledMetaModularCluster.toClusterTag` | Meta/ClusterRegistry.lean | Embed meta-modular sub-tag into `ClusterTag` |
 | `EnabledLatticeCluster.toClusterTag` | Meta/ClusterRegistry.lean | Embed lattice sub-tag into `ClusterTag` |
-| `allConstraintClusters` | Meta/ClusterRegistry.lean | Canonical list of 6 Tier 2 cluster tags |
+| `allConstraintClusters` | Meta/ClusterRegistry.lean | Canonical list of 7 Tier 2 cluster tags |
 | `allGoalClusters` | Meta/ClusterRegistry.lean | Canonical list of 6 Tier 3 cluster tags |
 | `allTier4Clusters` | Meta/ClusterRegistry.lean | Canonical list of 5 Tier 4 cluster tags |
 | `allWorldClusters` | Meta/ClusterRegistry.lean | Canonical list of 8 world-bundle cluster tags |
 | `allMetaModularClusters` | Meta/ClusterRegistry.lean | Canonical list of 1 constraint-modularity cluster tag |
 | `allLatticeClusters` | Meta/ClusterRegistry.lean | Canonical list of 3 lattice-stability cluster tags |
-| `allClusters` | Meta/ClusterRegistry.lean | Canonical ordered list of all 29 ClusterTags (derived from 6 per-family lists) |
+| `allClusters` | Meta/ClusterRegistry.lean | Canonical ordered list of all 30 ClusterTags (derived from 6 per-family lists) |
 | `clusterEnabled` | Meta/ClusterRegistry.lean | `EpArchConfig → ClusterTag → Bool` (computable routing); meta-modular and lattice always enabled |
 | `clusterDescription` | Meta/ClusterRegistry.lean | `ClusterTag → String` — one-line human-readable description |
 | `explainConfig` | Meta/Config.lean | `EpArchConfig → List ClusterTag` — enabled clusters |
