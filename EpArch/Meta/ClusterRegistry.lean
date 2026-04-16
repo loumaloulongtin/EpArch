@@ -172,31 +172,31 @@ def constraintMeta : EnabledConstraintCluster → ConstraintClusterMeta
   | .forcing_distributed_agents => {
       globalTag   := .forcing_distributed_agents
       enabledBy   := fun cfg => cfg.constraints.contains .distributed_agents
-      description := "[Tier 2] distributed_agents → HasBubbles  (disagreement_forces_bubbles)" }
+      description := "[Tier 2] distributed_agents -> HasBubbles  (disagreement_forces_bubbles)" }
   | .forcing_bounded_audit => {
       globalTag   := .forcing_bounded_audit
       enabledBy   := fun cfg => cfg.constraints.contains .bounded_audit
-      description := "[Tier 2] bounded_audit → HasTrustBridges  (bounded_verification_forces_trust_bridges)" }
+      description := "[Tier 2] bounded_audit -> HasTrustBridges  (bounded_verification_forces_trust_bridges)" }
   | .forcing_export => {
       globalTag   := .forcing_export
       enabledBy   := fun cfg => cfg.constraints.contains .export_across_boundaries
-      description := "[Tier 2] export_across_boundaries → HasHeaders  (discriminating_import_forces_headers)" }
+      description := "[Tier 2] export_across_boundaries -> HasHeaders  (discriminating_import_forces_headers)" }
   | .forcing_adversarial => {
       globalTag   := .forcing_adversarial
       enabledBy   := fun cfg => cfg.constraints.contains .adversarial_pressure
-      description := "[Tier 2] adversarial_pressure → HasRevocation  (monotonic_lifecycle_forces_revocation)" }
+      description := "[Tier 2] adversarial_pressure -> HasRevocation  (monotonic_lifecycle_forces_revocation)" }
   | .forcing_coordination => {
       globalTag   := .forcing_coordination
       enabledBy   := fun cfg => cfg.constraints.contains .coordination_need
-      description := "[Tier 2] coordination_need → HasBank  (private_coordination_forces_bank)" }
+      description := "[Tier 2] coordination_need -> HasBank  (private_coordination_forces_bank)" }
   | .forcing_truth => {
       globalTag   := .forcing_truth
       enabledBy   := fun cfg => cfg.constraints.contains .truth_pressure
-      description := "[Tier 2] truth_pressure → HasRedeemability  (closed_endorsement_forces_redeemability)" }
+      description := "[Tier 2] truth_pressure -> HasRedeemability  (closed_endorsement_forces_redeemability)" }
   | .forcing_multi_agent => {
       globalTag   := .forcing_multi_agent
       enabledBy   := fun cfg => cfg.constraints.contains .multi_agent_access
-      description := "[Tier 2] multi_agent_access → HasGranularACL  (uniform_access_forces_acl)" }
+      description := "[Tier 2] multi_agent_access -> HasGranularACL  (uniform_access_forces_acl)" }
 
 
 /-- Embed a constraint cluster into the global tag space.
@@ -253,7 +253,7 @@ The per-family canonical lists live here (not in EpArch.Meta.Config) because the
 are metadata objects — pure enumeration facts, no proofs.  The global
 `allClusters` list is derived from them so ordering stays consistent
 automatically.  `constraintClusterOfTag?` enables Tier 2 routing and display
-to dispatch through `constraintMeta` without re-enumerating the six
+to dispatch through `constraintMeta` without re-enumerating the seven
 forcing constructors. -/
 
 /-- All seven Tier 2 constraint-forcing clusters, in canonical order. -/
@@ -373,9 +373,9 @@ def clusterDescription : ClusterTag → String
   | .goal_selfCorrection =>
       "[Tier 3] SelfCorrectionGoal transports via Compatible  (transport_self_correction)"
   | .goal_corrigible_universal =>
-      "[Tier 3] CorrigibleLedgerGoal ∀-part transports via Compatible  (transport_corrigible_universal)"
+      "[Tier 3] CorrigibleLedgerGoal forall-part transports via Compatible  (transport_corrigible_universal)"
   | .goal_corrigible_full =>
-      "[Tier 3] CorrigibleLedgerGoal full ∃+∀ transports via SurjectiveCompatible  (transport_corrigible_ledger)"
+      "[Tier 3] CorrigibleLedgerGoal full exists+forall transports via SurjectiveCompatible  (transport_corrigible_ledger)"
   | .tier4_commitments =>
       "[Tier 4-A] C3/C4b/C7b/C8 unconditional commitment theorems (commitments_pack); C1/C2/C5/C6b proved as named theorems"
   | .tier4_structural =>
@@ -383,7 +383,7 @@ def clusterDescription : ClusterTag → String
   | .tier4_lts_universal =>
       "[Tier 4-B+] LTS-universal: withdrawal/repair/submit gates  (lts_theorems_step_universal)"
   | .tier4_bank_goals_compat =>
-      "[Tier 4-C] All ∀-health goals + universal corrigibility via Compatible  (concrete_bank_all_goals_transport)"
+      "[Tier 4-C] All forall-health goals + universal corrigibility via Compatible  (concrete_bank_all_goals_transport)"
   | .tier4_bank_goals_surj =>
       "[Tier 4-C+] All health goals + full CorrigibleLedgerGoal via SurjectiveCompatible  (concrete_bank_all_goals_transport_surj)"
   | .world_lies_possible =>
@@ -393,7 +393,7 @@ def clusterDescription : ClusterTag → String
   | .world_asymmetric_costs =>
       "[World] W_asymmetric_costs: export cost < defense cost  (WorldCtx.cost_asymmetry_of_W)"
   | .world_partial_observability =>
-      "[World] W_partial_observability: obs underdetermines truth → no omniscience  (WorldCtx.partial_obs_no_omniscience)"
+      "[World] W_partial_observability: obs underdetermines truth -> no omniscience  (WorldCtx.partial_obs_no_omniscience)"
   | .world_spoofed_v =>
       "[World] W_spoofedV: spoofed-V blocks provenance path  (AdversarialObligations.spoofed_V_blocks_path_of_W)"
   | .world_lies_scale =>
@@ -403,9 +403,9 @@ def clusterDescription : ClusterTag → String
   | .world_ddos =>
       "[World] W_ddos: DDoS causes verification collapse  (AdversarialObligations.ddos_causes_verification_collapse_of_W)"
   | .meta_modular =>
-      "[Meta] Constraint-subset modularity: ∀ S W, PartialWellFormed W S → projection_valid S W  (Meta.Modular.modular)"
+      "[Meta] Constraint-subset modularity: forall S W, PartialWellFormed W S -> projection_valid S W  (Meta.Modular.modular)"
   | .lattice_graceful =>
-      "[Lattice] Graceful degradation: NoSelfCorrection M → RevisionGate M  (Modularity.graceful_degradation)"
+      "[Lattice] Graceful degradation: NoSelfCorrection M -> RevisionGate M  (Modularity.graceful_degradation)"
   | .lattice_sub_safety =>
       "[Lattice] Sub-level revision safety: Compatible extension of any sub-bundle with RevisionGate preserves RevisionGate  (Modularity.sub_revision_safety)"
   | .lattice_pack =>

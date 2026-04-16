@@ -71,7 +71,7 @@ structure EvidenceConsequences (W : WorkingSystem) : Prop where
 /-- A system is structurally forced: for every pressure dimension, handling
     the capability implies the forced architectural feature.
 
-    `forcing` is the core convergence interface: the six unguarded
+    `forcing` is the core convergence interface: the seven unguarded
     capability→feature implications, derived from the `ForcingEmbedding`.
 
     `evidence` is the structural consequence bundle: impossibility proofs
@@ -82,7 +82,7 @@ structure StructurallyForced (W : WorkingSystem) : Prop where
   /-- For every pressure dimension P, handling capability P forces feature P.
       Justified per-dimension by the structural models in EpArch.Minimality. -/
   forcing : ∀ P : Pressure, handles_pressure W P → forced_feature W P
-  /-- Structural consequence bundle: the six impossibility results read from
+  /-- Structural consequence bundle: the seven impossibility results read from
       the stored `GroundedXStrict` evidence. -/
   evidence : EvidenceConsequences W
 
@@ -220,7 +220,7 @@ def bridge_scenario (W : WorkingSystem) : Pressure → Prop
 
 /-- Every bridge scenario is universally impossible: committing to the
     impossible scenario for any dimension yields `False`.
-    Proof by exhaustive pattern match — Lean verifies all six cases. -/
+    Proof by exhaustive pattern match — Lean verifies all seven cases. -/
 theorem all_bridges_impossible (W : WorkingSystem) (P : Pressure) : ¬bridge_scenario W P := by
   cases P
   · exact bridge_bubbles_impossible W

@@ -596,7 +596,7 @@ The concrete model demonstrates:
 1. SystemSpec is satisfiable (concreteSystemSpec exists)
 2. WorkingSystem can be instantiated (ConcreteWorkingSystem)
 3. All Has* predicates hold (trivially, by construction)
-4. SatisfiesAllProperties holds (all six operational properties)
+4. SatisfiesAllProperties holds (all seven operational properties)
 5. Convergence theorem applies via ForcingEmbedding (all Or.inl)
 
 The deficient systems demonstrate six bridge-impossibility theorems:

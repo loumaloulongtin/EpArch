@@ -73,7 +73,7 @@ def ConcreteRealizer : Realizer :=
     This bundles:
     - A WorkingSystem
     - Proof it's StructurallyForced (capability → architectural feature)
-    - Proof it satisfies all six operational properties
+    - Proof it satisfies all seven operational properties
 
     The existence of such a system is the "non-vacuity of success" claim. -/
 structure SuccessfulSystem where
@@ -81,7 +81,7 @@ structure SuccessfulSystem where
   W : WorkingSystem
   /-- System is structurally forced (capability flags → spec features) -/
   sf : StructurallyForced W
-  /-- System satisfies all six operational properties -/
+  /-- System satisfies all seven operational properties -/
   sat : SatisfiesAllProperties W
 
 /-- Canonical witness: the concrete working system.

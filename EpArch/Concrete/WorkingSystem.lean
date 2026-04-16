@@ -242,7 +242,7 @@ not depend on `EpArch.ConcreteModel` details.
 
 These witnesses are **minimal by design**: their purpose is to prove that the
 `SystemSpec` is satisfiable (non-vacuous) — that there exists *some* system
-instantiating all six dimensions. A non-vacuity proof requires one instance,
+instantiating all seven dimensions. A non-vacuity proof requires one instance,
 not a realistic one. The tiny private inductives (`ConcScopeLabel`, etc.) and
 trivial predicates are the smallest possible constructions that discharge each
 `GroundedXStrict` obligation. For a realistic instantiation, see

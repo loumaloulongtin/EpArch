@@ -8,8 +8,8 @@ above the abstract structural machinery and below the concrete witnesses.
 
 ## Headline Theorems
 
-- `grounded_world_and_structure_force_bank_primitives`: the full 20-parameter
-  convergence theorem — uses six Represents* witnesses plus per-dimension bridge
+- `grounded_world_and_structure_force_bank_primitives`: the full 26-parameter
+  convergence theorem — uses seven Represents* witnesses plus per-dimension bridge
   hypotheses to constructively derive containsBankPrimitives.
 - `bundled_structure_forces_bank_primitives`: the packaged 4-argument form
   using SystemOperationalBundle + WorldBridgeBundle.
@@ -178,7 +178,7 @@ theorem world_assumptions_force_bank_primitives (C : @EpArch.WorldCtx.{0})
 
 /-- Any StructurallyForced system satisfies WorldAwareSystem for any WorldCtx.
 
-    Proof by weakening: StructurallyForced asserts all six capability→feature
+    Proof by weakening: StructurallyForced asserts all seven capability→feature
     implications *unconditionally*, while WorldAwareSystem only requires three of
     them *conditionally* (behind W_* hypothesis guards).  Ignoring the W_* guard
     via `fun _ =>` discharges each conditional, reducing WorldAwareSystem to a
@@ -222,11 +222,11 @@ theorem kernel_world_forces_bank_primitives :
 
 
 /-- Any working system that carries explicit structural-scenario witnesses for all
-    six EpArch dimensions and satisfies all operational properties necessarily
+    seven EpArch dimensions and satisfies all operational properties necessarily
     contains Bank primitives.
 
     This theorem replaces `world_assumptions_force_bank_primitives` + `WorldAwareSystem`
-    as the headline convergence result.  `WorldAwareSystem` bundles the six
+    as the headline convergence result.  `WorldAwareSystem` bundles the seven
     capability→feature implications as opaque Prop conjuncts; here each implication
     is unpacked into a named `Represents*` structure (structural data) plus an
     auditable bridge hypothesis (per-dimension forcing evidence):

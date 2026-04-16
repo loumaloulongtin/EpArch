@@ -45,7 +45,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 
 | Bucket | Topic |
 |--------|-------|
-| 1 | Lifecycle & Type-Separation — Candidate/Validated/Deposited/Quarantine/Revoked gates |
+| 1 | Lifecycle & Type-Separation — Candidate/Deposited/Quarantined/Revoked gates |
 | 2 | Competition Gate Cluster — Revision ⇔ Self-correction equivalence |
 | 3 | Export/Strip Asymmetry — No left inverse, reconstruction impossible |
 | 4 | Diagnosability — Observability monotonicity, repair granularity |
@@ -54,7 +54,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | 7 | Invariant Preservation — Truth and gate invariants under trace induction |
 | 8 | Modal Properties — Safety/Sensitivity ↔ S/E/V header preservation |
 | 9 | Grounded Minimality — Each feature necessary for specific capabilities |
-| 9b | Abstract Structural Forcing — Six per-dimension `*_forces_*` theorems (no `WellFormed`, no biconditionals) + `SystemOperationalBundle` / `WorldBridgeBundle`; headline `bundled_structure_forces_bank_primitives`; six structural impossibility models + `StructurallyForced` / `convergence_structural` (`Minimality.lean` + `Convergence.lean`) |
+| 9b | Abstract Structural Forcing — Seven per-dimension `*_forces_*` theorems (no `WellFormed`, no biconditionals) + `SystemOperationalBundle` / `WorldBridgeBundle`; headline `bundled_structure_forces_bank_primitives`; seven structural impossibility models + `StructurallyForced` / `convergence_structural` (`Minimality.lean` + `Convergence.lean`) |
 | 9c | Observation-Boundary Equivalence — Any two `GroundedBehavior` witnesses produce identical observations; step-bridge grounds withdraw/challenge/tick via `ReadyState` + `behavior_from_step` (`Theorems/BehavioralEquivalence.lean`) |
 | 9d | Kernel Verification Depth — `DepthClaim` constructive witness; `bounded_verify` budget decision procedure; `DepthWorldCtx` closes `W_bounded_verification` by construction (`Concrete/VerificationDepth.lean`) |
 | 10 | Adversarial Model — Attack structures, DDoS vectors, obligation theorems |
@@ -97,7 +97,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | `Health.lean` | Health predicates + necessity theorems | 0 |
 | `Invariants.lean` | Protocol requirements | 0 |
 | `Minimality.lean` | Structural impossibility models + alternative-architecture dismissals | 0 |
-| `Scenarios.lean` | Six `Represents*` scenario enrichments + `SystemOperationalBundle`/`WorldBridgeBundle` packaging | 0 |
+| `Scenarios.lean` | Seven `Represents*` scenario enrichments + `SystemOperationalBundle`/`WorldBridgeBundle` packaging | 0 |
 | `GroundedEvidence.lean` | `GroundedX` evidence structures powering `PartialGroundedSpec` compliance API | 0 |
 | `Convergence.lean` | `StructurallyForced`, `ForcingEmbedding`, `convergence_structural`, bridge predicates | 0 |
 | `Theorems/BehavioralEquivalence.lean` | Observation-boundary equivalence; `Behavior` takes `GroundedBehavior`, step-grounded for withdraw/challenge/tick | 0 |

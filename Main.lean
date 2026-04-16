@@ -11,10 +11,10 @@ constraints of imperfect agents under permanent challenge pressure force
 a specific set of structural features.
 
 The formalization proves these claims:
-1. Six constraints (distributed agents, bounded audit, export across boundaries,
-   adversarial pressure, coordination need, truth pressure) each force a specific
-   architectural feature (bubbles, trust bridges, headers, revocation, shared
-   ledger, redeemability).
+1. Seven constraints (distributed agents, bounded audit, export across boundaries,
+   adversarial pressure, coordination need, truth pressure, multi-agent authorization)
+   each force a specific architectural feature (bubbles, trust bridges, headers,
+   revocation, shared ledger, redeemability, granular ACL).
 2. Removing any feature breaks a necessary property (impossibility theorems).
 3. All knowledge-managing systems satisfying the constraints converge on the
    same primitive cluster (convergence theorem).
@@ -61,7 +61,7 @@ The formalization proves these claims:
 1. **EpArch.Basic** — Core types: Agent, Claim, Bubble, Deposit, Header, Field, etc.
 2. **EpArch.Header** — The S/E/V/τ/acl/redeem header structure and observational
    completeness theorems.
-3. **EpArch.Bank** — Bank substrate: lifecycle operators (Validate, Challenge,
+3. **EpArch.Bank** — Bank substrate: lifecycle operators (Promote, Challenge,
    Repair, Revoke, etc.) as concrete guarded definitions.
 4. **EpArch.Semantics.LTS** — Generic labeled transition systems, traces, invariants,
    refinement, and safety preservation.

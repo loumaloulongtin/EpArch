@@ -2,8 +2,8 @@
 EpArch.Semantics.StepSemantics — Step Semantics (Labeled Transition System)
 
 Constructive operational semantics of the epistemic architecture.
-Defines a concrete LTS over SystemState with seven actions
-(Submit, Withdraw, Export, Challenge, Tick, Repair, Revoke)
+Defines a concrete LTS over SystemState with nine actions
+(Submit, Withdraw, Export, Challenge, Tick, Repair, Revoke, Promote, Inspect)
 and proves conditional linking results from operational
 preconditions rather than asserting them as axioms.
 
@@ -12,7 +12,7 @@ This module defines HOW they work: the Step relation's preconditions
 FORCE certain architectural features.
 
 Key exports:
-- ACLEntry, SystemState, Step (inductive LTS relation, 11 constructors)
+- ACLEntry, SystemState, Step (inductive LTS relation, 10 constructors)
 - no_revision_no_correction (competition gate impossibility)
 - generic_invariant_preservation (step-preserved invariants)
 - Companion: EpArch.Semantics.LinkingAxioms (operational groundings)

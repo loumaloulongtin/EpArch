@@ -13,7 +13,8 @@ via trace induction over the Agent LTS.
 - projectState: maps StepSemantics.SystemState → AgentSystemState
 - deposited_claim: Prop-sorted epistemic truth predicate
 - submit_preserves_deposited_claims: Submit cannot advance claims to Deposited
-- step_cannot_promote_to_deposited: no Step of any kind can (covers all 8 constructors)
+- deposit_promotion_requires_bank_authority: only Step.promote (with bank authority)
+  can advance a claim to Deposited (covers all 10 constructors)
 - AgentLTSAbstraction: simulation witness (all three fields machine-checked)
 - Containment invariants proved by trace induction:
   - truthInvariant: agent actions cannot flip truth
@@ -243,15 +244,17 @@ Two connected definitions bridge the state spaces:
 - `deposited_claim`: Prop-sorted counterpart — `∃ d ∈ s.ledger, d.P = c ∧ d.status = .Deposited`.
   Used in theorem statements to avoid a `DecidableEq` dependency.
 
-The key theorem is `step_cannot_promote_to_deposited`: no `Step` constructor
-can move a claim from non-Deposited into the Deposited set.  The proof
-covers all 8 Step constructors:
+The key theorem is `deposit_promotion_requires_bank_authority`: the only `Step`
+constructor that can move a claim from non-Deposited into the Deposited set is
+`Step.promote`, which requires `hasBankAuthority`.  The proof covers all 10 Step
+constructors:
 - `submit` / `export_*`: new entries enter at `.Candidate` — noConfusion with `.Deposited`
-- `withdraw` / `tick`: ledger unchanged — trivial
+- `withdraw` / `tick` / `inspect`: ledger unchanged — trivial
 - `challenge` / `revoke` / `repair`: `updateDepositStatus` sets a non-Deposited status — noConfusion
+- `promote`: `updateDepositStatus` sets `.Deposited` — bank authority extracted
 
-This is the formal statement that only mechanisms outside agent control
-(not modeled as `Step` constructors) can promote claims to `.Deposited`.
+This is the formal statement that only authorized bank operators
+(modeled by `hasBankAuthority` in `Step.promote`) can promote claims to `.Deposited`.
 -/
 
 /-- State projection: maps a `StepSemantics.SystemState` to an `AgentSystemState`.
@@ -317,9 +320,9 @@ theorem submit_preserves_deposited_claims
     **Theorem shape:** If `¬ deposited_claim s c` before a Step and `deposited_claim s' c`
     after, then the step was `Step.promote` with `hasBankAuthority s ag B`.
 
-    **Proof strategy:** Case analysis on all 9 Step constructors.
+    **Proof strategy:** Case analysis on all 10 Step constructors.
     - `submit`: appends `.Candidate` — noConfusion with `.Deposited`; old entries by h_not
-    - `withdraw`: `s' = s`, ledger unchanged — direct contradiction via h_not
+    - `withdraw` / `inspect`: `s' = s`, ledger unchanged — direct contradiction via h_not
     - `export_with_bridge`, `export_revalidate`: `addToNewBubble` appends `.Candidate` —
       noConfusion; original `.Deposited` entries covered by h_not
     - `challenge`: `updateDepositStatus` sets `.Quarantined` — noConfusion
@@ -467,7 +470,7 @@ bank authority theorem closes the simulation argument at the StepSemantics level
     - `gate_architectural`: gate invariant preserved along all AgentLTS traces
     - `over_approximation`: `deposit_promotion_requires_bank_authority` — if a claim
       becomes newly Deposited after a Step, the step was `Step.promote` with bank authority.
-      Covers all 9 Step constructors.
+      Covers all 10 Step constructors.
 
     `invariants_transfer_via_simulation` calls all three fields of the abstraction
     witness, so any `AgentLTSAbstraction` satisfying the proved fields transfers the
@@ -487,7 +490,7 @@ structure AgentLTSAbstraction (Agent Claim : Type u) where
       is `Step.promote`, which requires `hasBankAuthority`.
       Formally: if `¬ deposited_claim s c` and `deposited_claim s' c` after a Step,
       then the step was `Promote ag B d_idx` with `hasBankAuthority s ag B`.
-      Witnessed by `deposit_promotion_requires_bank_authority`, covering all 9
+      Witnessed by `deposit_promotion_requires_bank_authority`, covering all 10
       Step constructors. -/
   over_approximation :
     ∀ {Standard ErrorModel Provenance Reason Evidence : Type u}
@@ -502,7 +505,7 @@ structure AgentLTSAbstraction (Agent Claim : Type u) where
     All three fields are backed by machine-checked proofs:
     - `truth_external` / `gate_architectural`: invariant corollaries via trace induction
     - `over_approximation`: `deposit_promotion_requires_bank_authority`, covering all
-      9 Step constructors including the `promote` constructor -/
+      10 Step constructors including the `promote` constructor -/
 def agentLTSIsAbstraction (Agent Claim : Type u) : AgentLTSAbstraction Agent Claim where
   truth_external     := truth_preserved_along_trace
   gate_architectural := gate_preserved_along_trace

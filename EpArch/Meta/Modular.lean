@@ -1,20 +1,20 @@
 /-
 EpArch.Meta.Modular — Machine-Certified Modularity Meta-Theorem
 
-Answers the question: "Is EpArch modular on its six operational constraints —
+Answers the question: "Is EpArch modular on its seven operational constraints —
 can you drop any constraint and have the remaining forcing theorems still hold?"
 
-Scope: this file covers the six constraints in EpArch.Minimality only.
+Scope: this file covers the seven constraints in EpArch.Minimality only.
 Health-goal modularity (∀-transport of SafeWithdrawal, ReliableExport, etc.)
 is proved separately in EpArch.Meta.TheoremTransport and EpArch.Meta.Tier4Transport.
 
 This file provides two pieces:
 
   (1) `PartialWellFormed W S` — a biconditional-subset type parameterized by a subset S of
-      the six constraints. You only supply the biconditionals for the constraints
+      the seven constraints. You only supply the biconditionals for the constraints
       you care about; the rest are not required.
 
-  (2) `projection_valid S W` — the named target predicate: the conjunction of six
+  (2) `projection_valid S W` — the named target predicate: the conjunction of seven
       guarded forcing implications, each guarded by "S selects this constraint."
 
   (3) `modular` — the universally-quantified meta-theorem:
@@ -24,7 +24,7 @@ This file provides two pieces:
 
 ## Relationship to PartialWellFormed
 
-  `PartialWellFormed W allConstraints` — all six biconditionals required,
+  `PartialWellFormed W allConstraints` — all seven biconditionals required,
   the strongest subset — is the natural replacement for the former `WellFormed`
   predicate (which has been removed).  Every existing `WellFormed`-gated proof
   can be re-stated as `PartialWellFormed W allConstraints`.

@@ -609,7 +609,7 @@ def LeanWorkingSystem : WorkingSystem :=
 
 /-! ## Has* Predicates for LeanWorkingSystem -/
 
--- `grounded_spec_contains_all LeanGroundedSystemSpec` proves all six features
+-- `grounded_spec_contains_all LeanGroundedSystemSpec` proves all seven features
 -- simultaneously.  After `unfold HasX LeanWorkingSystem`, the goal becomes
 -- `spec_has_X LeanGroundedSystemSpec.toSystemSpec`, which is the corresponding
 -- component of the conjunction — no manually-set flag is consulted.
@@ -684,10 +684,10 @@ theorem lean_implements_bank_primitives : containsBankPrimitives LeanWorkingSyst
 theorem lean_partial_wellformed : PartialWellFormed LeanWorkingSystem allConstraints :=
   grounded_partial_wellformed LeanGroundedBehavior LeanGroundedSystemSpec
 
-/-- The Lean kernel satisfies all six operational properties.
+/-- The Lean kernel satisfies all seven operational properties.
 
     Follows directly from `grounded_behavior_satisfies_all`: any system
-    built via `WorkingSystem.withGroundedBehavior` satisfies all six
+    built via `WorkingSystem.withGroundedBehavior` satisfies all seven
     `handles_*` predicates, because each `Option *_ev.isSome = true`
     witness is set from the evidence in `LeanGroundedBehavior`. -/
 theorem lean_satisfies_all_properties : SatisfiesAllProperties LeanWorkingSystem :=
@@ -776,7 +776,7 @@ theorem lean_no_flat_namespace_resolver
 `LeanGroundedBubbles` and the full `LeanGroundedSystemSpec` are defined above
 in the Architecture Evidence section.  `LeanKernelSystemSpecGrounded` below
 grounds only `has_bubble_separation` and is the intermediate artifact from
-before the full six-feature grounding was available. -/
+before the full seven-feature grounding was available. -/
 
 /-- A `SystemSpec` for the Lean kernel grounded in `LeanGroundedBubbles`.
 
@@ -800,7 +800,7 @@ theorem lean_has_bubbles_grounded :
 
 /-- Forcing embedding for `LeanWorkingSystem`.
 
-    All six arms return `Or.inl` (the feature itself) because every
+    All seven arms return `Or.inl` (the feature itself) because every
     architectural feature is present in the Lean kernel.  The right
     disjunct (the impossible bridge scenario) is never reached. -/
 def lean_forcing_embedding : ForcingEmbedding LeanWorkingSystem where
@@ -845,7 +845,7 @@ def lean_grounded_consequences :=
       flag is inspected directly.  Does not depend on the convergence theorem.
 
     - **Structural** (`lean_structural_convergence`): by necessity — any
-      system handling these six operational pressures must have the features.
+      system handling these seven operational pressures must have the features.
       Routes through `ForcingEmbedding → StructurallyForced →
       convergence_structural`.
 
@@ -863,11 +863,11 @@ theorem lean_kernel_forces_bank_primitives : containsBankPrimitives LeanWorkingS
       (`lean_kernel_no_tradeoff`)
 
     **Architecture layer** (`LeanWorkingSystem`):
-    - `PartialWellFormed W allConstraints` — all six behavioral ↔ architectural biconditionals hold
-    - `containsBankPrimitives` — directly: all six `HasX` fields hold by construction;
+    - `PartialWellFormed W allConstraints` — all seven behavioral ↔ architectural biconditionals hold
+    - `containsBankPrimitives` — directly: all seven `HasX` fields hold by construction;
                                   separately: forced by `lean_structural_convergence`
-    - `StructurallyForced`     — six embedding arms all return `Or.inl`
-    - `SatisfiesAllProperties` — all six `handles_*` predicates hold via `Option *_ev.isSome = true`
+    - `StructurallyForced`     — seven embedding arms all return `Or.inl`
+    - `SatisfiesAllProperties` — all seven `handles_*` predicates hold via `Option *_ev.isSome = true`
 
     The proof is discharged by the kernel it models. -/
 theorem lean_kernel_existence :

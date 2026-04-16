@@ -1,8 +1,8 @@
 /-
 EpArch.SystemSpec — System Specification
 
-`SystemSpec` structure (six Bool capability flags), `spec_has_X` predicates,
-`DecidablePred` instances, `containsAllFeatures`, `fullBankSpec`, and the six
+`SystemSpec` structure (seven Bool capability flags), `spec_has_X` predicates,
+`DecidablePred` instances, `containsAllFeatures`, `fullBankSpec`, and the seven
 minimal specs missing exactly one feature each (for impossibility witnesses).
 
 Grounded evidence types (`GroundedX`, `GroundedXStrict`, `GroundedSystemSpec`)
@@ -110,7 +110,7 @@ instance : DecidablePred spec_has_granular_acl := fun spec =>
 
 /-! ## Full Spec Predicate
 
-A system has "all Bank primitives" iff all six features are present. -/
+A system has "all Bank primitives" iff all seven features are present. -/
 
 /-- A system specification contains all Bank primitives. -/
 def containsAllFeatures (spec : SystemSpec) : Prop :=

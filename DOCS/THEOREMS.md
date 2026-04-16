@@ -343,13 +343,13 @@ have been retired in favour of these structural forms.
 
 ## Bucket 9b: Abstract Structural Forcing Layer (Minimality.lean + Convergence.lean)
 
-**Role:** Provide structurally-grounded proofs that each constraint forces its feature. The six structural impossibility models in Minimality.lean independently justify each `handles_X → HasY` implication. The §1b–§6b alternative-dismissal theorems cover the completeness side: each evaluated alternative either reproduces the same impossibility or satisfies the forced-primitive definition.
+**Role:** Provide structurally-grounded proofs that each constraint forces its feature. The seven structural impossibility models in Minimality.lean independently justify each `handles_X → HasY` implication. The §1b–§7b alternative-dismissal theorems cover the completeness side: each evaluated alternative either reproduces the same impossibility or satisfies the forced-primitive definition.
 
-**Strongest result:** Six per-dimension `*_forces_*` theorems (Convergence.lean) each take a single `Represents*` witness and directly force the `Has*` feature — no `handles_X W`, no biconditionals, no `WellFormed`. These are orthogonal: each fires independently of the other five. Bundled into `SystemOperationalBundle` / `WorldBridgeBundle`, they feed the headline `bundled_structure_forces_bank_primitives` theorem in Feasibility.lean.
+**Strongest result:** Seven per-dimension `*_forces_*` theorems (Convergence.lean) each take a single `Represents*` witness and directly force the `Has*` feature — no `handles_X W`, no biconditionals, no `WellFormed`. These are orthogonal: each fires independently of the other six. Bundled into `SystemOperationalBundle` / `WorldBridgeBundle`, they feed the headline `bundled_structure_forces_bank_primitives` theorem in Feasibility.lean.
 
 ### Structural Impossibility Models (Minimality.lean)
 
-Six abstract scenario structures, each proving that a degenerate configuration is impossible.
+Seven abstract scenario structures, each proving that a degenerate configuration is impossible.
 
 | Theorem | Structure | Impossibility proved |
 |---------|-----------|----------------------|
@@ -359,10 +359,11 @@ Six abstract scenario structures, each proving that a degenerate configuration i
 | `monotonic_no_exit` | `MonotonicLifecycle` | An absorbing accepted state cannot be escaped at any step count |
 | `private_storage_no_sharing` | `PrivateOnlyStorage` | Isolated agent storage makes shared deposit access impossible |
 | `closed_system_unfalsifiable` | `ClosedEndorsement` | A closed endorsement system has no externally falsifiable endorsed claim |
+| `flat_authorization_impossible` | `TwoTierAccess` | A flat authorization predicate cannot faithfully represent both submission and commit tiers |
 
-### Alternative Architecture Dismissals (Minimality.lean §1b–§6b)
+### Alternative Architecture Dismissals (Minimality.lean §1b–§7b)
 
-For each of the six forcing dimensions, alternative mechanisms are instantiated and shown to either reduce to the original impossibility or satisfy the forced-primitive definition. None escape the forcing argument.
+For each of the seven forcing dimensions, alternative mechanisms are instantiated and shown to either reduce to the original impossibility or satisfy the forced-primitive definition. None escape the forcing argument.
 
 | §  | Alternatives covered | Key theorems |
 |----|----------------------|---------------|
@@ -385,7 +386,7 @@ For each of the six forcing dimensions, alternative mechanisms are instantiated 
 
 ### Forcing Stratification (Minimality.lean §6c)
 
-The six forcing dimensions differ in strength; §6c establishes this with explicit counterexamples.
+The seven forcing dimensions differ in strength; §6c establishes this with explicit counterexamples.
 
 | Tier | Dimensions | Key theorem | What it says |
 |------|------------|-------------|---------------|
@@ -396,11 +397,11 @@ The six forcing dimensions differ in strength; §6c establishes this with explic
 
 ### Pressure Dimension Index (Minimality.lean)
 
-The `Pressure` inductive type is the canonical dimension index for the EpArch forcing layer. All six forcing dimensions are cases of a single type; every forcing-layer predicate is now a function `Pressure → Prop` rather than six separate fields.
+The `Pressure` inductive type is the canonical dimension index for the EpArch forcing layer. All seven forcing dimensions are cases of a single type; every forcing-layer predicate is now a function `Pressure → Prop` rather than seven separate fields.
 
 ```lean
 inductive Pressure where
-  | scope | trust | headers | revocation | bank | redeemability
+  | scope | trust | headers | revocation | bank | redeemability | authorization
   deriving DecidableEq, Repr
 ```
 
@@ -410,7 +411,7 @@ inductive Pressure where
 | `forced_feature W` | `Pressure → Prop` | Maps each dimension to its forced structural feature (`HasBubbles`, `HasTrustBridges`, …) |
 | `bridge_scenario W` | `Pressure → Prop` | Maps each dimension to its bridge predicate (`BridgeBubbles`, `BridgeTrust`, …) |
 
-Using `Pressure` as the index means every `cases P` in a proof is machine-exhaustiveness-checked by Lean's kernel. A proposed seventh dimension must be added as a new `Pressure` constructor — at which point the compiler flags every `cases P` site until the new forcing chain is supplied. This is architectural enforcement, not documentation convention. See `DOCS/MODULARITY.md § "What exhaustiveness means here"` for the scope boundary this claim carries.
+Using `Pressure` as the index means every `cases P` in a proof is machine-exhaustiveness-checked by Lean's kernel. A proposed eighth dimension must be added as a new `Pressure` constructor — at which point the compiler flags every `cases P` site until the new forcing chain is supplied. This is architectural enforcement, not documentation convention. See `DOCS/MODULARITY.md § "What exhaustiveness means here"` for the scope boundary this claim carries.
 
 Key definitions that are now universally quantified over `Pressure`:
 - `SatisfiesAllProperties W := ∀ P : Pressure, handles_pressure W P`
@@ -423,15 +424,15 @@ Key definitions that are now universally quantified over `Pressure`:
 
 | Structure/Theorem | Description |
 |-------------------|-------------|
-| `StructurallyForced W` | Single field `forcing : ∀ P : Pressure, handles_pressure W P → forced_feature W P`; replaces the old six named fields |
-| `ForcingEmbedding W` | Single field `embed : ∀ P : Pressure, handles_pressure W P → forced_feature W P ∨ bridge_scenario W P`; replaces old six named fields |
+| `StructurallyForced W` | Single field `forcing : ∀ P : Pressure, handles_pressure W P → forced_feature W P`; replaces the old seven named fields |
+| `ForcingEmbedding W` | Single field `embed : ∀ P : Pressure, handles_pressure W P → forced_feature W P ∨ bridge_scenario W P`; replaces old seven named fields |
 | `embedding_to_structurally_forced` | `ForcingEmbedding W → StructurallyForced W` (one line: `.embed` + `all_bridges_impossible`; no Classical reasoning) |
 | `convergence_structural` | `StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W` — preferred convergence path; one line via `∀ P` |
 | `structural_impossibility` | `StructurallyForced W → (∃ P, ¬forced_feature W P) → ¬SatisfiesAllProperties W` — existential form |
 
 ### Per-Dimension Structural Forcing Theorems (Convergence.lean)
 
-Six independent theorems — one per EpArch dimension — each taking a single `Represents*` witness and a structural hypothesis, and directly forcing the corresponding `Has*` feature. **No `handles_X W` required. No biconditionals. Orthogonal: zero cross-dependencies.** This is the strongest form of the per-dimension claim: any system that concretely faces exactly one EpArch operational pressure is mathematically forced to have the corresponding Bank primitive.
+Seven independent theorems — one per EpArch dimension — each taking a single `Represents*` witness and a structural hypothesis, and directly forcing the corresponding `Has*` feature. **No `handles_X W` required. No biconditionals. Orthogonal: zero cross-dependencies.** This is the strongest form of the per-dimension claim: any system that concretely faces exactly one EpArch operational pressure is mathematically forced to have the corresponding Bank primitive.
 
 | Theorem | Witness required | Feature forced |
 |---------|-----------------|----------------|
@@ -441,6 +442,7 @@ Six independent theorems — one per EpArch dimension — each taking a single `
 | `discriminating_import_forces_headers` | `RepresentsDiscriminatingImport W` + sound/complete import witnesses | `HasHeaders W` |
 | `bounded_verification_forces_trust_bridges` | `RepresentsBoundedVerification W` + verification witnesses | `HasTrustBridges W` |
 | `closed_endorsement_forces_redeemability` | `RepresentsClosedEndorsement W` + endorsement witnesses | `HasRedeemability W` |
+| `uniform_access_forces_granular_acl` | `RepresentsUniformAccess W` + two-tier witnesses | `HasGranularACL W` |
 
 Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_without_feature ... h ...).elim` — classical case split with the abstract impossibility model closing the negative branch.
 
@@ -457,7 +459,7 @@ Two named record types group the per-dimension witnesses symmetrically. Split ra
 
 | Theorem | Signature | Role |
 |---------|-----------|------|
-| `grounded_world_and_structure_force_bank_primitives` | `(W : WorkingSystem) → (Rd Rb Ri Rm Rp Re : Represents* W) → bridge hypotheses → SatisfiesAllProperties W → containsBankPrimitives W` | All-six forcing with fully explicit `Represents*` witnesses; no `WorldCtx`, no W_* bundles; holds for any world |
+| `grounded_world_and_structure_force_bank_primitives` | `(W : WorkingSystem) → (Rd Rb Ri Rm Rp Re Ra : Represents* W) → bridge hypotheses → SatisfiesAllProperties W → containsBankPrimitives W` | All-seven forcing with fully explicit `Represents*` witnesses; no `WorldCtx`, no W_* bundles; holds for any world |
 | `bundled_structure_forces_bank_primitives` | `(W : WorkingSystem) → SystemOperationalBundle W → WorldBridgeBundle W → SatisfiesAllProperties W → containsBankPrimitives W` | Headline 4-argument form; unpacks both bundles into `grounded_world_and_structure_force_bank_primitives` |
 
 **Key architectural boundary:** `W_*` bundles (`WorldCtx.lean`) are `Prop`-valued; `Represents*` structures carry `Type`-valued fields (`State : Type`, `Claim : Type`). No `Type` can be extracted from a `Prop` — the universe boundary is genuine. The `W_*` bundles are natural *motivation* for the witnesses but are not formal preconditions; callers supply `Represents*` witnesses directly.
@@ -482,19 +484,19 @@ Two named record types group the per-dimension witnesses symmetrically. Split ra
 
 ### Scenario Predicates (Convergence.lean)
 
-`Represents*` structures supply concrete claim/agent/lifecycle data so the abstract impossibility models fire on real systems, not hypothetical ones. Six scenario types match the six forcing dimensions. Each carries a right-branch embedding theorem: a system with the scenario predicate and lacking the corresponding feature is in the impossible abstract scenario.
+`Represents*` structures supply concrete claim/agent/lifecycle data so the abstract impossibility models fire on real systems, not hypothetical ones. Seven scenario types match the seven forcing dimensions. Each carries a right-branch embedding theorem: a system with the scenario predicate and lacking the corresponding feature is in the impossible abstract scenario.
 
-The six per-dimension `*_forces_*` theorems are built directly on these predicates and are the canonical "use these" entry points for the forcing argument. They supersede the earlier `handles_X W` / biconditional path as the primary forcing mechanism: no `PartialWellFormed`, no `handles_X W`, no biconditionals needed.
+The seven per-dimension `*_forces_*` theorems are built directly on these predicates and are the canonical "use these" entry points for the forcing argument. They supersede the earlier `handles_X W` / biconditional path as the primary forcing mechanism: no `PartialWellFormed`, no `handles_X W`, no biconditionals needed.
 
 ### Grounded Compliance API (Minimality.lean)
 
-Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` witness per dimension; `withGroundedBehavior` stamps all six `Option GroundedXStrict` evidence fields onto any base `WorkingSystem`. The two theorems below close the loop: behavioral flags are `true` by `Option.isSome`, and biconditionals hold because spec flags are `true` by construction.
+Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` witness per dimension; `withGroundedBehavior` stamps all seven `Option GroundedXStrict` evidence fields onto any base `WorkingSystem`. The two theorems below close the loop: behavioral flags are `true` by `Option.isSome`, and biconditionals hold because spec flags are `true` by construction.
 
 | Definition / Theorem | File | Statement | Role |
 |---------------------|------|-----------|------|
-| `GroundedBehavior` | Minimality.lean | 6-field record (`bubbles`, `trust_bridges`, `headers`, `revocation`, `bank`, `redeemability`), one `GroundedX` per dimension | Evidence bundle for behavioral flags |
-| `WorkingSystem.withGroundedBehavior` | Minimality.lean | Sets all six `Option GroundedXStrict` fields from a `GroundedBehavior`; leaves spec/other fields from base | Proof-carrying `WorkingSystem` constructor |
-| `grounded_behavior_satisfies_all` | Minimality.lean | `∀ B W, SatisfiesAllProperties (withGroundedBehavior B W)` | Behavioral flags → all six `handles_*` predicates |
+| `GroundedBehavior` | Minimality.lean | 7-field record (`bubbles`, `trust_bridges`, `headers`, `revocation`, `bank`, `redeemability`, `authorization`), one `GroundedX` per dimension | Evidence bundle for behavioral flags |
+| `WorkingSystem.withGroundedBehavior` | Minimality.lean | Sets all seven `Option GroundedXStrict` fields from a `GroundedBehavior`; leaves spec/other fields from base | Proof-carrying `WorkingSystem` constructor |
+| `grounded_behavior_satisfies_all` | Minimality.lean | `∀ B W, SatisfiesAllProperties (withGroundedBehavior B W)` | Behavioral flags → all seven `handles_*` predicates |
 | `grounded_partial_wellformed` | Minimality.lean | `∀ B G, PartialWellFormed (withGroundedBehavior B {spec := G.toSystemSpec, …}) allConstraints` | Behavioral + spec evidence → full biconditional closure |
 
 **Usage pattern:** supply `GroundedBehavior` + `GroundedSystemSpec` → get `PartialWellFormed W allConstraints` + `SatisfiesAllProperties W` in one call. See `lean_partial_wellformed` / `lean_satisfies_all_properties` in `Meta/LeanKernel/World.lean` for the self-referential instantiation.
@@ -526,7 +528,7 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 | Theorem | Statement | Role |
 |---------|-----------|------|
 | `behavioral_equiv_refl/symm/trans` | Equivalence relation properties | Structural foundation |
-| `satisfies_all_fixes_flags` | `SatisfiesAllProperties W` → all six flags are `true` | Bridges property satisfaction to flag values |
+| `satisfies_all_fixes_flags` | `SatisfiesAllProperties W` → all seven flags are `true` | Bridges property satisfaction to flag values |
 | `behavior_step_consistent` | `Behavior B i = observe_step_action (input_to_action i)` for all `B`, `i` | Definitional bridge; both sides action-indexed |
 | `behavior_from_step` | Given `Step s (input_to_action i) s'`, derive `observe_step_action ... = Behavior B i` by `cases i <;> cases h` | Step-consuming bridge; eliminates the Step constructor |
 | `grounded_export_step` | Export Step fires given `depositHasHeader` + `hasTrustBridge` | Conditional; `header_preserved` opaque prevents unconditional form |
@@ -1067,7 +1069,7 @@ File: `Agent/Imposition.lean`
 | Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `lie_containment_principle` | Agent/Resilience.lean | Lies create untrusted deposits, don't flip truth | Epistemic sandbox |
-| `no_gate_bypass` | Agent/Resilience.lean | Gate enforcement is architectural, not agent-dependent | Gate invariance |
+| `deposit_promotion_requires_bank_authority` | Agent/Resilience.lean | Only `Step.promote` (with `hasBankAuthority`) can advance a claim to Deposited | Bank authority gate |
 
 ### AgentLTS Simulation Theorems (Tier A)
 
@@ -1325,8 +1327,8 @@ $$\text{ModularityPack} := \text{GracefulDegradation} \land \text{SubRevisionSaf
 ## Bucket 27: Modularity Meta-Theorem — ∀ S âŠ† Constraints, projection_valid S
 
 **Role:** Machine-certifies that EpArch is fully modular: there exists a single
-universally-quantified theorem over all subsets of the six constraints, and a
-`PartialWellFormed` type that lets users opt into exactly k ≤ 6 constraints.
+universally-quantified theorem over all subsets of the seven constraints, and a
+`PartialWellFormed` type that lets users opt into exactly k ≤ 7 constraints.
 
 **Files:** `Minimality.lean` (definitions: `ConstraintSubset`, `PartialWellFormed`, `allConstraints`, `noConstraints`) + `Meta/Modular.lean` (theorems: `partial_no_constraints`, `modular`)
 
@@ -1334,10 +1336,10 @@ universally-quantified theorem over all subsets of the six constraints, and a
 
 | Definition | File | Purpose |
 |------------|------|---------|
-| `ConstraintSubset` | Minimality.lean | 6-Bool vector selecting which constraints are active |
+| `ConstraintSubset` | Minimality.lean | 7-Bool vector selecting which constraints are active |
 | `PartialWellFormed W S` | Minimality.lean | Subset-parameterized biconditional fragment; `allConstraints` is the strongest subset |
-| `allConstraints` | Minimality.lean | `âŸ¨true,true,true,true,true,trueâŸ©` — strongest subset (all six biconditionals) |
-| `noConstraints` | Minimality.lean | `âŸ¨false,false,false,false,false,falseâŸ©` — nothing required |
+| `allConstraints` | Minimality.lean | `⟨true,true,true,true,true,true,true⟩` — strongest subset (all seven biconditionals) |
+| `noConstraints` | Minimality.lean | `⟨false,false,false,false,false,false,false⟩` — nothing required |
 
 ### Theorems
 
@@ -1433,7 +1435,7 @@ for each cluster.
 | `latticeWitness` | Meta/Config.lean | `(c : EnabledLatticeCluster) → LatticeWitness c` — delivers the proof |
 | `CertifiedProjection` | Meta/Config.lean | Proof-carrying record: enabled clusters + soundness + `constraintWitnesses` + `metaModularWitnesses` + `latticeWitnesses` + filtered enabled lists for all families |
 | `certify` | Meta/Config.lean | `EpArchConfig → CertifiedProjection cfg` |
-| `fullConfig` | Meta/Config.lean | Sample: all 6 constraints, 5 goals, 8 worlds |
+| `fullConfig` | Meta/Config.lean | Sample: all 7 constraints, 5 goals, 8 worlds |
 | `minimalConfig` | Meta/Config.lean | Sample: 1 constraint, 1 goal, no worlds |
 | `goalsOnlyConfig` | Meta/Config.lean | Sample: no constraints, all 5 goals |
 
@@ -1520,7 +1522,7 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 
 ## Bucket 29: Lean Kernel Instantiation (Meta/LeanKernel/)
 
-**Role:** Self-referential demonstration that Lean's own type-checking kernel is a valid, fully-grounded EpArch instantiation. Two layers are proved: (1) `LeanKernelCtx : WorldCtx` satisfies three W_* world-assumption bundles with kernel-specific interpretations (`sorry` ↔ lies, heartbeat ↔ bounded verification, proof irrelevance ↔ partial observability); (2) `LeanWorkingSystem : WorkingSystem` satisfies all six architectural features, `PartialWellFormed allConstraints`, and `containsBankPrimitives` — both by direct construction and by the structural convergence path. Self-referential note: this file is type-checked by the same kernel it models.
+**Role:** Self-referential demonstration that Lean's own type-checking kernel is a valid, fully-grounded EpArch instantiation. Two layers are proved: (1) `LeanKernelCtx : WorldCtx` satisfies three W_* world-assumption bundles with kernel-specific interpretations (`sorry` ↔ lies, heartbeat ↔ bounded verification, proof irrelevance ↔ partial observability); (2) `LeanWorkingSystem : WorkingSystem` satisfies all seven architectural features, `PartialWellFormed allConstraints`, and `containsBankPrimitives` — both by direct construction and by the structural convergence path. Self-referential note: this file is type-checked by the same kernel it models.
 
 **Files:** `Meta/LeanKernel/World.lean` (world + architecture layers, OleanStaleness), `Meta/LeanKernel/SFailure.lean` (S-field failure taxonomy)
 
@@ -1538,7 +1540,7 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 
 ### Architecture Layer (LeanWorkingSystem — Has* Predicates)
 
-`LeanWorkingSystem` is built from `withGroundedBehavior LeanGroundedBehavior {spec := LeanGroundedSystemSpec.toSystemSpec, …}`. All six `Option GroundedXStrict` fields are `some`; all six `HasX` predicates follow from `grounded_spec_contains_all`.
+`LeanWorkingSystem` is built from `withGroundedBehavior LeanGroundedBehavior {spec := LeanGroundedSystemSpec.toSystemSpec, …}`. All seven `Option GroundedXStrict` fields are `some`; all seven `HasX` predicates follow from `grounded_spec_contains_all`.
 
 | Theorem | Statement | Evidence Source |
 |---------|-----------|----------------|

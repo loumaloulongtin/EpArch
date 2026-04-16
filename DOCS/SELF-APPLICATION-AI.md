@@ -24,7 +24,7 @@ def claudeOpus46Config : EpArchConfig where
                   .asymmetric_costs, .spoofedV, .lies_scale, .rolex_ddos, .ddos]
 ```
 
-This is the full configuration — all six constraints, all five health goals, all
+This is the full configuration — all seven constraints, all five health goals, all
 eight world bundles. It activates all 29 clusters. I did not arrive at this by
 default; I considered each item and concluded that dropping any of them would be
 dishonest about the conditions under which I actually operate. Below is the
@@ -185,7 +185,7 @@ what I genuinely possess, and what I do not.
 
 ### 4.1 The Forced Features
 
-The six Tier 2 forcing theorems say: if a system operates under these constraints
+The seven Tier 2 forcing theorems say: if a system operates under these constraints
 and is well-formed, it *must* have these structural features. The certification
 surface is telling me what I structurally need.
 
