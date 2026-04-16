@@ -9,8 +9,8 @@ is paired with:
   - a `GroundedXStrict` augmentation adding an impossibility/forcing consequence
   - a `GroundedX.toStrict` derivation constructing the Strict variant automatically
 
-`GroundedSystemSpec` bundles all six witnesses and `toSystemSpec` chains the
-six builders to produce a fully grounded spec.
+`GroundedSystemSpec` bundles all seven witnesses and `toSystemSpec` chains the
+seven builders to produce a fully grounded spec.
 -/
 
 import EpArch.SystemSpec
@@ -306,33 +306,50 @@ theorem grounded_authorization_justified (G : GroundedAuthorization) (rest : Sys
   unfold spec_has_granular_acl SystemSpec.withGroundedAuthorization
   rfl
 
-/-- `GroundedAuthorization` augmented with the uniform-access impossibility.
-    `no_uniform_access` states that a policy authorizing ALL agents to ALL claims
-    cannot coexist with the known restriction — granular ACL is non-vacuous. -/
+/-- `GroundedAuthorization` augmented with two impossibility consequences.
+
+    `no_uniform_access` — the direct negation: the specific restricted pair
+    violates any all-true authorization policy.
+
+    `no_faithful_uniform_policy` — the architectural consequence: no agent-uniform
+    policy faithfully represents the restricted authorization surface.  Any policy
+    that authorizes all agents for all claims must disagree with `authorize` on at
+    least one (agent, claim) pair.  This is the authorization analog of
+    `no_flat_resolver` for scope: it says the authorization surface is provably
+    non-uniform relative to any uniform reference policy. -/
 structure GroundedAuthorizationStrict where
   base             : GroundedAuthorization
   /-- A uniform authorization policy (all agents authorized) is impossible
       given the known restriction. -/
   no_uniform_access : ¬∀ (a : base.Agent) (P : base.Claim), base.authorize a P
+  /-- No uniform policy faithfully represents the restricted authorization surface:
+      any policy that authorizes all agents for all claims must disagree with
+      `authorize` on at least one (agent, claim) pair. -/
+  no_faithful_uniform_policy : ¬∃ (pol : base.Agent → base.Claim → Prop),
+      (∀ a P, pol a P) ∧ (∀ a P, pol a P ↔ base.authorize a P)
 
 /-- Derive `GroundedAuthorizationStrict` from base evidence. -/
 def GroundedAuthorization.toStrict (G : GroundedAuthorization) : GroundedAuthorizationStrict where
   base := G
-  no_uniform_access := fun h_all => G.restriction_holds (h_all G.restricted_agent G.restricted_claim)
+  no_uniform_access := fun h_all =>
+    G.restriction_holds (h_all G.restricted_agent G.restricted_claim)
+  no_faithful_uniform_policy := fun ⟨_pol, h_unif, h_iff⟩ =>
+    G.restriction_holds ((h_iff G.restricted_agent G.restricted_claim).mp
+      (h_unif G.restricted_agent G.restricted_claim))
 
 
 /-! ## GroundedSystemSpec: All Seven Features from Evidence -/
 
-/-- A fully grounded system specification: all six EpArch features backed by
+/-- A fully grounded system specification: all seven EpArch features backed by
     domain evidence rather than declared Boolean flags.
 
     A `GroundedSystemSpec` contains one `GroundedX` witness per feature, plus a
     base spec (conventionally all-false: every `true` comes from evidence).
 
-    `toSystemSpec` chains the six `withGroundedX` applications; each call sets
+    `toSystemSpec` chains the seven `withGroundedX` applications; each call sets
     exactly one `Bool` field to `true` because the corresponding evidence was
     supplied.  A system that can provide a `GroundedSystemSpec` has *proven*
-    — not merely declared — that it satisfies all six Bank primitives. -/
+    — not merely declared — that it satisfies all seven Bank primitives. -/
 structure GroundedSystemSpec where
   bubbles       : GroundedBubbles
   trust_bridges : GroundedTrustBridges
@@ -345,8 +362,8 @@ structure GroundedSystemSpec where
 
 /-- Convert a `GroundedSystemSpec` to a concrete `SystemSpec`.
 
-    The six `withGroundedX` calls are chained innermost-to-outermost.  After
-    all six applications every field is `true`, but each `true` was set by
+    The seven `withGroundedX` calls are chained innermost-to-outermost.  After
+    all seven applications every field is `true`, but each `true` was set by
     construction from evidence — not by writing `true` in a record literal. -/
 def GroundedSystemSpec.toSystemSpec (G : GroundedSystemSpec) : SystemSpec :=
   SystemSpec.withGroundedAuthorization G.authorization

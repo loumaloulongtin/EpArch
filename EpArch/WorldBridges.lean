@@ -94,17 +94,6 @@ theorem w_partial_obs_forces_redeemability (C : @EpArch.WorldCtx.{0})
   exact ⟨P, w0, fun endorsed obs_stable closed h_end =>
     (h_bic.mp (closed w0 P h_end)) (closed w1 P (obs_stable P w0 w1 h_obs h_end))⟩
 
-/-- W_multi_agent_heterogeneous witnesses a non-trivially restricted authorization surface.
-
-    The `secrets_exist` field directly supplies (a, P) where `¬Utter a P` — an agent
-    that cannot assert some claim.  This is the formal basis for why open-mode ACL
-    (acl_table = [], all agents authorized) is insufficient: at least one agent must be
-    excluded from at least one claim's certification path. -/
-theorem w_multi_agent_forces_authorization_need (C : @EpArch.WorldCtx.{0})
-    (W : C.W_multi_agent_heterogeneous) :
-    ∃ (a : C.Agent) (P : C.Claim), ¬C.Utter a P :=
-  W.secrets_exist
-
 /-- W_lies_possible and W_multi_agent_heterogeneous are incompatible.
 
     W_lies_possible.unrestricted_utterance asserts every agent can utter every claim.
@@ -128,14 +117,27 @@ theorem w_lies_multi_agent_incompatible (C : @EpArch.WorldCtx.{0})
     forcing implications are grounded in C's world assumptions (for those that
     have W_* bundle counterparts) and by structural analysis (for the rest).
 
-    Three of the six StructurallyForced implications are justified by W_* bundles:
-    - trust_forcing        ← W_bounded_verification (verification_only_import_incomplete)
-    - revocation_forcing   ← W_lies_possible        (monotonic_no_exit)
+    Three of the seven StructurallyForced implications are justified by W_* bundles:
+    - trust_forcing         ← W_bounded_verification (verification_only_import_incomplete)
+    - revocation_forcing    ← W_lies_possible        (monotonic_no_exit)
     - redeemability_forcing ← W_partial_observability (closed_system_unfalsifiable)
 
-    Four are justified by structural impossibility arguments alone and have no
-    W_* bundle counterpart (AgentDisagreement, DiscriminatingImport,
-    PrivateOnlyStorage, UniformAccess) — included here as unconditional hypotheses. -/
+    Four are unconditional: scope, headers, bank, and authorization.
+    Their forcing is system-internal — a system carrying the corresponding
+    `GroundedXStrict` evidence self-certifies the impossibility regardless of
+    any world assumption.
+
+    Why authorization is unconditional rather than gated on W_multi_agent_heterogeneous:
+    (1) W_multi_agent_heterogeneous is formally incompatible with W_lies_possible
+        (proven in WorldCtx.w_lies_multi_agent_incompatible and
+        w_lies_multi_agent_incompatible), so it cannot be added as a guard here
+        alongside Wl without making this theorem vacuously provable from contradictory
+        premises.
+    (2) The authorization forcing is self-certifying: GroundedAuthorizationStrict carries
+        restriction_holds and no_faithful_uniform_policy, both derived from the system's
+        own authorization evidence without any world-semantic premise.  The parallel is
+        exact: scope forcing is also self-certifying (AgentDisagreement is internal to
+        the system), and scope is unconditional for the same reason. -/
 def WorldAwareSystem (C : @EpArch.WorldCtx.{0}) (W : WorkingSystem) : Prop :=
   (C.W_bounded_verification  → handles_bounded_audit W    → HasTrustBridges W)  ∧
   (C.W_lies_possible         → handles_adversarial W      → HasRevocation W)    ∧

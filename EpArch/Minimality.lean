@@ -1358,6 +1358,144 @@ theorem uniform_access_impossible (M : UniformAccessScenario)
   M.has_restriction (h_uniform M.restricted_agent M.restricted_claim)
 
 
+/-! ### 7b. Alternative Authorization Mechanisms Reduce to UniformAccessScenario
+
+A reviewer may ask: do RBAC (role-based ACL), capability-token systems, or
+attribute-based ACL escape `uniform_access_impossible`?
+
+This section instantiates each alternative, then shows it directly supplies
+a `GroundedAuthorization` instance — `uniform_access_impossible` then fires
+via `groundedAuthorization_to_scenario`.
+
+**RBAC.**  Agents are assigned roles; permissions are attached to roles;
+authorization is role-derived.  If the restricted agent's role lacks the
+required permission, `restriction_holds` follows from the role-derivation
+equivalence.  This is a direct `GroundedAuthorization` instance.
+
+**Capability-token system.**  An agent is authorized for a claim iff it holds
+a token that grants that claim.  If the restricted agent holds no token granting
+the restricted claim, `restriction_holds` follows from the capability derivation.
+Again a direct `GroundedAuthorization` instance.
+
+**Attribute-based ACL.**  Authorization requires the agent to have every attribute
+demanded by the claim.  If the restricted agent lacks a required attribute,
+`restriction_holds` follows from the attribute derivation.
+Again a direct `GroundedAuthorization` instance.
+
+**Conclusion.**  All three alternatives instantiate `GroundedAuthorization` with a
+specific `restriction_holds` proof.  `uniform_access_impossible` then fires via
+`groundedAuthorization_to_scenario` — the authorization pressure is insensitive to
+the ACL mechanism chosen.  The forcing is at the level of the restriction fact,
+not the mechanism that implements it. -/
+
+/-- RBAC authorization surface: agents carry roles, roles carry permissions,
+    authorization is role-derived.  A restriction arises when the restricted
+    agent's role lacks the required permission for the restricted claim. -/
+structure RBACAuthSurface where
+  Agent            : Type
+  Claim            : Type
+  Role             : Type
+  role_of          : Agent → Role
+  perm             : Role → Claim → Prop
+  authorize        : Agent → Claim → Prop
+  /-- Authorization is exactly role-derived permission. -/
+  derives_from_rbac : ∀ a P, authorize a P ↔ perm (role_of a) P
+  restricted_agent : Agent
+  restricted_claim : Claim
+  /-- The restricted agent's role lacks permission for the restricted claim. -/
+  role_lacks_perm  : ¬perm (role_of restricted_agent) restricted_claim
+
+/-- An RBAC surface with a restricted role directly instantiates `GroundedAuthorization`.
+    `restriction_holds` follows from the role-derivation equivalence and `role_lacks_perm`. -/
+def rbac_to_grounded (M : RBACAuthSurface) : GroundedAuthorization where
+  Agent            := M.Agent
+  Claim            := M.Claim
+  authorize        := M.authorize
+  restricted_agent := M.restricted_agent
+  restricted_claim := M.restricted_claim
+  restriction_holds := fun h =>
+    M.role_lacks_perm ((M.derives_from_rbac M.restricted_agent M.restricted_claim).mp h)
+
+/-- A uniform authorization policy is impossible in any RBAC surface with a
+    restricted role: `uniform_access_impossible` fires via `rbac_to_grounded`. -/
+theorem rbac_uniform_impossible (M : RBACAuthSurface)
+    (h_uniform : ∀ a P, M.authorize a P) : False :=
+  (rbac_to_grounded M).restriction_holds (h_uniform M.restricted_agent M.restricted_claim)
+
+/-- Capability-token authorization: an agent is authorized for a claim iff it
+    holds a token that grants that claim.  A restriction arises when the
+    restricted agent holds no token granting the restricted claim. -/
+structure CapabilityTokenAuth where
+  Agent         : Type
+  Claim         : Type
+  Token         : Type
+  holds_token   : Agent → Token → Prop
+  token_grants  : Token → Claim → Prop
+  authorize     : Agent → Claim → Prop
+  /-- Authorization is exactly token-based capability. -/
+  derives_from_caps : ∀ a P, authorize a P ↔ ∃ t, holds_token a t ∧ token_grants t P
+  restricted_agent : Agent
+  restricted_claim : Claim
+  /-- The restricted agent holds no token that grants the restricted claim. -/
+  no_token         : ∀ t, holds_token restricted_agent t → ¬token_grants t restricted_claim
+
+/-- A capability-token surface with a restricted agent directly instantiates
+    `GroundedAuthorization`.  `restriction_holds` follows from the capability
+    derivation and the token-absence hypothesis. -/
+def capability_token_to_grounded (M : CapabilityTokenAuth) : GroundedAuthorization where
+  Agent            := M.Agent
+  Claim            := M.Claim
+  authorize        := M.authorize
+  restricted_agent := M.restricted_agent
+  restricted_claim := M.restricted_claim
+  restriction_holds := fun h =>
+    let ⟨t, h_holds, h_grants⟩ :=
+      (M.derives_from_caps M.restricted_agent M.restricted_claim).mp h
+    M.no_token t h_holds h_grants
+
+/-- A uniform authorization policy is impossible in any capability-token surface
+    with a restricted agent: `uniform_access_impossible` fires via the bridge. -/
+theorem capability_token_uniform_impossible (M : CapabilityTokenAuth)
+    (h_uniform : ∀ a P, M.authorize a P) : False :=
+  (capability_token_to_grounded M).restriction_holds (h_uniform M.restricted_agent M.restricted_claim)
+
+/-- Attribute-based ACL: authorization requires the agent to hold all attributes
+    demanded by the claim.  A restriction arises when the restricted agent is
+    missing at least one attribute required by the restricted claim. -/
+structure AttributeBasedAuth where
+  Agent             : Type
+  Claim             : Type
+  Attr              : Type
+  has_attr          : Agent → Attr → Prop
+  requires          : Claim → Attr → Prop
+  authorize         : Agent → Claim → Prop
+  /-- Authorization is exactly attribute satisfaction. -/
+  derives_from_attrs : ∀ a P, authorize a P ↔ ∀ attr, requires P attr → has_attr a attr
+  restricted_agent  : Agent
+  restricted_claim  : Claim
+  /-- The restricted agent lacks at least one attribute required by the restricted claim. -/
+  missing_attr      : ∃ attr, requires restricted_claim attr ∧ ¬has_attr restricted_agent attr
+
+/-- An attribute-based ACL surface with a missing required attribute directly
+    instantiates `GroundedAuthorization`.  `restriction_holds` follows from the
+    attribute derivation and the missing-attribute hypothesis. -/
+def attribute_based_to_grounded (M : AttributeBasedAuth) : GroundedAuthorization where
+  Agent            := M.Agent
+  Claim            := M.Claim
+  authorize        := M.authorize
+  restricted_agent := M.restricted_agent
+  restricted_claim := M.restricted_claim
+  restriction_holds := fun h =>
+    let ⟨attr, h_req, h_no_attr⟩ := M.missing_attr
+    h_no_attr ((M.derives_from_attrs M.restricted_agent M.restricted_claim).mp h attr h_req)
+
+/-- A uniform authorization policy is impossible in any attribute-based ACL surface
+    with a missing required attribute: `uniform_access_impossible` fires via the bridge. -/
+theorem attribute_based_uniform_impossible (M : AttributeBasedAuth)
+    (h_uniform : ∀ a P, M.authorize a P) : False :=
+  (attribute_based_to_grounded M).restriction_holds (h_uniform M.restricted_agent M.restricted_claim)
+
+
 /-! ## §7. GroundedX ↔ Impossibility Bridges
 
 Each `GroundedX` structure is isomorphic to the *input* of the corresponding
