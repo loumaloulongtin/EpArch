@@ -185,7 +185,8 @@ theorem theory_floor_not_fully_authorizable (C : WorldCtx) :
   have ⟨h⟩ := h_partial
   exact h.obs_underdetermines
 
-/-- The witness context requires credit (specialized form). -/
+/-- The witness context requires credit (specialized form).
+    Instance of `theory_floor_not_fully_authorizable`. -/
 theorem witness_requires_credit : CreditRequired WorldWitness.WitnessCtx :=
   theory_floor_not_fully_authorizable WorldWitness.WitnessCtx theory_floor_satisfiable
 
@@ -233,22 +234,20 @@ theorem theory_floor_implies_not_fully_authorizable (C : WorldCtx) :
     TheoryFloor C → ¬ FullyAuthorizableByObs C :=
   fun h => credit_required_implies_not_fully_authorizable C (theory_floor_not_fully_authorizable C h)
 
-/-- The witness context is NOT fully authorizable from observations. -/
+/-- The witness context is NOT fully authorizable from observations.
+    Instance of `theory_floor_implies_not_fully_authorizable`. -/
 theorem witness_not_fully_authorizable : ¬ FullyAuthorizableByObs WorldWitness.WitnessCtx :=
   theory_floor_implies_not_fully_authorizable WorldWitness.WitnessCtx theory_floor_satisfiable
 
 
 /-! ## 5. Pillar 3: Safe on Credit (Extension Safety) -/
 
-/-- Re-export: safe extensions preserve revision-gate results.
+/-- Safe extensions preserve revision-gate results.
 
     This is the "non-collapse under incompleteness" pillar: even when
     operating on credit (incomplete information), extending the theory
     doesn't break safety properties. -/
-theorem credit_safe_under_extension :
-    ∀ (C : RevisionSafety.CoreModel) (R : RevisionSafety.RevisionSafeExtension C),
-      RevisionSafety.RevisionGate C → RevisionSafety.RevisionGate (RevisionSafety.forget R.ext) :=
-  fun C R => RevisionSafety.safe_extension_preserves C R
+def credit_safe_under_extension := RevisionSafety.safe_extension_preserves
 
 
 /-! ## 6. Headline Theorem: Meta-Status Proof Pack -/

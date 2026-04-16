@@ -156,27 +156,6 @@ theorem concrete_bank_vacuous_gate
     RevisionGate (ConcreteBankModel { ops with selfCorr_pred := fun _ => False }) :=
   fun _B h_sc => h_sc.elim
 
-/-- Compatible extensions of `ConcreteBankModel` preserve `RevisionGate`.
-    Direct application of `transport_self_correction`. -/
-theorem concrete_bank_transport
-    (ops : ConcreteBankOps PropLike Standard ErrorModel Provenance)
-    (E : ExtModel)
-    (h_compat : Compatible E (ConcreteBankModel ops))
-    (h_gate : RevisionGate (ConcreteBankModel ops)) :
-    RevisionGate (forget E) :=
-  transport_self_correction E _ h_compat h_gate
-
-/-- Vacuous concrete bank extension: specialises `concrete_bank_transport` to
-    the base case where `selfCorrects` is always False. -/
-theorem concrete_bank_vacuous_transport
-    (ops : ConcreteBankOps PropLike Standard ErrorModel Provenance)
-    (E : ExtModel)
-    (h_compat : Compatible E (ConcreteBankModel { ops with selfCorr_pred := fun _ => False })) :
-    RevisionGate (forget E) :=
-  transport_self_correction E _
-    h_compat
-    (concrete_bank_vacuous_gate ops)
-
 
 /-! ## §3b  LTS-Universal Theorems (Operational Layer)
 
@@ -303,22 +282,6 @@ theorem concrete_bank_all_goals_transport_surj
 
 
 /-! ## §4  Full Tier 4 Certification -/
-
-/-- `tier4_transport_pack` — legacy pack (RevisionGate only, vacuous base).
-
-    Kept for backward compatibility. For the full Cluster C certification
-    (all five health goals), use `tier4_full_pack`. -/
-theorem tier4_transport_pack
-    (ops : ConcreteBankOps PropLike Standard ErrorModel Provenance)
-    (E_bank   : ExtModel)
-    (h_compat : Compatible E_bank
-        (ConcreteBankModel { ops with selfCorr_pred := fun _ => False })) :
-    (∀ (d : Deposit PropLike Standard ErrorModel Provenance),
-        ∃ (s : Standard) (e : ErrorModel) (v : Provenance),
-          d.h.S = s ∧ d.h.E = e ∧ d.h.V = v) ∧
-    RevisionGate (forget E_bank) :=
-  ⟨SEVFactorization,
-   concrete_bank_vacuous_transport ops E_bank h_compat⟩
 
 /-- `tier4_full_pack` — complete Tier 4 transport certification.
 

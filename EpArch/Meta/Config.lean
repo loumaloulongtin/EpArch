@@ -83,16 +83,8 @@ open EpArch.AdversarialObligations
 universe u
 
 
-/-! ## §4  Cluster Validity
-
-`clusterValid c := True` unconditionally: all 30 clusters are machine-proved.
-The routing layer uses this so `certify` type-checks without universe complications;
-typed proof content lives in the indexed witnesses (§4b–§4e') and `cluster_*`
-witnesses (§5b). -/
-
-/-- Every cluster is valid: holds unconditionally (all 30 are machine-proved).
-    See the `cluster_*` witnesses in §5b for real typed propositions. -/
-@[simp] def clusterValid : ClusterTag → Prop := fun _ => True
+-- clusterValid is defined in §4g, after all indexed witness inductives.
+-- See §4g below (after latticeWitness) for the real predicate.
 
 
 /-! ## §4b  Constraint Proof Carrier
@@ -398,6 +390,24 @@ def latticeWitness : (c : EnabledLatticeCluster) → LatticeWitness c
   | .lattice_pack       => .pack      modularity_pack
 
 
+/-! ## §4g  Cluster Validity
+
+`clusterValid c = True` for every cluster `c`.  All 30 clusters are machine-proved;
+the typed Lean propositions live in:
+- `constraintSpec c` (Tier 2: forcing propositions + proofs)
+- `goalWitness c`, `worldWitness c`, `tier4Witness c`, `metaModularWitness c`,
+  `latticeWitness c` (indexed proof carriers, §4c–§4e')
+- `cluster_*` named theorems (§5b: one per cluster, callable by name)
+
+Keeping `clusterValid = True` avoids universe-polymorphism complications
+(the indexed witnesses reference `ExtModel : Type u`); the certification
+value is provided by `CertifiedProjection`'s indexed witness fields. -/
+
+/-- Every cluster is valid: holds unconditionally.
+    Typed proof content for each cluster is in the `cluster_*` gallery (§5b). -/
+def clusterValid : ClusterTag → Prop := fun _ => True
+
+
 /-! ## §4f  Correspondence Lemmas (support lemmas)
 
 The `allXxxClusters` canonical lists used by `certify` and the membership
@@ -637,86 +647,65 @@ Usage:  `#check cluster_forcing_distributed_agents`
 -- ── Tier 2 forcing ──────────────────────────────────────────────────────── -/
 
 /-- Cluster `.forcing_distributed_agents`: distributed agents force HasBubbles. -/
-theorem cluster_forcing_distributed_agents :
+def cluster_forcing_distributed_agents :
     ∀ W : WorkingSystem, StructurallyForced W → handles_distributed_agents W → HasBubbles W :=
   fun _W sf => sf.forcing .scope
 
 /-- Cluster `.forcing_bounded_audit`: bounded audit forces HasTrustBridges. -/
-theorem cluster_forcing_bounded_audit :
+def cluster_forcing_bounded_audit :
     ∀ W : WorkingSystem, StructurallyForced W → handles_bounded_audit W → HasTrustBridges W :=
   fun _W sf => sf.forcing .trust
 
 /-- Cluster `.forcing_export`: export-across-boundaries forces HasHeaders. -/
-theorem cluster_forcing_export :
+def cluster_forcing_export :
     ∀ W : WorkingSystem, StructurallyForced W → handles_export W → HasHeaders W :=
   fun _W sf => sf.forcing .headers
 
 /-- Cluster `.forcing_adversarial`: adversarial pressure forces HasRevocation. -/
-theorem cluster_forcing_adversarial :
+def cluster_forcing_adversarial :
     ∀ W : WorkingSystem, StructurallyForced W → handles_adversarial W → HasRevocation W :=
   fun _W sf => sf.forcing .revocation
 
 /-- Cluster `.forcing_coordination`: coordination need forces HasBank. -/
-theorem cluster_forcing_coordination :
+def cluster_forcing_coordination :
     ∀ W : WorkingSystem, StructurallyForced W → handles_coordination W → HasBank W :=
   fun _W sf => sf.forcing .bank
 
 /-- Cluster `.forcing_truth`: truth pressure forces HasRedeemability. -/
-theorem cluster_forcing_truth :
+def cluster_forcing_truth :
     ∀ W : WorkingSystem, StructurallyForced W → handles_truth_pressure W → HasRedeemability W :=
   fun _W sf => sf.forcing .redeemability
 
 /-- Cluster `.forcing_multi_agent`: multi-agent heterogeneous access forces HasGranularACL. -/
-theorem cluster_forcing_multi_agent :
+def cluster_forcing_multi_agent :
     ∀ W : WorkingSystem, StructurallyForced W → handles_multi_agent W → HasGranularACL W :=
   fun _W sf => sf.forcing .authorization
 
 -- ── Tier 3 goal transport ────────────────────────────────────────────────
 
 /-- Cluster `.goal_safeWithdrawal`: SafeWithdrawalGoal is Compatible-transport-safe. -/
-theorem cluster_goal_safeWithdrawal
-    (E : ExtModel) (C : CoreModel) (h : Compatible E C)
-    (hg : SafeWithdrawalGoal C) : SafeWithdrawalGoal (forget E) :=
-  transport_safe_withdrawal E C h hg
+def cluster_goal_safeWithdrawal := transport_safe_withdrawal
 
 /-- Cluster `.goal_reliableExport`: ReliableExportGoal is Compatible-transport-safe. -/
-theorem cluster_goal_reliableExport
-    (E : ExtModel) (C : CoreModel) (h : Compatible E C)
-    (hg : ReliableExportGoal C) : ReliableExportGoal (forget E) :=
-  transport_reliable_export E C h hg
+def cluster_goal_reliableExport := transport_reliable_export
 
 /-- Cluster `.goal_soundDeposits`: SoundDepositsGoal is Compatible-transport-safe. -/
-theorem cluster_goal_soundDeposits
-    (E : ExtModel) (C : CoreModel) (h : Compatible E C)
-    (hg : SoundDepositsGoal C) : SoundDepositsGoal (forget E) :=
-  transport_sound_deposits E C h hg
+def cluster_goal_soundDeposits := transport_sound_deposits
 
 /-- Cluster `.goal_selfCorrection`: SelfCorrectionGoal is Compatible-transport-safe. -/
-theorem cluster_goal_selfCorrection
-    (E : ExtModel) (C : CoreModel) (h : Compatible E C)
-    (hg : SelfCorrectionGoal C) : SelfCorrectionGoal (forget E) :=
-  transport_self_correction E C h hg
+def cluster_goal_selfCorrection := transport_self_correction
 
 /-- Cluster `.goal_corrigible_universal`: CorrigibleLedgerGoal ∀-part is Compatible-safe. -/
-theorem cluster_goal_corrigible_universal
-    (E : ExtModel) (C : CoreModel) (h : Compatible E C)
-    (hg : CorrigibleLedgerGoal C)
-    (B_E : (forget E).sig.Bubble) (hB : (forget E).ops.hasRevision B_E)
-    (d_E d'_E : (forget E).sig.Deposit)
-    (hr : (forget E).ops.revise B_E d_E d'_E) : (forget E).ops.truth B_E d'_E :=
-  transport_corrigible_universal E C h hg B_E hB d_E d'_E hr
+def cluster_goal_corrigible_universal := transport_corrigible_universal
 
 /-- Cluster `.goal_corrigible_full`: full CorrigibleLedgerGoal is SurjectiveCompatible-safe. -/
-theorem cluster_goal_corrigible_full
-    (E : ExtModel) (C : CoreModel) (h : SurjectiveCompatible E C)
-    (hg : CorrigibleLedgerGoal C) : CorrigibleLedgerGoal (forget E) :=
-  transport_corrigible_ledger E C h hg
+def cluster_goal_corrigible_full := transport_corrigible_ledger
 
 -- ── Tier 4 bank goal bundles ─────────────────────────────────────────────
 
 /-- Cluster `.tier4_bank_goals_compat`: all five ∀-health goals + universal
     corrigibility transport through any plain Compatible extension. -/
-theorem cluster_tier4_bank_goals_compat
+def cluster_tier4_bank_goals_compat
     (E : ExtModel) (C : CoreModel) (h : Compatible E C)
     (h_sw : SafeWithdrawalGoal C) (h_re : ReliableExportGoal C)
     (h_sd : SoundDepositsGoal C) (h_sc : SelfCorrectionGoal C)
@@ -734,7 +723,7 @@ theorem cluster_tier4_bank_goals_compat
 
 /-- Cluster `.tier4_bank_goals_surj`: all five health goals including full
     CorrigibleLedgerGoal (∃+∀) transport via SurjectiveCompatible. -/
-theorem cluster_tier4_bank_goals_surj
+def cluster_tier4_bank_goals_surj
     (E : ExtModel) (C : CoreModel) (h : SurjectiveCompatible E C)
     (h_sw : SafeWithdrawalGoal C) (h_re : ReliableExportGoal C)
     (h_sd : SoundDepositsGoal C) (h_sc : SelfCorrectionGoal C)
@@ -753,31 +742,20 @@ theorem cluster_tier4_bank_goals_surj
 -- its WorldTag.
 
 /-- Cluster `.world_lies_possible`: lying is structurally possible when W_lies_possible holds. -/
-theorem cluster_world_lies_possible
-    (C : WorldCtx) (W : C.W_lies_possible) : ∃ w a P, C.Lie w a P :=
-  WorldCtx.lie_possible_of_W C W
+def cluster_world_lies_possible := WorldCtx.lie_possible_of_W
 
 /-- Cluster `.world_bounded_audit`: audit cannot complete before deadline under W_bounded_verification. -/
-theorem cluster_world_bounded_audit
-    (C : WorldCtx) (w : C.World) (P : C.Claim) (k t : Nat) :
-    C.RequiresSteps w P k → t < k → ¬C.VerifyWithin w P t :=
-  WorldCtx.bounded_audit_fails C w P k t
+def cluster_world_bounded_audit := WorldCtx.bounded_audit_fails
 
 /-- Cluster `.world_asymmetric_costs`: export cost strictly less than defense cost under W_asymmetric_costs. -/
-theorem cluster_world_asymmetric_costs
-    (C : WorldCtx) (W : C.W_asymmetric_costs) : W.export_cost < W.defense_cost :=
-  WorldCtx.cost_asymmetry_of_W C W
+def cluster_world_asymmetric_costs := WorldCtx.cost_asymmetry_of_W
 
 /-- Cluster `.world_partial_observability`: partial observability blocks omniscience —
-    there exists a proposition no agent can determine from observations alone.
-    This is the epistemic-gap argument, orthogonal to the PRP cost-budget argument. -/
-theorem cluster_world_partial_observability
-    (C : WorldCtx) (W : C.W_partial_observability) : ∃ P, C.NotDeterminedByObs P :=
-  WorldCtx.partial_obs_no_omniscience C W
+    there exists a proposition no agent can determine from observations alone. -/
+def cluster_world_partial_observability := WorldCtx.partial_obs_no_omniscience
 
 /-- Cluster `.world_spoofed_v`: spoofed provenance or consultation suppression contradicts
-    any existing verification path. If a path (PathExists d) exists and V is spoofed or
-    consultation is suppressed, the two assumptions together derive False. -/
+    any existing verification path. -/
 theorem cluster_world_spoofed_v
     {PropLike Standard ErrorModel Provenance : Type u}
     (W : W_spoofedV (PropLike := PropLike) (Standard := Standard)
@@ -787,62 +765,35 @@ theorem cluster_world_spoofed_v
     (EpArch.V_spoof d ∨ EpArch.consultation_suppressed a) → False :=
   spoofed_V_blocks_path_of_W W d a p
 
-/-- Cluster `.world_lies_scale`: lies scale — export cost < defense cost under W_lies_scale.
-    Grounded: see `concrete_W_lies_scale` for the non-axiomatic instance. -/
-theorem cluster_world_lies_scale (W : W_lies_scale) :
-    W.export_cost < W.defense_cost :=
-  lies_scale_of_W W
+/-- Cluster `.world_lies_scale`: lies scale — export cost < defense cost under W_lies_scale. -/
+def cluster_world_lies_scale := lies_scale_of_W
 
 /-- Cluster `.world_rolex_ddos`: individual and population attacks are structurally equivalent. -/
-theorem cluster_world_rolex_ddos (W : W_rolex_ddos) :
-    same_structure W.rolex_structure W.ddos_structure :=
-  rolex_ddos_structural_equivalence_of_W W
+def cluster_world_rolex_ddos := rolex_ddos_structural_equivalence_of_W
 
-/-- Cluster `.world_ddos`: any DDoS vector causes verification collapse under W_ddos.
-    Proof requires genuine 4-way case dispatch in `ddos_causes_verification_collapse_of_W`. -/
-theorem cluster_world_ddos
-    (W : W_ddos) (a : Agent) :
-    (EpArch.ladder_overloaded a ∨ EpArch.V_channel_exhausted a ∨
-     EpArch.E_field_poisoned a ∨ EpArch.denial_triggered a) →
-    EpArch.verification_collapsed a :=
-  ddos_causes_verification_collapse_of_W W a
+/-- Cluster `.world_ddos`: any DDoS vector causes verification collapse under W_ddos. -/
+def cluster_world_ddos := ddos_causes_verification_collapse_of_W
 
 
 -- ── Constraint-modularity meta-theorems ───────────────────────────────────────
 
-/-- Cluster `.meta_modular`: the seven EpArch constraints are independent modules.
-    Any subset S of the seven constraints defines a self-consistent configuration:
-    if W partially satisfies S, the forcing theorems for every constraint in S hold. -/
-theorem cluster_meta_modular (S : ConstraintSubset) (W : WorkingSystem)
-    (pwf : PartialWellFormed W S) : projection_valid S W :=
-  modular S W pwf
+/-- Cluster `.meta_modular`: the seven EpArch constraints are independent modules. -/
+def cluster_meta_modular := modular
 
 
 -- ── Lattice-stability theorems ─────────────────────────────────────────────────
 
 /-- Cluster `.lattice_graceful`: graceful degradation — removing self-correction
     collapses the RevisionGate obligation to True (vacuously satisfied). -/
-theorem cluster_lattice_graceful (M : CoreModel) (h : NoSelfCorrection M) :
-    RevisionGate M :=
-  graceful_degradation M h
+def cluster_lattice_graceful := graceful_degradation
 
 /-- Cluster `.lattice_sub_safety`: compatible extension of any sub-bundle that
     already satisfies RevisionGate preserves RevisionGate. -/
-theorem cluster_lattice_sub_safety (S : SubBundle) (E : ExtModel)
-    (h_compat : Compatible E S.model) (h_gate : RevisionGate S.model) :
-    RevisionGate (forget E) :=
-  sub_revision_safety S E h_compat h_gate
+def cluster_lattice_sub_safety := sub_revision_safety
 
 /-- Cluster `.lattice_pack`: EpArch is a floor, not a cage — the full
-    bidirectional lattice-stability result (graceful degradation + sub-level
-    revision safety + full-level revision safety). -/
-theorem cluster_lattice_pack :
-    (∀ (M : CoreModel), NoSelfCorrection M → RevisionGate M) ∧
-    (∀ (S : SubBundle) (E : ExtModel),
-        Compatible E S.model → RevisionGate S.model → RevisionGate (forget E)) ∧
-    (∀ (C : CoreModel) (R : RevisionSafeExtension C),
-        RevisionGate C → RevisionGate (forget R.ext)) :=
-  modularity_pack
+    bidirectional lattice-stability result. -/
+def cluster_lattice_pack := modularity_pack
 
 
 /-! ## §8  Sample Configurations

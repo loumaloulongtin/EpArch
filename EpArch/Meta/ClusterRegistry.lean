@@ -361,63 +361,11 @@ def explainConfig (cfg : EpArchConfig) : List ClusterTag :=
 
 /-! ## §4  Human-Readable Output -/
 
-/-- One-line description of each cluster (theorem name in parentheses). -/
-def clusterDescription : ClusterTag → String
-  -- Tier 3: health-goal transport clusters
-  | .goal_safeWithdrawal =>
-      "[Tier 3] SafeWithdrawalGoal transports via Compatible  (transport_safe_withdrawal)"
-  | .goal_reliableExport =>
-      "[Tier 3] ReliableExportGoal transports via Compatible  (transport_reliable_export)"
-  | .goal_soundDeposits =>
-      "[Tier 3] SoundDepositsGoal transports via Compatible  (transport_sound_deposits)"
-  | .goal_selfCorrection =>
-      "[Tier 3] SelfCorrectionGoal transports via Compatible  (transport_self_correction)"
-  | .goal_corrigible_universal =>
-      "[Tier 3] CorrigibleLedgerGoal forall-part transports via Compatible  (transport_corrigible_universal)"
-  | .goal_corrigible_full =>
-      "[Tier 3] CorrigibleLedgerGoal full exists+forall transports via SurjectiveCompatible  (transport_corrigible_ledger)"
-  | .tier4_commitments =>
-      "[Tier 4-A] C3/C4b/C7b/C8 unconditional commitment theorems (commitments_pack); C1/C2/C5/C6b proved as named theorems"
-  | .tier4_structural =>
-      "[Tier 4-B] Structural theorems unconditional: SEV/Temporal/Monolithic/Header  (structural_theorems_unconditional)"
-  | .tier4_lts_universal =>
-      "[Tier 4-B+] LTS-universal: withdrawal/repair/submit gates  (lts_theorems_step_universal)"
-  | .tier4_bank_goals_compat =>
-      "[Tier 4-C] All forall-health goals + universal corrigibility via Compatible  (concrete_bank_all_goals_transport)"
-  | .tier4_bank_goals_surj =>
-      "[Tier 4-C+] All health goals + full CorrigibleLedgerGoal via SurjectiveCompatible  (concrete_bank_all_goals_transport_surj)"
-  | .world_lies_possible =>
-      "[World] W_lies_possible: lying is structurally possible  (WorldCtx.lie_possible_of_W)"
-  | .world_bounded_audit =>
-      "[World] W_bounded_verification: audit can fail before deadline  (WorldCtx.bounded_audit_fails)"
-  | .world_asymmetric_costs =>
-      "[World] W_asymmetric_costs: export cost < defense cost  (WorldCtx.cost_asymmetry_of_W)"
-  | .world_partial_observability =>
-      "[World] W_partial_observability: obs underdetermines truth -> no omniscience  (WorldCtx.partial_obs_no_omniscience)"
-  | .world_spoofed_v =>
-      "[World] W_spoofedV: spoofed-V blocks provenance path  (AdversarialObligations.spoofed_V_blocks_path_of_W)"
-  | .world_lies_scale =>
-      "[World] W_lies_scale: lies scale (export < defense cost)  (AdversarialObligations.lies_scale_of_W)"
-  | .world_rolex_ddos =>
-      "[World] W_rolex_ddos: individual and population attacks structurally equivalent  (AdversarialObligations.rolex_ddos_structural_equivalence_of_W)"
-  | .world_ddos =>
-      "[World] W_ddos: DDoS causes verification collapse  (AdversarialObligations.ddos_causes_verification_collapse_of_W)"
-  | .meta_modular =>
-      "[Meta] Constraint-subset modularity: forall S W, PartialWellFormed W S -> projection_valid S W  (Meta.Modular.modular)"
-  | .lattice_graceful =>
-      "[Lattice] Graceful degradation: NoSelfCorrection M -> RevisionGate M  (Modularity.graceful_degradation)"
-  | .lattice_sub_safety =>
-      "[Lattice] Sub-level revision safety: Compatible extension of any sub-bundle with RevisionGate preserves RevisionGate  (Modularity.sub_revision_safety)"
-  | .lattice_pack =>
-      "[Lattice] EpArch is a floor, not a cage: full bidirectional lattice-stability  (Modularity.modularity_pack)"
-  -- Tier 2: only forcing tags reach this arm; dispatch through constraintMeta
-  | t => match constraintClusterOfTag? t with
-         | some c => (constraintMeta c).description
-         | none   => panic! "unreachable: all non-Tier-2 ClusterTags are handled above"
-
-/-- Human-readable list of all cluster descriptions enabled by `cfg`. -/
+/-- Human-readable list of enabled cluster tags for `cfg`.
+    Each tag is shown by its constructor name (from `Repr ClusterTag`).
+    Full descriptions of each cluster live in `DOCS/MODULARITY.md`. -/
 def showConfig (cfg : EpArchConfig) : List String :=
-  (explainConfig cfg).map clusterDescription
+  (explainConfig cfg).map reprStr
 
 
 end EpArch.Meta.Config

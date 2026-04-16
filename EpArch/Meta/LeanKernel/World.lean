@@ -53,7 +53,6 @@ Case structures at the kernel level:
 - `LeanVacuousStandard` — a `sorry ⊢ False` proof; `lean_vacuous_standard_is_void`
   proves void S.
 - `lean_S_failure_taxonomy` — both S-failure kinds appear at the kernel level.
-- `lean_s_failure_VE_data` — V and E evidence surfaces in any kernel S-failure.
 
 ## Limitation
 
@@ -205,8 +204,7 @@ theorem lean_kernel_satisfies_bundles :
     places `LeanKernelCtx` alongside `WitnessCtx` from EpArch.WorldWitness as
     a concrete witness, but with kernel-specific bundle interpretations:
     sorry / heartbeat / proof-irrelevance. -/
-theorem lean_kernel_theory_floor : EpArch.Meta.TheoryFloor LeanKernelCtx :=
-  lean_kernel_satisfies_bundles
+def lean_kernel_theory_floor := lean_kernel_satisfies_bundles
 
 
 /-! ## CAP Theorem on the Lean Kernel -/
@@ -253,26 +251,6 @@ theorem lean_is_eparch_world :
       Nonempty C.W_bounded_verification ∧
       Nonempty C.W_partial_observability :=
   ⟨LeanKernelCtx, lean_kernel_satisfies_bundles⟩
-
-
-/-! ## Architecture Layer: Lean as a Working System -/
-
-/-- `LeanKernelSystemSpec`: the Lean kernel's architectural features as `SystemSpec`.
-    | SystemSpec field          | Lean kernel feature                                        |
-    |---------------------------|-----------------------------------------------------------|
-    | `has_bubble_separation`   | Namespaces + module scoping = scoped trust zones          |
-    | `has_trust_bridges`       | `import` declarations = cross-module trust bridges        |
-    | `preserves_headers`       | Type signatures = headers preserved across elaboration    |
-    | `has_revocation`          | Kernel rejects ill-typed terms; sorry taints tracked      |
-    | `has_shared_ledger`       | Shared `Environment` accumulates all declarations         |
-    | `has_redeemability`       | `#print axioms` verifies zero-sorry (redeemability)       | -/
-def LeanKernelSystemSpec : SystemSpec where
-  has_bubble_separation := true   -- Lean namespaces / module system = scoped trust zones
-  has_trust_bridges     := true   -- `import` declarations = cross-module trust bridges
-  preserves_headers     := true   -- type signatures = headers preserved across elaboration
-  has_revocation        := true   -- kernel rejects ill-typed terms; sorry taints tracked
-  has_shared_ledger     := true   -- shared `Environment` = bank (shared ledger)
-  has_redeemability     := true   -- `#print axioms` = zero-sorry redeemability check
 
 
 /-! ## Architecture Evidence: Domain Types and Grounded Feature Witnesses
@@ -771,29 +749,13 @@ theorem lean_no_flat_namespace_resolver
   lean_namespace_requires_scope_separation ⟨f, h₁, h₂⟩
 
 
-/-! ## Single-Feature Grounded Spec (Stepping Stone)
-
-`LeanGroundedBubbles` and the full `LeanGroundedSystemSpec` are defined above
-in the Architecture Evidence section.  `LeanKernelSystemSpecGrounded` below
-grounds only `has_bubble_separation` and is the intermediate artifact from
-before the full seven-feature grounding was available. -/
-
-/-- A `SystemSpec` for the Lean kernel grounded in `LeanGroundedBubbles`.
-
-    This is `LeanKernelSystemSpec` with `has_bubble_separation` set
-    *because* `LeanGroundedBubbles` was provided — not asserted manually.
-    The other five fields are copied from `LeanKernelSystemSpec`. -/
-def LeanKernelSystemSpecGrounded : SystemSpec :=
-  SystemSpec.withGroundedBubbles LeanGroundedBubbles LeanKernelSystemSpec
-
-/-- `HasBubbles` holds for a `WorkingSystem` whose spec is
-    `LeanKernelSystemSpecGrounded`, derived from evidence.
+/-- `HasBubbles` holds for `LeanWorkingSystem`, derived from `LeanGroundedSystemSpec`.
 
     Traces back to `LeanGroundedBubbles`, `openNatAccepts`, and
     `leanNamespaceDisagreement`. -/
 theorem lean_has_bubbles_grounded :
-    spec_has_bubbles LeanKernelSystemSpecGrounded :=
-  grounded_bubbles_justified LeanGroundedBubbles LeanKernelSystemSpec
+    spec_has_bubbles LeanGroundedSystemSpec.toSystemSpec :=
+  grounded_bubbles_justified LeanGroundedBubbles LeanGroundedSystemSpec.toSystemSpec
 
 
 /-! ## Structural Forcing -/
@@ -850,8 +812,7 @@ def lean_grounded_consequences :=
       convergence_structural`.
 
     This alias uses the direct route (`lean_implements_bank_primitives`). -/
-theorem lean_kernel_forces_bank_primitives : containsBankPrimitives LeanWorkingSystem :=
-  lean_implements_bank_primitives
+def lean_kernel_forces_bank_primitives := lean_implements_bank_primitives
 
 /-- The Lean kernel satisfies all EpArch requirements — both layers.
 

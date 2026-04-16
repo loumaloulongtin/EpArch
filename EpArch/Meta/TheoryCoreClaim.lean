@@ -107,16 +107,6 @@ def AddTheoryCore (C : WorldCtx) (P0 : C.Claim) : WorldCtx where
 
 /-! ## 3. Transfer Lemma: Underdetermination Lifts -/
 
-/-- PartialObs is preserved under AddTheoryCore (obs is unchanged). -/
-theorem addTheoryCore_partialObs_iff (C : WorldCtx) (P0 : C.Claim) (w0 w1 : C.World) :
-    (AddTheoryCore C P0).PartialObs w0 w1 ↔ C.PartialObs w0 w1 := by
-  simp only [WorldCtx.PartialObs, AddTheoryCore]
-
-/-- Truth of theory_core equals truth of the base claim P0. -/
-theorem addTheoryCore_truth_theory_core (C : WorldCtx) (P0 : C.Claim) (w : C.World) :
-    (AddTheoryCore C P0).Truth w (Sum.inr MetaClaim.theory_core) = C.Truth w P0 := by
-  rfl
-
 /-- Underdetermination transfers: if P0 is underdetermined in C, then theory_core
     is underdetermined in AddTheoryCore C P0.
 
@@ -129,7 +119,7 @@ theorem lift_notDeterminedByObs_theory_core (C : WorldCtx) (P0 : C.Claim) :
   -- Construct the same witnesses for the extended context
   refine ⟨w0, w1, ?_, ?_⟩
   -- PartialObs is preserved (obs is unchanged)
-  · exact (addTheoryCore_partialObs_iff C P0 w0 w1).mpr h_obs
+  · exact h_obs  -- PartialObs inherited from C (obs field unchanged)
   -- Truth difference transfers (theory_core aliases P0)
   · simp only [AddTheoryCore]
     exact h_diff

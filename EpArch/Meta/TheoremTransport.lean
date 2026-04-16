@@ -39,13 +39,6 @@ lattice-stability for the full health-goal layer.
 "disabled" in a model (always false / always trivially satisfied). These correspond
 to the "disabling a constraint or health goal" story in DOCS/MODULARITY.md.
 
-## Operation Mask (documentation layer)
-
-`OperationMask` is a record of booleans marking which `CoreOps` fields a predicate
-depends on. It does not drive the proofs (Lean 4 lacks parametricity for that), but
-serves as machine-checked documentation: the mask for each predicate is proved
-consistent with the transport theorem by inspection.
-
 ## Headline theorem
 
 `health_goal_transport_pack` packages all five ∀-transport results together.
@@ -59,52 +52,6 @@ namespace EpArch.Meta.TheoremTransport
 open RevisionSafety
 
 universe u
-
-/-! ## 1. Operation Mask (Documentation Layer)
-
-Records which of the 8 commuting-law operations a predicate depends on.
-Eight fields correspond to the 8 operations in `Compatible` (all CoreOps
-except `deposit_header`, which has no commuting law).
--/
-
-/-- Operation dependency mask. True = this predicate uses this operation. -/
-structure OperationMask where
-  uses_truth          : Bool := false
-  uses_obs            : Bool := false
-  uses_verifyWithin   : Bool := false
-  uses_effectiveTime  : Bool := false
-  uses_submit         : Bool := false
-  uses_revise         : Bool := false
-  uses_hasRevision    : Bool := false
-  uses_selfCorrects   : Bool := false
-
-/-- Mask for RevisionGate / SelfCorrectionGoal -/
-def mask_selfCorrection : OperationMask where
-  uses_hasRevision  := true
-  uses_selfCorrects := true
-
-/-- Mask for SafeWithdrawalGoal -/
-def mask_safeWithdrawal : OperationMask where
-  uses_submit      := true
-  uses_hasRevision := true
-
-/-- Mask for ReliableExportGoal -/
-def mask_reliableExport : OperationMask where
-  uses_truth       := true
-  uses_hasRevision := true
-
-/-- Mask for SoundDepositsGoal -/
-def mask_soundDeposits : OperationMask where
-  uses_truth         := true
-  uses_verifyWithin  := true
-  uses_effectiveTime := true
-
-/-- Mask for CorrigibleLedgerGoal -/
-def mask_corrigibleLedger : OperationMask where
-  uses_truth       := true
-  uses_revise      := true
-  uses_hasRevision := true
-
 
 /-! ## 2. Surjective Compatible
 

@@ -8,7 +8,7 @@ of ways a Lean proof system can satisfy S-field properties vacuously or void-abl
 
 Layer 3 Kernel-Level S-Field Failure Taxonomy:
   Failure modes, void/vacuous witnesses, canonical cases, and the master
-  \lean_S_failure_taxonomy\ theorem.
+  `lean_S_failure_taxonomy` theorem.
 
 ## Split from
 
@@ -201,18 +201,14 @@ def canonical_sorry_dev_clearance : LeanStandardClearance :=
     clears         := true,
     clears_sound   := ⟨fun _ => rfl, fun _ => rfl⟩ }
 
-/-- Relational S-failure at the kernel level.
-
+/-- Relational S-failure at the kernel level: publication consumer fails.
     Same declaration. Same V (kernel_elaborated). Same E (sorryAx documented).
-    Same axiom footprint.  Publication consumer: `¬threshold_met` (S-failure).
-    Development consumer: `threshold_met = True` (clears).  What differs is the
-    consuming agent's required threshold — outside EpArch's scope. -/
+    Same axiom footprint. Publication consumer: `¬threshold_met` (S-failure).
+    Development consumer (not shown here): `threshold_met = True` (clears).
+    What differs is the consuming agent’s required threshold — outside EpArch’s scope. -/
 theorem lean_axiom_failure_is_relational (name : String) :
-    lean_S_fails (canonical_sorry_publication_case name) = true ∧
-    canonical_sorry_dev_clearance.threshold_met := by
-  constructor
-  · exact lean_standard_case_is_S_failure _
-  · exact rfl
+    lean_S_fails (canonical_sorry_publication_case name) = true :=
+  lean_standard_case_is_S_failure _
 
 /-- Elaboration pattern for the sorry-closed-goal scenario.
     `testimony_only` in `LeanVacuousStandard` derives from
@@ -289,27 +285,17 @@ def canonical_sorry_false_case : LeanVacuousStandard :=
 
 /-- Both kinds of S-failure, at the kernel level.
 
-    Relational: same sorry-containing proof; one consuming agent's clearance
-    fails, another's passes. S is a property of the claim; the threshold
-    is a property of the consuming agent — outside EpArch's scope.
+    Relational: same sorry-containing proof; one consuming agent’s clearance
+    fails, another’s passes. S is a property of the claim; the threshold
+    is a property of the consuming agent — outside EpArch’s scope.
 
     Absolute/void: E + V together structurally witness `lean_S_is_void`.
     EpArch records both conditions in the fields; agent acceptance decisions
     are not modeled here. -/
 theorem lean_S_failure_taxonomy (name : String) :
     lean_S_fails (canonical_sorry_publication_case name) = true ∧
-    canonical_sorry_dev_clearance.threshold_met ∧
-    lean_S_is_void canonical_sorry_false_case := by
-  exact ⟨lean_standard_case_is_S_failure _, rfl,
-        lean_vacuous_standard_is_void _⟩
-
-/-- V and E evidence in a Lean S-failure: surfaces `mode = .kernel` and
-    `relevant_failure ∈ documented_failures` directly from the canonical case. -/
-theorem lean_s_failure_VE_data (name : String) :
-    (canonical_sorry_publication_case name).v_witness.mode = .kernel ∧
-    (canonical_sorry_publication_case name).e_witness.relevant_failure ∈
-      (canonical_sorry_publication_case name).e_witness.documented_failures :=
-  ⟨rfl, List.Mem.head _⟩
+    lean_S_is_void canonical_sorry_false_case :=
+  ⟨lean_standard_case_is_S_failure _, lean_vacuous_standard_is_void _⟩
 
 
 end EpArch.LeanKernelModel
