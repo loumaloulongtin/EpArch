@@ -128,7 +128,8 @@ Inactive constraints (S.X = false) require only `fun h => absurd h (by decide)`.
 | `export_across`  | Export across bounds    | `GroundedHeaders`          |
 | `adversarial`    | Adversarial pressure    | `GroundedRevocation`       |
 | `coordination`   | Coordination need       | `GroundedBank`             |
-| `truth_pressure` | Truth pressure          | `GroundedRedeemability`    | -/
+| `truth_pressure` | Truth pressure          | `GroundedRedeemability`    |
+| `multi_agent`    | Multi-agent access      | `GroundedAuthorization`    | -/
 
 /-- The compliance form: evidence for each EpArch constraint in S.
 
@@ -142,7 +143,8 @@ Inactive constraints (S.X = false) require only `fun h => absurd h (by decide)`.
     def MyConstraints : ConstraintSubset :=
       { distributed := true, adversarial := true,
         bounded_audit := false, export_across := false,
-        coordination := false, truth_pressure := false }
+        coordination := false, truth_pressure := false,
+        multi_agent := false }
 
     def MySpec : PartialGroundedSpec MyConstraints where
       bubbles       := fun _ => MyGroundedBubbles    -- real domain evidence
@@ -151,6 +153,7 @@ Inactive constraints (S.X = false) require only `fun h => absurd h (by decide)`.
       headers       := fun h => absurd h (by decide)
       bank          := fun h => absurd h (by decide)
       redeemability := fun h => absurd h (by decide)
+      authorization := fun h => absurd h (by decide)
 
     -- If this compiles, your design is EpArch-compliant for MyConstraints:
     #check (partial_modular MyConstraints MySpec)
