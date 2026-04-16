@@ -11,7 +11,7 @@ implementations can differ.
 
 Key exports:
 - WorkingSystem (record wrapping SystemSpec configuration flags)
-- Six structural impossibility models and their impossibility theorems
+- Seven structural impossibility models and their impossibility theorems
 -/
 
 import EpArch.Basic
@@ -84,7 +84,7 @@ def HasRedeemability (W : WorkingSystem) : Prop := W.spec.has_redeemability = tr
 def HasGranularACL (W : WorkingSystem) : Prop := W.spec.has_granular_acl = true
 
 
-/-! ## Six Operational Properties
+/-! ## Seven Operational Properties
 
 These are the functional requirements that working systems must satisfy.
 Each maps to one constraint in the table. -/
@@ -127,14 +127,14 @@ def handles_multi_agent (W : WorkingSystem) : Prop :=
 
 /-! ## Pressure: The Canonical Dimension Index
 
-`Pressure` is the machine-exhaustive index of EpArch's six architectural
+`Pressure` is the machine-exhaustive index of EpArch's seven architectural
 forcing dimensions.  Using it as the canonical index for `handles_pressure`,
 `forced_feature`, `SatisfiesAllProperties`, and `containsBankPrimitives`
-means the coverage of the framework — exactly these six and no others —
+means the coverage of the framework — exactly these seven and no others —
 is a typed fact, not a counting convention.
 
 A proof that pattern-matches on `Pressure` is checked by Lean for
-exhaustiveness: adding a seventh dimension requires adding a seventh
+exhaustiveness: adding an eighth dimension requires adding an eighth
 constructor here, which would break every existing `cases P` proof
 until the new forcing chain is supplied. -/
 
@@ -169,8 +169,8 @@ def forced_feature (W : WorkingSystem) : Pressure → Prop
   | .redeemability => HasRedeemability W
   | .authorization => HasGranularACL W
 
-/-- A working system satisfies ALL six operational properties — indexed by `Pressure`.
-    The six-ness is machine-checked: `cases P` in any proof is
+/-- A working system satisfies ALL seven operational properties — indexed by `Pressure`.
+    The seven-ness is machine-checked: `cases P` in any proof is
     exhaustiveness-verified by Lean. -/
 def SatisfiesAllProperties (W : WorkingSystem) : Prop :=
   ∀ P : Pressure, handles_pressure W P
@@ -183,13 +183,13 @@ def containsBankPrimitives (W : WorkingSystem) : Prop :=
 
 /-! ## Constraint Subset and Partial Well-Formedness -/
 
-/-- A subset of the six EpArch operational constraints, represented as a
-    6-boolean vector. `true` = constraint included; `false` = dropped.
+/-- A subset of the seven EpArch operational constraints, represented as a
+    7-boolean vector. `true` = constraint included; `false` = dropped.
 
     Examples:
-    - `allConstraints`  — all six included (strongest case)
+    - `allConstraints`  — all seven included (strongest case)
     - `noConstraints`   — none included (no forcing theorems claimed)
-    - `⟨true, false, false, false, true, false⟩` — only distributed + coordination -/
+    - `⟨true, false, false, false, true, false, false⟩` — only distributed + coordination -/
 structure ConstraintSubset where
   distributed    : Bool
   bounded_audit  : Bool
@@ -226,7 +226,7 @@ structure PartialWellFormed (W : WorkingSystem) (S : ConstraintSubset) : Prop wh
 
 /-! ## Grounded Behavioral Evidence
 
-The six capability witnesses correspond exactly to the six `GroundedX` structures:
+The seven capability witnesses correspond exactly to the seven `GroundedX` structures:
 
 | WorkingSystem field  | GroundedXStrict type            | Forcing dimension                                     |
 |----------------------|---------------------------------|-------------------------------------------------------|
@@ -235,9 +235,10 @@ The six capability witnesses correspond exactly to the six `GroundedX` structure
 | `headers_ev`         | `GroundedHeadersStrict`         | Export across boundaries — header preservation        |
 | `revocation_ev`      | `GroundedRevocationStrict`      | Adversarial pressure — revocation                     |
 | `bank_ev`            | `GroundedBankStrict`            | Coordination need — shared ledger                     |
-| `redeemability_ev`   | `GroundedRedeemabilityStrict`   | Truth pressure — redeemability                        | -/
+| `redeemability_ev`   | `GroundedRedeemabilityStrict`   | Truth pressure — redeemability                        |
+| `authorization_ev`   | `GroundedAuthorizationStrict`   | Multi-agent access — granular ACL                     | -/
 
-/-- Evidence for all six behavioral capabilities of a `WorkingSystem`.
+/-- Evidence for all seven behavioral capabilities of a `WorkingSystem`.
 
     One `GroundedX` field per forcing dimension.  Supplying a `GroundedBehavior`
     to `withGroundedBehavior` sets each `Option GroundedX` field in `WorkingSystem`
@@ -258,7 +259,7 @@ structure GroundedBehavior where
   /-- Authorization: a restricted-agent witness demonstrates granular ACL. -/
   authorization : GroundedAuthorization
 
-/-- Build a `WorkingSystem` with all six proof-carrying option fields set from evidence. -/
+/-- Build a `WorkingSystem` with all seven proof-carrying option fields set from evidence. -/
 def WorkingSystem.withGroundedBehavior (B : GroundedBehavior) (base : WorkingSystem) : WorkingSystem :=
   { base with
     bubbles_ev       := some B.bubbles.toStrict
@@ -269,7 +270,7 @@ def WorkingSystem.withGroundedBehavior (B : GroundedBehavior) (base : WorkingSys
     redeemability_ev := some B.redeemability.toStrict
     authorization_ev := some B.authorization.toStrict }
 
-/-- A `WorkingSystem` built from `GroundedBehavior` satisfies all six operational
+/-- A `WorkingSystem` built from `GroundedBehavior` satisfies all seven operational
     properties. -/
 theorem grounded_behavior_satisfies_all (B : GroundedBehavior) (W : WorkingSystem) :
     SatisfiesAllProperties (WorkingSystem.withGroundedBehavior B W) := by
@@ -279,8 +280,8 @@ theorem grounded_behavior_satisfies_all (B : GroundedBehavior) (W : WorkingSyste
         handles_truth_pressure, handles_multi_agent,
         WorkingSystem.withGroundedBehavior, Option.isSome]
 
-/-- `SatisfiesAllProperties` implies all six evidence option fields are present.
-    Extracts the six `isSome = true` facts from the property predicate. -/
+/-- `SatisfiesAllProperties` implies all seven evidence option fields are present.
+    Extracts the seven `isSome = true` facts from the property predicate. -/
 theorem satisfies_all_fixes_flags (W : WorkingSystem) (h : SatisfiesAllProperties W) :
     W.bubbles_ev.isSome       = true ∧
     W.bridges_ev.isSome       = true ∧
@@ -330,10 +331,10 @@ theorem grounded_partial_wellformed (B : GroundedBehavior) (G : GroundedSystemSp
 
 /-! ## Global Impossibility and Convergence -/
 
-/-- All six forced features together constitute Bank-like architecture.
+/-- All seven forced features together constitute Bank-like architecture.
 
     This is a definitional theorem: `containsBankPrimitives W` is
-    `∀ P : Pressure, forced_feature W P` — providing the six `Has*`
+    `∀ P : Pressure, forced_feature W P` — providing the seven `Has*`
     witnesses satisfies it by case analysis on `P`. -/
 theorem all_features_constitute_bank (W : WorkingSystem) :
   HasBubbles W → HasTrustBridges W → HasHeaders W →
@@ -1256,7 +1257,7 @@ theorem soft_closed_when_universal (M : SoftFalsifiability)
 
 /-! ### §6c. Forcing Stratification: Hard vs Soft Forcing for Truth Pressure
 
-The six forcing dimensions do not all have the same tightness.
+The seven forcing dimensions do not all have the same tightness.
 
 Hard forcing: impossibility follows from the structure alone, without additional
 behavioral coverage assumptions.  Scope, revocation, bank, and partial contestation
@@ -1392,7 +1393,7 @@ theorem flat_authorization_impossible (M : TwoTierAccess)
     (h_flat : ∃ (f : M.Agent → M.Claim → Prop),
       (∀ a c, f a c ↔ M.can_propose a c) ∧
       (∀ a c, f a c ↔ M.can_commit a c)) : False :=
-  let ⟨f, hprop, hcommit⟩ := h_flat
+  let ⟨_f, hprop, hcommit⟩ := h_flat
   M.cannot_commit ((hcommit M.submitter M.tier_claim).mp
     ((hprop M.submitter M.tier_claim).mpr M.may_propose))
 
@@ -1404,7 +1405,7 @@ attribute-based ACL escape `flat_authorization_impossible`?
 
 This section instantiates each alternative, then shows it directly supplies
 a `GroundedAuthorization` instance (with both a positive and a negative witness).
-`GroundedAuthorizationStrict.`GroundedAuthorizationStrict.no_flat_tier` then fires directly, or
+`GroundedAuthorizationStrict.no_flat_tier` then fires directly, or
 equivalently, `flat_authorization_impossible` fires via `groundedAuthorization_to_scenario`.
 
 **RBAC.**  The commit tier is role-derived authorization; the submission tier is
@@ -1573,7 +1574,7 @@ explicit: given any `GroundedX` witness, the matching impossibility result fires
 `GroundedXStrict` packages the base evidence with its impossibility consequence —
 the non-trivial `Prop` that falls out of the bridge.
 
-**Relation to WorkingSystem.**  `WorkingSystem` carries six `Option GroundedXStrict`
+**Relation to WorkingSystem.**  `WorkingSystem` carries seven `Option GroundedXStrict`
 fields.  The `GroundedXStrict` structures are defined in EpArch.SystemSpec (where
 they only depend on `GroundedX` fields).
 
