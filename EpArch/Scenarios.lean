@@ -617,11 +617,14 @@ theorem uniform_access_acl_embed
     (h_no_acl_uniform : ¬HasGranularACL W → ∀ (a : R.Agent) (P : R.Claim), R.authorize a P) :
     handles_multi_agent W →
     HasGranularACL W ∨
-    (∃ M : UniformAccessScenario, ∀ (a : M.Agent) (P : M.Claim), M.authorize a P) := by
+    (∃ M : UniformAccessScenario, ∀ (a b : M.Agent) (P : M.Claim), M.authorize a P ↔ M.authorize b P) := by
   intro _
   by_cases h : HasGranularACL W
   · exact Or.inl h
-  · exact Or.inr ⟨R.toScenario, h_no_acl_uniform h⟩
+  · -- h_no_acl_uniform h : ∀ a P, R.authorize a P
+    -- Lift to the iff form: both sides hold, so the biconditional is trivial.
+    have h_all := h_no_acl_uniform h
+    exact Or.inr ⟨R.toScenario, fun a b P => ⟨fun _ => h_all b P, fun _ => h_all a P⟩⟩
 
 
 /-! ## Bundled Witness Packages

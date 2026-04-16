@@ -63,9 +63,9 @@ structure EvidenceConsequences (W : WorkingSystem) : Prop where
   /-- Redeemability forcing: a constrained-and-redeemable witness is known. -/
   redeemability_consequence : ∀ G : GroundedRedeemabilityStrict, W.redeemability_ev = some G →
       ∃ c : G.base.Claim, G.base.constrained c ∧ G.base.redeemable c
-  /-- Authorization forcing: a uniform-access policy is impossible given the known restriction. -/
+  /-- Authorization forcing: agent-uniform authorization is impossible given the two-witness differentiation. -/
   authorization_consequence : ∀ G : GroundedAuthorizationStrict, W.authorization_ev = some G →
-      ¬∀ (a : G.base.Agent) (P : G.base.Claim), G.base.authorize a P
+      ¬∀ (a b : G.base.Agent) (P : G.base.Claim), G.base.authorize a P ↔ G.base.authorize b P
 
 /-- A system is structurally forced: for every pressure dimension, handling
     the capability implies the forced architectural feature.
@@ -191,17 +191,18 @@ def BridgeRedeemability (_W : WorkingSystem) : Prop :=
 theorem bridge_redeemability_impossible (_W : WorkingSystem) : ¬BridgeRedeemability _W :=
   fun ⟨M, c, hc⟩ => closed_system_unfalsifiable M ⟨c, hc⟩
 
-/-- A system is bridge-committed on authorization: a uniform access policy covers all agents. -/
+/-- A system is bridge-committed on authorization: all agents have equivalent authorization
+    for every claim (agent-uniform access).  The commitment that `uniform_access_impossible`
+    proves is universally impossible: the scenario already carries two witnesses with
+    strictly different authorization for the same claim. -/
 def BridgeAuthorization (_W : WorkingSystem) : Prop :=
-  ∃ M : UniformAccessScenario, ∀ (a : M.Agent) (P : M.Claim), M.authorize a P
+  ∃ M : UniformAccessScenario, ∀ (a b : M.Agent) (P : M.Claim), M.authorize a P ↔ M.authorize b P
 
-/-- The authorization bridge scenario is universally impossible: a uniform-access policy
-    (all agents authorized) cannot coexist with the known agent differentiation.
-    Proof: `∀ a P, authorize a P` implies `∀ a b P, authorize a P ↔ authorize b P`
-    (trivially, since both sides hold), which contradicts `uniform_access_impossible`. -/
+/-- The authorization bridge scenario is universally impossible: agent-uniform authorization
+    contradicts the two-witness differentiation carried by `UniformAccessScenario`.
+    Proof: passes the agent-uniform hypothesis directly to `uniform_access_impossible`. -/
 theorem bridge_authorization_impossible (_W : WorkingSystem) : ¬BridgeAuthorization _W :=
-  fun ⟨M, h_all⟩ =>
-    uniform_access_impossible M (fun a b P => ⟨fun _ => h_all b P, fun _ => h_all a P⟩)
+  fun ⟨M, h⟩ => uniform_access_impossible M h
 
 
 /-- Maps each `Pressure` dimension to its bridge-scenario predicate.
@@ -267,7 +268,7 @@ theorem embedding_to_structurally_forced (W : WorkingSystem) (E : ForcingEmbeddi
     revocation_consequence    := fun G _h_ev => G.has_invalid_revocable_witness
     bank_consequence          := fun G _h_ev => G.has_shared_entry
     redeemability_consequence := fun G _h_ev => G.has_constrained_redeemable_witness
-    authorization_consequence := fun G _h_ev => G.no_uniform_access }
+    authorization_consequence := fun G _h_ev => G.no_agent_uniform_policy }
 
 
 /-! ## Convergence and Impossibility (Structural Versions) -/
@@ -311,7 +312,7 @@ theorem grounded_evidence_consequences (W : WorkingSystem)
     (∃ G : GroundedRedeemabilityStrict, W.redeemability_ev = some G ∧
         ∃ c : G.base.Claim, G.base.constrained c ∧ G.base.redeemable c) ∧
     (∃ G : GroundedAuthorizationStrict, W.authorization_ev = some G ∧
-        ¬∀ (a : G.base.Agent) (P : G.base.Claim), G.base.authorize a P) := by
+        ¬∀ (a b : G.base.Agent) (P : G.base.Claim), G.base.authorize a P ↔ G.base.authorize b P) := by
   refine ⟨convergence_structural W h_sf h_sat, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   -- Each goal: none-branch contradicted via Bool.noConfusion h2;
   -- some G branch closed via h_sf.evidence.X_consequence G h_ev.

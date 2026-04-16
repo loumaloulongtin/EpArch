@@ -191,7 +191,7 @@ theorem world_assumptions_force_bank_primitives (C : @EpArch.WorldCtx.{0})
         revocation_consequence    := fun G _h_ev => G.has_invalid_revocable_witness
         bank_consequence          := fun G _h_ev => G.has_shared_entry
         redeemability_consequence := fun G _h_ev => G.has_constrained_redeemable_witness
-        authorization_consequence := fun G _h_ev => G.no_uniform_access } }
+        authorization_consequence := fun G _h_ev => G.no_agent_uniform_policy } }
   exact (grounded_evidence_consequences W h_sf h_sat).1
 
 /-- Any StructurallyForced system satisfies WorldAwareSystem for any WorldCtx.

@@ -463,7 +463,7 @@ theorem concrete_structurally_forced : StructurallyForced ConcreteWorkingSystem 
     authorization_consequence := fun G heq => by
       have hrfl : ConcreteWorkingSystem.authorization_ev = some concAuthorization.toStrict := rfl
       rw [hrfl] at heq; injection heq with hG; subst hG
-      exact concAuthorization.toStrict.no_uniform_access }
+      exact concAuthorization.toStrict.no_agent_uniform_policy }
 
 /-- Structural convergence applies to the concrete model.
     Full chain: ForcingEmbedding → StructurallyForced → convergence. -/
