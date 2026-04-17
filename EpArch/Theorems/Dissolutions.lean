@@ -338,7 +338,12 @@ structure NotationRelabeling (α : Type u) where
 
     Proof: trivial — both sides unfold to `a.uses_proof_consistency = true`.
     The triviality IS the argument: notation-invariance is baked in by
-    construction because the architecture never inspects surface symbols. -/
+    construction because the architecture never inspects surface symbols.
+
+    For the stripped-bridge case — when σ is NOT carried with the export and the
+    recipient improvises a bijection — see `notation_opacity_prevents_authorization`
+    in `EpArch.Theorems.NotationBridge`. Layer 3 (bridge-carried export) is
+    `bridge_export_enables_authorization` in the same module. -/
 theorem notation_invariance_of_redeemability (r : NotationRelabeling PropLike)
     (a : apriori_case (PropLike := PropLike)) :
     redeemability_is_proof_consistency a ↔
