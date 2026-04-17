@@ -257,6 +257,10 @@ inductive VindicationRole
     eventually recovering from error. That is precisely why challenge, repair, and
     adversarial robustness remain necessary rather than optional: they are the
     machinery a system needs when it cannot guarantee its own verdicts.
+    `EpArch.Meta.LeanKernel.OdometerModel` is a worked example of a system that
+    acknowledges this explicitly: it accepts `¬CorrigibleLedgerGoal` and
+    `¬SafeWithdrawalGoal` as deliberate tradeoffs, documenting which risks it takes
+    on and which recovery capabilities it therefore must not claim.
 
     The three predicates `path_route_exists`, `contact_was_made`, `verdict_discriminates`
     are transparent projections of this single opaque — three roles of one underlying
