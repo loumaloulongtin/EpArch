@@ -1393,7 +1393,7 @@ for each cluster.
 | `ConstraintTag` | Meta/ClusterRegistry.lean | 7 constraint tags (distributed_agents … multi_agent_access) |
 | `GoalTag` | Meta/ClusterRegistry.lean | 5 health-goal tags (safeWithdrawal … selfCorrection) |
 | `WorldTag` | Meta/ClusterRegistry.lean | 8 world-bundle tags (lies_possible … ddos) |
-| `EpArchConfig` | Meta/Config.lean | User-supplied config: lists of active constraints/goals/worlds |
+| `EpArchConfig` | Meta/ClusterRegistry.lean | User-supplied config: lists of active constraints/goals/worlds |
 | `ClusterTag` | Meta/ClusterRegistry.lean | 30 cluster tags spanning Tiers 2–4, world obligations, constraint-modularity, and lattice-stability |
 | `EnabledConstraintCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 7 Tier 2 forcing cluster tags |
 | `EnabledGoalCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 6 Tier 3 health-goal transport cluster tags |
@@ -1458,6 +1458,7 @@ for each cluster.
 | `cluster_forcing_adversarial` | Meta/Config.lean | `StructurallyForced W → handles_adversarial W → HasRevocation W` | Witness for `.forcing_adversarial` |
 | `cluster_forcing_coordination` | Meta/Config.lean | `StructurallyForced W → handles_coordination W → HasBank W` | Witness for `.forcing_coordination` |
 | `cluster_forcing_truth` | Meta/Config.lean | `StructurallyForced W → handles_truth_pressure W → HasRedeemability W` | Witness for `.forcing_truth` |
+| `cluster_forcing_multi_agent` | Meta/Config.lean | `StructurallyForced W → handles_multi_agent W → HasGranularACL W` | Witness for `.forcing_multi_agent_access` |
 
 #### Tier 3 Named Proof Witnesses (Health-Goal Transport)
 
