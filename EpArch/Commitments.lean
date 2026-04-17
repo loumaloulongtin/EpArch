@@ -236,9 +236,16 @@ inductive VindicationRole
     validation collapses, nothing needs mediation, challenges have no contested ground,
     the scarcity and constraint that make mediation necessary disappear so the pressure
     that was supposed to force routing through bank and surface machinery is weakened or
-    gone, and the adversarial model has no surface to attack. A system relaxed enough that those primitives are already
-    irrelevant can fill the opaque consistently — but then it is not using EpArch for
-    what EpArch is for. The opaque is load-bearing exactly when the architecture is.
+    gone, and the adversarial model has no surface to attack. Two configurations can fill
+    the opaque consistently. First, a system relaxed enough that those primitives are
+    already irrelevant — but then it is not using EpArch for what EpArch is for. Second,
+    a system whose deposit space is narrow and homogeneous enough that every deposit
+    genuinely goes through the same known channel: a concrete uniform body is then correct
+    for that restricted domain. This is exactly what `EpArch.Meta.LeanKernel.VerificationPath`
+    demonstrates — within the Lean elaboration domain, all three vindication roles have a
+    single concrete realization, so a non-opaque parallel structure is sound. In both cases
+    the result is a domain-specific instantiation, not the general architecture. The opaque
+    is load-bearing exactly when the architecture is.
 
     The three predicates `path_route_exists`, `contact_was_made`, `verdict_discriminates`
     are transparent projections of this single opaque — three roles of one underlying
