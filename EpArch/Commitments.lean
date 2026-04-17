@@ -251,14 +251,13 @@ inductive VindicationRole
     when the primitives it supports are.
 
     A further consequence: as long as `vindication_evidence` remains opaque, any system
-    operating against it must treat vindication as potentially fallible — it cannot
-    inspect the evidence and certify it as definitively correct. This is not a weakness;
-    it is the architectural acknowledgment that vindication verdicts can be wrong, which
-    is precisely the precondition for the recovery machinery being necessary rather than
-    optional. A system that cannot guarantee its own vindication verdicts is exactly the
-    system that needs challenge, repair, and adversarial robustness. The opaque does not
-    merely leave room for error — it formally encodes that error is possible, and in doing
-    so justifies the machinery that handles it.
+    operating against it cannot inspect the vindication mechanism from inside the core
+    theory, and so cannot collapse vindication into guaranteed self-certifying correctness.
+    The system must remain compatible with challenge, revision, and contestation — not
+    because the opaque proves that errors will occur, but because it forecloses the
+    self-certification that would make the recovery machinery optional. A system that
+    cannot certify its own vindication verdicts from inside is exactly the system that
+    needs challenge, repair, and adversarial robustness to remain meaningful.
 
     The three predicates `path_route_exists`, `contact_was_made`, `verdict_discriminates`
     are transparent projections of this single opaque — three roles of one underlying
