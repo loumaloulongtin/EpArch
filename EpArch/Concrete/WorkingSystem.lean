@@ -65,11 +65,11 @@ def process_export (req : CExportRequest) : COutcome :=
 /-- Process a challenge in the concrete model. -/
 def process_challenge (ch : CChallenge) : COutcome :=
   if ch.field ∈ ["S", "E", "V", "τ"] then
-    -- Field-local challenge can be processed
+    -- Field-local challenge: can be diagnosed and repaired
     .ChallengeResolved .Pending
   else
-    -- No field specified → cannot diagnose
-    .ChallengeResolved .Pending
+    -- No field specified: cannot localize → immediately revoked
+    .ChallengeResolved .Revoked
 
 /-- Two concrete systems are behaviorally equivalent if they produce
     the same outcomes on all inputs.

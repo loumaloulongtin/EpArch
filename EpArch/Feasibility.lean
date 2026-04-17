@@ -80,8 +80,9 @@ theorem commitments_feasible :
     (∃ d : ConcreteModel.CDeposit, d.S > 0 ∧ d.E.length > 0 ∧ d.V.length > 0) ∧
     -- Commitment 4: Consensus without redeemability
     (∃ B d, ConcreteModel.c_consensus B d.claim ∧ ¬ConcreteModel.c_redeemable d) ∧
-    -- Commitment 5: Export gating
-    True ∧
+    -- Commitment 5: Export gating is required (ungated → revalidation or trust bridge)
+    (∃ B1 B2 d, ConcreteModel.c_ungated_export B1 B2 d →
+      (ConcreteModel.c_revalidated B2 d ∨ ConcreteModel.c_trust_bridge B1 B2)) ∧
     -- Commitment 6: Repair loop
     (∃ _d c : ConcreteModel.CChallenge, c.field ∈ ["S", "E", "V", "τ"]) ∧
     -- Commitment 7: Header-stripped loses diagnosability

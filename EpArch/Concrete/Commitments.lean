@@ -92,11 +92,10 @@ theorem commitment1_concrete :
 
 /-! ## Commitment 2: Scoped Bubbles (No Global Ledger) -/
 
-/-- Innovation: can accept claims that contradict existing deposits. -/
+/-- Innovation: the ledger contains deposits with genuinely distinct claims.
+    Non-trivial: requires two deposits with different claim strings. -/
 def c_supports_innovation (G : CGlobalLedger) : Prop :=
-  ∀ (d_new : CDeposit), ∃ (d_old : CDeposit),
-    d_old ∈ G.all_deposits → d_new.claim ≠ d_old.claim → True
-  -- Innovation means: we can add contradictory claims
+  ∃ d1 d2, d1 ∈ G.all_deposits ∧ d2 ∈ G.all_deposits ∧ d1.claim ≠ d2.claim
 
 /-- Coordination: all deposits must be mutually consistent. -/
 def c_supports_coordination (G : CGlobalLedger) : Prop :=
@@ -116,25 +115,33 @@ def witness_global_ledger_conflict : CGlobalLedger :=
     ]
     acceptance_threshold := 50 }
 
-/-- Commitment 2 holds: the witness ledger cannot support both. -/
+/-- Commitment 2 holds: the witness ledger simultaneously supports innovation
+    (has deposits "P" and "¬P" with distinct claims) yet cannot support coordination
+    (those deposits share domain "test", so consistency is violated).
+    Both directions of the tension are witnessed directly. -/
 theorem commitment2_concrete :
     let G := witness_global_ledger_conflict
-    ¬(c_supports_innovation G ∧ c_supports_coordination G) := by
-  -- P and ¬P in same domain violates coordination
-  simp only [witness_global_ledger_conflict]
-  intro ⟨_, h_coord⟩
-  -- d1 = "P", d2 = "¬P", both in domain "test"
-  let d1 : CDeposit := { claim := "P", S := 50, E := [], V := ["A"], τ := 100,
-                         cs := { domain := "test", test_procedure := "check" } }
-  let d2 : CDeposit := { claim := "¬P", S := 50, E := [], V := ["B"], τ := 100,
-                         cs := { domain := "test", test_procedure := "check" } }
-  have h1 : d1 ∈ [d1, d2] := List.Mem.head _
-  have h2 : d2 ∈ [d1, d2] := List.Mem.tail _ (List.Mem.head _)
-  have h := h_coord d1 d2 h1 h2
-  -- h says: "P" = "¬P" ∨ ("P" ≠ "¬P" → "test" ≠ "test")
-  cases h with
-  | inl h_eq => exact absurd h_eq (by decide)
-  | inr h_dom => exact absurd rfl (h_dom (by decide))
+    c_supports_innovation G ∧ ¬c_supports_coordination G := by
+  simp only [witness_global_ledger_conflict, c_supports_innovation, c_supports_coordination]
+  constructor
+  · -- Innovation holds: "P" and "¬P" are distinct deposits in all_deposits
+    let d1 : CDeposit := { claim := "P", S := 50, E := [], V := ["A"], τ := 100,
+                           cs := { domain := "test", test_procedure := "check" } }
+    let d2 : CDeposit := { claim := "¬P", S := 50, E := [], V := ["B"], τ := 100,
+                           cs := { domain := "test", test_procedure := "check" } }
+    exact ⟨d1, d2, List.Mem.head _, List.Mem.tail _ (List.Mem.head _), by decide⟩
+  · -- Coordination fails: "P" and "¬P" are in the same domain "test"
+    intro h_coord
+    let d1 : CDeposit := { claim := "P", S := 50, E := [], V := ["A"], τ := 100,
+                           cs := { domain := "test", test_procedure := "check" } }
+    let d2 : CDeposit := { claim := "¬P", S := 50, E := [], V := ["B"], τ := 100,
+                           cs := { domain := "test", test_procedure := "check" } }
+    have h1 : d1 ∈ [d1, d2] := List.Mem.head _
+    have h2 : d2 ∈ [d1, d2] := List.Mem.tail _ (List.Mem.head _)
+    have h := h_coord d1 d2 h1 h2
+    cases h with
+    | inl h_eq => exact absurd h_eq (by decide)
+    | inr h_dom => exact absurd rfl (h_dom (by decide))
 
 
 /-! ## Commitment 3: S/E/V Factorization -/
@@ -278,10 +285,10 @@ theorem commitment6_concrete :
 def witness_header_comparison : CDeposit × CDeposit :=
   let with_header : CDeposit := {
     claim := "Vaccines cause autism"
-    S := 0    -- Fails standard!
+    S := 60   -- Non-zero: deposit has a standard (a low one, but present)
     E := ["selection bias", "no control group", "data manipulation"]
     V := ["Wakefield 1998", "retracted"]
-    τ := 0    -- Expired!
+    τ := 0    -- Expired, but the header fields S/E/V are intact
     cs := { domain := "medicine", test_procedure := "epidemiological study" }
   }
   let without_header : CDeposit := {
@@ -297,17 +304,14 @@ def witness_header_comparison : CDeposit × CDeposit :=
 /-- Commitment 7 holds: headerless disputes are harder. -/
 theorem commitment7_concrete :
     let (d_good, d_bad) := witness_header_comparison
-    -- With header: we can diagnose exactly what failed
-    (c_header_preserved d_good → d_good.S = 0 ∨ d_good.τ = 0) ∧
+    -- With header: c_header_preserved implies we have all three diagnostic fields
+    (c_header_preserved d_good → d_good.S > 0 ∧ d_good.E.length > 0 ∧ d_good.V.length > 0) ∧
     -- Without header: we can only say "wrong" with no localization
     (c_header_stripped d_bad ∧ d_bad.E.length = 0 ∧ d_bad.V.length = 0) := by
-  -- d_good has S=0 so fails c_header_preserved; d_bad has all zeros
   simp only [witness_header_comparison, c_header_preserved, c_header_stripped]
   constructor
-  · -- c_header_preserved d_good → ... is vacuously true since d_good.S = 0
-    intro ⟨h_S, _, _⟩
-    -- h_S says 0 > 0, which is false
-    exact absurd h_S (by decide)
+  · -- c_header_preserved unfolds to exactly these three conditions; just unpack
+    intro ⟨hS, hE, hV⟩; exact ⟨hS, hE, hV⟩
   · -- d_bad satisfies all conditions
     decide
 
@@ -355,8 +359,8 @@ theorem all_commitments_satisfiable :
     (∃ d : CDeposit, d.S > 0 ∧ d.E.length > 0 ∧ d.V.length > 0) ∧
     -- Commitment 4: Consensus without redeemability is possible
     (∃ B d, c_consensus B d.claim ∧ ¬c_redeemable d) ∧
-    -- Commitment 5: Export gating is required (ungated → unreliable)
-    True ∧  -- Captured by the theorem above
+    -- Commitment 5: Export gating is required (ungated → revalidation or trust bridge)
+    (∃ B1 B2 d, c_ungated_export B1 B2 d → (c_revalidated B2 d ∨ c_trust_bridge B1 B2)) ∧
     -- Commitment 6: Repair loop with field localization exists
     (∃ _d c : CChallenge, c.field ∈ ["S", "E", "V", "τ"]) ∧
     -- Commitment 7: Header-stripped claims lose diagnosability
@@ -372,7 +376,7 @@ theorem all_commitments_satisfiable :
     exact ⟨_, _, _, commitment1_concrete.2⟩
   constructor
   · -- Commitment 2
-    exact ⟨witness_global_ledger_conflict, commitment2_concrete⟩
+    exact ⟨witness_global_ledger_conflict, fun ⟨_, h_c⟩ => commitment2_concrete.2 h_c⟩
   constructor
   · -- Commitment 3
     exact ⟨witness_SEV_deposit, commitment3_concrete⟩
@@ -380,8 +384,9 @@ theorem all_commitments_satisfiable :
   · -- Commitment 4
     exact ⟨_, _, commitment4_concrete⟩
   constructor
-  · -- Commitment 5 (trivial)
-    trivial
+  · -- Commitment 5
+    exact ⟨witness_ungated_export.1, witness_ungated_export.2.1, witness_ungated_export.2.2,
+           commitment5_concrete⟩
   constructor
   · -- Commitment 6
     let d : CDeposit := { claim := "P", S := 50, E := [], V := [], τ := 100,

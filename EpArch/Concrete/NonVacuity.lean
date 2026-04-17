@@ -10,6 +10,7 @@ Part of the EpArch.Concrete module family.
 
 import EpArch.Concrete.WorkingSystem
 import EpArch.Semantics.StepSemantics
+import EpArch.Theorems.Strip
 
 namespace EpArch.ConcreteInstance
 
@@ -437,15 +438,24 @@ theorem competition_gate_non_vacuity_revision :
   rw [concrete_trace_hasRevision] at h_false
   exact Bool.noConfusion h_false
 
-/-- COMPETITION GATE NON-VACUITY 3: Stripping is meaningful.
+/-- COMPETITION GATE NON-VACUITY 3: Stripping is non-injective.
 
-    Existence witness: the concrete model has at least one deposit.
-    Non-injectivity of strip follows from `different_headers_same_strip`,
-    not from bare existence. -/
+    Two deposits with different headers but identical P/bubble/status
+    have the same stripped form — information is genuinely lost on export.
+    Witnessed by `witness_deposit` (S=90) vs a variant with S=80. -/
 theorem competition_gate_non_vacuity_stripping :
-    ∃ (_d : Deposit String CStandard String String),
-      True := -- Existence witness
-  ⟨witness_deposit, trivial⟩
+    ∃ (d1 d2 : Deposit String CStandard String String),
+      d1 ≠ d2 ∧ strip d1 = strip d2 := by
+  let d1 : Deposit String CStandard String String := witness_deposit
+  let d2 : Deposit String CStandard String String :=
+    { witness_deposit with h := { concreteHeader with S := 80 } }
+  have h_diff_header : d1.h ≠ d2.h := by
+    intro hh
+    have h_S := congrArg Header.S hh
+    simp only [d1, d2, concreteHeader] at h_S
+    exact absurd h_S (by decide)
+  have h_ineq_strip := different_headers_same_strip d1 d2 rfl rfl rfl h_diff_header
+  exact ⟨d1, d2, h_ineq_strip.1, h_ineq_strip.2⟩
 
 /-! ## Summary: The competition gate is not vacuously true.
 

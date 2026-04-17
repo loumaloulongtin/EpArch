@@ -45,8 +45,9 @@ structure Realizer where
     (∃ d : EpArch.ConcreteModel.CDeposit, d.S > 0 ∧ d.E.length > 0 ∧ d.V.length > 0) ∧
     -- Commitment 4: Consensus without redeemability is possible
     (∃ B d, EpArch.ConcreteModel.c_consensus B d.claim ∧ ¬EpArch.ConcreteModel.c_redeemable d) ∧
-    -- Commitment 5: Export gating (captured by architecture)
-    True ∧
+    -- Commitment 5: Export gating is required (ungated → revalidation or trust bridge)
+    (∃ B1 B2 d, EpArch.ConcreteModel.c_ungated_export B1 B2 d →
+      (EpArch.ConcreteModel.c_revalidated B2 d ∨ EpArch.ConcreteModel.c_trust_bridge B1 B2)) ∧
     -- Commitment 6: Repair loop with field localization exists
     (∃ _d c : EpArch.ConcreteModel.CChallenge, c.field ∈ ["S", "E", "V", "τ"]) ∧
     -- Commitment 7: Header-stripped claims lose diagnosability
