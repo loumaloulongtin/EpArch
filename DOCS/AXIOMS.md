@@ -33,8 +33,8 @@ axiom lean_kernel_verification_path
 
 **What it asserts:** For any Lean deposit (claim is a `Prop`) that is proved (`h_prop : d.P`),
 the Lean kernel provides vindication evidence (`vindication_evidence d d.h.redeem`) against
-the deposit's own constraint surface. The single opaque covers all three stages (route,
-contact, verdict) in the Lean domain.
+the deposit's own constraint surface. The single opaque covers all three aspects (route,
+contact, verdict) of the completed vindication occurrence in the Lean domain.
 
 **Why it is an axiom and not a theorem:** `vindication_evidence` is `opaque` in
 `Commitments.lean` by design — `path_route_exists`, `contact_was_made`, and

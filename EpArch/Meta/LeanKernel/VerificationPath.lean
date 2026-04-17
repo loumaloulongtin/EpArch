@@ -6,7 +6,7 @@ This file is NOT part of the core architectural claim. It demonstrates two thing
 **Part A — Axiom-free parallel instantiation.**
 The C4b surface structure can be fully discharged as a theorem, with zero axioms,
 by giving one concrete non-opaque definition for the Lean domain. In this domain,
-a proved claim witnesses all three vindication stages simultaneously, so one predicate
+a proved claim witnesses all three vindication aspects simultaneously, so one predicate
 suffices. This shows the shape any domain instantiation may take.
 
 **Part B — Core theory connection (one axiom).**
@@ -43,22 +43,21 @@ open EpArch
 
 /-! ## Concrete Lean-Domain Vindication Evidence
 
-In the Lean domain, the three vindication stages collapse to a single concrete fact:
-the deposit's claim has a proof term (`d.P`). A proved claim witnesses the route
-(the kernel elaborated it), the contact (the kernel ran), and the verdict (the kernel
-discriminates — it accepts proved terms and rejects unprovable ones). One predicate
-suffices. -/
+In the Lean domain, the three vindication aspects — route, contact, verdict — collapse
+to a single concrete fact: the deposit's claim has a proof term (`d.P`). A proved claim
+witnesses all three simultaneously (the kernel elaborated it, ran, and discriminated).
+One predicate suffices. -/
 
 /-- Lean-domain vindication evidence: the deposit's claim is proved.
-    In this domain, `d.P` simultaneously witnesses all three stages — Channel (a proof
-    route exists), Contact (elaboration ran), and Verdict (the kernel discriminated).
+    In this domain, `d.P` simultaneously witnesses all three aspects — route (a proof
+    path exists), contact (elaboration ran), and verdict (the kernel discriminated).
     This is what makes the Lean domain a valid instantiation with one backing predicate
     rather than three separate ones. -/
 def LeanPathExists (d : Deposit Prop Standard ErrorModel Provenance) (_ : ConstraintSurface) : Prop :=
   d.P
 
 /-- Lean-domain analogue of `VerificationPath`: one evidence field suffices since all
-    three stages collapse to `LeanPathExists` in this domain. -/
+    three aspects collapse to `LeanPathExists` in this domain. -/
 structure LeanVerificationPath (d : Deposit Prop Standard ErrorModel Provenance) where
   surface   : ConstraintSurface
   h_witness : LeanPathExists d surface

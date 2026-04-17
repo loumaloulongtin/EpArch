@@ -253,9 +253,11 @@ theorem SEVFactorization (d : Deposit PropLike Standard ErrorModel Provenance) :
     needs when it cannot guarantee its own verdicts from inside the core theory.
 
     The three predicates `path_route_exists`, `contact_was_made`, `verdict_discriminates`
-    are transparent projections of this single opaque — three named stages of one
-    vindication occurrence, not three independent black boxes. Their ordering is encoded
-    by `verdict_implies_contact` and `contact_implies_path`.
+    are transparent projections of this single opaque — three named aspects of one
+    completed vindication occurrence, not three independently meaningful process states.
+    Each name picks out a presuppositional reading of the same fact: that the occurrence
+    happened. The ordering between names is encoded by `verdict_implies_contact` and
+    `contact_implies_path`.
 
     Domain instantiators discharge `vindication_evidence` by axiom (naming their trust
     boundary explicitly) or by building a concrete non-opaque vindication witness.
@@ -265,49 +267,57 @@ opaque vindication_evidence :
     Deposit PropLike Standard ErrorModel Provenance →
     ConstraintSurface → Prop
 
-/-- Stage 1 of a vindication occurrence: a route to the evaluative surface exists.
-    Presupposed by `contact_was_made` (`contact_implies_path`). -/
+/-- Aspect 1 of a completed vindication occurrence: a route to the evaluative surface exists.
+    This name picks out the weakest presuppositional reading of `vindication_evidence`.
+    Formally identical to `contact_was_made` and `verdict_discriminates`; the distinction
+    is architectural, not semantic — it names what the occurrence presupposes, not a
+    separable intermediate state. -/
 def path_route_exists (d : Deposit PropLike Standard ErrorModel Provenance)
     (cs : ConstraintSurface) : Prop :=
   vindication_evidence d cs
 
-/-- Stage 2 of a vindication occurrence: the evaluative surface was actually exercised.
-    Presupposes `path_route_exists` (`contact_implies_path`); presupposed by `verdict_discriminates`. -/
+/-- Aspect 2 of a completed vindication occurrence: the evaluative surface was exercised.
+    Formally identical to `path_route_exists` and `verdict_discriminates`; the distinction
+    is architectural — it names the intermediate presuppositional reading. -/
 def contact_was_made (d : Deposit PropLike Standard ErrorModel Provenance)
     (cs : ConstraintSurface) : Prop :=
   vindication_evidence d cs
 
-/-- Stage 3 of a vindication occurrence: the evaluative surface gave a nontrivial verdict.
+/-- Aspect 3 of a completed vindication occurrence: the surface gave a nontrivial verdict.
     "Nontrivial" means the surface can distinguish outcomes — proof checker, institution,
     preference, benchmark, community acceptance rule. Does not mean "returned the objectively
-    correct truth verdict." Presupposes `contact_was_made` (`verdict_implies_contact`);
-    this is the strongest vindication predicate. -/
+    correct truth verdict." Formally identical to `path_route_exists` and `contact_was_made`;
+    the distinction is architectural — it names the strongest presuppositional reading of
+    the occurrence. -/
 def verdict_discriminates (d : Deposit PropLike Standard ErrorModel Provenance)
     (cs : ConstraintSurface) : Prop :=
   vindication_evidence d cs
 
-/-- Vindication stage ordering: a nontrivial verdict presupposes the surface was contacted.
+/-- Vindication aspect ordering: a nontrivial verdict presupposes the surface was contacted.
     Formally trivial (all three predicates share one backing opaque); architecturally
-    load-bearing — it encodes that the stage order is not arbitrary. -/
+    load-bearing — it encodes that the presuppositional order between names is not
+    arbitrary, even though no distinct intermediate states are modelled in core. -/
 theorem verdict_implies_contact
     (d : Deposit PropLike Standard ErrorModel Provenance)
     (cs : ConstraintSurface) :
     verdict_discriminates d cs → contact_was_made d cs :=
   fun h => h
 
-/-- Vindication stage ordering: contacting a surface presupposes a route to it.
+/-- Vindication aspect ordering: contacting a surface presupposes a route to it.
     Formally trivial (all three predicates share one backing opaque); architecturally
-    load-bearing — it encodes that the stage order is not arbitrary. -/
+    load-bearing — it encodes that the presuppositional order between names is not
+    arbitrary, even though no distinct intermediate states are modelled in core. -/
 theorem contact_implies_path
     (d : Deposit PropLike Standard ErrorModel Provenance)
     (cs : ConstraintSurface) :
     contact_was_made d cs → path_route_exists d cs :=
   fun h => h
 
-/-- A verification path: connects deposit to constraint surface via all three vindication stages.
+/-- A verification path: connects deposit to constraint surface via all three vindication aspects.
     The evidence fields all back onto the single opaque `vindication_evidence`, so the
     structure cannot be trivially constructed — external evidence is required. The three
-    named fields encode the staged semantics: path (Stage 1) → contact (Stage 2) → verdict (Stage 3). -/
+    named fields encode the presuppositional ordering: path ≤ contact ≤ verdict, each
+    a different name for the same completed occurrence. -/
 structure VerificationPath where
   deposit   : Deposit PropLike Standard ErrorModel Provenance
   surface   : ConstraintSurface
