@@ -19,7 +19,7 @@ hypothesis bundles.
     `hObs` is automatic via `WorldCtx.localLedger_is_obs_based` (see EpArch.WorldCtx).
 - C3 (`SEVFactorization`)    — by rfl
 - C4b (`redeemability_requires_more_than_consensus`) — proved from `intra_bubble_only`
-    and the definitional gap between `consensus` (True) and `redeemable`
+    and `consensus B d.P` (a genuine active deposit) versus `redeemable`
     (requires opaque external evidence: path_route_exists, contact_was_made,
     verdict_discriminates).
 - C5 (`ExportGating`)        — from the LTS export constructors
@@ -276,8 +276,8 @@ theorem redeemable_implies_contact_and_discriminating
 
 /-- A deposit is intra-bubble-only if it has no external route to any constraint surface.
     This is the structural condition that separates consensus from redeemability:
-    consensus is achievable for any deposit, but a deposit satisfying `intra_bubble_only`
-    provably cannot be redeemable. -/
+    consensus is grounded in `hasDeposit` (an active authorized deposit in B), but a
+    deposit satisfying `intra_bubble_only` provably cannot be redeemable. -/
 def intra_bubble_only (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
   ∀ cs, ¬path_route_exists (PropLike := PropLike) (Standard := Standard)
       (ErrorModel := ErrorModel) (Provenance := Provenance) d cs
@@ -868,21 +868,22 @@ The remaining commitments are proved as named theorems:
 -/
 
 /-- Redeemability requires more than consensus: the constraint surface is independent.
-    For intra-bubble deposits, consensus (trivially true for any bubble) and redeemability
-    (requiring external path, contact, and verdict evidence) are structurally separated.
-    Proved structurally: the separation follows from definitions alone. -/
+    An endorsed intra-bubble deposit — one with an active authorized deposit in B —
+    cannot be redeemed: redeemability additionally requires opaque external evidence
+    (`path_route_exists`, `contact_was_made`, `verdict_discriminates`) that intra-bubble
+    deposits provably lack. -/
 theorem redeemability_requires_more_than_consensus
     (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance)
-    (h_intra : intra_bubble_only d) :
-    does_not_imply (consensus B d.P) (redeemable d) :=
-  ⟨trivial, intra_bubble_not_redeemable d h_intra⟩
+    (h_intra : intra_bubble_only d) (_h_cons : consensus B d.P) :
+    ¬redeemable d :=
+  intra_bubble_not_redeemable d h_intra
 
 /-- Standalone commitments pack: unconditional commitment theorems (C3/C4b/C7b/C8).
     C4b is the commitment-specific result that distinguishes this from
     `structural_theorems_unconditional` (Cluster B).
     - C3: `SEVFactorization` — every deposit carries independent S/E/V fields.
-    - C4b: `redeemability_requires_more_than_consensus` — intra-bubble deposits cannot
-           be redeemable; consensus (True) and redeemability are structurally separated.
+    - C4b: `redeemability_requires_more_than_consensus` — an endorsed intra-bubble
+           deposit cannot be redeemed; consensus does not confer redeemability.
     - C7b: `header_stripping_harder` — stripped disputes are systematically harder to diagnose.
     - C8: `TemporalValidity` — refreshed and unrefreshed deposits are not equivalent.
     C1, C2, C5, C6b are proved as named theorems (see their respective sections). -/
@@ -891,7 +892,7 @@ theorem commitments_pack :
         ∃ (s : Standard) (e : ErrorModel) (v : Provenance),
           d.h.S = s ∧ d.h.E = e ∧ d.h.V = v) ∧
     (∀ (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance),
-        intra_bubble_only d → does_not_imply (consensus B d.P) (redeemable d)) ∧
+        intra_bubble_only d → consensus B d.P → ¬redeemable d) ∧
     systematically_harder header_preserved_diagnosability header_stripped_diagnosability ∧
     (∀ (d1 d2 : Deposit PropLike Standard ErrorModel Provenance),
         refreshed d1 → unrefreshed d2 → ¬performs_equivalently d1 d2) :=

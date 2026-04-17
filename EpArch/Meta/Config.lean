@@ -262,7 +262,7 @@ inductive Tier4Witness : EnabledTier4Cluster → Type 1 where
         (∀ (d : Deposit PL SL EL PrL),
             ∃ (s : SL) (e : EL) (v : PrL), d.h.S = s ∧ d.h.E = e ∧ d.h.V = v) ∧
         (∀ (B : Bubble) (d : Deposit PL SL EL PrL),
-            intra_bubble_only d → does_not_imply (consensus B d.P) (redeemable d)) ∧
+            intra_bubble_only d → consensus B d.P → ¬redeemable d) ∧
         systematically_harder header_preserved_diagnosability header_stripped_diagnosability ∧
         (∀ (d1 d2 : Deposit PL SL EL PrL),
             refreshed d1 → unrefreshed d2 → ¬performs_equivalently d1 d2)) →
@@ -503,7 +503,7 @@ def clusterValid (c : ClusterTag) : Prop :=
         (∀ (d : Deposit PL SL EL PrL),
             ∃ (s : SL) (e : EL) (v : PrL), d.h.S = s ∧ d.h.E = e ∧ d.h.V = v) ∧
         (∀ (B : Bubble) (d : Deposit PL SL EL PrL),
-            intra_bubble_only d → does_not_imply (consensus B d.P) (redeemable d)) ∧
+            intra_bubble_only d → consensus B d.P → ¬redeemable d) ∧
         systematically_harder header_preserved_diagnosability header_stripped_diagnosability ∧
         (∀ (d1 d2 : Deposit PL SL EL PrL),
             refreshed d1 → unrefreshed d2 → ¬performs_equivalently d1 d2)

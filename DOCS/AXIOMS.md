@@ -39,7 +39,7 @@ see §Proved Theorems below.
 
 **C4b is proved.** `redeemability_requires_more_than_consensus` in `Commitments.lean`
 is derived from `intra_bubble_only` (structural predicate: ∀ cs, ¬path_route_exists d cs)
-and the definitional gap between `consensus` (intra-bubble, formally `True`) and
+and the gap between `consensus` (intra-bubble, grounded in `hasDeposit B P`) and
 `redeemable` (requires opaque external evidence: `path_route_exists`, `contact_was_made`,
 `verdict_discriminates`); see §Proved Theorems below.
 
@@ -101,7 +101,7 @@ Key opaque primitives:
 | `header_preserved` | Header.lean | Deposit has header intact (vs. stripped in transmission); `header_stripped` is a def: `¬header_preserved` |
 | `path_route_exists` / `contact_was_made` / `verdict_discriminates` | Commitments.lean | Opaque evidence predicates for VerificationPath (C4: redeemability external to consensus) |
 | `pushback` | Commitments.lean | Agent-level contestation of a deposit; used in C6 repair-loop machinery |
-| `withdraw` / `exportDep` / `TrustBridge` / `Revalidate` / `RepairAction` | Bank.lean | Abstract behavioral hooks (withdrawal reliance, cross-bubble export, trust bridge, revalidation, repair action type) |
+| `exportDep` / `TrustBridge` / `Revalidate` / `RepairAction` | Bank.lean | Abstract behavioral hooks (cross-bubble export, trust bridge, revalidation, repair action type) |
 | Adversarial/Base.lean opaques | Adversarial/Base.lean | 17 opaques constituting the adversarial model: attack channel (`AuditChannel`, `channel_capacity`, `attack_volume`), DDoS state (`ladder_overloaded`, `V_channel_exhausted`, etc.), countermeasures (`trust_bridge_on_hand`, `E_includes_threat`, etc.), cost primitives (`export_cost`, `import_defense_cost`). Note: `cheap_validator_reachable`, `transaction_reversible`, and `constraint_cheaply_testable` are **`def`s** (grounded as `d.h.τ > 0` or `τ > 0`), not opaques — see §Adversarial Model in THEOREMS.md |
 
 Note: `reliance_level` and `blast_radius` are **`def`s** (not opaques), grounded in `DepositDynamics` struct fields (`dd.relying_agents` and `dd.cascade_agents` respectively). The behavioral theorems `success_driven_bypass` and `blast_radius_scales_with_reliance` are proved over these defs.
@@ -145,7 +145,7 @@ All 8 commitments are now **proved**.  The table below records each commitment a
 | C6b (`NoSelfCorrectionWithoutRevision`) | Proved from StepSemantics |
 | C8 (`TemporalValidity`) | Proved from header τ definition |
 | C2 (`NoGlobalLedger`) | **Proved** as `WorldCtx.no_ledger_tradeoff` (EpArch CAP Theorem) from `W_partial_observability` + `obs_based` in `WorldCtx.lean` |
-| C4b (`ConsensusNotSufficient`) | **Proved** as `redeemability_requires_more_than_consensus` from `intra_bubble_only` + definitional gap between `consensus` (`True`) and `redeemable` (opaque external evidence) in `Commitments.lean` |
+| C4b (`ConsensusNotSufficient`) | **Proved** as `redeemability_requires_more_than_consensus` from `intra_bubble_only` + genuine consensus witness (`consensus B d.P`, grounded in `hasDeposit`) versus `redeemable` (opaque external evidence) in `Commitments.lean` |
 | C7b (`HeaderStrippingHarder`) | **Proved** via admissible completion-space model: `metadata_stripping_strictly_enlarges` establishes strict inclusion admissible_full ⊂ admissible_stripped; `header_stripping_harder` is its numeric corollary (0 < 3 fields). `dispute_about B d` — an incoming same-type counter-deposit d' disagreeing on ≥1 header field — directly witnesses `has_alternative_completion d` via `dispute_about_to_alternative` (no type-universe condition). `cross_axis_dispute_about B d` — two counter-deposits dS, dE blaming S and E respectively — directly witnesses both axes for `proxy_battles`. `sticky B P d` (admissible-space multiplicity) proved by `stripped_dispute_is_sticky` from `dispute_about B d` alone; `proxy_battles B P d` (cross-axis underdetermination) proved by `stripped_dispute_has_proxy_battles` from `cross_axis_dispute_about B d` alone. **`has_cross_field_alternatives` premise entirely eliminated** — replaced by event-level export structure. `header_stripping_produces_pathology` takes `dispute_about` + `cross_axis_dispute_about`; zero opaque or type-universe hypotheses. |
 | C1 (`TractionAuthSplit`) | **Proved** as two mechanism-grounded theorems: `innovation_allows_traction_without_authorization` (`PreAuthTractionWitness`) + `caveated_authorization_does_not_force_certainty` (`BurdensomeAuthWitness`). |
 
