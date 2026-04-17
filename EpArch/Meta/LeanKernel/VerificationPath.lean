@@ -10,8 +10,8 @@ Lean domain. This shows the shape any domain instantiation must take.
 
 **Part B — Core theory connection (one axiom).**
 Connecting to the core theory's `redeemable d` requires crossing the opaque barrier
-in Commitments.lean. That barrier is intentional: the three predicates are opaque
-because their realization varies across domains, across subsystems within a domain,
+in Commitments.lean. That barrier is intentional: `vindication_evidence` is opaque
+because its realization varies across domains, across subsystems within a domain,
 and even across deposits within the same system. A single concrete body would not
 just commit the architecture to one domain — it would assert a uniform implementation
 of route, contact, and verdict for every deposit, which is false in any realistic
@@ -42,8 +42,8 @@ open EpArch
 
 /-! ## Concrete Lean-Domain Predicates
 
-Non-opaque definitions inhabitable by construction — unlike the sealed opaques in
-Commitments.lean that each domain must satisfy from the outside. -/
+Non-opaque definitions inhabitable by construction — unlike `vindication_evidence`
+(the sealed opaque in Commitments.lean) that each domain must satisfy from the outside. -/
 
 /-- A proof term exists for this deposit's claim: the claim is inhabited as a Prop. -/
 def LeanPathExists (d : Deposit Prop Standard ErrorModel Provenance) (_ : ConstraintSurface) : Prop :=
@@ -99,17 +99,19 @@ theorem lean_redeemable_deposits_exist :
 /-! ## Connecting to the Core Theory
 
 Part A filled the abstract C4 interface with concrete Lean-domain definitions.
-Part B's axiom bridges those definitions to the core theory's sealed opaques —
+Part B's axiom bridges those definitions to the core theory's sealed opaque (`vindication_evidence`) —
 the step that cannot be a theorem, for the reasons given in the file header. -/
 
 /-- The Lean domain satisfies the abstract C4 interface.
 
     **What it asserts:** For any proved Prop deposit, the Lean kernel satisfies
-    all three opaque evidence predicates against the deposit's own constraint surface.
+    all three vindication-role predicates against the deposit's own constraint surface
+    (via the opaque `vindication_evidence` in Commitments.lean).
 
-    **Why an axiom:** The opaques in Commitments.lean are sealed by design; any
-    concrete body would fix one domain's validation mechanism as the architecture's own.
-    This axiom names the Lean domain's trust boundary. Other domains supply their own.
+    **Why an axiom:** The opaque `vindication_evidence` in Commitments.lean is sealed
+    by design; any concrete body would fix one domain's validation mechanism as the
+    architecture's own. This axiom names the Lean domain's trust boundary. Other domains
+    supply their own.
 
     **Universe note:** `Prop : Type 0 = Type`, so `Standard`, `ErrorModel`, and
     `Provenance` are fixed to `Type` (universe 0). -/
@@ -125,7 +127,7 @@ axiom lean_kernel_verification_path
 
     **Theorem shape:** `d.P → redeemable d` (core `redeemable`, not `lean_redeemable`)
 
-    **Proof strategy:** Destructs the axiom, packages the three opaque evidence terms
+    **Proof strategy:** Destructs the axiom, packages the three evidence terms
     into a `VerificationPath`, witnesses `vp.deposit = d` and `vp.surface = d.h.redeem`
     by `rfl`. -/
 theorem lean_kernel_path_is_redeemable

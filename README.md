@@ -10,7 +10,7 @@ Standalone Lean 4 framework for reasoning about bounded epistemic systems under 
 
 [![CI](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml/badge.svg)](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml)
 
-**0 axiom declarations. 0 sorries.**
+**0 axiom declarations in the core formalization. 0 sorries.** One named axiom (`lean_kernel_verification_path`) exists in `EpArch/Meta/LeanKernel/VerificationPath.lean` — a worked domain-instantiation example not imported in `Main.lean` and outside the core claim. See [DOCS/AXIOMS.md](DOCS/AXIOMS.md).
 
 > **Reading guide.** Much of the theorem surface is structural bookkeeping (transport lemmas, `Has*` witnesses, definitional unfolding). For the substantive results — the impossibility proofs that show *why* alternative architectures fail — start with `StructurallyForced` in `Convergence.lean` and the impossibility witnesses in `GroundedXStrict`, not the `Has*` predicates in `Minimality.lean`.
 
@@ -188,7 +188,7 @@ The framework has three layers:
 
 ## Axiom Declarations
 
-The formalization contains **zero `axiom` declarations**. All 8 structural commitments are proved standalone theorems; `commitments_pack` bundles the unconditional ones (C3/C4b/C7b/C8). Operational invariants are grounded in `StepSemantics`. Opaque domain primitives are declared with `opaque`, not `axiom`.
+The core formalization (the `Main.lean` import surface) contains **zero `axiom` declarations**. All 8 structural commitments are proved standalone theorems; `commitments_pack` bundles the unconditional ones (C3/C4b/C7b/C8). Operational invariants are grounded in `StepSemantics`. Opaque domain primitives are declared with `opaque`, not `axiom`. One named axiom (`lean_kernel_verification_path`) exists in `EpArch/Meta/LeanKernel/VerificationPath.lean` — a worked domain-instantiation example not imported in `Main.lean` and outside the core architectural claim.
 
 > **Note:** “zero global axioms” does not mean “zero assumptions in an absolute sense.”
 > EpArch works with explicit base commitments and context-bundled conditions where appropriate;
@@ -266,9 +266,10 @@ lake build
 Select-String -Path "EpArch\*.lean", "EpArch\**\*.lean" -Pattern "^\s*sorry\b"
 # Expected: no output
 
-# Verify axiom declarations (expect 0)
+# Verify axiom declarations (expect 1: lean_kernel_verification_path in Meta/LeanKernel/VerificationPath.lean;
+# that file is a worked domain-instantiation example outside the core claim, not imported in Main.lean)
 (Select-String -Path "EpArch\*.lean", "EpArch\**\*.lean" -Pattern "^axiom\s" | Measure-Object).Count
-# Expected: 0
+# Expected: 1
 
 # Verify Concrete/ modules have no axioms
 Get-ChildItem -Path "EpArch\Concrete\" -Filter "*.lean" | ForEach-Object {

@@ -7,10 +7,11 @@ are proved theorems.
 > intra-bubble deposits cannot be redeemable — but the positive witness (`∃ d, redeemable d`)
 > is outside the core theory's scope. EpArch specifies the structure around validation;
 > it does not itself validate. Domain instantiators (agent OS, proof checker, legal process,
-> etc.) are responsible for discharging the positive side by supplying concrete witnesses
-> for `path_route_exists`, `contact_was_made`, and `verdict_discriminates` in their domain.
+> etc.) are responsible for discharging the positive side by supplying a concrete
+> instantiation of `vindication_evidence` (the opaque) for their domain — either by axiom
+> (naming the trust boundary explicitly) or by building non-opaque analogues of each role.
 > `EpArch/Meta/LeanKernel/VerificationPath.lean` is one worked example of such an
-> instantiation — it is verified by the build but is not part of the core architectural claim.
+> instantiation — it is not imported in `Main.lean` and is not part of the core architectural claim.
 
 This document records the current assumption boundary and how the prior axiom surface was resolved.
 
@@ -37,12 +38,13 @@ the Lean kernel constitutes a VerificationPath against that deposit's own constr
 a proof term exists (route), elaboration ran (contact), and the kernel discriminated the
 verdict (it does not accept all terms without sorry).
 
-**Why it is an axiom and not a theorem:** `path_route_exists`, `contact_was_made`, and
-`verdict_discriminates` are `opaque` in `Commitments.lean` by design — any concrete body
-would commit the core theory to one domain's validation mechanism and break the
-domain-generality of every theorem about `redeemable`. This axiom names the Lean domain's
-trust boundary. Other domains (observation over time, RLHF, institutional assessment,
-peer challenge) would each supply their own analogous axiom.
+**Why it is an axiom and not a theorem:** `vindication_evidence` is `opaque` in
+`Commitments.lean` by design — `path_route_exists`, `contact_was_made`, and
+`verdict_discriminates` are transparent projections of it. Any concrete body for
+`vindication_evidence` would commit the core theory to one domain's validation mechanism
+and break the domain-generality of every theorem about `redeemable`. This axiom names
+the Lean domain's trust boundary. Other domains (observation over time, RLHF, institutional
+assessment, peer challenge) would each supply their own analogous axiom.
 
 **Non-vacuity closed:** `redeemable_deposits_exist` (in the same file) now proves
 `∃ d, redeemable d` — the positive direction that was previously missing.
@@ -134,7 +136,7 @@ Key opaque primitives:
 | `agentTraction` | Basic.lean | Agent's private traction assignment (Claim → LadderStage); hook for psychology/cognition |
 | `ignores_bank_signal` | Basic.lean | Whether agent's review channel is closed (separate from `certainty_L`) |
 | `header_preserved` | Header.lean | Deposit has header intact (vs. stripped in transmission); `header_stripped` is a def: `¬header_preserved` |
-| `path_route_exists` / `contact_was_made` / `verdict_discriminates` | Commitments.lean | Opaque evidence predicates for VerificationPath (C4: redeemability external to consensus). Inhabited via `lean_kernel_verification_path` axiom for the Lean domain; generic hooks preserved for other domains. |
+| `vindication_evidence` | Commitments.lean | Single opaque for surface-relative vindication evidence (C4: redeemability external to consensus). `path_route_exists`, `contact_was_made`, `verdict_discriminates` are transparent `def` projections. Inhabited via `lean_kernel_verification_path` axiom for the Lean domain; other domains supply their own. |
 | `pushback` | Commitments.lean | Agent-level contestation of a deposit; used in C6 repair-loop machinery |
 | `exportDep` / `TrustBridge` / `Revalidate` / `RepairAction` | Bank.lean | Abstract behavioral hooks (cross-bubble export, trust bridge, revalidation, repair action type) |
 | Adversarial/Base.lean opaques | Adversarial/Base.lean | 17 opaques constituting the adversarial model: attack channel (`AuditChannel`, `channel_capacity`, `attack_volume`), DDoS state (`ladder_overloaded`, `V_channel_exhausted`, etc.), countermeasures (`trust_bridge_on_hand`, `E_includes_threat`, etc.), cost primitives (`export_cost`, `import_defense_cost`). Note: `cheap_validator_reachable`, `transaction_reversible`, and `constraint_cheaply_testable` are **`def`s** (grounded as `d.h.τ > 0` or `τ > 0`), not opaques — see §Adversarial Model in THEOREMS.md |
