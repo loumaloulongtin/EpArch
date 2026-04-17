@@ -84,7 +84,7 @@ theorem commitments_feasible :
     (∃ B1 B2 d, ConcreteModel.c_ungated_export B1 B2 d →
       (ConcreteModel.c_revalidated B2 d ∨ ConcreteModel.c_trust_bridge B1 B2)) ∧
     -- Commitment 6: Repair loop
-    (∃ _d c : ConcreteModel.CChallenge, c.field ∈ ["S", "E", "V", "τ"]) ∧
+    (∃ (_ : ConcreteModel.CDeposit) (c : ConcreteModel.CChallenge), c.field ∈ ["S", "E", "V", "τ"]) ∧
     -- Commitment 7: Header-stripped loses diagnosability
     (∃ d : ConcreteModel.CDeposit, ConcreteModel.c_header_stripped d ∧ d.E.length = 0) ∧
     -- Commitment 8: Fresh/stale differ

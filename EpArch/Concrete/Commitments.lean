@@ -363,7 +363,7 @@ theorem all_commitments_satisfiable :
     -- Commitment 5: Export gating is required (ungated → revalidation or trust bridge)
     (∃ B1 B2 d, c_ungated_export B1 B2 d → (c_revalidated B2 d ∨ c_trust_bridge B1 B2)) ∧
     -- Commitment 6: Repair loop with field localization exists
-    (∃ _d c : CChallenge, c.field ∈ ["S", "E", "V", "τ"]) ∧
+    (∃ (_ : CDeposit) (c : CChallenge), c.field ∈ ["S", "E", "V", "τ"]) ∧
     -- Commitment 7: Header-stripped claims lose diagnosability
     (∃ d : CDeposit, c_header_stripped d ∧ d.E.length = 0) ∧
     -- Commitment 8: Fresh and stale deposits differ
@@ -389,11 +389,8 @@ theorem all_commitments_satisfiable :
     exact ⟨witness_ungated_export.1, witness_ungated_export.2.1, witness_ungated_export.2.2,
            commitment5_concrete⟩
   constructor
-  · -- Commitment 6
-    let d : CDeposit := { claim := "P", S := 50, E := [], V := [], τ := 100,
-                          cs := { domain := "test", test_procedure := "check" } }
-    let c : CChallenge := { target := d, field := "S", reason := "test" }
-    exact ⟨c, c, List.Mem.head _⟩
+  · -- Commitment 6: witness_repair_loop provides both the deposit and the challenge
+    exact ⟨witness_repair_loop.1, witness_repair_loop.2, commitment6_concrete.1⟩
   constructor
   · -- Commitment 7
     exact ⟨_, commitment7_concrete.2.1, commitment7_concrete.2.2.1⟩

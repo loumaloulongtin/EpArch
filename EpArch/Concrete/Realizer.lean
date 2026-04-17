@@ -49,7 +49,7 @@ structure Realizer where
     (∃ B1 B2 d, EpArch.ConcreteModel.c_ungated_export B1 B2 d →
       (EpArch.ConcreteModel.c_revalidated B2 d ∨ EpArch.ConcreteModel.c_trust_bridge B1 B2)) ∧
     -- Commitment 6: Repair loop with field localization exists
-    (∃ _d c : EpArch.ConcreteModel.CChallenge, c.field ∈ ["S", "E", "V", "τ"]) ∧
+    (∃ (_ : EpArch.ConcreteModel.CDeposit) (c : EpArch.ConcreteModel.CChallenge), c.field ∈ ["S", "E", "V", "τ"]) ∧
     -- Commitment 7: Header-stripped claims lose diagnosability
     (∃ d : EpArch.ConcreteModel.CDeposit, EpArch.ConcreteModel.c_header_stripped d ∧ d.E.length = 0) ∧
     -- Commitment 8: Fresh and stale deposits differ
