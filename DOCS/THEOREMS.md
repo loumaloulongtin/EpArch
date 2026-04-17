@@ -597,7 +597,7 @@ These theorems prove that out-of-scope fundamentals (physics, consciousness, psy
 
 **Role:** Convert philosophical "linking axioms" from axioms to definitional theorems.
 
-**Files:** `Theorems/Dissolutions.lean`, `Theorems/Pathologies.lean`
+**Files:** `Theorems/Dissolutions.lean`, `Theorems/Pathologies.lean`, `Theorems/NotationBridge.lean`
 
 Each linking axiom is discharged by making an opaque predicate concrete — replacing an assumed philosophical connection with explicit typed fields and well-formedness constraints.
 
@@ -634,6 +634,16 @@ Each linking axiom is discharged by making an opaque predicate concrete — repl
 | `math_practice_is_bubble_distinct` | âœ… theorem | Mathematical practice is a bubble: notation varies, structural position (constraint surface) does not |
 | `bridge_monolithic_opaque` | âœ… theorem | `¬depositHasHeader → ¬field_checkable` via `harder_without_headers`; header absence makes challenge fields guesses, not diagnoses |
 | `bridge_stripped_ungrounded` | âœ… theorem | Follows from depositHasHeader definition |
+
+### Batch 3: Notation Bridge Extensions
+
+**File:** `Theorems/NotationBridge.lean`
+
+| Theorem | Mechanism |
+|---------|-----------|
+| `notation_opacity_prevents_authorization` | ¬(σ′ pointwise equals σ) from divergence witness — single mismatch defeats identification |
+| `bridge_export_enables_authorization` | `notation_bridge_case` instantiates `notation_invariance_of_redeemability`; Layer 1 at the export-packet bijection |
+| `accidental_correctness_is_not_authorization` | ¬(σ′ = σ as functions) from route mismatch; surface correctness does not repair the authorization gap |
 
 ---
 

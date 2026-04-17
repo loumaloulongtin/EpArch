@@ -142,7 +142,7 @@ The framework has three layers:
 
 | Module | Purpose |
 |---|---|
-| `Theorems/` | Primary theorem library — 10 focused sub-modules: `Withdrawal`, `Cases`, `Headers`, `Modal`, `Strip`, `Corners`, `Dissolutions`, `Pathologies`, `Diagnosability`, `BehavioralEquivalence` |
+| `Theorems/` | Primary theorem library — 11 focused sub-modules: `Withdrawal`, `Cases`, `Headers`, `Modal`, `Strip`, `Corners`, `Dissolutions`, `Pathologies`, `Diagnosability`, `BehavioralEquivalence`, `NotationBridge` |
 | `Theorems/Diagnosability.lean` | Observability-based diagnosability ordering |
 | `Adversarial/Base.lean` | Adversarial type definitions |
 | `Adversarial/Obligations.lean` | Attack/defense obligation theorems under world bundles |
