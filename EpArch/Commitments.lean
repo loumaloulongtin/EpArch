@@ -20,8 +20,8 @@ hypothesis bundles.
 - C3 (`SEVFactorization`)    — by rfl
 - C4b (`redeemability_requires_more_than_consensus`) — proved from `intra_bubble_only`
     and `consensus B d.P` (a genuine active deposit) versus `redeemable`
-    (requires opaque external evidence: path_route_exists, contact_was_made,
-    verdict_discriminates).
+    (requires `vindication_evidence` — role-parameterized opaque backing
+    `path_route_exists`, `contact_was_made`, `verdict_discriminates`).
 - C5 (`ExportGating`)        — from the LTS export constructors
 - C6b (`NoSelfCorrectionWithoutRevision`) — from StepSemantics
 - C7b (`header_stripping_harder`) — proved via the admissible completion-space model:
@@ -202,7 +202,14 @@ theorem SEVFactorization (d : Deposit PropLike Standard ErrorModel Provenance) :
 
 /-! ## Commitment 4: Redeemability External to Consensus -/
 
-/-- Abstract interface for domain-specific verification evidence.
+/-- The three roles any validation occurrence must fill for a deposit to be redeemable.
+    Parameterizes `vindication_evidence` — the single opaque core of the C4 surface. -/
+inductive VindicationRole
+  | Channel  -- A route to the evaluative surface exists for this deposit
+  | Contact  -- The evaluative surface was actually exercised
+  | Verdict  -- The surface gave a nontrivial result under its own standard
+
+/-- Single opaque abstraction for surface-relative vindication evidence.
 
     EpArch tracks **redeemability** — surface-relative vindication — not truth
     simpliciter. The architecture must remain neutral between objective, institutional,
@@ -216,35 +223,44 @@ theorem SEVFactorization (d : Deposit PropLike Standard ErrorModel Provenance) :
     intentionally neutral between these.
 
     A second, independent reason: even within claims of one kind, realization varies
-    per deposit, not just per domain. The type signature encodes this — each predicate
-    takes a `Deposit` as its first argument. In Lean alone, fresh elaboration, cache
-    reuse, and proof-object replay are genuinely different realizations of `path_route_exists`
+    per deposit, not just per domain. In Lean alone, fresh elaboration, cache reuse,
+    and proof-object replay are genuinely different realizations of the Channel role
     for different deposits. A single concrete body would assert uniform implementation
     across all deposits, which is false in any realistic system.
 
-    Domain instantiators discharge these predicates by axiom (naming their trust
-    boundary explicitly) or by building concrete non-opaque analogues.
+    The three predicates `path_route_exists`, `contact_was_made`, `verdict_discriminates`
+    are transparent projections of this single opaque — three roles of one underlying
+    vindication concept, not three independent black boxes.
+
+    Domain instantiators discharge `vindication_evidence` by axiom (naming their trust
+    boundary explicitly) or by building concrete non-opaque analogues for each role.
     See `EpArch.Meta.LeanKernel.VerificationPath` for a worked example of both
     approaches. -/
-opaque path_route_exists : Deposit PropLike Standard ErrorModel Provenance →
-    ConstraintSurface → Prop
-/-- Whether the domain's contact mechanism was exercised against this deposit.
-    See `path_route_exists` above for the full design rationale. -/
-opaque contact_was_made : Deposit PropLike Standard ErrorModel Provenance →
-    ConstraintSurface → Prop
-/-- Whether the relevant evaluative surface gave a nontrivial verdict for this deposit —
-    i.e., it can distinguish outcomes under the deposit's own standard, whatever that
-    standard is (proof checker, institution, preference, benchmark, community acceptance
-    rule). Does not mean "returned the objectively correct truth verdict."
-    See `path_route_exists` above for the full design rationale. -/
-opaque verdict_discriminates : Deposit PropLike Standard ErrorModel Provenance →
+opaque vindication_evidence : VindicationRole →
+    Deposit PropLike Standard ErrorModel Provenance →
     ConstraintSurface → Prop
 
-/-- A verification path: connects deposit to constraint surface.
-    The three evidence fields carry opaque Prop witnesses -- they cannot be
-    satisfied by constructing a record with trivially true Bool fields.
-    External evidence is required to inhabit path_route_exists, contact_was_made,
-    and verdict_discriminates. -/
+/-- A route to the evaluative surface exists for this deposit (`VindicationRole.Channel`). -/
+def path_route_exists (d : Deposit PropLike Standard ErrorModel Provenance)
+    (cs : ConstraintSurface) : Prop :=
+  vindication_evidence .Channel d cs
+
+/-- The evaluative surface was actually exercised for this deposit (`VindicationRole.Contact`). -/
+def contact_was_made (d : Deposit PropLike Standard ErrorModel Provenance)
+    (cs : ConstraintSurface) : Prop :=
+  vindication_evidence .Contact d cs
+
+/-- The evaluative surface gave a nontrivial verdict under its own standard (`VindicationRole.Verdict`).
+    "Nontrivial" means it can distinguish outcomes for this deposit under whatever standard
+    applies — proof checker, institution, preference, benchmark, community acceptance rule.
+    Does not mean "returned the objectively correct truth verdict." -/
+def verdict_discriminates (d : Deposit PropLike Standard ErrorModel Provenance)
+    (cs : ConstraintSurface) : Prop :=
+  vindication_evidence .Verdict d cs
+
+/-- A verification path: connects deposit to constraint surface via all three vindication roles.
+    The evidence fields are backed by `vindication_evidence` (opaque), so the structure
+    cannot be trivially constructed — external evidence is required for each role. -/
 structure VerificationPath where
   deposit   : Deposit PropLike Standard ErrorModel Provenance
   surface   : ConstraintSurface
@@ -299,8 +315,9 @@ theorem redeemable_implies_contact_and_discriminating
 
 /-! Commitment 4b: Consensus alone doesn't create redeemability.
     Proved structurally below: `intra_bubble_only` deposits cannot be redeemable
-    because redeemability requires `path_route_exists` (opaque external evidence)
-    while intra-bubble deposits provably have no such route. -/
+    because redeemability requires `vindication_evidence .Channel` (the Channel role
+    of the opaque vindication interface) while intra-bubble deposits provably have
+    no such route. -/
 
 /-- A deposit is intra-bubble-only if it has no external route to any constraint surface.
     This is the structural condition that separates consensus from redeemability:
