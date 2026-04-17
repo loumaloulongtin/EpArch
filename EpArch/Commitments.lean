@@ -204,28 +204,23 @@ theorem SEVFactorization (d : Deposit PropLike Standard ErrorModel Provenance) :
 
 /-- Abstract interface for domain-specific verification evidence.
 
-    These three predicates are `opaque` by design — not by limitation. Their realization
-    can vary across domains, across subsystems within a domain, and even across deposits
-    within the same system. Fixing any concrete body would not just pick one domain; it
-    would also assert a uniform implementation of route, contact, and verdict across every
-    deposit — which is false in any realistic system.
+    EpArch tracks **redeemability** — surface-relative vindication — not truth
+    simpliciter. The architecture must remain neutral between objective, institutional,
+    and preference-scoped claims, because those do not share an evaluation space.
+    "This theorem type-checks," "this food tastes good to me," "this interpretation is
+    acceptable under this jurisdiction" are all candidates for redeemability. There is
+    no single global truth function that discriminates across all of them, so EpArch
+    should not bake one in. For objective claims, redeemability coincides with truth
+    under the deposit's standard; for preference- or scope-relative claims, it means
+    answerability to the deposit's own constraint surface. The architecture is
+    intentionally neutral between these.
 
-    The type signature already encodes this: each predicate takes a `Deposit` as its first
-    argument because the realization is inherently per-deposit, not per-domain-tag.
-
-    Examples of realization variance within a single domain:
-    - In Lean: one deposit may be validated by fresh elaboration, another by cache reuse,
-      another by proof-object replay. All three satisfy the same abstract interface, but
-      none is a canonical implementation of `path_route_exists`.
-    - In a human/institutional setting: one claim may be validated by direct observation,
-      another by expert testimony, another by adversarial challenge, another by document
-      trail. The contact and verdict events differ per deposit, not just per domain.
-    - In an agent OS: different claims may go through different routes, contact events,
-      and verdict mechanisms even within the same run.
-
-    The opaques preserve the generality: *something* must constitute a path, *something*
-    must constitute contact, *something* must discriminate verdicts — but what those
-    things are is the implementing domain's responsibility, deposit by deposit.
+    A second, independent reason: even within claims of one kind, realization varies
+    per deposit, not just per domain. The type signature encodes this — each predicate
+    takes a `Deposit` as its first argument. In Lean alone, fresh elaboration, cache
+    reuse, and proof-object replay are genuinely different realizations of `path_route_exists`
+    for different deposits. A single concrete body would assert uniform implementation
+    across all deposits, which is false in any realistic system.
 
     Domain instantiators discharge these predicates by axiom (naming their trust
     boundary explicitly) or by building concrete non-opaque analogues.
@@ -237,8 +232,11 @@ opaque path_route_exists : Deposit PropLike Standard ErrorModel Provenance →
     See `path_route_exists` above for the full design rationale. -/
 opaque contact_was_made : Deposit PropLike Standard ErrorModel Provenance →
     ConstraintSurface → Prop
-/-- Whether the domain's verdict function discriminated — i.e., does not accept all
-    terms uniformly. See `path_route_exists` above for the full design rationale. -/
+/-- Whether the relevant evaluative surface gave a nontrivial verdict for this deposit —
+    i.e., it can distinguish outcomes under the deposit's own standard, whatever that
+    standard is (proof checker, institution, preference, benchmark, community acceptance
+    rule). Does not mean "returned the objectively correct truth verdict."
+    See `path_route_exists` above for the full design rationale. -/
 opaque verdict_discriminates : Deposit PropLike Standard ErrorModel Provenance →
     ConstraintSurface → Prop
 
