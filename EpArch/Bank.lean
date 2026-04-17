@@ -3,7 +3,7 @@ EpArch.Bank — Bank (Shared Ledger Substrate)
 
 Defines the Bank substrate: the shared ledger of authorized deposits.
 Contains the core predicates (knowledge_B, deposited, hasDeposit), the
-withdrawal and export operators, the full lifecycle operator suite
+export operators, the full lifecycle operator suite
 (Validate, Accept, Challenge, Repair, Revoke, Restore, Export, Import),
 status-transition theorems, and bubble hygiene structures.
 
@@ -77,18 +77,6 @@ theorem KnowledgeIffDeposited (B : Bubble) (P : PropLike) :
     knowledge_B B P ↔ hasDeposit B P := Iff.rfl
 
 
-/-! ## Withdrawal -/
-
-/-- Withdrawal context: an agent relying on a deposit. -/
-structure WithdrawalCtx where
-  agent : Agent
-  deposit : Deposit PropLike Standard ErrorModel Provenance
-
-/-- Withdraw: agent relies on deposit in bubble.
-    Requires ACL, τ (currentness), and choice to consult bank. -/
-opaque withdraw : Agent → Bubble → Deposit PropLike Standard ErrorModel Provenance → Prop
-
-
 /-! ## Export/Import -/
 
 /-- Export: deposit crosses from bubble B1 to bubble B2.
@@ -123,8 +111,10 @@ def repair (_B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance)
     within B's own endorsement process.  Contrast with `redeemable`, which requires
     `path_route_exists`, `contact_was_made`, and `verdict_discriminates` against an
     external constraint surface.
-    Formally `True`: any bubble can form endorsement without external gating. -/
-def consensus (_B : Bubble) (_P : PropLike) : Prop := True
+    Grounded in `hasDeposit`: at least one active authorized deposit for P exists in B.
+    This is the minimal meaningful endorsement condition at the abstract level — the
+    concrete model (`c_consensus`) requires ≥ 2 deposits; this sets the floor. -/
+def consensus (B : Bubble) (P : PropLike) : Prop := hasDeposit B P
 
 
 /-! ## Lifecycle Operators -/

@@ -868,21 +868,23 @@ The remaining commitments are proved as named theorems:
 -/
 
 /-- Redeemability requires more than consensus: the constraint surface is independent.
-    For intra-bubble deposits, consensus (trivially true for any bubble) and redeemability
-    (requiring external path, contact, and verdict evidence) are structurally separated.
-    Proved structurally: the separation follows from definitions alone. -/
+    For intra-bubble deposits, consensus (a genuine active deposit for P in B) and
+    redeemability (requiring external path, contact, and verdict evidence) are
+    structurally separated. Proved structurally: the separation follows from definitions
+    alone, given an actual endorsement event and the absence of an external route. -/
 theorem redeemability_requires_more_than_consensus
     (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance)
-    (h_intra : intra_bubble_only d) :
+    (h_intra : intra_bubble_only d) (h_cons : consensus B d.P) :
     does_not_imply (consensus B d.P) (redeemable d) :=
-  ⟨trivial, intra_bubble_not_redeemable d h_intra⟩
+  ⟨h_cons, intra_bubble_not_redeemable d h_intra⟩
 
 /-- Standalone commitments pack: unconditional commitment theorems (C3/C4b/C7b/C8).
     C4b is the commitment-specific result that distinguishes this from
     `structural_theorems_unconditional` (Cluster B).
     - C3: `SEVFactorization` — every deposit carries independent S/E/V fields.
-    - C4b: `redeemability_requires_more_than_consensus` — intra-bubble deposits cannot
-           be redeemable; consensus (True) and redeemability are structurally separated.
+    - C4b: `redeemability_requires_more_than_consensus` — given a genuine intra-bubble
+           endorsement event AND absence of an external route, consensus and redeemability
+           are structurally separated.
     - C7b: `header_stripping_harder` — stripped disputes are systematically harder to diagnose.
     - C8: `TemporalValidity` — refreshed and unrefreshed deposits are not equivalent.
     C1, C2, C5, C6b are proved as named theorems (see their respective sections). -/
@@ -891,7 +893,7 @@ theorem commitments_pack :
         ∃ (s : Standard) (e : ErrorModel) (v : Provenance),
           d.h.S = s ∧ d.h.E = e ∧ d.h.V = v) ∧
     (∀ (B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance),
-        intra_bubble_only d → does_not_imply (consensus B d.P) (redeemable d)) ∧
+        intra_bubble_only d → consensus B d.P → does_not_imply (consensus B d.P) (redeemable d)) ∧
     systematically_harder header_preserved_diagnosability header_stripped_diagnosability ∧
     (∀ (d1 d2 : Deposit PropLike Standard ErrorModel Provenance),
         refreshed d1 → unrefreshed d2 → ¬performs_equivalently d1 d2) :=
