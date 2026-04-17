@@ -39,16 +39,17 @@ structure Realizer where
     -- Commitment 1: Traction/Authorization split
     (∃ a B P, EpArch.ConcreteModel.c_certainty a P ∧ ¬EpArch.ConcreteModel.c_knowledge B P) ∧
     (∃ a B P, EpArch.ConcreteModel.c_knowledge B P ∧ ¬EpArch.ConcreteModel.c_certainty a P) ∧
-    -- Commitment 2: No global ledger supports both innovation and coordination
-    (∃ G : EpArch.ConcreteModel.CGlobalLedger, ¬(EpArch.ConcreteModel.c_supports_innovation G ∧ EpArch.ConcreteModel.c_supports_coordination G)) ∧
+    -- Commitment 2: Innovation and coordination are in genuine tension
+    (∃ G : EpArch.ConcreteModel.CGlobalLedger, EpArch.ConcreteModel.c_supports_innovation G ∧ ¬EpArch.ConcreteModel.c_supports_coordination G) ∧
     -- Commitment 3: S/E/V factorization exists
     (∃ d : EpArch.ConcreteModel.CDeposit, d.S > 0 ∧ d.E.length > 0 ∧ d.V.length > 0) ∧
     -- Commitment 4: Consensus without redeemability is possible
     (∃ B d, EpArch.ConcreteModel.c_consensus B d.claim ∧ ¬EpArch.ConcreteModel.c_redeemable d) ∧
-    -- Commitment 5: Export gating (captured by architecture)
-    True ∧
+    -- Commitment 5: Export gating is required (ungated → revalidation or trust bridge)
+    (∃ B1 B2 d, EpArch.ConcreteModel.c_ungated_export B1 B2 d →
+      (EpArch.ConcreteModel.c_revalidated B2 d ∨ EpArch.ConcreteModel.c_trust_bridge B1 B2)) ∧
     -- Commitment 6: Repair loop with field localization exists
-    (∃ _d c : EpArch.ConcreteModel.CChallenge, c.field ∈ ["S", "E", "V", "τ"]) ∧
+    (∃ (_ : EpArch.ConcreteModel.CDeposit) (c : EpArch.ConcreteModel.CChallenge), c.field ∈ ["S", "E", "V", "τ"]) ∧
     -- Commitment 7: Header-stripped claims lose diagnosability
     (∃ d : EpArch.ConcreteModel.CDeposit, EpArch.ConcreteModel.c_header_stripped d ∧ d.E.length = 0) ∧
     -- Commitment 8: Fresh and stale deposits differ

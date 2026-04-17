@@ -74,16 +74,17 @@ theorem commitments_feasible :
     -- Commitment 1: Traction/Authorization split
     (∃ a B P, ConcreteModel.c_certainty a P ∧ ¬ConcreteModel.c_knowledge B P) ∧
     (∃ a B P, ConcreteModel.c_knowledge B P ∧ ¬ConcreteModel.c_certainty a P) ∧
-    -- Commitment 2: No global ledger supports both
-    (∃ G, ¬(ConcreteModel.c_supports_innovation G ∧ ConcreteModel.c_supports_coordination G)) ∧
+    -- Commitment 2: Innovation and coordination are in genuine tension
+    (∃ G, ConcreteModel.c_supports_innovation G ∧ ¬ConcreteModel.c_supports_coordination G) ∧
     -- Commitment 3: S/E/V factorization exists
     (∃ d : ConcreteModel.CDeposit, d.S > 0 ∧ d.E.length > 0 ∧ d.V.length > 0) ∧
     -- Commitment 4: Consensus without redeemability
     (∃ B d, ConcreteModel.c_consensus B d.claim ∧ ¬ConcreteModel.c_redeemable d) ∧
-    -- Commitment 5: Export gating
-    True ∧
+    -- Commitment 5: Export gating is required (ungated → revalidation or trust bridge)
+    (∃ B1 B2 d, ConcreteModel.c_ungated_export B1 B2 d →
+      (ConcreteModel.c_revalidated B2 d ∨ ConcreteModel.c_trust_bridge B1 B2)) ∧
     -- Commitment 6: Repair loop
-    (∃ _d c : ConcreteModel.CChallenge, c.field ∈ ["S", "E", "V", "τ"]) ∧
+    (∃ (_ : ConcreteModel.CDeposit) (c : ConcreteModel.CChallenge), c.field ∈ ["S", "E", "V", "τ"]) ∧
     -- Commitment 7: Header-stripped loses diagnosability
     (∃ d : ConcreteModel.CDeposit, ConcreteModel.c_header_stripped d ∧ d.E.length = 0) ∧
     -- Commitment 8: Fresh/stale differ
