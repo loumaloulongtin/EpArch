@@ -74,8 +74,8 @@ theorem commitments_feasible :
     -- Commitment 1: Traction/Authorization split
     (∃ a B P, ConcreteModel.c_certainty a P ∧ ¬ConcreteModel.c_knowledge B P) ∧
     (∃ a B P, ConcreteModel.c_knowledge B P ∧ ¬ConcreteModel.c_certainty a P) ∧
-    -- Commitment 2: No global ledger supports both
-    (∃ G, ¬(ConcreteModel.c_supports_innovation G ∧ ConcreteModel.c_supports_coordination G)) ∧
+    -- Commitment 2: Innovation and coordination are in genuine tension
+    (∃ G, ConcreteModel.c_supports_innovation G ∧ ¬ConcreteModel.c_supports_coordination G) ∧
     -- Commitment 3: S/E/V factorization exists
     (∃ d : ConcreteModel.CDeposit, d.S > 0 ∧ d.E.length > 0 ∧ d.V.length > 0) ∧
     -- Commitment 4: Consensus without redeemability

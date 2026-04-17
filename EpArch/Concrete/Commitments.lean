@@ -353,8 +353,9 @@ theorem all_commitments_satisfiable :
     -- Commitment 1: Traction/Authorization split
     (∃ a B P, c_certainty a P ∧ ¬c_knowledge B P) ∧
     (∃ a B P, c_knowledge B P ∧ ¬c_certainty a P) ∧
-    -- Commitment 2: No global ledger supports both innovation and coordination
-    (∃ G : CGlobalLedger, ¬(c_supports_innovation G ∧ c_supports_coordination G)) ∧
+    -- Commitment 2: Innovation and coordination are in genuine tension
+    -- (a ledger CAN support innovation AND cannot support coordination simultaneously)
+    (∃ G : CGlobalLedger, c_supports_innovation G ∧ ¬c_supports_coordination G) ∧
     -- Commitment 3: S/E/V factorization exists
     (∃ d : CDeposit, d.S > 0 ∧ d.E.length > 0 ∧ d.V.length > 0) ∧
     -- Commitment 4: Consensus without redeemability is possible
@@ -375,8 +376,8 @@ theorem all_commitments_satisfiable :
   · -- Commitment 1b: ∃ a B P, c_knowledge B P ∧ ¬c_certainty a P
     exact ⟨_, _, _, commitment1_concrete.2⟩
   constructor
-  · -- Commitment 2
-    exact ⟨witness_global_ledger_conflict, fun ⟨_, h_c⟩ => commitment2_concrete.2 h_c⟩
+  · -- Commitment 2: witness directly; commitment2_concrete proves both directions
+    exact ⟨witness_global_ledger_conflict, commitment2_concrete⟩
   constructor
   · -- Commitment 3
     exact ⟨witness_SEV_deposit, commitment3_concrete⟩

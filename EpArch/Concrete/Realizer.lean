@@ -39,8 +39,8 @@ structure Realizer where
     -- Commitment 1: Traction/Authorization split
     (∃ a B P, EpArch.ConcreteModel.c_certainty a P ∧ ¬EpArch.ConcreteModel.c_knowledge B P) ∧
     (∃ a B P, EpArch.ConcreteModel.c_knowledge B P ∧ ¬EpArch.ConcreteModel.c_certainty a P) ∧
-    -- Commitment 2: No global ledger supports both innovation and coordination
-    (∃ G : EpArch.ConcreteModel.CGlobalLedger, ¬(EpArch.ConcreteModel.c_supports_innovation G ∧ EpArch.ConcreteModel.c_supports_coordination G)) ∧
+    -- Commitment 2: Innovation and coordination are in genuine tension
+    (∃ G : EpArch.ConcreteModel.CGlobalLedger, EpArch.ConcreteModel.c_supports_innovation G ∧ ¬EpArch.ConcreteModel.c_supports_coordination G) ∧
     -- Commitment 3: S/E/V factorization exists
     (∃ d : EpArch.ConcreteModel.CDeposit, d.S > 0 ∧ d.E.length > 0 ∧ d.V.length > 0) ∧
     -- Commitment 4: Consensus without redeemability is possible

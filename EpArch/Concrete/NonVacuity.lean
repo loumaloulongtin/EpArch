@@ -463,6 +463,8 @@ theorem competition_gate_non_vacuity_stripping :
     1. Self-correction exists (concrete trace from Deposited to Revoked)
     2. Revision exists (concrete trace with hasRevision = true)
     3. Non-prohibiting states exist (initialConcreteState7)
+    4. Stripping is non-injective: two distinct deposits have the same stripped
+       form, so header information is genuinely lost on export (S=90 vs S=80)
 
     Therefore when we prove "prohibits_revision → no self-correction",
     the antecedent is not trivially false — there ARE states that
