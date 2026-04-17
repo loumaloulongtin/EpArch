@@ -105,4 +105,27 @@ theorem full_can_repair_any :
   unfold canTargetRepair ObservableFields AllFields
   cases f <;> decide
 
+/-! ## Epistemic Fields
+
+The epistemic triad (S, E, V) that determines belief quality.
+Subset of AllFields — these are the three targeted by disputes and diagnoses. -/
+
+/-- The three epistemic fields that determine belief quality.
+    Subset of AllFields: these are the ones targeted by disputes and diagnoses. -/
+def EpistemicFields : List Field := [.S, .E, .V]
+
+/-- Epistemic diagnosability: the number of epistemic fields observable.
+    Full deposits expose all three; stripped deposits expose none.
+    Score 3 is derived, not hand-set. -/
+def epistemic_diagnosability (has_header : Bool) : Nat :=
+  if has_header then EpistemicFields.length else 0
+
+/-- Full deposits have epistemic diagnosability 3 (S, E, V). -/
+theorem epistemic_diagnosability_full : epistemic_diagnosability true = 3 := by
+  unfold epistemic_diagnosability EpistemicFields; rfl
+
+/-- Stripped deposits have epistemic diagnosability 0. -/
+theorem epistemic_diagnosability_stripped : epistemic_diagnosability false = 0 := by
+  unfold epistemic_diagnosability; rfl
+
 end EpArch.Diagnosability

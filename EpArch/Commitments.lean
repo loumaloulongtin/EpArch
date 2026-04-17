@@ -63,6 +63,7 @@ import EpArch.Header
 import EpArch.Bank
 import EpArch.Semantics.StepSemantics
 import EpArch.Semantics.LinkingAxioms
+import EpArch.Theorems.Diagnosability
 
 namespace EpArch
 
@@ -763,8 +764,10 @@ corollary of that structural theorem, not an assignment by fiat. -/
 structure DiagnosabilityScore where
   score : Fin 4  -- 0, 1, 2, or 3
 
-/-- With full header, all three fields are independently diagnosable. -/
-def header_preserved_diagnosability : DiagnosabilityScore := ⟨3, by decide⟩
+/-- With full header, all three fields are independently diagnosable.
+    Score derived from `Diagnosability.epistemic_diagnosability true = 3`, not hand-set. -/
+def header_preserved_diagnosability : DiagnosabilityScore :=
+  ⟨Diagnosability.epistemic_diagnosability true, by decide⟩
 
 /-- Without header, no field-specific diagnosis is possible. -/
 def header_stripped_diagnosability : DiagnosabilityScore := ⟨0, by decide⟩
@@ -785,6 +788,12 @@ theorem header_stripping_harder :
   -- 0 < 3 as Fin 4: numeric bridge from the completion-space strict inclusion.
   -- Stripped (0 fields) vs full (3 fields) reflects admissible_full ⊂ admissible_stripped.
   decide
+
+/-- Bridge: both diagnosability models agree on stripped deposits (score = 0).
+    `epistemic_diagnosability false` and `diagnosability false` both evaluate to 0. -/
+theorem epistemic_and_full_agree_on_stripped :
+    Diagnosability.epistemic_diagnosability false =
+    Diagnosability.diagnosability false := rfl
 
 
 /-! ## S/E/V Factorization: Partition Refinement
