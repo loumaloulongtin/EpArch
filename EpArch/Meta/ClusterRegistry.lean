@@ -148,17 +148,17 @@ inductive EnabledLatticeCluster where
 /-! ## §2c  Constraint Cluster Metadata
 
 `ConstraintClusterMeta` is the metadata-only record for a Tier 2 cluster.
-It records the three fields that determine routing and display — no proofs.
-`constraintMeta` is the single source of truth for this data; `clusterEnabled`,
-`clusterDescription`, and `EnabledConstraintCluster.toClusterTag` all derive
-their Tier 2 answers from it.  EpArch.Meta.Config extends this record with a
-`witness : ConstraintProof` field via `ConstraintClusterSpec extends ConstraintClusterMeta`.
+It records the three fields that determine routing — no proofs.
+`constraintMeta` is the single source of truth for this data; `clusterEnabled`
+and `EnabledConstraintCluster.toClusterTag` both derive their Tier 2 answers
+from it.  EpArch.Meta.Config extends this record with a `witness : ConstraintProof`
+field via `ConstraintClusterSpec extends ConstraintClusterMeta`.
 
 Placed here (after §2 and §2b) so both `ClusterTag` and `EnabledConstraintCluster`
 are in scope. -/
 
 /-- Metadata-only record for a Tier 2 constraint-forcing cluster.
-    Contains the three fields needed for routing and display but **no proof**.
+    Contains the three fields needed for routing but **no proof**.
     Extended in EpArch.Meta.Config by `ConstraintClusterSpec` which adds `witness`. -/
 structure ConstraintClusterMeta where
   globalTag   : ClusterTag
@@ -166,8 +166,8 @@ structure ConstraintClusterMeta where
   description : String
 
 /-- Authoritative metadata for each Tier 2 constraint-forcing cluster.
-    `clusterEnabled`, `clusterDescription`, and `EnabledConstraintCluster.toClusterTag`
-    all derive their Tier 2 answers from this function. -/
+    `clusterEnabled` and `EnabledConstraintCluster.toClusterTag` both derive
+    their Tier 2 answers from this function. -/
 def constraintMeta : EnabledConstraintCluster → ConstraintClusterMeta
   | .forcing_distributed_agents => {
       globalTag   := .forcing_distributed_agents
@@ -252,7 +252,7 @@ def EnabledLatticeCluster.toClusterTag : EnabledLatticeCluster → ClusterTag
 The per-family canonical lists live here (not in EpArch.Meta.Config) because they
 are metadata objects — pure enumeration facts, no proofs.  The global
 `allClusters` list is derived from them so ordering stays consistent
-automatically.  `constraintClusterOfTag?` enables Tier 2 routing and display
+automatically.  `constraintClusterOfTag?` enables Tier 2 routing
 to dispatch through `constraintMeta` without re-enumerating the seven
 forcing constructors. -/
 
@@ -299,9 +299,8 @@ def allClusters : List ClusterTag :=
 
 /-- Reverse lookup: given a `ClusterTag`, return the matching
     `EnabledConstraintCluster` if it is a Tier 2 forcing tag, or `none`
-    otherwise.  Used by `clusterEnabled` and `clusterDescription` to dispatch
-    Tier 2 cases through `constraintMeta` without re-enumerating the
-    seven forcing constructors. -/
+    otherwise.  Used by `clusterEnabled` to dispatch Tier 2 cases through
+    `constraintMeta` without re-enumerating the seven forcing constructors. -/
 def constraintClusterOfTag? (t : ClusterTag) : Option EnabledConstraintCluster :=
   allConstraintClusters.find? fun c => c.toClusterTag == t
 

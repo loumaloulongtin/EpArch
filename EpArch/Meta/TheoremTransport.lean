@@ -72,7 +72,7 @@ structure SurjectiveCompatible (E : ExtModel) (C : CoreModel) extends Compatible
 
 /-! ## 3. Transport Theorems for Health Goals (∀-predicates)
 
-Each theorem uses only the commuting laws relevant to its operation mask. -/
+Each theorem uses only the commuting laws relevant to its health-goal operations. -/
 
 /-- Transport: `SafeWithdrawalGoal` is preserved by compatible extensions.
 

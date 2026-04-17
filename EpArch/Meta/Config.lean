@@ -859,10 +859,10 @@ theorem mem_enabledLatticeWitnesses_of_enabled (cfg : EpArchConfig)
 
 /-! ## §5b  Named Proof Witnesses
 
-Each theorem below names and proves the machine-checked proposition for its
-cluster.  These are the authoritative typed witnesses behind the routing engine.
-Lean infers the universe parameters implicitly (they are standard universe-
-polymorphic theorems, not match arms of a monomorphic `Prop`-valued def).
+Each entry below is a named proof witness for its cluster — either a `def`
+delegating to the upstream theorem or an explicit `theorem` where the signature
+needs stating separately.  These are the authoritative typed witnesses behind
+the routing engine.  Lean infers the universe parameters implicitly.
 
 Usage:  `#check cluster_forcing_distributed_agents`
          → `∀ (W : WorkingSystem), StructurallyForced W → handles_distributed_agents W → HasBubbles W`

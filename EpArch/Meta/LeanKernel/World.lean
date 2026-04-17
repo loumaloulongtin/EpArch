@@ -41,19 +41,6 @@ that verifies `holds_W_lies_possible` is the entity described by
 `leanKernel_gettier_gap` derives the provenance gap via the generic
 `gettier_ctx_exhibits_provenance_gap`.
 
-## S-Failure Taxonomy
-
-The lower half of the file instantiates the Standard Case / Vacuous Standard
-Case structures at the kernel level:
-
-- `LeanStandardClearance` / `LeanVWitness` / `LeanEWitness` — kernel-level
-  field-clearance and witness structures.
-- `LeanStandardCase` — a proof whose S clearance does not meet the consumer's
-  threshold; `lean_standard_case_is_S_failure` proves the S-failure.
-- `LeanVacuousStandard` — a `sorry ⊢ False` proof; `lean_vacuous_standard_is_void`
-  proves void S.
-- `lean_S_failure_taxonomy` — both S-failure kinds appear at the kernel level.
-
 ## Limitation
 
 `LeanKernelCtx` is a proxy model matching kernel behavior by construction.
@@ -783,8 +770,7 @@ theorem lean_structurally_forced : StructurallyForced LeanWorkingSystem :=
 /-- `LeanWorkingSystem` contains Bank primitives.
 
     Full chain: ForcingEmbedding → StructurallyForced → convergence.
-    Self-referential: type-checked by the same kernel whose features populate
-    `LeanKernelSystemSpec`. -/
+    Self-referential: type-checked by the same kernel it models. -/
 theorem lean_structural_convergence : containsBankPrimitives LeanWorkingSystem :=
   convergence_structural LeanWorkingSystem lean_structurally_forced lean_satisfies_all_properties
 
