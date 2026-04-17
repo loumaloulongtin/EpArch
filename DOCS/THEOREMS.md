@@ -87,22 +87,6 @@ $$\text{SelfCorrecting}(D) \Rightarrow \text{permitsRevision}(D)$$
 | `content_eq_not_implies_deposit_eq` | Theorems/Strip.lean | Same content ≠ same deposit | Provenance matters |
 | `provenance_matters` | Theorems/Strip.lean | Different provenance → different deposits | Identity |
 
-### stripV Properties
-
-| Theorem | File | Statement | Claim |
-|---------|------|-----------|-------------|
-| `stripV_irreversible` | Theorems/Strip.lean | ∃ p1 ≠ p2 in Provenance → ¬∃ f. f âˆ˜ stripV = id (requires non-trivial Provenance type) | V-strip irreversibility |
-| `stripV_idempotent` | Theorems/Strip.lean | stripV(stripV(x)) = stripV(x) | Idempotency |
-| `stripV_preserves_claim` | Theorems/Strip.lean | stripV preserves the claim | Content preserved |
-
-### Export Visibility (Corner 9)
-
-| Theorem | File | Statement | Claim |
-|---------|------|-----------|-------------|
-| `export_creates_visibility` | Theorems/Corners.lean | Export step → deposit visible in target bubble | Export semantics |
-| `export_creates_B2_deposit` | Theorems/Corners.lean | Export step → concrete deposit record in target ledger (single premise) | Deposit creation |
-| `export_ignores_target_acl` | Theorems/Corners.lean | Export fires without ACL check on target | ACL gap at boundary |
-
 ### Math Form
 
 $$\neg \exists f : \text{Stripped} \to \text{Full}.\, f \circ \text{strip} = \text{id}$$
@@ -126,54 +110,12 @@ $$h_1 \neq h_2 \land \text{claim}(h_1) = \text{claim}(h_2) \Rightarrow \text{str
 | `full_can_repair_any` | Full can target any field | Surgical repair |
 | `repair_requires_observability` | Repair granularity = observable fields | Equivalence |
 
-### Bridge Theorems (Theorems/Headers.lean)
-
-| Theorem | Statement | Claim |
-|---------|-----------|-------------|
-| `strip_reduces_field_count` | FieldCount stripped < full | Field count |
-| `fewer_fields_coarser_repair` | Fewer fields → coarser repair | Repair quality |
-| `sev_refines_stripped` | SEV partitions refine stripped | Refinement |
-| `stripped_not_implies_sev` | Stripped âŠ„ SEV distinction | Asymmetry |
-
 ### Math Form
 
 $$\text{diagnosability}(\text{full}) = 6 > 0 = \text{diagnosability}(\text{stripped})$$
 
 $$f \notin \text{ObservableFields}(d) \Rightarrow \neg\text{canTargetRepair}(f, d)$$
 
-### Field-Localization Bridge (Semantics/StepSemantics.lean — core namespace)
-
-| Theorem | Statement | Claim |
-|---------|-----------|-------------|
-| `factorization_enables_field_identification` | Broken field is contained in the 6-field enum {S,E,V,τ,red,acl} | Field enum completeness |
-| `factorization_enables_legibility` | Deposited deposit with a broken field → Legible | Legibility |
-| `strong_sev_localizes_to_core_fields` | Strong SEV factorization → broken field âˆˆ {S,E,V} | Strong SEV → core-field localization |
-| `all_challenges_field_specific` | All challenges target one of 6 canonical fields | Field specificity |
-| `headers_enable_field_diagnosis` | depositHasHeader → challenge is field-specific | Header enables diagnosis |
-| `header_enables_efficient_resolution` | depositHasHeader → efficient resolution via field targeting | Header efficiency |
-
-### Diagnosability Metric Theorems (Theorems/Headers.lean)
-
-| Theorem | File | Statement | Claim |
-|---------|------|-----------|-------------|
-| `field_checkable_iff_header` | Theorems/Headers.lean | field_checkable s d_idx f ↔ depositHasHeader s d_idx (Field param is universally free) | Checkability ≡ header presence |
-| `harder_without_headers` | Theorems/Headers.lean | ¬depositHasHeader → ¬field_checkable (structural; any field) | Stripped strictly harder |
-| `header_stripped_harder` | Theorems/Headers.lean | header_stripped → systematically_harder | Header effect (dispute level) |
-| `header_improves_diagnosability` | Theorems/Headers.lean | depositHasHeader → field_checkable (positive direction, dual to harder_without_headers) | Header → field checkable |
-| `header_localization_link` | Theorems/Headers.lean | depositHasHeader → challenge_is_field_specific ∧ field_checkable | Header → localization |
-| `diagnose_finds_broken` | Theorems/Withdrawal.lean | Sound diagnosis oracle finds broken field | Diagnostic completeness |
-
-### Diagnosability Coupling Theorems (Theorems/Strip.lean)
-
-Bridge theorems coupling the Theorems/Diagnosability.lean and Theorems/Strip.lean metric systems:
-
-| Theorem | File | Statement | Claim |
-|---------|------|-----------|-------------|
-| `fieldcount_full_eq_diagnosability` | Theorems/Strip.lean | FieldCount_Full = diagnosability true | Bridge: field-count ↔ score |
-| `stripped_diagnosability_is_zero` | Theorems/Strip.lean | diagnosability false = 0 | Bridge: stripped score = 0 |
-| `v8_implies_v7_strip_reduces` | Theorems/Strip.lean | v8 hard → v7 field-count reduction | Bridge: v8 ⇒ v7 |
-| `stripped_repair_must_be_coarse` | Theorems/Strip.lean | ∀ f, ¬canTargetRepair false f | Bridge: coarse repair (alias stripped_no_field_repair) |
-| `full_repair_can_be_surgical` | Theorems/Strip.lean | ∀ f, canTargetRepair true f | Bridge: surgical repair (alias full_can_repair_any) |
 
 ---
 
@@ -361,40 +303,6 @@ Seven abstract scenario structures, each proving that a degenerate configuration
 | `closed_system_unfalsifiable` | `ClosedEndorsement` | A closed endorsement system has no externally falsifiable endorsed claim |
 | `flat_authorization_impossible` | `TwoTierAccess` | A flat authorization predicate cannot faithfully represent both submission and commit tiers |
 
-### Alternative Architecture Dismissals (Minimality.lean §1b–§7b)
-
-For each of the seven forcing dimensions, alternative mechanisms are instantiated and shown to either reduce to the original impossibility or satisfy the forced-primitive definition. None escape the forcing argument.
-
-| §  | Alternatives covered | Key theorems |
-|----|----------------------|---------------|
-| §1b | Capability-token systems, federated namespaces, parameterized gates | `capability_flat_impossible`, `federated_flat_impossible`, `parameterized_gate_flat_impossible` — each gives an `AgentDisagreement`; `flat_scope_impossible` fires unchanged |
-| §2b | Staged verification, delegated verification markets | `staged_verification_incomplete` (cumulative-cost `BoundedVerification`); `delegated_is_trust_bridge` + `trust_required_iff_not_locally_verifiable` + `delegation_necessary_iff_locally_inadequate` — delegation satisfies the trust-bridge definition |
-| §3b | Content-addressed routing, global contextual routing state | `content_addressed_has_header` — sound+complete content-addressed import satisfies `IsHeader` directly; `global_routing_cannot_discriminate` — global state is effectively uniform |
-| §4b | Quarantine, hold/shadow, rollback | `quarantine_violates_absorbing`, `hold_violates_absorbing`, `rollback_violates_absorbing` — each is a non-absorbing exit from accepted, i.e., revocation under another name |
-| §5b | Replicated logs, attestation networks, CRDT-based shared state | `replicated_log_is_shared`, `attestation_network_is_shared`, `crdt_is_shared` — each satisfies the sharing condition; isolation does not hold; each qualifies as a shared ledger under the definition |
-| §6b | Anomaly signaling, partial contestation, soft falsifiability | `anomaly_signal_insufficient`; `partial_contestation_closed_on_endorsed`; `soft_falsifiability_closed`; `*_closed_when_universal` under coverage assumption |
-
-### `IsHeader` Definition (Minimality.lean)
-
-`IsHeader M f` — a routing function `f : M.Claim → Bool` is a header for `DiscriminatingImport` scenario `M` iff it discriminates good from bad claims (`f M.good ≠ f M.bad`).
-
-| Theorem | Statement | Role |
-|---------|-----------|------|
-| `sound_complete_import_is_header` | Sound+complete import → `IsHeader` | Any sound+complete import satisfies the header definition |
-| `routing_requires_header` | ∃ sound+complete f → ∃ header | Any working routing function carries a header |
-| `content_addressed_has_header` | Sound+complete content-addressed policy → `IsHeader` | Sound+complete content-addressed routing satisfies `IsHeader` |
-
-### Forcing Stratification (Minimality.lean §6c)
-
-The seven forcing dimensions differ in strength; §6c establishes this with explicit counterexamples.
-
-| Tier | Dimensions | Key theorem | What it says |
-|------|------------|-------------|---------------|
-| Hard | Scope, revocation, bank, partial contestation | `redeemability_hard_forced`, `partial_contestation_hard_forced` | Impossibility fires from structural fields alone, no coverage assumption |
-| Soft | Anomaly signaling, soft falsifiability | `anomaly_not_hard_forced`, `soft_falsifiability_not_hard_forced` | Consistent instances exist with endorsed+falsifiable claims; coverage assumption (`∀ c, endorsed c → signals c`) cannot be discharged from structure alone |
-
-`anomaly_not_hard_forced` and `soft_falsifiability_not_hard_forced` exhibit explicit counterexamples (vacuous `emits_anomaly`/`flagged`) confirming soft closure is genuinely weaker than hard forcing.
-
 ### Pressure Dimension Index (Minimality.lean)
 
 The `Pressure` inductive type is the canonical dimension index for the EpArch forcing layer. All seven forcing dimensions are cases of a single type; every forcing-layer predicate is now a function `Pressure → Prop` rather than seven separate fields.
@@ -405,11 +313,6 @@ inductive Pressure where
   deriving DecidableEq, Repr
 ```
 
-| Dispatch function | Type | What it routes |
-|-------------------|------|----------------|
-| `handles_pressure W` | `Pressure → Prop` | Maps each dimension to its operational handle predicate (`handles_distributed_agents`, `handles_bounded_audit`, …) |
-| `forced_feature W` | `Pressure → Prop` | Maps each dimension to its forced structural feature (`HasBubbles`, `HasTrustBridges`, …) |
-| `bridge_scenario W` | `Pressure → Prop` | Maps each dimension to its bridge predicate (`BridgeBubbles`, `BridgeTrust`, …) |
 
 Using `Pressure` as the index means every `cases P` in a proof is machine-exhaustiveness-checked by Lean's kernel. A proposed eighth dimension must be added as a new `Pressure` constructor — at which point the compiler flags every `cases P` site until the new forcing chain is supplied. This is architectural enforcement, not documentation convention. See `DOCS/MODULARITY.md § "What exhaustiveness means here"` for the scope boundary this claim carries.
 
@@ -419,16 +322,6 @@ Key definitions that are now universally quantified over `Pressure`:
 - `StructurallyForced W` — single field `forcing : ∀ P, handles_pressure W P → forced_feature W P`
 - `ForcingEmbedding W` — single field `embed : ∀ P, handles_pressure W P → forced_feature W P ∨ bridge_scenario W P`
 - `all_bridges_impossible W P : ¬bridge_scenario W P` — exhaustive impossibility theorem (proves by `cases P`)
-
-### Forcing Package (Convergence.lean)
-
-| Structure/Theorem | Description |
-|-------------------|-------------|
-| `StructurallyForced W` | Single field `forcing : ∀ P : Pressure, handles_pressure W P → forced_feature W P`; replaces the old seven named fields |
-| `ForcingEmbedding W` | Single field `embed : ∀ P : Pressure, handles_pressure W P → forced_feature W P ∨ bridge_scenario W P`; replaces old seven named fields |
-| `embedding_to_structurally_forced` | `ForcingEmbedding W → StructurallyForced W` (one line: `.embed` + `all_bridges_impossible`; no Classical reasoning) |
-| `convergence_structural` | `StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W` — preferred convergence path; one line via `∀ P` |
-| `structural_impossibility` | `StructurallyForced W → (∃ P, ¬forced_feature W P) → ¬SatisfiesAllProperties W` — existential form |
 
 ### Per-Dimension Structural Forcing Theorems (Convergence.lean)
 
@@ -446,14 +339,6 @@ Seven independent theorems — one per EpArch dimension — each taking a single
 
 Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_without_feature ... h ...).elim` — classical case split with the abstract impossibility model closing the negative branch.
 
-### Witness Bundle Structures (Convergence.lean)
-
-Two named record types group the per-dimension witnesses symmetrically. Split rationale: `SystemOperationalBundle` is purely architectural (no world-semantic content, no `WorldCtx`); `WorldBridgeBundle` covers world-adjacent dimensions that are W-specific.
-
-| Structure | Dimensions bundled | Content |
-|-----------|-------------------|---------|
-| `SystemOperationalBundle W` | Scope, headers, bank | `Rd : RepresentsDisagreement W` + flat-acceptance fields; `Ri : RepresentsDiscriminatingImport W` + import fields; `Rp : RepresentsPrivateCoordination W` + shared-deposit fields |
-| `WorldBridgeBundle W` | Revocation, trust bridges, redeemability | `Rm : RepresentsMonotonicLifecycle W` + escape fields; `Rb : RepresentsBoundedVerification W` + trust fields; `Re : RepresentsClosedEndorsement W` + endorsement + falsifiability fields |
 
 ### Headline Convergence Theorems (Feasibility.lean)
 
@@ -464,43 +349,6 @@ Two named record types group the per-dimension witnesses symmetrically. Split ra
 
 **Key architectural boundary:** `W_*` bundles (`WorldCtx.lean`) are `Prop`-valued; `Represents*` structures carry `Type`-valued fields (`State : Type`, `Claim : Type`). No `Type` can be extracted from a `Prop` — the universe boundary is genuine. The `W_*` bundles are natural *motivation* for the witnesses but are not formal preconditions; callers supply `Represents*` witnesses directly.
 
-### Bridge Predicates and Impossibility (Convergence.lean)
-
-| Predicate | `bridge_*_impossible` | What is ruled out |
-|-----------|-----------------------|--------------------|
-| `BridgeBubbles W` | `bridge_bubbles_impossible` | Flat scope faithful to two disagreeing agents |
-| `BridgeTrust W` | `bridge_trust_impossible` | All claims fitting within budget |
-| `BridgeHeaders W` | `bridge_headers_impossible` | Sound-and-complete uniform import |
-| `BridgeRevocation W` | `bridge_revocation_impossible` | Escaping the absorbing accepted state |
-| `BridgeBank W` | `bridge_bank_impossible` | Isolated agents sharing a deposit |
-| `BridgeRedeemability W` | `bridge_redeemability_impossible` | Endorsed claim externally falsifiable in closed system |
-
-### Convergence and Impossibility (Convergence.lean)
-
-| Theorem | Statement | Role |
-|---------|-----------|------|
-| `convergence_structural` | `StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W` | Preferred convergence path; no `WellFormed` dependency |
-| `structural_impossibility` | `StructurallyForced W → missing any feature → ¬SatisfiesAllProperties W` | Contrapositive: missing a feature blocks all-property satisfaction |
-
-### Scenario Predicates (Convergence.lean)
-
-`Represents*` structures supply concrete claim/agent/lifecycle data so the abstract impossibility models fire on real systems, not hypothetical ones. Seven scenario types match the seven forcing dimensions. Each carries a right-branch embedding theorem: a system with the scenario predicate and lacking the corresponding feature is in the impossible abstract scenario.
-
-The seven per-dimension `*_forces_*` theorems are built directly on these predicates and are the canonical "use these" entry points for the forcing argument. They supersede the earlier `handles_X W` / biconditional path as the primary forcing mechanism: no `PartialWellFormed`, no `handles_X W`, no biconditionals needed.
-
-### Grounded Compliance API (Minimality.lean)
-
-Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` witness per dimension; `withGroundedBehavior` stamps all seven `Option GroundedXStrict` evidence fields onto any base `WorkingSystem`. The two theorems below close the loop: behavioral flags are `true` by `Option.isSome`, and biconditionals hold because spec flags are `true` by construction.
-
-| Definition / Theorem | File | Statement | Role |
-|---------------------|------|-----------|------|
-| `GroundedBehavior` | Minimality.lean | 7-field record (`bubbles`, `trust_bridges`, `headers`, `revocation`, `bank`, `redeemability`, `authorization`), one `GroundedX` per dimension | Evidence bundle for behavioral flags |
-| `WorkingSystem.withGroundedBehavior` | Minimality.lean | Sets all seven `Option GroundedXStrict` fields from a `GroundedBehavior`; leaves spec/other fields from base | Proof-carrying `WorkingSystem` constructor |
-| `grounded_behavior_satisfies_all` | Minimality.lean | `∀ B W, SatisfiesAllProperties (withGroundedBehavior B W)` | Behavioral flags → all seven `handles_*` predicates |
-| `grounded_partial_wellformed` | Minimality.lean | `∀ B G, PartialWellFormed (withGroundedBehavior B {spec := G.toSystemSpec, …}) allConstraints` | Behavioral + spec evidence → full biconditional closure |
-
-**Usage pattern:** supply `GroundedBehavior` + `GroundedSystemSpec` → get `PartialWellFormed W allConstraints` + `SatisfiesAllProperties W` in one call. See `lean_partial_wellformed` / `lean_satisfies_all_properties` in `Meta/LeanKernel/World.lean` for the self-referential instantiation.
-
 ---
 
 ## Bucket 9c: Observation-Boundary Equivalence (Theorems/BehavioralEquivalence.lean)
@@ -510,18 +358,6 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 **Certificate semantics:** `GroundedBehavior` is intentionally domain-agnostic — its fields carry abstract type parameters (`Entry`, `Claim`, etc.) that a domain fills in with its own types. `B` is a type-level certificate confirming the caller's features typecheck against EpArch's mechanism signatures; it does not construct the `CState` and does not guarantee design quality. The `let _ :=` lines in the ready-state builders confirm certificate field presence only. A domain instantiator (EV charging, finance, Lean kernel) that wants mechanically grounded evidence replaces those lines with substantive obligations over their own types. The kernel enforces the observation boundary contract; domain correctness is the instantiator's responsibility.
 
 **Extension model:** Any domain that provides a `GroundedBehavior` instantiation immediately inherits `working_systems_equivalent` — any two implementations holding the certificate agree at the observation boundary, regardless of internal design. See `Meta/LeanKernel/World.lean` (`LeanGroundedBehavior`) for the reference instantiation.
-
-### Definitions
-
-- `Input` — abstract input events (withdraw, export, challenge, time-advance)
-- `Observation` — observable outcomes
-- `Behavior B i` — observation produced by `B : GroundedBehavior` on input `i`; determined by input shape, not by witness content; no fallback branch
-- `BehaviorallyEquivalent B1 B2` — identical observations on all inputs
-- `input_to_action` — maps `Input` to the matching concrete `StepSemantics.Action`
-- `observe_step_action` — extracts an `Observation` from a concrete action
-- `ReadyState i` — a `CState` + proof that `Step` fires for `input_to_action i`
-- `withdraw_ready_state B a b d` — constructs `ReadyState` at Unit types; `B` is the type-level certificate
-- `challenge_ready_state B c f` — constructs `ReadyState` at Unit types; `B` is the type-level certificate
 
 ### Theorems
 
@@ -540,14 +376,6 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 ## Bucket 9d: Kernel Verification Depth (Concrete/VerificationDepth.lean)
 
 **Role:** Provides a *constructive* kernel-level witness that `W_bounded_verification` is not an empirical world assumption but follows from the structural properties of the verification relation itself. `DepthClaim n` is a depth-indexed proposition family with exactly n constructors; a budget-d verifier traverses only d constructors and therefore cannot decide `DepthClaim (d+1)`, which is genuinely true. This justifies the bounded-audit forcing argument for trust bridges by construction rather than supposition.
-
-### Definitions
-
-| Definition | Description |
-|------------|-------------|
-| `DepthClaim : Nat → Prop` | Inductive family: `DepthClaim n` has exactly n constructors (`base`, n × `step`); represents a proposition whose verification cost is structurally n |
-| `bounded_verify : Nat → Nat → Bool` | Budget-d decision procedure; `bounded_verify d n = true ↔ n ≤ d` |
-| `DepthWorldCtx : WorldCtx` | Concrete `WorldCtx` where `Claim := Nat`, `Truth _ n := DepthClaim n`, `VerifyWithin _ n t ↔ n ≤ t`; `W_bounded_verification` holds by construction |
 
 ### Theorems
 
@@ -570,18 +398,6 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 
 **Role:** Formalize attack patterns and boundary conditions.
 
-### Attack Structures
-
-| Definition | Description |
-|------------|-------------|
-| `FullStackAttack` | Coordinated multi-primitive attack |
-| `PseudoDeposit` | Deposit with spoofed V |
-| `DDoSAttack` | Bandwidth exhaustion |
-| `DDoSVector` | Four attack vectors |
-| `AttackLevel` | 5-level hierarchy (Lie → DDoS) |
-| `Lie` | Primitive false deposit |
-| `ProxySubstitution` | Similarity exploitation |
-
 ### Core Theorems in Adversarial/Base.lean (Proved)
 
 | Theorem | File | Statement |
@@ -596,14 +412,6 @@ Product-facing constructor layer. `GroundedBehavior` bundles one `GroundedX` wit
 `CExportRequest` from `Concrete/Types.lean`). Four-step demonstration that gate conditions are
 un-bypassable at the concrete model level.
 
-### Step 2: Gate Theorems
-
-| Theorem | File | Statement | Claim |
-|---------|------|-----------|-------|
-| `τ_expired_not_withdrawable` | Adversarial/Concrete.lean | `d.τ ≤ t → ¬c_can_withdraw acl a B d t` | τ gate fires |
-| `V_stripped_not_withdrawable` | Adversarial/Concrete.lean | `d.V.length = 0 → d.τ > t + 10 → ¬c_can_withdraw acl a B d t` | V gate fires |
-| `E_stripped_diagnosis_lost` | Adversarial/Concrete.lean | `c_header_stripped d → ¬c_header_preserved d` | E/header gate fires |
-
 ### Step 3: Attack-Named Wrappers and DDoS Chain
 
 | Theorem | File | Statement | Claim |
@@ -615,14 +423,6 @@ un-bypassable at the concrete model level.
 | `ddos_V_channel_collapse_blocks_withdrawal` | Adversarial/Concrete.lean | DDoS chain: channel overload → V = [] → ¬c_can_withdraw | DDoS → V gate (5-step) |
 | `concrete_attack_succeeds` | Adversarial/Concrete.lean | `attack_succeeds concrete_full_stack_attack` holds | Attack vocab non-vacuity |
 | `full_stack_attack_concrete_blocked` | Adversarial/Concrete.lean | Matching `CDeposit` blocked by τ gate at current_time 100 | End-to-end |
-
-### Step 4: Export Gate Conditions
-
-| Theorem | File | Statement | Claim |
-|---------|------|-----------|-------|
-| `invalid_export_requires_reval_or_bridge` | Adversarial/Concrete.lean | `¬revalidated ∧ via_trust_bridge = none → c_valid_export = false` | Gate condition fires |
-| `missing_export_gate_blocks_import` | Adversarial/Concrete.lean | `c_valid_export = false → c_import_deposit = none` | Import blocked |
-| `V_spoof_blocks_cross_bubble_reliance` | Adversarial/Concrete.lean | `¬revalidated ∧ ¬bridge → c_import_deposit = none` | V-spoof surface → gate fires |
 
 **Scope boundary:** these theorems prove gate conditions are un-bypassable *when invoked*. Whether an agent must invoke `c_can_withdraw` before constructing a `CExportRequest` is an agent-layer protocol obligation, not enforced by `EpArch.Adversarial.Concrete`. EpArch proves the gates are sound; agents prove the gates are invoked in the right order.
 
@@ -722,27 +522,6 @@ Each architectural constraint creates both a capability and an exploitable surfa
 **Role:** Connect health goals to mechanism requirements (invariants).
 
 **File:** `Health.lean`, `Agent/Imposition.lean`
-
-### Capability Predicates (Agent/Imposition.lean)
-
-| Predicate | Description | What It Captures |
-|-----------|-------------|------------------|
-| `ReversibleWithdrawal` | System can undo withdrawals | Reversibility capability |
-| `CheapValidatorAvailable` | System has low-cost verification | Validator capability |
-| `ExportGateEnforced` | System blocks erroneous exports | Gate capability |
-
-### Health Goal Definitions (Health.lean)
-
-Health goals are definitional predicates over `CoreModel`/`CoreOps`:
-
-| Definition | Signature | Description |
-|------------|-----------|-------------|
-| `SafeWithdrawalGoal` | `CoreModel → Prop` | Authorized submissions only |
-| `ReliableExportGoal` | `CoreModel → Prop` | No contamination propagation |
-| `CorrigibleLedgerGoal` | `CoreModel → Prop` | Existence + soundness conjunction: `(∃ B, hasRevision B) ∧ (revise → truth)` |
-| `SoundDepositsGoal` | `CoreModel → Prop` | Verifiable within effectiveTime |
-| `SelfCorrectionGoal` | `CoreModel → Prop` | `selfCorrects B → hasRevision B` (conditional goal) |
-| `SelfCorrectingSystem` | `CoreModel → Prop` | `SelfCorrectionGoal M ∧ ∃ B, selfCorrects B` (active self-correction) |
 
 ### Necessity Theorems (Proved, Health.lean)
 
@@ -886,14 +665,6 @@ Three levels of safety are formalized: premise strengthening (adding premises pr
 | `safe_extension_preserves` | RevisionSafeExtension C → RevisionGate C → RevisionGate (forget R.ext) | Safe extension |
 | `safety_preserved_under_contract_refinement` | Refinement → IsInvariant C Safety → IsInvariant R (Safety âˆ˜ φ) | LTS refinement |
 
-### Acceptance Tests (Diagnostic)
-
-| Theorem | Description |
-|---------|-------------|
-| `goodExtension_compatible` | Extra-state extension satisfies Compatible (Iff.refl) |
-| `badExtension_incompatible_witness` | Semantic-breaking extension FAILS Compatible |
-| `badExtension_incompatible_if_id` | Corollary for identity projection |
-
 ### Math Form
 
 $$\text{Compatible}(E, C) \land \text{RevisionGate}(C) \Rightarrow \text{RevisionGate}(\text{forget}(E))$$
@@ -959,13 +730,6 @@ $$\text{PRP} \Rightarrow \neg\exists t_{\text{final}}.\, \forall t \geq t_{\text
 |---------|------|-----------|------|
 | `health_goal_transport_pack` | Meta/TheoremTransport.lean | All five ∀-transports packaged | Full Tier 3 certification |
 
-### Supporting Definitions
-
-| Definition | File | Purpose |
-|------------|------|---------|
-| `SurjectiveCompatible` | Meta/TheoremTransport.lean | Compatible + πBubble/πDeposit surjective |
-| `VacuousSelfCorrects`/`VacuousHasRevision`/`VacuousRevise`/`VacuousSubmit`/`VacuousTruth` | Meta/TheoremTransport.lean | Disabled-operation predicates |
-
 ---
 
 ## Bucket 26: Theorem Transport — Main Library Layer (Tier 4 Closure)
@@ -1025,12 +789,6 @@ pullback that `Compatible` alone cannot provide. `SurjectiveCompatible` adds
 | `tier4_full_pack` | Meta/Tier4Transport.lean | SEV ∧ LTS-withdrawal ∧ SafeWithdrawal ∧ ReliableExport ∧ SoundDeposits ∧ SelfCorrection ∧ universal-corrigibility | Headline Tier 4 pack (plain Compatible; ∀-corrigibility only) |
 | `tier4_full_pack_surj` | Meta/Tier4Transport.lean | Same 8 conjuncts with **full** CorrigibleLedgerGoal (∃+∀) in place of universal-corrigibility | Maximal Tier 4 pack (SurjectiveCompatible; no residual caveat) |
 
-### Supporting Definitions
-
-| Definition | File | Purpose |
-|------------|------|---------|
-| `ConcreteBankModel` | Meta/Tier4Transport.lean | CoreModel instance from concrete EpArch bank types |
-
 ### Math Form
 
 $$\forall E \supseteq C_{\text{bank}},\; G(C_{\text{bank}}) \Rightarrow G(\text{forget}(E)) \text{ for } G \in \{\text{SafeWithdrawal, ReliableExport, SoundDeposits, SelfCorrection, Corrigible}_\forall\}$$
@@ -1063,22 +821,6 @@ File: `Agent/Imposition.lean`
 | `lie_containment_principle` | Agent/Resilience.lean | Lies create untrusted deposits, don't flip truth | Epistemic sandbox |
 | `deposit_promotion_requires_bank_authority` | Agent/Resilience.lean | Only `Step.promote` (with `hasBankAuthority`) can advance a claim to Deposited | Bank authority gate |
 
-### AgentLTS Simulation Theorems (Tier A)
-
-**File:** `Agent/Resilience.lean`
-
-`AgentLTS` is a proof-oriented abstraction of `StepSemantics` that packages containment invariants as an LTS with a simulation relation. Theorems here prove that StepSemantics preserves these invariants via the simulation.
-
-| Theorem | File | Statement | Claim |
-|---------|------|-----------|-------------|
-| `truth_invariant_preserved` | Agent/Resilience.lean | Single step preserves truth invariant | Containment: truth is stable |
-| `truth_preserved_along_trace` | Agent/Resilience.lean | Full trace preserves truth invariant | Containment: trace-level truth |
-| `gate_invariant_preserved` | Agent/Resilience.lean | Single step preserves gate invariant | Containment: gate is stable |
-| `gate_preserved_along_trace` | Agent/Resilience.lean | Full trace preserves gate invariant | Containment: trace-level gate |
-| `agent_containment` | Agent/Resilience.lean | Agent actions are contained within the epistemic sandbox | Fault containment |
-| `invariants_transfer_via_simulation` | Agent/Resilience.lean | If `AgentLTS` preserves invariant I, then `StepSemantics` preserves I | Simulation correctness |
-| `stepsemantics_preserves_containment_invariants` | Agent/Resilience.lean | StepSemantics directly preserves truth + gate invariants | Headline containment closure |
-
 ---
 
 ## Bucket 19: Feasibility / Existence Under Constraints (Tier A)
@@ -1099,16 +841,6 @@ File: `Agent/Imposition.lean`
 | `all_bundles_satisfiable` | WorldWitness.lean | W_* bundles jointly satisfiable | World witness |
 | `all_commitments_satisfiable` | Concrete/Commitments.lean | 8 commitments have witnesses | Commitment witness |
 | `concrete_satisfies_all_properties` | Concrete/WorkingSystem.lean | ConcreteWorkingSystem satisfies all properties | Witness for success |
-
-### Supporting Structures
-
-| Structure | File | Purpose |
-|-----------|------|---------|
-| `Realizer` | Concrete/Realizer.lean | Type packaging commitment proofs |
-| `SuccessfulSystem` | Concrete/Realizer.lean | Type packaging successful system (W + sf + sat) |
-| `ConcreteRealizer` | Concrete/Realizer.lean | Realizer witness instance |
-| `ConcreteSuccessfulSystem` | Concrete/Realizer.lean | SuccessfulSystem witness instance |
-| `WitnessCtx` | WorldWitness.lean | Concrete WorldCtx instance |
 
 ---
 
@@ -1143,35 +875,6 @@ File: `Agent/Imposition.lean`
 | `lift_notDeterminedByObs_theory_core` | Meta/TheoryCoreClaim.lean | Underdetermination transfers | Transfer lemma |
 | `witness_theory_core_not_determined` | Meta/TheoryCoreClaim.lean | `NotDeterminedByObs theory_core` | Headline stretch |
 | `witnessTheoryCoreCtx_satisfies_floor_bundles` | Meta/TheoryCoreClaim.lean | Floor preserved | Extension preserves floor |
-
-| Definition | File | Purpose |
-|------------|------|---------|
-| `MetaClaim` | Meta/TheoryCoreClaim.lean | Single constructor `theory_core` |
-| `AddTheoryCore` | Meta/TheoryCoreClaim.lean | Conservative extension functor |
-| `WitnessTheoryCoreCtx` | Meta/TheoryCoreClaim.lean | WitnessCtx + theory_core |
-| `theory_core` | Meta/TheoryCoreClaim.lean | The designated underdetermined token |
-
-### Universal Schema (No Witness Dependence)
-
-| Theorem | File | Statement | Claim |
-|---------|------|-----------|-------------|
-| `theory_core_token_not_determined` | Meta/TheoryCoreClaim.lean | Universal: any C with bundle | Schema theorem |
-| `witness_theory_core_not_determined'` | Meta/TheoryCoreClaim.lean | Witness as instance of schema | Instance corollary |
-
-| Definition | File | Purpose |
-|------------|------|---------|
-| `AddTheoryCoreFromPartialObs` | Meta/TheoryCoreClaim.lean | Extension specialized to extracted claim |
-| `theory_core_token` | Meta/TheoryCoreClaim.lean | The designated token (parametric) |
-
-### Supporting Definitions
-
-| Definition | File | Purpose |
-|------------|------|---------|
-| `TheoryFloor` | Meta/FalsifiableNotAuthorizable.lean | W-bundles inhabitable |
-| `TrivialCtx` | Meta/FalsifiableNotAuthorizable.lean | Countercontext where floor fails |
-| `CreditRequired` | Meta/FalsifiableNotAuthorizable.lean | ∃ P, NotDeterminedByObs P |
-| `FullyAuthorizableByObs` | Meta/FalsifiableNotAuthorizable.lean | ∀ P, determines_truth P |
-
 ### Vocabulary Guard
 
 **DO NOT say:** "never provable true", "unprovable"  
@@ -1195,17 +898,6 @@ File: `Agent/Imposition.lean`
 | `k_of_n_suffices_under_independence` | Agent/Corroboration.lean | Independence bound + k > t → resilient | T2: Sufficiency |
 | `corroboration_package` | Agent/Corroboration.lean | T1 ∧ T3 bundled | Headline package |
 
-### Supporting Definitions
-
-| Definition | File | Purpose |
-|------------|------|---------|
-| `SingleSourceAttack` | Agent/Corroboration.lean | Weak adversary: can corrupt one source |
-| `CommonModeAttack` | Agent/Corroboration.lean | Strong adversary: correlated compromise |
-| `SingleSourceAcceptance` | Agent/Corroboration.lean | Accept on one attestation |
-| `HasKWitnesses` | Agent/Corroboration.lean | k witnesses from pool attest |
-| `KOfNIndependentAcceptance` | Agent/Corroboration.lean | k pairwise-independent witnesses |
-| `IndependenceBounded` | Agent/Corroboration.lean | At most t compromised among independent |
-| `HonestImpliesTrue` | Agent/Corroboration.lean | Honest attestation → truth |
 
 ---
 
@@ -1221,14 +913,6 @@ File: `Agent/Imposition.lean`
 |---------|------|-----------|-------------|
 | `entrenchment_breaks_safe_withdrawal` | Theorems/Corners.lean | Entrenched + inactive deposit → ¬isDeposited | A.S7: Entrenchment blocks withdrawal |
 | `entrenched_cannot_withdraw` | Theorems/Corners.lean | Entrenched + inactive → no Step.withdraw fires | B1.10/B1.11: Full withdrawal failure |
-
-### Supporting Definitions
-
-| Definition | File | Description |
-|------------|------|-------------|
-| `Entrenched` | Basic.lean:198 | `certainty_L a P ∧ ignores_bank_signal a P` — Certainty + closed review channel |
-| `EntrenchedAgent` | Theorems/Corners.lean | Structure bundling agent, claim, and entrenchment proof |
-| `deposit_no_longer_active` | Theorems/Corners.lean | Deposit is Quarantined or Revoked |
 
 ### Math Form
 
@@ -1305,15 +989,6 @@ $$\text{Compatible}(E, S) \land \text{RevisionGate}(S) \Rightarrow \text{Revisio
 
 $$\text{ModularityPack} := \text{GracefulDegradation} \land \text{SubRevisionSafety} \land \text{safe\_extension\_preserves}$$
 
-### Supporting Definitions
-
-| Definition | File | Purpose |
-|------------|------|---------|
-| `RevisionGate` | Semantics/RevisionSafety.lean | `∀ B, selfCorrects B → hasRevision B` — competition gate predicate |
-| `NoSelfCorrection` | Meta/TheoremTransport.lean | Sub-bundle predicate: no bubble self-corrects (`abbrev` of `VacuousSelfCorrects`) |
-| `SubBundle` | Meta/TheoremTransport.lean | CoreModel + active SubGoal predicate + satisfaction witness |
-| `OdometerModel` | Meta/LeanKernel/OdometerModel.lean | Concrete sub-bundle: one bubble, append-only, SoundDepositsGoal only |
-
 ---
 
 ## Bucket 27: Modularity Meta-Theorem — ∀ S âŠ† Constraints, projection_valid S
@@ -1323,15 +998,6 @@ universally-quantified theorem over all subsets of the seven constraints, and a
 `PartialWellFormed` type that lets users opt into exactly k ≤ 7 constraints.
 
 **Files:** `Minimality.lean` (definitions: `ConstraintSubset`, `PartialWellFormed`, `allConstraints`, `noConstraints`) + `Meta/Modular.lean` (theorems: `partial_no_constraints`, `modular`)
-
-### Definitions
-
-| Definition | File | Purpose |
-|------------|------|---------|
-| `ConstraintSubset` | Minimality.lean | 7-Bool vector selecting which constraints are active |
-| `PartialWellFormed W S` | Minimality.lean | Subset-parameterized biconditional fragment; `allConstraints` is the strongest subset |
-| `allConstraints` | Minimality.lean | `⟨true,true,true,true,true,true,true⟩` — strongest subset (all seven biconditionals) |
-| `noConstraints` | Minimality.lean | `⟨false,false,false,false,false,false,false⟩` — nothing required |
 
 ### Theorems
 
@@ -1395,40 +1061,12 @@ for each cluster.
 | `WorldTag` | Meta/ClusterRegistry.lean | 8 world-bundle tags (lies_possible … ddos) |
 | `EpArchConfig` | Meta/ClusterRegistry.lean | User-supplied config: lists of active constraints/goals/worlds |
 | `ClusterTag` | Meta/ClusterRegistry.lean | 30 cluster tags spanning Tiers 2–4, world obligations, constraint-modularity, and lattice-stability |
-| `EnabledConstraintCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 7 Tier 2 forcing cluster tags |
-| `EnabledGoalCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 6 Tier 3 health-goal transport cluster tags |
-| `EnabledTier4Cluster` | Meta/ClusterRegistry.lean | Sub-inductive: 5 Tier 4 library cluster tags |
-| `EnabledWorldCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 8 world-bundle cluster tags |
-| `EnabledMetaModularCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 1 constraint-modularity meta-theorem cluster tag |
-| `EnabledLatticeCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 3 lattice-stability cluster tags |
-| `EnabledConstraintCluster.toClusterTag` | Meta/ClusterRegistry.lean | Embed constraint sub-tag into `ClusterTag` |
-| `EnabledGoalCluster.toClusterTag` | Meta/ClusterRegistry.lean | Embed goal sub-tag into `ClusterTag` |
-| `EnabledTier4Cluster.toClusterTag` | Meta/ClusterRegistry.lean | Embed Tier 4 sub-tag into `ClusterTag` |
-| `EnabledWorldCluster.toClusterTag` | Meta/ClusterRegistry.lean | Embed world sub-tag into `ClusterTag` |
-| `EnabledMetaModularCluster.toClusterTag` | Meta/ClusterRegistry.lean | Embed meta-modular sub-tag into `ClusterTag` |
-| `EnabledLatticeCluster.toClusterTag` | Meta/ClusterRegistry.lean | Embed lattice sub-tag into `ClusterTag` |
-| `allConstraintClusters` | Meta/ClusterRegistry.lean | Canonical list of 7 Tier 2 cluster tags |
-| `allGoalClusters` | Meta/ClusterRegistry.lean | Canonical list of 6 Tier 3 cluster tags |
-| `allTier4Clusters` | Meta/ClusterRegistry.lean | Canonical list of 5 Tier 4 cluster tags |
-| `allWorldClusters` | Meta/ClusterRegistry.lean | Canonical list of 8 world-bundle cluster tags |
-| `allMetaModularClusters` | Meta/ClusterRegistry.lean | Canonical list of 1 constraint-modularity cluster tag |
-| `allLatticeClusters` | Meta/ClusterRegistry.lean | Canonical list of 3 lattice-stability cluster tags |
-| `allClusters` | Meta/ClusterRegistry.lean | Canonical ordered list of all 30 ClusterTags (derived from 6 per-family lists) |
 | `clusterEnabled` | Meta/ClusterRegistry.lean | `EpArchConfig → ClusterTag → Bool` (computable routing); meta-modular and lattice always enabled |
-| `explainConfig` | Meta/ClusterRegistry.lean | `EpArchConfig → List ClusterTag` — enabled clusters |
 | `clusterValid` | Meta/Config.lean | `ClusterTag → Prop` — genuine proved proposition for each of the 30 clusters; 15 clusters use `prop_*` defs pinned at universe 0 to eliminate free universe variables |
 | `showConfig` | Meta/ClusterRegistry.lean | `EpArchConfig → List String` — `#eval`-able routing report |
 | `ConstraintProof` | Meta/Config.lean | Proof-carrying record: `statement : Prop`, `proof : statement` (Tier 2 only) |
-| `constraintProof` | Meta/Config.lean | `EnabledConstraintCluster → ConstraintProof` — real proposition + proof for each forcing cluster |
-| `MetaModularWitness` | Meta/Config.lean | Indexed proof carrier for constraint-modularity cluster (1 constructor: `.modular`) |
-| `metaModularWitness` | Meta/Config.lean | `(c : EnabledMetaModularCluster) → MetaModularWitness c` — delivers the proof |
-| `LatticeWitness` | Meta/Config.lean | Indexed proof carrier for lattice-stability clusters (3 constructors: `.graceful`, `.subSafety`, `.pack`) |
-| `latticeWitness` | Meta/Config.lean | `(c : EnabledLatticeCluster) → LatticeWitness c` — delivers the proof |
 | `CertifiedProjection` | Meta/Config.lean | Proof-carrying record: enabled clusters + soundness + `constraintWitnesses` + `metaModularWitnesses` + `latticeWitnesses` + filtered enabled lists for all families |
 | `certify` | Meta/Config.lean | `EpArchConfig → CertifiedProjection cfg` |
-| `fullConfig` | Meta/Config.lean | Sample: all 7 constraints, 5 goals, 8 worlds |
-| `minimalConfig` | Meta/Config.lean | Sample: 1 constraint, 1 goal, no worlds |
-| `goalsOnlyConfig` | Meta/Config.lean | Sample: no constraints, all 5 goals |
 
 ### Theorems
 
@@ -1437,16 +1075,6 @@ for each cluster.
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
 | `clusterEnabled_sound` | Meta/Config.lean | `clusterEnabled cfg c = true → clusterValid c` | All enabled clusters are machine-proved |
-
-#### Correspondence / Completeness Theorems
-
-| Theorem | File | Statement | Role |
-|---------|------|-----------|------|
-| `mem_enabledGoalWitnesses_of_enabled` | Meta/Config.lean | `clusterEnabled cfg c.toClusterTag = true → âŸ¨c, goalWitness câŸ© âˆˆ ...` | Completeness of Tier 3 witness list |
-| `mem_enabledTier4Witnesses_of_enabled` | Meta/Config.lean | `clusterEnabled cfg c.toClusterTag = true → âŸ¨c, tier4Witness câŸ© âˆˆ ...` | Completeness of Tier 4 witness list |
-| `mem_enabledWorldWitnesses_of_enabled` | Meta/Config.lean | `clusterEnabled cfg c.toClusterTag = true → âŸ¨c, worldWitness câŸ© âˆˆ ...` | Completeness of world witness list |
-| `mem_enabledMetaModularWitnesses_of_enabled` | Meta/Config.lean | `clusterEnabled cfg c.toClusterTag = true → âŸ¨c, metaModularWitness câŸ© âˆˆ (certify cfg).enabledMetaModularWitnesses` | **Phase F** — completeness of meta-modular witness list |
-| `mem_enabledLatticeWitnesses_of_enabled` | Meta/Config.lean | `clusterEnabled cfg c.toClusterTag = true → âŸ¨c, latticeWitness câŸ© âˆˆ (certify cfg).enabledLatticeWitnesses` | **Phase F** — completeness of lattice witness list |
 
 #### Tier 2 Named Proof Witnesses (Forcing)
 
@@ -1459,24 +1087,6 @@ for each cluster.
 | `cluster_forcing_coordination` | Meta/Config.lean | `StructurallyForced W → handles_coordination W → HasBank W` | Witness for `.forcing_coordination` |
 | `cluster_forcing_truth` | Meta/Config.lean | `StructurallyForced W → handles_truth_pressure W → HasRedeemability W` | Witness for `.forcing_truth` |
 | `cluster_forcing_multi_agent` | Meta/Config.lean | `StructurallyForced W → handles_multi_agent W → HasGranularACL W` | Witness for `.forcing_multi_agent_access` |
-
-#### Tier 3 Named Proof Witnesses (Health-Goal Transport)
-
-| Theorem | File | Statement | Role |
-|---------|------|-----------|------|
-| `cluster_goal_safeWithdrawal` | Meta/Config.lean | `Compatible E C → SafeWithdrawalGoal C → SafeWithdrawalGoal (forget E)` | Witness for `.goal_safeWithdrawal` |
-| `cluster_goal_reliableExport` | Meta/Config.lean | `Compatible E C → ReliableExportGoal C → ReliableExportGoal (forget E)` | Witness for `.goal_reliableExport` |
-| `cluster_goal_soundDeposits` | Meta/Config.lean | `Compatible E C → SoundDepositsGoal C → SoundDepositsGoal (forget E)` | Witness for `.goal_soundDeposits` |
-| `cluster_goal_selfCorrection` | Meta/Config.lean | `Compatible E C → SelfCorrectionGoal C → SelfCorrectionGoal (forget E)` | Witness for `.goal_selfCorrection` |
-| `cluster_goal_corrigible_universal` | Meta/Config.lean | `Compatible E C → CorrigibleLedgerGoal C → ∀-corrigibility for (forget E)` | Witness for `.goal_corrigible_universal` |
-| `cluster_goal_corrigible_full` | Meta/Config.lean | `SurjectiveCompatible E C → CorrigibleLedgerGoal C → CorrigibleLedgerGoal (forget E)` | Witness for `.goal_corrigible_full` |
-
-#### Tier 4-C Named Proof Witnesses (Bank Goal Transport)
-
-| Theorem | File | Statement | Role |
-|---------|------|-----------|------|
-| `cluster_tier4_bank_goals_compat` | Meta/Config.lean | All 5 ∀-goals + universal corrigibility via Compatible | Witness for `.tier4_bank_goals_compat` |
-| `cluster_tier4_bank_goals_surj` | Meta/Config.lean | All 5 goals + full CorrigibleLedgerGoal via SurjectiveCompatible | Witness for `.tier4_bank_goals_surj` |
 
 #### World-Bundle Named Proof Witnesses (Obligation Theorems)
 
@@ -1553,16 +1163,6 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 | `lean_structurally_forced` | `StructurallyForced LeanWorkingSystem` | Via `embedding_to_structurally_forced lean_forcing_embedding` |
 | `lean_structural_convergence` | `containsBankPrimitives LeanWorkingSystem` | Indirect: `convergence_structural` via `StructurallyForced`; independently verified |
 | `lean_kernel_forces_bank_primitives` | `containsBankPrimitives LeanWorkingSystem` | Citability alias; uses the direct route (`lean_implements_bank_primitives`) |
-
-### Namespace Forcing
-
-`leanNamespaceDisagreement` is the concrete `AgentDisagreement` built from Lean's `open Nat` vs `open Int` semantics. `flat_scope_impossible` fires on it, grounding the bubble-necessity argument in kernel structure.
-
-| Theorem | Statement | Role |
-|---------|-----------|------|
-| `lean_namespace_requires_scope_separation` | `¬∃ f, (∀ n, f n ↔ openNatAccepts n) ∧ (∀ n, f n ↔ openIntAccepts n)` | `flat_scope_impossible` instantiated on kernel name-resolution |
-| `lean_no_flat_namespace_resolver` | `openNatAccepts` and `openIntAccepts` → `False` | Bridge impossibility: a flat resolver faithful to both namespaces is contradictory |
-| `lean_has_bubbles_grounded` | `spec_has_bubbles LeanGroundedSystemSpec.toSystemSpec` | `HasBubbles` derived from `LeanGroundedBubbles` evidence directly |
 
 ### Two-Layer Joint Witness
 
