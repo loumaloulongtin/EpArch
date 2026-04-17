@@ -282,12 +282,5 @@ inductive DepositKind where
   | Institutional -- event-driven TTL (governance changes)
   deriving DecidableEq, Repr
 
-/-- TTL requirement by deposit kind. -/
-def ttl_required : DepositKind → Bool
-  | .Structural => false
-  | .WorldState => true
-  | .Adversarial => true
-  | .Institutional => true
-
 
 end EpArch
