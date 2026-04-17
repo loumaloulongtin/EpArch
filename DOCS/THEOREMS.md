@@ -1007,8 +1007,6 @@ C1, C2, C4b, C5, C6b are proved as named theorems in `Commitments.lean`
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
 | `concrete_bank_vacuous_gate` | Meta/Tier4Transport.lean | `ConcreteBankModel` with `selfCorrects := False` satisfies RevisionGate | Base case |
-| `concrete_bank_transport` | Meta/Tier4Transport.lean | `Compatible E ConcreteBankModel → RevisionGate base → RevisionGate (forget E)` | Extension safety |
-| `concrete_bank_vacuous_transport` | Meta/Tier4Transport.lean | Combines base + transport for the vacuous case | Convenience theorem |
 
 ### Cluster C Extended: All Five Health Goals Transport
 
@@ -1380,19 +1378,19 @@ that no agent can determine from observations alone — independent of the PRP c
 argument. Together, PRP (cost) and partial observability (underdetermination) give two
 orthogonal reasons terminal epistemic closure is unreachable.
 
-**Files:** `Meta/ClusterRegistry.lean` (29-cluster tag registry, routing, per-family canonical lists) and `Meta/Config.lean` (witness carriers, `certify`, completeness theorems, named proof witnesses)
+**Files:** `Meta/ClusterRegistry.lean` (30-cluster tag registry, routing, per-family canonical lists) and `Meta/Config.lean` (witness carriers, `certify`, completeness theorems, named proof witnesses)
 
 **Design:** `clusterEnabled cfg c : Bool` is the computable routing function. `showConfig cfg`
-is `#eval`-able and returns human-readable cluster descriptions. `certify cfg` returns a
+is `#eval`-able and returns the enabled cluster tag names (via `reprStr`). `certify cfg` returns a
 `CertifiedProjection` that names every enabled cluster and carries genuine `ConstraintProof`
 records for each Tier 2 forcing cluster.  Named proof witnesses (`cluster_forcing_*`,
 `cluster_goal_*`, `cluster_tier4_*`, `cluster_world_*`) state and prove the exact proposition
 for each cluster.
 
 **Three-layer architecture:**
-1. **Routing layer** — `clusterEnabled`, `enabled`, `complete`, `sound` (all clusters, routing only, `clusterValid := True`)
+1. **Routing layer** — `clusterEnabled`, `enabled`, `complete`, `sound` (all clusters; `clusterValid c` returns a genuine proved proposition for every cluster, not `True`)
 2. **Constraint proof layer** — `constraintProof`/`constraintWitnesses` (Tier 2 forcing clusters: real `ConstraintProof` with genuine proposition + proof; possible because `WorkingSystem` is monomorphic)
-3. **Proof-content layer** — `cluster_*` universe-polymorphic theorems (all 30 clusters; goal/Tier4/world/meta-modular/lattice clusters reference universe-polymorphic types and live in `Meta/Config.lean`)
+3. **Proof-content layer** — `cluster_*` universe-polymorphic theorems (all 30 clusters; 15 non-Tier2 clusters use private `prop_*` defs pinned at universe 0 in §4g-pre to avoid free universe variables in the `clusterValid` match)
 
 ### Definitions / Configuration Language
 
@@ -1423,9 +1421,8 @@ for each cluster.
 | `allLatticeClusters` | Meta/ClusterRegistry.lean | Canonical list of 3 lattice-stability cluster tags |
 | `allClusters` | Meta/ClusterRegistry.lean | Canonical ordered list of all 30 ClusterTags (derived from 6 per-family lists) |
 | `clusterEnabled` | Meta/ClusterRegistry.lean | `EpArchConfig → ClusterTag → Bool` (computable routing); meta-modular and lattice always enabled |
-| `clusterDescription` | Meta/ClusterRegistry.lean | `ClusterTag → String` — one-line human-readable description |
 | `explainConfig` | Meta/Config.lean | `EpArchConfig → List ClusterTag` — enabled clusters |
-| `clusterValid` | Meta/Config.lean | `ClusterTag → Prop` — always `True` (every cluster is proved) |
+| `clusterValid` | Meta/Config.lean | `ClusterTag → Prop` — genuine proved proposition for each of the 30 clusters; 15 clusters use `prop_*` defs pinned at universe 0 to eliminate free universe variables |
 | `showConfig` | Meta/Config.lean | `EpArchConfig → List String` — `#eval`-able routing report |
 | `ConstraintProof` | Meta/Config.lean | Proof-carrying record: `statement : Prop`, `proof : statement` (Tier 2 only) |
 | `constraintProof` | Meta/Config.lean | `EnabledConstraintCluster → ConstraintProof` — real proposition + proof for each forcing cluster |
@@ -1570,7 +1567,7 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 |---------|-----------|------|
 | `lean_namespace_requires_scope_separation` | `¬∃ f, (∀ n, f n ↔ openNatAccepts n) ∧ (∀ n, f n ↔ openIntAccepts n)` | `flat_scope_impossible` instantiated on kernel name-resolution |
 | `lean_no_flat_namespace_resolver` | `openNatAccepts` and `openIntAccepts` → `False` | Bridge impossibility: a flat resolver faithful to both namespaces is contradictory |
-| `lean_has_bubbles_grounded` | `spec_has_bubbles LeanKernelSystemSpecGrounded` | `HasBubbles` derived from `LeanGroundedBubbles` evidence directly |
+| `lean_has_bubbles_grounded` | `spec_has_bubbles LeanGroundedSystemSpec.toSystemSpec` | `HasBubbles` derived from `LeanGroundedBubbles` evidence directly |
 
 ### Two-Layer Joint Witness
 

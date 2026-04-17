@@ -92,7 +92,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | `Semantics/ScopeIrrelevance.lean` | Scope irrelevance theorems | 0 |
 | `Bank.lean` | Bank substrate, lifecycle operators | 0 |
 | `Commitments.lean` | 8 structural commitments; all proved as standalone theorems; `commitments_pack` bundles the unconditional ones (C3/C4b/C7b/C8) | 0 |
-| `Meta/ClusterRegistry.lean` | 29-cluster tag registry, routing, per-family canonical lists | 0 |
+| `Meta/ClusterRegistry.lean` | 30-cluster tag registry, routing, per-family canonical lists | 0 |
 | `Meta/Config.lean` | Certification engine: `certify`, proof witnesses, completeness theorems | 0 |
 | `Health.lean` | Health predicates + necessity theorems | 0 |
 | `Invariants.lean` | Protocol requirements | 0 |

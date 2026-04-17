@@ -63,8 +63,8 @@ does what prevents confusion about where to look and where to edit.
   `#eval EpArch.Meta.Config.showConfig myConfig`.
 
 ### Routing/metadata layer — `Meta/ClusterRegistry.lean`
-- Owns `ClusterTag`, all `EnabledXxxCluster` enumerations, `clusterDescription`,
-  `clusterEnabled`, and every `toClusterTag` mapping.
+- Owns `ClusterTag`, all `EnabledXxxCluster` enumerations, `clusterEnabled`,
+  and every `toClusterTag` mapping.
 - **No EpArch-specific imports.** It is pure metadata — all types are self-contained.
 - Changing a cluster's description, family, or enabled status: edit here only.
 
@@ -109,7 +109,7 @@ theorem my_constraint_requires_feature (W : WorkingSystem)
 ### Step 2 — Update `ClusterRegistry.lean`
 
 Add a new `ClusterTag` constructor, the corresponding `EnabledXxxCluster` value,
-`clusterDescription`, `clusterEnabled`, and `toClusterTag` routing.
+`clusterEnabled`, and `toClusterTag` routing.
 
 ```lean
 -- In ClusterTag inductive:
@@ -208,7 +208,7 @@ directly bundles the four unconditional commitment theorems with no wrapper.
 A mismatch between the registry description and what the witness actually carries
 is a documentation bug. The three layers must always agree:
 
-- `clusterDescription` in `ClusterRegistry.lean` says what is certified.
+- The `description` field in `ConstraintClusterMeta` (in `ClusterRegistry.lean`) says what is certified for Tier 2 clusters.
 - The witness constructor type in `Config.lean` encodes exactly that.
 - The proof term in the match arm delivers exactly the constructor type.
 
@@ -276,7 +276,7 @@ These rules prevent the registry, config, and docs from drifting apart.
 
 | # | Invariant |
 |---|---|
-| **I1** | `ClusterRegistry.lean` owns all routing and display. No other file defines `clusterDescription` or `clusterEnabled`. |
+| **I1** | `ClusterRegistry.lean` owns all routing and display. No other file defines `clusterEnabled` or the `toClusterTag` mappings. |
 | **I2** | `Config.lean` owns all proof carriers. Witness inductive constructors are the only place where theorem types are formally encoded against a `ClusterTag`. |
 | **I3** | Named `cluster_*` pack theorems (e.g. `commitments_pack`, `structural_theorems_unconditional`, `lts_theorems_step_universal`) remain the authoritative typed witnesses. Config.lean match arms must reference them by name, not re-prove inline. |
 | **I4** | Every `ClusterTag` constructor that exists must have a matching witness constructor in `Config.lean` and a description in `ClusterRegistry.lean`. Orphaned tags are a build-time bug. |
