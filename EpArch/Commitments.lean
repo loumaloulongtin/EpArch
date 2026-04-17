@@ -236,8 +236,12 @@ theorem SEVFactorization (d : Deposit PropLike Standard ErrorModel Provenance) :
     approaches. -/
 opaque path_route_exists : Deposit PropLike Standard ErrorModel Provenance →
     ConstraintSurface → Prop
+/-- Whether the domain's contact mechanism was exercised against this deposit.
+    See `path_route_exists` above for the full design rationale. -/
 opaque contact_was_made : Deposit PropLike Standard ErrorModel Provenance →
     ConstraintSurface → Prop
+/-- Whether the domain's verdict function discriminated — i.e., does not accept all
+    terms uniformly. See `path_route_exists` above for the full design rationale. -/
 opaque verdict_discriminates : Deposit PropLike Standard ErrorModel Provenance →
     ConstraintSurface → Prop
 

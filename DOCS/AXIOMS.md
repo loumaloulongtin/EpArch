@@ -38,15 +38,11 @@ a proof term exists (route), elaboration ran (contact), and the kernel discrimin
 verdict (it does not accept all terms without sorry).
 
 **Why it is an axiom and not a theorem:** `path_route_exists`, `contact_was_made`, and
-`verdict_discriminates` are `opaque` in `Commitments.lean` — they have no in-system
-inhabitants. Without this axiom, `redeemable d` is satisfiable by nothing, `intra_bubble_only`
-is vacuously true for every deposit, and C4b proves nothing. The axiom names the kernel
-soundness assumption — that the Lean kernel does not accept `h : T` when `T` is false without
-`sorry` — which every sorry-free Lean proof already relies on, but which must be stated
-explicitly here because the predicates are opaque.
-
-**Axiom footprint reduction:** Before this file, every theorem using `redeemable` listed
-three unlabeled opaque instances in `#print axioms`. After: one named axiom.
+`verdict_discriminates` are `opaque` in `Commitments.lean` by design — any concrete body
+would commit the core theory to one domain's validation mechanism and break the
+domain-generality of every theorem about `redeemable`. This axiom names the Lean domain's
+trust boundary. Other domains (observation over time, RLHF, institutional assessment,
+peer challenge) would each supply their own analogous axiom.
 
 **Non-vacuity closed:** `redeemable_deposits_exist` (in the same file) now proves
 `∃ d, redeemable d` — the positive direction that was previously missing.

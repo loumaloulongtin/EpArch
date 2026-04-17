@@ -24,7 +24,7 @@ That is what the opaque barrier is for.
 
 - `LeanPathExists` / `LeanContact` / `LeanVerdict` — concrete Lean-domain predicates
 - `LeanVerificationPath` — concrete local structure, mirrors VerificationPath
-- `lean_redeemable_theorem` — Part A: non-vacuity as a closed theorem (zero axioms)
+- `lean_redeemable_deposits_exist` — Part A: non-vacuity as a closed theorem (zero axioms)
 - `lean_kernel_verification_path` — Part B: axiom bridging to core `redeemable`
 - `redeemable_deposits_exist` — Part B: ∃ d, redeemable d via the core theory
 -/
@@ -135,7 +135,9 @@ theorem lean_kernel_path_is_redeemable
   let ⟨h_path, h_contact, h_discrim⟩ := lean_kernel_verification_path d h_prop
   ⟨⟨d, d.h.redeem, h_path, h_contact, h_discrim⟩, rfl, rfl⟩
 
-/-- Core-theory redeemable deposits exist (via the axiom). -/
+/-- Core-theory redeemable deposits exist (via the axiom).
+    Same deposit witness as `lean_redeemable_deposits_exist` — the bridge changes
+    which redeemability predicate is targeted, not the example. -/
 theorem redeemable_deposits_exist :
     ∃ (d : Deposit Prop Unit Unit Unit), redeemable d :=
   let d : Deposit Prop Unit Unit Unit :=
