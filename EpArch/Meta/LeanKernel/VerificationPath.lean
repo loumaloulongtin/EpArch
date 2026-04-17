@@ -41,9 +41,8 @@ open EpArch
 
 /-! ## Concrete Lean-Domain Predicates
 
-These are non-opaque definitions for the Lean domain. Unlike `path_route_exists`,
-`contact_was_made`, and `verdict_discriminates` in Commitments.lean (which are
-`opaque` and have no introduction rules), these can be inhabited by construction. -/
+Non-opaque definitions inhabitable by construction — unlike the sealed opaques in
+Commitments.lean that each domain must satisfy from the outside. -/
 
 /-- A proof term exists for this deposit's claim: the claim is inhabited as a Prop. -/
 def LeanPathExists (d : Deposit Prop Standard ErrorModel Provenance) (_ : ConstraintSurface) : Prop :=
@@ -53,14 +52,11 @@ def LeanPathExists (d : Deposit Prop Standard ErrorModel Provenance) (_ : Constr
 def LeanContact (_ : Deposit Prop Standard ErrorModel Provenance) (_ : ConstraintSurface) : Prop :=
   True
 
-/-- The kernel gave a non-trivial verdict: it accepts some terms and not others.
-    Witnessed here by the fact that `True` and `False` have different proof statuses. -/
+/-- The kernel gave a non-trivial verdict: it accepts some terms and not others. -/
 def LeanVerdict (_ : Deposit Prop Standard ErrorModel Provenance) (_ : ConstraintSurface) : Prop :=
   True
 
-/-- A concrete VerificationPath for the Lean domain using the non-opaque predicates above.
-    Mirrors the structure of `VerificationPath` in Commitments.lean — same shape,
-    but with inhabitable evidence fields. -/
+/-- Lean-domain analogue of `VerificationPath`: same shape, inhabitable evidence fields. -/
 structure LeanVerificationPath (d : Deposit Prop Standard ErrorModel Provenance) where
   surface   : ConstraintSurface
   h_path    : LeanPathExists d surface
@@ -71,13 +67,12 @@ structure LeanVerificationPath (d : Deposit Prop Standard ErrorModel Provenance)
 def lean_redeemable (d : Deposit Prop Standard ErrorModel Provenance) : Prop :=
   ∃ vp : LeanVerificationPath d, vp.surface = d.h.redeem
 
-/-- PART A THEOREM: Any proved Prop deposit is Lean-redeemable. Zero axioms.
+/-- Any proved Prop deposit is Lean-redeemable.
 
     **Theorem shape:** `d.P → lean_redeemable d`
 
-    **Proof strategy:** Constructs the LeanVerificationPath directly from `h_prop`.
-    `LeanPathExists` is literally `d.P`, `LeanContact` and `LeanVerdict` are `True`.
-    No trust boundary required — all evidence fields have concrete definitions. -/
+    **Proof strategy:** Constructs `LeanVerificationPath` directly from `h_prop`;
+    `LeanPathExists` unfolds to `d.P`, `LeanContact` and `LeanVerdict` are `True`. -/
 theorem lean_redeemable_from_proof
     {Standard ErrorModel Provenance : Type}
     (d : Deposit Prop Standard ErrorModel Provenance)
@@ -85,12 +80,7 @@ theorem lean_redeemable_from_proof
     lean_redeemable d :=
   ⟨⟨d.h.redeem, h_prop, trivial, trivial⟩, rfl⟩
 
-/-- PART A COROLLARY: Lean-redeemable deposits exist. Zero axioms.
-
-    **Theorem shape:** `∃ d, lean_redeemable d`
-
-    **Proof strategy:** Exhibits a deposit with `P := True` and applies
-    `lean_redeemable_from_proof` with `True.intro`. Fully closed theorem. -/
+/-- Lean-redeemable deposits exist. -/
 theorem lean_redeemable_deposits_exist :
     ∃ (d : Deposit Prop Unit Unit Unit), lean_redeemable d :=
   let d : Deposit Prop Unit Unit Unit :=
@@ -105,35 +95,20 @@ theorem lean_redeemable_deposits_exist :
     PART B — CORE THEORY CONNECTION (ONE AXIOM)
     ======================================================================== -/
 
-/-! ## The Opaque Barrier and Why It Exists
+/-! ## Connecting to the Core Theory
 
-The three predicates in Commitments.lean are opaque because different agents make
-contact with reality in fundamentally different ways. Observation over time, RLHF
-reward signal, institutional exam results, and peer challenge all constitute valid
-instantiations of "path", "contact", and "verdict" — and none of them is the Lean
-kernel. An architecture that commits to one of these notions is not a general
-epistemic architecture; it is a theory about one specific mechanism.
+Part A filled the abstract C4 interface with concrete Lean-domain definitions.
+Part B's axiom bridges those definitions to the core theory's sealed opaques —
+the step that cannot be a theorem, for the reasons given in the file header. -/
 
-Part A fills the abstract interface concretely for the Lean domain, using non-opaque
-local definitions. Those definitions are not the opaques — they live in a different
-namespace and have concrete reduction behaviour. Connecting them to the core theory's
-abstract interface is exactly what Part B's axiom does. The axiom is not a weakness;
-it is the formal statement that the Lean domain satisfies the abstract contract, in
-the same way that any other domain would have to name its own trust boundary. -/
+/-- The Lean domain satisfies the abstract C4 interface.
 
-/-- Lean-kernel VerificationPath axiom: the Lean domain satisfies the abstract C4 interface.
+    **What it asserts:** For any proved Prop deposit, the Lean kernel satisfies
+    all three opaque evidence predicates against the deposit's own constraint surface.
 
-    **What it asserts:** For any proved Prop deposit, the Lean kernel instantiates
-    the core theory's three opaque evidence predicates against the deposit's own surface.
-    This is the bridge from the Lean-domain instantiation (Part A) to the core theory's
-    abstract `redeemable` predicate.
-
-    **Why it is an axiom and not a theorem:** The opaques are opaque by design — any
-    concrete body would commit the core theory to one domain's validation mechanism and
-    break the domain-generality of every theorem about `redeemable`. This axiom names
-    the assumption that the Lean domain satisfies the abstract contract. An agent
-    validating by observation over time, or through RLHF, or through institutional
-    assessment would each supply an analogous axiom for their own domain.
+    **Why an axiom:** The opaques in Commitments.lean are sealed by design; any
+    concrete body would fix one domain's validation mechanism as the architecture's own.
+    This axiom names the Lean domain's trust boundary. Other domains supply their own.
 
     **Universe note:** `Prop : Type 0 = Type`, so `Standard`, `ErrorModel`, and
     `Provenance` are fixed to `Type` (universe 0). -/
@@ -145,13 +120,13 @@ axiom lean_kernel_verification_path
     contact_was_made d d.h.redeem ∧
     verdict_discriminates d d.h.redeem
 
-/-- PART B THEOREM: Any proved Prop deposit is redeemable in the core theory's sense.
+/-- Any proved Prop deposit is redeemable in the core theory's sense.
 
-    **Theorem shape:** `d.P → redeemable d` (core theory `redeemable`, not `lean_redeemable`)
+    **Theorem shape:** `d.P → redeemable d` (core `redeemable`, not `lean_redeemable`)
 
-    **Proof strategy:** Destructs the axiom to extract the three opaque evidence
-    terms, packages them into a `VerificationPath`, witnesses `rfl` for both
-    `vp.deposit = d` and `vp.surface = d.h.redeem`. -/
+    **Proof strategy:** Destructs the axiom, packages the three opaque evidence terms
+    into a `VerificationPath`, witnesses `vp.deposit = d` and `vp.surface = d.h.redeem`
+    by `rfl`. -/
 theorem lean_kernel_path_is_redeemable
     {Standard ErrorModel Provenance : Type}
     (d : Deposit Prop Standard ErrorModel Provenance)
@@ -160,7 +135,7 @@ theorem lean_kernel_path_is_redeemable
   let ⟨h_path, h_contact, h_discrim⟩ := lean_kernel_verification_path d h_prop
   ⟨⟨d, d.h.redeem, h_path, h_contact, h_discrim⟩, rfl, rfl⟩
 
-/-- PART B COROLLARY: Core-theory redeemable deposits exist (via the axiom). -/
+/-- Core-theory redeemable deposits exist (via the axiom). -/
 theorem redeemable_deposits_exist :
     ∃ (d : Deposit Prop Unit Unit Unit), redeemable d :=
   let d : Deposit Prop Unit Unit Unit :=
