@@ -240,7 +240,7 @@ inductive VindicationRole
     the opaque consistently. First, a system relaxed enough that those primitives are
     already irrelevant — but then it is not using EpArch for what EpArch is for. Second,
     a system whose deposit space is narrow and homogeneous enough that every deposit
-    genuinely goes through the same known channel: a concrete uniform body is then correct
+    genuinely shares the same vindication realization: a concrete uniform body is then correct
     for that restricted domain. This is exactly what `EpArch.Meta.LeanKernel.VerificationPath`
     demonstrates — within the Lean elaboration domain, all three vindication roles have a
     single concrete realization, so a non-opaque parallel structure is sound. In both cases
