@@ -337,7 +337,7 @@ structure GroundedAuthorizationStrict where
     Parallel to `no_flat_resolver` for scope. -/
 def GroundedAuthorization.toStrict (G : GroundedAuthorization) : GroundedAuthorizationStrict where
   base := G
-  no_flat_tier := fun ⟨f, hprop, hcommit⟩ =>
+  no_flat_tier := fun ⟨_, hprop, hcommit⟩ =>
     G.cannot_commit ((hcommit G.submitter G.tier_claim).mp
       ((hprop G.submitter G.tier_claim).mpr G.may_propose))
 
