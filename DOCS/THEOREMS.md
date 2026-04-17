@@ -1086,7 +1086,7 @@ for each cluster.
 | `cluster_forcing_adversarial` | Meta/Config.lean | `StructurallyForced W → handles_adversarial W → HasRevocation W` | Witness for `.forcing_adversarial` |
 | `cluster_forcing_coordination` | Meta/Config.lean | `StructurallyForced W → handles_coordination W → HasBank W` | Witness for `.forcing_coordination` |
 | `cluster_forcing_truth` | Meta/Config.lean | `StructurallyForced W → handles_truth_pressure W → HasRedeemability W` | Witness for `.forcing_truth` |
-| `cluster_forcing_multi_agent` | Meta/Config.lean | `StructurallyForced W → handles_multi_agent W → HasGranularACL W` | Witness for `.forcing_multi_agent_access` |
+| `cluster_forcing_multi_agent` | Meta/Config.lean | `StructurallyForced W → handles_multi_agent W → HasGranularACL W` | Witness for `.forcing_multi_agent` |
 
 #### World-Bundle Named Proof Witnesses (Obligation Theorems)
 
