@@ -1,17 +1,21 @@
 /-
-EpArch.Meta.LeanKernel.VerificationPath — Lean-Kernel Non-Vacuity Witness for C4b
+EpArch.Meta.LeanKernel.VerificationPath — Worked Example: Lean Domain C4b Instantiation
 
-Without a positive witness for `redeemable`, `intra_bubble_only d` is vacuously true
-for every deposit (since `path_route_exists` is never inhabited), and
-`redeemability_requires_more_than_consensus` degenerates into a tautology that
-distinguishes nothing. This file prevents that collapse by exhibiting the Lean kernel
-as a concrete VerificationPath instantiation for any proved Prop deposit.
+This file is NOT part of the core architectural claim. It is a worked example showing
+how one domain — Lean proof checking — can instantiate the C4b surface and supply a
+positive redeemability witness.
+
+EpArch specifies the structure around validation; the actual act of validation is
+discharged by the implementing domain. The core theory's C4b result
+(`redeemability_requires_more_than_consensus`) proves the separation between consensus
+and redeemability. Whether any deposit is *actually* redeemable in a given system is
+the responsibility of that system's instantiation layer — not the core architecture.
 
 The three opaque predicates (`path_route_exists`, `contact_was_made`,
 `verdict_discriminates`) are unchanged in Commitments.lean — this file is a
-downstream witness layer only, not a redefinition of the C4 surface.
+downstream instantiation only, not a redefinition of the C4 surface.
 
-- `lean_kernel_verification_path` — the packaged axiom; names the trust boundary
+- `lean_kernel_verification_path` — the packaged axiom for the Lean domain
 - `lean_kernel_path_is_redeemable` — redeemability for any proved Prop deposit
 - `redeemable_deposits_exist` — the non-vacuity witness: ∃ d, redeemable d
 -/

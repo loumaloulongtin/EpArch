@@ -1,15 +1,16 @@
 # Axiom Declarations
 
-The formalization contains **one `axiom` declaration**: `lean_kernel_verification_path`
-in `EpArch/Meta/LeanKernel/VerificationPath.lean`. This is a named, documented trust
-boundary — not a hidden assumption. All other results are proved theorems.
+The core formalization contains **zero `axiom` declarations**. All architectural results
+are proved theorems.
 
-> **Note:** This axiom is what gives `intra_bubble_only` its discriminating force.
-> Without a positive `redeemable` witness, `redeemability_requires_more_than_consensus`
-> would be vacuously true of every deposit and C4b would prove nothing. The axiom
-> names the kernel soundness assumption that every sorry-free Lean proof already relies
-> on implicitly — this formalization must state it explicitly because `verdict_discriminates`
-> is opaque and has no in-system inhabitants.
+> **Note on C4b non-vacuity:** `redeemability_requires_more_than_consensus` proves that
+> intra-bubble deposits cannot be redeemable — but the positive witness (`∃ d, redeemable d`)
+> is outside the core theory's scope. EpArch specifies the structure around validation;
+> it does not itself validate. Domain instantiators (agent OS, proof checker, legal process,
+> etc.) are responsible for discharging the positive side by supplying concrete witnesses
+> for `path_route_exists`, `contact_was_made`, and `verdict_discriminates` in their domain.
+> `EpArch/Meta/LeanKernel/VerificationPath.lean` is one worked example of such an
+> instantiation — it is verified by the build but is not part of the core architectural claim.
 
 This document records the current assumption boundary and how the prior axiom surface was resolved.
 

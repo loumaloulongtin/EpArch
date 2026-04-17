@@ -188,7 +188,6 @@ import EpArch.Meta.Modular     -- Modularity meta-theorem: ∀ S ⊆ constraints
 import EpArch.Meta.Config      -- Configurable certification engine: EpArchConfig → ClusterTag → certified proof
 import EpArch.Meta.LeanKernel.World     -- Self-referential: Lean kernel world + architecture + OleanStaleness
 import EpArch.Meta.LeanKernel.SFailure  -- Lean kernel S-field failure taxonomy
-import EpArch.Meta.LeanKernel.VerificationPath  -- C4 non-vacuity: redeemable deposits exist (Lean-kernel witness)
 import EpArch.Theorems.NotationBridge   -- Notation bridge authorization (Layers 2, 3, Gettier)
 
 /-- Entry point: confirms the formalization compiles and prints a banner. -/
