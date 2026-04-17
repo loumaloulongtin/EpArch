@@ -251,13 +251,12 @@ inductive VindicationRole
     when the primitives it supports are.
 
     A further consequence: as long as `vindication_evidence` remains opaque, any system
-    operating against it cannot inspect the vindication mechanism from inside the core
-    theory, and so cannot collapse vindication into guaranteed self-certifying correctness.
-    The system must remain compatible with challenge, revision, and contestation — not
-    because the opaque proves that errors will occur, but because it forecloses the
-    self-certification that would make the recovery machinery optional. A system that
-    cannot certify its own vindication verdicts from inside is exactly the system that
-    needs challenge, repair, and adversarial robustness to remain meaningful.
+    operating against it must accept that its vindication verdicts are not internally
+    self-certifying. The architecture cannot inspect the vindication mechanism from
+    inside the core theory, so it must remain compatible with being wrong and with
+    eventually recovering from error. That is precisely why challenge, repair, and
+    adversarial robustness remain necessary rather than optional: they are the
+    machinery a system needs when it cannot guarantee its own verdicts.
 
     The three predicates `path_route_exists`, `contact_was_made`, `verdict_discriminates`
     are transparent projections of this single opaque — three roles of one underlying
