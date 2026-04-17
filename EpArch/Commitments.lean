@@ -232,9 +232,11 @@ inductive VindicationRole
     bank, challenge/repair mechanism, and forcing story are load-bearing, filling
     `vindication_evidence` with a trivial body is self-contradictory: it asserts that
     validation is immediate and uniform, which makes those primitives redundant —
-    deposits are always valid, nothing needs mediation, challenges have no contested
-    ground, the forcing story has no pathway to compel, and the adversarial model has
-    no surface to attack. A system relaxed enough that those primitives are already
+    redeemability becomes trivialized so the distinction between mediated and unmediated
+    validation collapses, nothing needs mediation, challenges have no contested ground,
+    the scarcity and constraint that make mediation necessary disappear so the pressure
+    that was supposed to force routing through bank and surface machinery is weakened or
+    gone, and the adversarial model has no surface to attack. A system relaxed enough that those primitives are already
     irrelevant can fill the opaque consistently — but then it is not using EpArch for
     what EpArch is for. The opaque is load-bearing exactly when the architecture is.
 
