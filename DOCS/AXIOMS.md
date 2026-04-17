@@ -4,12 +4,12 @@ The formalization contains **one `axiom` declaration**: `lean_kernel_verificatio
 in `EpArch/Meta/LeanKernel/VerificationPath.lean`. This is a named, documented trust
 boundary — not a hidden assumption. All other results are proved theorems.
 
-> **Note:** This axiom packages what were previously three unlabeled opaque instances
-> in `#print axioms` output into a single named claim. It closes the C4b non-vacuity gap
-> (`∃ d, redeemable d` is now provable). It is an explicit statement of kernel soundness —
-> an assumption every sorry-free Lean proof already relies on implicitly. Lean4Lean
-> (digama0) is an active project that would, if completed and connected, offer a path
-> toward discharging it.
+> **Note:** This axiom is what gives `intra_bubble_only` its discriminating force.
+> Without a positive `redeemable` witness, `redeemability_requires_more_than_consensus`
+> would be vacuously true of every deposit and C4b would prove nothing. The axiom
+> names the kernel soundness assumption that every sorry-free Lean proof already relies
+> on implicitly — this formalization must state it explicitly because `verdict_discriminates`
+> is opaque and has no in-system inhabitants.
 
 This document records the current assumption boundary and how the prior axiom surface was resolved.
 
@@ -36,14 +36,13 @@ the Lean kernel constitutes a VerificationPath against that deposit's own constr
 a proof term exists (route), elaboration ran (contact), and the kernel discriminated the
 verdict (it does not accept all terms without sorry).
 
-**Why it is an axiom and not a theorem:** The three predicates `path_route_exists`,
-`contact_was_made`, and `verdict_discriminates` are `opaque` in `Commitments.lean` — they
-cannot be inhabited from inside the formalization. This axiom is the only escape: it names
-kernel soundness explicitly. Every sorry-free Lean proof already rests on this assumption;
-this formalization is unusual only in having to state it out loud. Lean4Lean (digama0) is
-an active project aimed at proving Lean's kernel sound within Lean itself — a hopeful path
-toward discharging this axiom — but that work is incomplete and would additionally require
-bridging `verdict_discriminates` (currently opaque) to whatever Lean4Lean proves.
+**Why it is an axiom and not a theorem:** `path_route_exists`, `contact_was_made`, and
+`verdict_discriminates` are `opaque` in `Commitments.lean` — they have no in-system
+inhabitants. Without this axiom, `redeemable d` is satisfiable by nothing, `intra_bubble_only`
+is vacuously true for every deposit, and C4b proves nothing. The axiom names the kernel
+soundness assumption — that the Lean kernel does not accept `h : T` when `T` is false without
+`sorry` — which every sorry-free Lean proof already relies on, but which must be stated
+explicitly here because the predicates are opaque.
 
 **Axiom footprint reduction:** Before this file, every theorem using `redeemable` listed
 three unlabeled opaque instances in `#print axioms`. After: one named axiom.

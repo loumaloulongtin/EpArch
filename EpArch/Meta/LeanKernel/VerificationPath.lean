@@ -1,42 +1,19 @@
 /-
-EpArch.Meta.LeanKernel.VerificationPath — Lean-Kernel C4 Non-Vacuity Witness
+EpArch.Meta.LeanKernel.VerificationPath — Lean-Kernel Non-Vacuity Witness for C4b
 
-Closes the non-vacuity gap in Commitment 4b: `redeemable d` is proved false for
-intra-bubble deposits in Commitments.lean, but `∃ d, redeemable d` was never
-exhibited. This file supplies the witness via a single named axiom.
-
-## Design
+Without a positive witness for `redeemable`, `intra_bubble_only d` is vacuously true
+for every deposit (since `path_route_exists` is never inhabited), and
+`redeemability_requires_more_than_consensus` degenerates into a tautology that
+distinguishes nothing. This file prevents that collapse by exhibiting the Lean kernel
+as a concrete VerificationPath instantiation for any proved Prop deposit.
 
 The three opaque predicates (`path_route_exists`, `contact_was_made`,
-`verdict_discriminates`) are NOT rewritten. They remain generic hooks in
-Commitments.lean, open to instantiation for any domain (medical, legal, empirical
-science, etc.). This file is a *downstream witness layer only* — it does not
-mutate the C4 surface.
+`verdict_discriminates`) are unchanged in Commitments.lean — this file is a
+downstream witness layer only, not a redefinition of the C4 surface.
 
-The Lean kernel constitutes a VerificationPath instantiation for any deposit
-whose claim is a proved Prop:
-- `path_route_exists d d.h.redeem` — a proof term exists (Curry-Howard route).
-- `contact_was_made d d.h.redeem` — elaboration ran; the kernel was invoked.
-- `verdict_discriminates d d.h.redeem` — the kernel is a non-trivial oracle;
-  it rejects `h : T` when T is false (no sorry). This is kernel soundness —
-  the assumption every sorry-free Lean proof already relies on implicitly.
-  This formalization just has to name it explicitly. Lean4Lean (digama0) is
-  an active project that offers a hopeful path toward a formal proof of this,
-  but remains incomplete.
-
-## Axiom accounting
-
-| | Before | After |
-|---|---|---|
-| `#print axioms` entries for C4 theorems | 3 (opaques, unlabeled) | 1 (named, packaged) |
-| `∃ d, redeemable d` provable | No | Yes |
-| Commitments.lean changed | — | No — untouched |
-
-## Exported items
-
-- `lean_kernel_verification_path` — the single packaged axiom
-- `lean_kernel_path_is_redeemable` — redeemability from the axiom
-- `redeemable_deposits_exist` — non-vacuity corollary: ∃ d, redeemable d
+- `lean_kernel_verification_path` — the packaged axiom; names the trust boundary
+- `lean_kernel_path_is_redeemable` — redeemability for any proved Prop deposit
+- `redeemable_deposits_exist` — the non-vacuity witness: ∃ d, redeemable d
 -/
 
 import EpArch.Commitments
@@ -49,31 +26,21 @@ open EpArch
     THE LEAN-KERNEL AXIOM
     ======================================================================== -/
 
-/-- Lean-kernel VerificationPath witness.
+/-- Non-vacuity witness for `redeemable`: the Lean kernel is a VerificationPath.
 
-    For any deposit whose claim is a proved Prop, the Lean kernel constitutes
-    a VerificationPath against the deposit's own constraint surface: a proof
-    term exists (route), elaboration ran (contact), and the kernel discriminated
-    the verdict (it does not accept all terms).
+    For any proved Prop deposit, the Lean kernel satisfies all three C4 surface
+    obligations against the deposit's own constraint surface. This is the axiom
+    that gives `intra_bubble_only` its discriminating force: without an inhabited
+    `redeemable`, the separation theorem `redeemability_requires_more_than_consensus`
+    would be vacuously true of every deposit.
 
-    This packages all three C4 evidence obligations for the Lean domain into one
-    named trust boundary. The three opaque predicates in Commitments.lean remain
-    unchanged — this axiom is a downstream instantiation, not a redefinition.
+    The assumption is kernel soundness — that the Lean kernel does not accept
+    `h : T` when `T` is false without `sorry`. Every sorry-free Lean proof already
+    relies on this; this formalization must name it explicitly because `verdict_discriminates`
+    is opaque and has no in-system inhabitants.
 
     **Universe note:** `Prop : Type 0 = Type`, so `Standard`, `ErrorModel`, and
-    `Provenance` are all fixed to `Type` (universe 0) to match the `PropLike = Prop`
-    instantiation of `Deposit`.
-
-    **Trust boundary:** kernel soundness (`verdict_discriminates`) is the assumption
-    underlying every sorry-free Lean proof — this formalization is unusual only in
-    having to state it explicitly. Lean4Lean (digama0) is an active project that
-    aims to prove Lean's kernel sound within Lean itself, offering a hopeful path
-    toward discharging this axiom. That work is incomplete, and discharging this
-    axiom would additionally require bridging `verdict_discriminates` (opaque in
-    `Commitments.lean`) to whatever Lean4Lean establishes.
-
-    **Axiom footprint:** 1 named axiom, replacing 3 unlabeled opaque instances
-    in `#print axioms` output for any theorem that uses `redeemable`. -/
+    `Provenance` are fixed to `Type` (universe 0). -/
 axiom lean_kernel_verification_path
     {Standard ErrorModel Provenance : Type}
     (d : Deposit Prop Standard ErrorModel Provenance)
