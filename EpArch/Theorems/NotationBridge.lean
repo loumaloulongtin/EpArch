@@ -2,14 +2,16 @@
 EpArch.Theorems.NotationBridge — Notation Bridge Authorization
 
 Bridges Layer 1 (notation-invariance of redeemability, proved in Dissolutions)
-to Layers 2 and 3 of the notation authorization story:
-- Layer 2: a single divergence witness defeats pointwise bijection identification
-- Layer 3: having the source bijection record instantiates Layer 1 directly
-- Gettier case: route mismatch (σ′ ≠ σ) is independent of surface correctness
+to Layers 2 and 3 of the notation authorization story.
+Exported items:
+- `notation_bridge_case` — export packet: claim + source bijection σ
+- `improvised_uptake_case` — stripped-bridge uptake: recipient supplies σ′ ≠ σ
+- `notation_gettier_case` — route mismatch with accidental surface correctness
+- `notation_opacity_prevents_authorization` — Layer 2: ¬(σ′ pointwise equals σ)
+- `bridge_export_enables_authorization` — Layer 3: notation_bridge_case instantiates Layer 1
+- `accidental_correctness_is_not_authorization` — Gettier: ¬(σ′ = σ) given route_mismatch
 -/
 import EpArch.Theorems.Dissolutions
-import EpArch.Theorems.Strip
-import EpArch.Theorems.Pathologies
 
 namespace EpArch
 
@@ -30,9 +32,10 @@ Layer 2 (this file): without the source bijection σ, the recipient cannot ident
 which relabeling was used — a single witness of divergence defeats identification.
 This mirrors `import_cannot_reconstruct` for the notation domain.
 
-Layer 3 (this file): if σ is carried with the export, `notation_invariance_of_redeemability`
-applies directly and authorization transfers without prior notation knowledge.
-Layer 3 is exactly Layer 1 with the bridge now available to the recipient by construction. -/
+Layer 3 (this file): a `notation_bridge_case` record structurally encodes σ — having
+the record IS having the bridge. `notation_invariance_of_redeemability` then applies
+directly. There is no additional proof content: Layer 3 is Layer 1 instantiated at the
+export-packet bijection, with the bridge available by construction rather than assumed. -/
 
 /-- The export packet: a claim together with its source notation bijection.
     Having this record IS having the bridge: σ/σ_inv/left_inv/right_inv are
@@ -56,7 +59,7 @@ structure notation_bridge_case where
     together with an explicit divergence witness.
     The `disagrees` field is the structural invariant encoding V-side defect under
     notation opacity: the improvised route departs from the source's truth-conferring
-    structure at `divergence_point` — the one input where σ′ ≠ σ. -/
+    structure at `divergence_point` — a witnessed input where σ′ ≠ σ. -/
 structure improvised_uptake_case where
   source          : notation_bridge_case (PropLike := PropLike)
   σ_prime         : PropLike → PropLike
@@ -145,9 +148,14 @@ theorem bridge_export_enables_authorization
 
 /-! ## Gettier Case — Accidental Correctness Is Not Authorization
 
-Correct surface output through the wrong interpretive route is not authorized uptake. -/
+The Gettier framing here is a V-side defect under notation opacity, not epistemic luck.
+The recipient's improvised route σ′ is not the source's truth-conferring route σ.
+A correct surface output produced by σ′ is accidental — it is not authorized under
+the source notation because the provenance chain (which bijection was used at deposit
+time) is broken. `route_mismatch` encodes this as a structural invariant: σ′ ≠ σ as
+functions, independently of whether any particular output happens to agree. -/
 
-/-- ROUTE MISMATCH IS INDEPENDENT OF SURFACE MATCH (Gettier theorem)
+/-- ACCIDENTAL CORRECTNESS IS NOT AUTHORIZATION (Gettier theorem)
 
     σ′ ≠ σ (as functions) even when the improvised uptake surface-matches the
     correct output. The `route_mismatch` field encodes this directly: the improvised
@@ -158,11 +166,7 @@ Correct surface output through the wrong interpretive route is not authorized up
 
     **Proof strategy:** Discard the surface-match premise (it is not needed — route
     mismatch is unconditional); extract `c.route_mismatch`. All structural content
-    lives in the record field, not in the proof term.
-
-    Note: this proves ¬(functional equality of σ′ and σ), given `c.route_mismatch`.
-    The Gettier reading is: the recipient's route (σ′) is not the source's route (σ),
-    so any correct output produced by σ′ is not authorized under the source notation. -/
+    lives in the record field, not in the proof term. -/
 theorem accidental_correctness_is_not_authorization
     (c : notation_gettier_case (PropLike := PropLike)) :
     c.surface_match = true →
