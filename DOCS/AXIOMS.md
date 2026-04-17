@@ -196,16 +196,18 @@ All 8 commitments are now **proved**.  The table below records each commitment a
 
 ---
 
-## Axiom-Free Modules
+## Core Modules — No Axiom Declarations
 
-No `axiom` declarations appear anywhere in the codebase. All modules introduce
-only theorems, definitions, and opaque constants.
+All core architectural modules introduce only theorems, definitions, and opaque constants.
+No `axiom` declarations appear in the core build surface. The one named axiom in this
+repository is `lean_kernel_verification_path` in `EpArch/Meta/LeanKernel/VerificationPath.lean`,
+which is a worked domain instantiation outside the core claim (see above).
 
 | Module | Role |
 |--------|------|
 | `Basic.lean` | Core types |
 | `Header.lean` | S/E/V header structure |
-| `Bank.lean` | Bank substrate (concrete operators; `deposited`/`hasDeposit`/`knowledge_B`/`reliance_level`/`blast_radius` are defs; opaque: `withdraw`, `exportDep`, `TrustBridge`, `Revalidate`, `RepairAction`) |
+| `Bank.lean` | Bank substrate (concrete operators; `deposited`/`hasDeposit`/`knowledge_B`/`reliance_level`/`blast_radius` are defs; opaque: `exportDep`, `TrustBridge`, `Revalidate`, `RepairAction`) |
 | `Commitments.lean` | Structural commitments (all 8 proved as standalone theorems) |
 | `Invariants.lean` | Grounded operational invariants |
 | `Semantics/StepSemantics.lean` | Concrete step semantics (LTS core) |
