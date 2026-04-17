@@ -1,24 +1,16 @@
 /-
 EpArch.Meta.FalsifiableNotAuthorizable — Meta-Status Proof Pack
 
-This module packages the meta-level claims about the theory itself:
+Packages three meta-level claims about the theory itself:
 - (P1) Falsifiable: coherent countercontexts exist
-- (P2) Not fully authorizable: underdetermination exists (credit required)
+- (P2) Not fully authorizable from observations: underdetermination exists (credit required)
 - (P3) Safe on credit: extension-safety prevents collapse
 
-## Vocabulary Guard
+Builds on existing machinery from WorldCtx, WorldWitness, and RevisionSafety — no new axioms.
 
-DO NOT write "never provable true" or "unprovable".
-Allowed: "not fully authorizable from observational surfaces",
-         "underdetermined by obs",
-         "cannot be upgraded to unconditional authorization by obs alone".
-
-## Purpose
-
-This module provides the headline theorem that packages all three
-meta-status pillars. It reuses existing machinery from
-WorldCtx, WorldWitness, and RevisionSafety — no new axioms.
-
+Note: P2 is an epistemic claim, not a provability claim. "Not fully authorizable from
+observational surfaces" means observations underdetermine truth in the intended model;
+it does not mean proofs cannot exist or that the theory is inconsistent.
 -/
 
 import EpArch.WorldCtx

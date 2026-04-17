@@ -497,7 +497,7 @@ def clusterValid (c : ClusterTag) : Prop :=
   | .goal_selfCorrection       => prop_goal_selfCorrection
   | .goal_corrigible_universal => prop_goal_corrigible_universal
   | .goal_corrigible_full      => prop_goal_corrigible_full
-  -- Tier 4 (3 safe + 2 unsafe)
+  -- Tier 4 (3 inline + 2 via prop_tier4_bank_goals_*)
   | .tier4_commitments       =>
       ∀ {PL SL EL PrL : Type},
         (∀ (d : Deposit PL SL EL PrL),
