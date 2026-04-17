@@ -6,7 +6,10 @@ boundary — not a hidden assumption. All other results are proved theorems.
 
 > **Note:** This axiom packages what were previously three unlabeled opaque instances
 > in `#print axioms` output into a single named claim. It closes the C4b non-vacuity gap
-> (`∃ d, redeemable d` is now provable). Lean4Lean (digama0) will make it a theorem.
+> (`∃ d, redeemable d` is now provable). It is an explicit statement of kernel soundness —
+> an assumption every sorry-free Lean proof already relies on implicitly. Lean4Lean
+> (digama0) is an active project that would, if completed and connected, offer a path
+> toward discharging it.
 
 This document records the current assumption boundary and how the prior axiom surface was resolved.
 
@@ -36,8 +39,11 @@ verdict (it does not accept all terms without sorry).
 **Why it is an axiom and not a theorem:** The three predicates `path_route_exists`,
 `contact_was_made`, and `verdict_discriminates` are `opaque` in `Commitments.lean` — they
 cannot be inhabited from inside the formalization. This axiom is the only escape: it names
-the trust boundary (kernel soundness) explicitly. Lean4Lean (digama0) will make
-`verdict_discriminates` a theorem, at which point this axiom can be eliminated.
+kernel soundness explicitly. Every sorry-free Lean proof already rests on this assumption;
+this formalization is unusual only in having to state it out loud. Lean4Lean (digama0) is
+an active project aimed at proving Lean's kernel sound within Lean itself — a hopeful path
+toward discharging this axiom — but that work is incomplete and would additionally require
+bridging `verdict_discriminates` (currently opaque) to whatever Lean4Lean proves.
 
 **Axiom footprint reduction:** Before this file, every theorem using `redeemable` listed
 three unlabeled opaque instances in `#print axioms`. After: one named axiom.

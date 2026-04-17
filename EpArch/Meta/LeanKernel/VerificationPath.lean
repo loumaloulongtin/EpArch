@@ -18,9 +18,11 @@ whose claim is a proved Prop:
 - `path_route_exists d d.h.redeem` — a proof term exists (Curry-Howard route).
 - `contact_was_made d d.h.redeem` — elaboration ran; the kernel was invoked.
 - `verdict_discriminates d d.h.redeem` — the kernel is a non-trivial oracle;
-  it rejects `h : T` when T is false (no sorry). This is kernel soundness,
-  the universal trust assumption underlying every sorry-free Lean proof.
-  Lean4Lean (digama0) will make this a theorem.
+  it rejects `h : T` when T is false (no sorry). This is kernel soundness —
+  the assumption every sorry-free Lean proof already relies on implicitly.
+  This formalization just has to name it explicitly. Lean4Lean (digama0) is
+  an active project that offers a hopeful path toward a formal proof of this,
+  but remains incomplete.
 
 ## Axiom accounting
 
@@ -62,10 +64,13 @@ open EpArch
     `Provenance` are all fixed to `Type` (universe 0) to match the `PropLike = Prop`
     instantiation of `Deposit`.
 
-    **Trust boundary:** kernel soundness (`verdict_discriminates`) is currently
-    the universal assumption underlying every sorry-free Lean proof. Lean4Lean
-    (digama0, actively in progress) will make this a theorem, reducing this axiom
-    to zero at that point.
+    **Trust boundary:** kernel soundness (`verdict_discriminates`) is the assumption
+    underlying every sorry-free Lean proof — this formalization is unusual only in
+    having to state it explicitly. Lean4Lean (digama0) is an active project that
+    aims to prove Lean's kernel sound within Lean itself, offering a hopeful path
+    toward discharging this axiom. That work is incomplete, and discharging this
+    axiom would additionally require bridging `verdict_discriminates` (opaque in
+    `Commitments.lean`) to whatever Lean4Lean establishes.
 
     **Axiom footprint:** 1 named axiom, replacing 3 unlabeled opaque instances
     in `#print axioms` output for any theorem that uses `redeemable`. -/
