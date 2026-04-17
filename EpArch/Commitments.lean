@@ -244,7 +244,7 @@ inductive VindicationRole
     is not load-bearing in that context, so filling it is consistent but does not generalise.
     Second, a system whose deposit space is narrow and homogeneous enough that every deposit
     genuinely shares the same vindication realization: a concrete uniform body is then correct
-    for that restricted domain. This is exactly what `EpArch.Meta.LeanKernel.VerificationPath`
+    for that restricted domain. This is the kind of case EpArch.Meta.LeanKernel.VerificationPath
     demonstrates — within the Lean elaboration domain, all three vindication roles have a
     single concrete realization, so a non-opaque parallel structure is sound. In both cases
     the result is a configuration-specific instantiation. The opaque is load-bearing exactly
@@ -255,12 +255,9 @@ inductive VindicationRole
     self-certifying. The architecture cannot inspect the vindication mechanism from
     inside the core theory, so it must remain compatible with being wrong and with
     eventually recovering from error. That is precisely why challenge, repair, and
-    adversarial robustness remain necessary rather than optional: they are the
-    machinery a system needs when it cannot guarantee its own verdicts.
-    `EpArch.Meta.LeanKernel.OdometerModel` is a worked example of a system that
-    acknowledges this explicitly: it accepts `¬CorrigibleLedgerGoal` and
-    `¬SafeWithdrawalGoal` as deliberate tradeoffs, documenting which risks it takes
-    on and which recovery capabilities it therefore must not claim.
+    adversarial robustness remain necessary for any system that claims corrigibility,
+    safe withdrawal, or adversarial resilience: they are the machinery such a system
+    needs when it cannot guarantee its own verdicts from inside the core theory.
 
     The three predicates `path_route_exists`, `contact_was_made`, `verdict_discriminates`
     are transparent projections of this single opaque — three roles of one underlying
