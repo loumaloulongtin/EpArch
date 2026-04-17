@@ -1,18 +1,51 @@
 # Axiom Declarations
 
-The formalization contains **zero `axiom` declarations**.
+The formalization contains **one `axiom` declaration**: `lean_kernel_verification_path`
+in `EpArch/Meta/LeanKernel/VerificationPath.lean`. This is a named, documented trust
+boundary — not a hidden assumption. All other results are proved theorems.
 
-> **Note:** “zero global axioms” does not mean “zero assumptions in an absolute sense.”
-> EpArch works with explicit base commitments and context-bundled conditions where appropriate;
-> those boundaries are made explicit rather than hidden.
-> That is intentional: the framework does not claim terminal epistemic closure,
-> and PRP rules out eliminating every assumption boundary altogether.
+> **Note:** This axiom packages what were previously three unlabeled opaque instances
+> in `#print axioms` output into a single named claim. It closes the C4b non-vacuity gap
+> (`∃ d, redeemable d` is now provable). Lean4Lean (digama0) will make it a theorem.
 
 This document records the current assumption boundary and how the prior axiom surface was resolved.
 
 ---
 
 ## Current Assumption Boundary
+
+### Lean-Kernel VerificationPath Axiom
+
+**File:** `EpArch/Meta/LeanKernel/VerificationPath.lean`
+
+```lean
+axiom lean_kernel_verification_path
+    {Standard ErrorModel Provenance : Type}
+    (d : Deposit Prop Standard ErrorModel Provenance)
+    (h_prop : d.P) :
+    path_route_exists d d.h.redeem ∧
+    contact_was_made d d.h.redeem ∧
+    verdict_discriminates d d.h.redeem
+```
+
+**What it asserts:** For any Lean deposit (claim is a `Prop`) that is proved (`h_prop : d.P`),
+the Lean kernel constitutes a VerificationPath against that deposit's own constraint surface:
+a proof term exists (route), elaboration ran (contact), and the kernel discriminated the
+verdict (it does not accept all terms without sorry).
+
+**Why it is an axiom and not a theorem:** The three predicates `path_route_exists`,
+`contact_was_made`, and `verdict_discriminates` are `opaque` in `Commitments.lean` — they
+cannot be inhabited from inside the formalization. This axiom is the only escape: it names
+the trust boundary (kernel soundness) explicitly. Lean4Lean (digama0) will make
+`verdict_discriminates` a theorem, at which point this axiom can be eliminated.
+
+**Axiom footprint reduction:** Before this file, every theorem using `redeemable` listed
+three unlabeled opaque instances in `#print axioms`. After: one named axiom.
+
+**Non-vacuity closed:** `redeemable_deposits_exist` (in the same file) now proves
+`∃ d, redeemable d` — the positive direction that was previously missing.
+
+---
 
 ### All 8 Commitments Proved — Standalone Theorems
 
@@ -99,7 +132,7 @@ Key opaque primitives:
 | `agentTraction` | Basic.lean | Agent's private traction assignment (Claim → LadderStage); hook for psychology/cognition |
 | `ignores_bank_signal` | Basic.lean | Whether agent's review channel is closed (separate from `certainty_L`) |
 | `header_preserved` | Header.lean | Deposit has header intact (vs. stripped in transmission); `header_stripped` is a def: `¬header_preserved` |
-| `path_route_exists` / `contact_was_made` / `verdict_discriminates` | Commitments.lean | Opaque evidence predicates for VerificationPath (C4: redeemability external to consensus) |
+| `path_route_exists` / `contact_was_made` / `verdict_discriminates` | Commitments.lean | Opaque evidence predicates for VerificationPath (C4: redeemability external to consensus). Inhabited via `lean_kernel_verification_path` axiom for the Lean domain; generic hooks preserved for other domains. |
 | `pushback` | Commitments.lean | Agent-level contestation of a deposit; used in C6 repair-loop machinery |
 | `exportDep` / `TrustBridge` / `Revalidate` / `RepairAction` | Bank.lean | Abstract behavioral hooks (cross-bubble export, trust bridge, revalidation, repair action type) |
 | Adversarial/Base.lean opaques | Adversarial/Base.lean | 17 opaques constituting the adversarial model: attack channel (`AuditChannel`, `channel_capacity`, `attack_volume`), DDoS state (`ladder_overloaded`, `V_channel_exhausted`, etc.), countermeasures (`trust_bridge_on_hand`, `E_includes_threat`, etc.), cost primitives (`export_cost`, `import_defense_cost`). Note: `cheap_validator_reachable`, `transaction_reversible`, and `constraint_cheaply_testable` are **`def`s** (grounded as `d.h.τ > 0` or `τ > 0`), not opaques — see §Adversarial Model in THEOREMS.md |
