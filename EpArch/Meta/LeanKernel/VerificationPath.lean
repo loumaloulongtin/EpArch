@@ -9,13 +9,18 @@ by giving concrete non-opaque definitions to the three evidence predicates for t
 Lean domain. This shows the shape any domain instantiation must take.
 
 **Part B — Core theory connection (one axiom).**
-Connecting to the core theory's `redeemable d` (which wraps opaque predicates from
-Commitments.lean) requires one axiom. The opaques cannot be opened from downstream;
-an axiom is the only structural escape. This names the one trust boundary explicitly.
+Connecting to the core theory's `redeemable d` requires crossing the opaque barrier
+in Commitments.lean. That barrier is intentional: the three predicates are opaque so
+that EpArch is not committed to any single domain's notion of validation. An agent
+validating by observing outcomes over time, an AI receiving RLHF reward signal, a
+student getting exam results from a teacher, and an agent surviving peer challenge all
+satisfy the same abstract contract — but none of them are the Lean kernel. If the
+predicates had concrete bodies, every theorem about `redeemable` would be a claim
+about one specific mechanism, not a domain-general architecture.
 
-Together these two parts answer the question: can the positive side of C4b be
-discharged as a theorem? Yes — for the *structure* of the instantiation. Connecting
-that structure to the core theory's opaque surface requires naming one assumption.
+Part B's axiom is the formal bridge: it names the assumption that the Lean domain
+satisfies the abstract interface. Other domains would supply their own analogous axiom.
+That is what the opaque barrier is for.
 
 - `LeanPathExists` / `LeanContact` / `LeanVerdict` — concrete Lean-domain predicates
 - `LeanVerificationPath` — concrete local structure, mirrors VerificationPath
@@ -100,24 +105,35 @@ theorem lean_redeemable_deposits_exist :
     PART B — CORE THEORY CONNECTION (ONE AXIOM)
     ======================================================================== -/
 
-/-! ## The Opaque Barrier
+/-! ## The Opaque Barrier and Why It Exists
 
-Part A shows the structure can be discharged axiom-free. Connecting to the core
-theory's `redeemable d` — which wraps `path_route_exists`, `contact_was_made`,
-`verdict_discriminates` from Commitments.lean — requires crossing an opaque barrier.
-Those predicates are sealed; no downstream file can construct inhabitants of them.
-An axiom is the only structural escape. -/
+The three predicates in Commitments.lean are opaque because different agents make
+contact with reality in fundamentally different ways. Observation over time, RLHF
+reward signal, institutional exam results, and peer challenge all constitute valid
+instantiations of "path", "contact", and "verdict" — and none of them is the Lean
+kernel. An architecture that commits to one of these notions is not a general
+epistemic architecture; it is a theory about one specific mechanism.
 
-/-- Lean-kernel VerificationPath axiom: bridges the Lean domain to the core theory.
+Part A fills the abstract interface concretely for the Lean domain, using non-opaque
+local definitions. Those definitions are not the opaques — they live in a different
+namespace and have concrete reduction behaviour. Connecting them to the core theory's
+abstract interface is exactly what Part B's axiom does. The axiom is not a weakness;
+it is the formal statement that the Lean domain satisfies the abstract contract, in
+the same way that any other domain would have to name its own trust boundary. -/
+
+/-- Lean-kernel VerificationPath axiom: the Lean domain satisfies the abstract C4 interface.
 
     **What it asserts:** For any proved Prop deposit, the Lean kernel instantiates
-    the core theory's three opaque C4 predicates against the deposit's own surface.
+    the core theory's three opaque evidence predicates against the deposit's own surface.
+    This is the bridge from the Lean-domain instantiation (Part A) to the core theory's
+    abstract `redeemable` predicate.
 
-    **Why it cannot be a theorem:** `path_route_exists`, `contact_was_made`, and
-    `verdict_discriminates` are `opaque` in Commitments.lean — they have no
-    introduction rules and cannot be inhabited from any downstream file. This axiom
-    is the only escape. See Part A for the same claim proved as a theorem using
-    local non-opaque predicates.
+    **Why it is an axiom and not a theorem:** The opaques are opaque by design — any
+    concrete body would commit the core theory to one domain's validation mechanism and
+    break the domain-generality of every theorem about `redeemable`. This axiom names
+    the assumption that the Lean domain satisfies the abstract contract. An agent
+    validating by observation over time, or through RLHF, or through institutional
+    assessment would each supply an analogous axiom for their own domain.
 
     **Universe note:** `Prop : Type 0 = Type`, so `Standard`, `ErrorModel`, and
     `Provenance` are fixed to `Type` (universe 0). -/

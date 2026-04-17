@@ -202,9 +202,38 @@ theorem SEVFactorization (d : Deposit PropLike Standard ErrorModel Provenance) :
 
 /-! ## Commitment 4: Redeemability External to Consensus -/
 
-/-- Three opaque evidence predicates for VerificationPath.
-    Being opaque, these cannot be constructed inside the formalization by
-    trivial means -- external evidence is required to produce witnesses. -/
+/-- Abstract interface for domain-specific verification evidence.
+
+    These three predicates are `opaque` by design — not by limitation. Different
+    agents and systems make contact with reality through fundamentally different
+    mechanisms, and EpArch must remain neutral between them:
+    - An agent operating in the world validates by **observing outcomes over time**:
+      path is a causal channel, contact is made when the outcome is observed,
+      verdict discriminates when outcomes vary.
+    - An AI trained via **RLHF** makes contact through reward signal: path is the
+      training pipeline, contact is made when reward is received, verdict discriminates
+      when reward varies across outputs.
+    - A **student** validates through institutional assessment: path runs to an
+      examiner, contact is made when the exam is graded, verdict discriminates when
+      grades are meaningful rather than uniform.
+    - In **peer-challenge** configurations: path is the challenge mechanism, contact
+      is made when challenges are actually attempted, verdict discriminates when
+      challenges sometimes succeed.
+    - The **Lean kernel** is one instantiation among these: path is the elaboration
+      channel, contact is made when the file compiles, verdict discriminates because
+      the kernel rejects some terms.
+
+    Giving any of these predicates a concrete body would commit EpArch to one
+    domain's notion of validation — every theorem about `redeemable` would become
+    a Lean-specific (or observation-specific, or RLHF-specific) claim. The opaques
+    preserve the generality: *something* must constitute a path, *something* must
+    constitute contact, *something* must discriminate verdicts — but what those
+    things are is the implementing domain's responsibility.
+
+    Domain instantiators discharge these predicates by axiom (naming their trust
+    boundary explicitly) or by building concrete non-opaque analogues.
+    See `EpArch.Meta.LeanKernel.VerificationPath` for a worked example of both
+    approaches. -/
 opaque path_route_exists : Deposit PropLike Standard ErrorModel Provenance →
     ConstraintSurface → Prop
 opaque contact_was_made : Deposit PropLike Standard ErrorModel Provenance →
