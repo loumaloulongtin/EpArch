@@ -204,31 +204,28 @@ theorem SEVFactorization (d : Deposit PropLike Standard ErrorModel Provenance) :
 
 /-- Abstract interface for domain-specific verification evidence.
 
-    These three predicates are `opaque` by design — not by limitation. Different
-    agents and systems make contact with reality through fundamentally different
-    mechanisms, and EpArch must remain neutral between them:
-    - An agent operating in the world validates by **observing outcomes over time**:
-      path is a causal channel, contact is made when the outcome is observed,
-      verdict discriminates when outcomes vary.
-    - An AI trained via **RLHF** makes contact through reward signal: path is the
-      training pipeline, contact is made when reward is received, verdict discriminates
-      when reward varies across outputs.
-    - A **student** validates through institutional assessment: path runs to an
-      examiner, contact is made when the exam is graded, verdict discriminates when
-      grades are meaningful rather than uniform.
-    - In **peer-challenge** configurations: path is the challenge mechanism, contact
-      is made when challenges are actually attempted, verdict discriminates when
-      challenges sometimes succeed.
-    - The **Lean kernel** is one instantiation among these: path is the elaboration
-      channel, contact is made when the file compiles, verdict discriminates because
-      the kernel rejects some terms.
+    These three predicates are `opaque` by design — not by limitation. Their realization
+    can vary across domains, across subsystems within a domain, and even across deposits
+    within the same system. Fixing any concrete body would not just pick one domain; it
+    would also assert a uniform implementation of route, contact, and verdict across every
+    deposit — which is false in any realistic system.
 
-    Giving any of these predicates a concrete body would commit EpArch to one
-    domain's notion of validation — every theorem about `redeemable` would become
-    a Lean-specific (or observation-specific, or RLHF-specific) claim. The opaques
-    preserve the generality: *something* must constitute a path, *something* must
-    constitute contact, *something* must discriminate verdicts — but what those
-    things are is the implementing domain's responsibility.
+    The type signature already encodes this: each predicate takes a `Deposit` as its first
+    argument because the realization is inherently per-deposit, not per-domain-tag.
+
+    Examples of realization variance within a single domain:
+    - In Lean: one deposit may be validated by fresh elaboration, another by cache reuse,
+      another by proof-object replay. All three satisfy the same abstract interface, but
+      none is a canonical implementation of `path_route_exists`.
+    - In a human/institutional setting: one claim may be validated by direct observation,
+      another by expert testimony, another by adversarial challenge, another by document
+      trail. The contact and verdict events differ per deposit, not just per domain.
+    - In an agent OS: different claims may go through different routes, contact events,
+      and verdict mechanisms even within the same run.
+
+    The opaques preserve the generality: *something* must constitute a path, *something*
+    must constitute contact, *something* must discriminate verdicts — but what those
+    things are is the implementing domain's responsibility, deposit by deposit.
 
     Domain instantiators discharge these predicates by axiom (naming their trust
     boundary explicitly) or by building concrete non-opaque analogues.

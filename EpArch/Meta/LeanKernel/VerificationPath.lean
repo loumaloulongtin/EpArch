@@ -10,17 +10,18 @@ Lean domain. This shows the shape any domain instantiation must take.
 
 **Part B — Core theory connection (one axiom).**
 Connecting to the core theory's `redeemable d` requires crossing the opaque barrier
-in Commitments.lean. That barrier is intentional: the three predicates are opaque so
-that EpArch is not committed to any single domain's notion of validation. An agent
-validating by observing outcomes over time, an AI receiving RLHF reward signal, a
-student getting exam results from a teacher, and an agent surviving peer challenge all
-satisfy the same abstract contract — but none of them are the Lean kernel. If the
-predicates had concrete bodies, every theorem about `redeemable` would be a claim
-about one specific mechanism, not a domain-general architecture.
+in Commitments.lean. That barrier is intentional: the three predicates are opaque
+because their realization varies across domains, across subsystems within a domain,
+and even across deposits within the same system. A single concrete body would not
+just commit the architecture to one domain — it would assert a uniform implementation
+of route, contact, and verdict for every deposit, which is false in any realistic
+system. Even within Lean alone, fresh elaboration, cache reuse, and proof-object
+replay are genuinely different realizations of the same interface for different deposits.
 
-Part B's axiom is the formal bridge: it names the assumption that the Lean domain
-satisfies the abstract interface. Other domains would supply their own analogous axiom.
-That is what the opaque barrier is for.
+Part B's axiom is the formal bridge: it names the assumption that Lean elaboration
+(not Lean caching, not proof-object replay — this specific mechanism) satisfies the
+abstract interface for this class of deposits. Other domains and other mechanisms
+within a domain would each supply their own analogous statement.
 
 - `LeanPathExists` / `LeanContact` / `LeanVerdict` — concrete Lean-domain predicates
 - `LeanVerificationPath` — concrete local structure, mirrors VerificationPath
