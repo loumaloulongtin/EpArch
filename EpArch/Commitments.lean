@@ -250,6 +250,16 @@ inductive VindicationRole
     the result is a configuration-specific instantiation. The opaque is load-bearing exactly
     when the primitives it supports are.
 
+    A further consequence: as long as `vindication_evidence` remains opaque, any system
+    operating against it must treat vindication as potentially fallible — it cannot
+    inspect the evidence and certify it as definitively correct. This is not a weakness;
+    it is the architectural acknowledgment that vindication verdicts can be wrong, which
+    is precisely the precondition for the recovery machinery being necessary rather than
+    optional. A system that cannot guarantee its own vindication verdicts is exactly the
+    system that needs challenge, repair, and adversarial robustness. The opaque does not
+    merely leave room for error — it formally encodes that error is possible, and in doing
+    so justifies the machinery that handles it.
+
     The three predicates `path_route_exists`, `contact_was_made`, `verdict_discriminates`
     are transparent projections of this single opaque — three roles of one underlying
     vindication concept, not three independent black boxes.
