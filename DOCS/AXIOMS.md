@@ -28,15 +28,13 @@ axiom lean_kernel_verification_path
     {Standard ErrorModel Provenance : Type}
     (d : Deposit Prop Standard ErrorModel Provenance)
     (h_prop : d.P) :
-    path_route_exists d d.h.redeem ∧
-    contact_was_made d d.h.redeem ∧
-    verdict_discriminates d d.h.redeem
+    vindication_evidence d d.h.redeem
 ```
 
 **What it asserts:** For any Lean deposit (claim is a `Prop`) that is proved (`h_prop : d.P`),
-the Lean kernel constitutes a VerificationPath against that deposit's own constraint surface:
-a proof term exists (route), elaboration ran (contact), and the kernel discriminated the
-verdict (it does not accept all terms without sorry).
+the Lean kernel provides vindication evidence (`vindication_evidence d d.h.redeem`) against
+the deposit's own constraint surface. The single opaque covers all three stages (route,
+contact, verdict) in the Lean domain.
 
 **Why it is an axiom and not a theorem:** `vindication_evidence` is `opaque` in
 `Commitments.lean` by design — `path_route_exists`, `contact_was_made`, and

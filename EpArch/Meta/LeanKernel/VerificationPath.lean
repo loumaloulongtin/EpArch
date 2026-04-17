@@ -5,8 +5,9 @@ This file is NOT part of the core architectural claim. It demonstrates two thing
 
 **Part A — Axiom-free parallel instantiation.**
 The C4b surface structure can be fully discharged as a theorem, with zero axioms,
-by giving concrete non-opaque definitions to the three evidence predicates for the
-Lean domain. This shows the shape any domain instantiation must take.
+by giving one concrete non-opaque definition for the Lean domain. In this domain,
+a proved claim witnesses all three vindication stages simultaneously, so one predicate
+suffices. This shows the shape any domain instantiation may take.
 
 **Part B — Core theory connection (one axiom).**
 Connecting to the core theory's `redeemable d` requires crossing the opaque barrier
@@ -23,8 +24,8 @@ Part B's axiom is the formal bridge: it names the assumption that Lean elaborati
 abstract interface for this class of deposits. Other domains and other mechanisms
 within a domain would each supply their own analogous statement.
 
-- `LeanPathExists` / `LeanContact` / `LeanVerdict` — concrete Lean-domain predicates
-- `LeanVerificationPath` — concrete local structure, mirrors VerificationPath
+- `LeanPathExists` — concrete Lean-domain vindication evidence (proved claim = vindication occurrence)
+- `LeanVerificationPath` — concrete local structure, one-field analogue of VerificationPath
 - `lean_redeemable_deposits_exist` — Part A: non-vacuity as a closed theorem (zero axioms)
 - `lean_kernel_verification_path` — Part B: axiom bridging to core `redeemable`
 - `redeemable_deposits_exist` — Part B: ∃ d, redeemable d via the core theory
@@ -40,29 +41,27 @@ open EpArch
     PART A — AXIOM-FREE PARALLEL INSTANTIATION
     ======================================================================== -/
 
-/-! ## Concrete Lean-Domain Predicates
+/-! ## Concrete Lean-Domain Vindication Evidence
 
-Non-opaque definitions inhabitable by construction — unlike `vindication_evidence`
-(the sealed opaque in Commitments.lean) that each domain must satisfy from the outside. -/
+In the Lean domain, the three vindication stages collapse to a single concrete fact:
+the deposit's claim has a proof term (`d.P`). A proved claim witnesses the route
+(the kernel elaborated it), the contact (the kernel ran), and the verdict (the kernel
+discriminates — it accepts proved terms and rejects unprovable ones). One predicate
+suffices. -/
 
-/-- A proof term exists for this deposit's claim: the claim is inhabited as a Prop. -/
+/-- Lean-domain vindication evidence: the deposit's claim is proved.
+    In this domain, `d.P` simultaneously witnesses all three stages — Channel (a proof
+    route exists), Contact (elaboration ran), and Verdict (the kernel discriminated).
+    This is what makes the Lean domain a valid instantiation with one backing predicate
+    rather than three separate ones. -/
 def LeanPathExists (d : Deposit Prop Standard ErrorModel Provenance) (_ : ConstraintSurface) : Prop :=
   d.P
 
-/-- Elaboration ran: the deposit's claim was submitted and type-checked. -/
-def LeanContact (_ : Deposit Prop Standard ErrorModel Provenance) (_ : ConstraintSurface) : Prop :=
-  True
-
-/-- The kernel gave a non-trivial verdict: it accepts some terms and not others. -/
-def LeanVerdict (_ : Deposit Prop Standard ErrorModel Provenance) (_ : ConstraintSurface) : Prop :=
-  True
-
-/-- Lean-domain analogue of `VerificationPath`: same shape, inhabitable evidence fields. -/
+/-- Lean-domain analogue of `VerificationPath`: one evidence field suffices since all
+    three stages collapse to `LeanPathExists` in this domain. -/
 structure LeanVerificationPath (d : Deposit Prop Standard ErrorModel Provenance) where
   surface   : ConstraintSurface
-  h_path    : LeanPathExists d surface
-  h_contact : LeanContact d surface
-  h_discrim : LeanVerdict d surface
+  h_witness : LeanPathExists d surface
 
 /-- A deposit is Lean-redeemable if it has a LeanVerificationPath targeting its own surface. -/
 def lean_redeemable (d : Deposit Prop Standard ErrorModel Provenance) : Prop :=
@@ -73,13 +72,13 @@ def lean_redeemable (d : Deposit Prop Standard ErrorModel Provenance) : Prop :=
     **Theorem shape:** `d.P → lean_redeemable d`
 
     **Proof strategy:** Constructs `LeanVerificationPath` directly from `h_prop`;
-    `LeanPathExists` unfolds to `d.P`, `LeanContact` and `LeanVerdict` are `True`. -/
+    `LeanPathExists` unfolds to `d.P`. -/
 theorem lean_redeemable_from_proof
     {Standard ErrorModel Provenance : Type}
     (d : Deposit Prop Standard ErrorModel Provenance)
     (h_prop : d.P) :
     lean_redeemable d :=
-  ⟨⟨d.h.redeem, h_prop, trivial, trivial⟩, rfl⟩
+  ⟨⟨d.h.redeem, h_prop⟩, rfl⟩
 
 /-- Lean-redeemable deposits exist. -/
 theorem lean_redeemable_deposits_exist :
@@ -98,15 +97,15 @@ theorem lean_redeemable_deposits_exist :
 
 /-! ## Connecting to the Core Theory
 
-Part A filled the abstract C4 interface with concrete Lean-domain definitions.
-Part B's axiom bridges those definitions to the core theory's sealed opaque (`vindication_evidence`) —
+Part A filled the abstract C4 interface with one concrete Lean-domain definition.
+Part B's axiom bridges that definition to the core theory's sealed opaque (`vindication_evidence`) —
 the step that cannot be a theorem, for the reasons given in the file header. -/
 
 /-- The Lean domain satisfies the abstract C4 interface.
 
-    **What it asserts:** For any proved Prop deposit, the Lean kernel satisfies
-    all three vindication-role predicates against the deposit's own constraint surface
-    (via the opaque `vindication_evidence` in Commitments.lean).
+    **What it asserts:** For any proved Prop deposit, the Lean kernel provides
+    vindication evidence against the deposit's own constraint surface — i.e.,
+    `vindication_evidence d d.h.redeem` holds.
 
     **Why an axiom:** The opaque `vindication_evidence` in Commitments.lean is sealed
     by design; any concrete body would fix one domain's validation mechanism as the
@@ -119,24 +118,22 @@ axiom lean_kernel_verification_path
     {Standard ErrorModel Provenance : Type}
     (d : Deposit Prop Standard ErrorModel Provenance)
     (h_prop : d.P) :
-    path_route_exists d d.h.redeem ∧
-    contact_was_made d d.h.redeem ∧
-    verdict_discriminates d d.h.redeem
+    vindication_evidence d d.h.redeem
 
 /-- Any proved Prop deposit is redeemable in the core theory's sense.
 
     **Theorem shape:** `d.P → redeemable d` (core `redeemable`, not `lean_redeemable`)
 
-    **Proof strategy:** Destructs the axiom, packages the three evidence terms
-    into a `VerificationPath`, witnesses `vp.deposit = d` and `vp.surface = d.h.redeem`
-    by `rfl`. -/
+    **Proof strategy:** Applies the axiom to get `vindication_evidence d d.h.redeem`,
+    then uses it as all three `VerificationPath` fields (the fields share one backing
+    opaque, so one witness serves all three). -/
 theorem lean_kernel_path_is_redeemable
     {Standard ErrorModel Provenance : Type}
     (d : Deposit Prop Standard ErrorModel Provenance)
     (h_prop : d.P) :
     redeemable d :=
-  let ⟨h_path, h_contact, h_discrim⟩ := lean_kernel_verification_path d h_prop
-  ⟨⟨d, d.h.redeem, h_path, h_contact, h_discrim⟩, rfl, rfl⟩
+  let h := lean_kernel_verification_path d h_prop
+  ⟨⟨d, d.h.redeem, h, h, h⟩, rfl, rfl⟩
 
 /-- Core-theory redeemable deposits exist (via the axiom).
     Same deposit witness as `lean_redeemable_deposits_exist` — the bridge changes
