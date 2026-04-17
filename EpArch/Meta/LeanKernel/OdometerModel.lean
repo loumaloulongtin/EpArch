@@ -252,7 +252,11 @@ to in order to make safe withdrawal possible.  Whether that cost is worth
 bearing — or whether the irrevocability is the feature you want — is a
 decision EpArch does not make.  It names the fork; the architecture takes it. -/
 
-/-! ## Typed Goal-Stance Bundle -/
+/-! ## Typed Goal-Stance Bundle
+
+    `odometer_is_minimal_goal_witness` packages all five goal stances into a single
+    machine-checked unit; `odometer_extension_safe` shows the profile is preserved
+    under compatible extension. -/
 
 /-- `odometer_is_minimal_goal_witness`: the complete typed goal-stance profile.
 

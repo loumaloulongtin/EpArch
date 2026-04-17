@@ -20,8 +20,8 @@ hypothesis bundles.
 - C3 (`SEVFactorization`)    — by rfl
 - C4b (`redeemability_requires_more_than_consensus`) — proved from `intra_bubble_only`
     and `consensus B d.P` (a genuine active deposit) versus `redeemable`
-    (requires opaque external evidence: path_route_exists, contact_was_made,
-    verdict_discriminates).
+    (requires `vindication_evidence` — single opaque backing the three staged predicates
+    `path_route_exists`, `contact_was_made`, `verdict_discriminates`).
 - C5 (`ExportGating`)        — from the LTS export constructors
 - C6b (`NoSelfCorrectionWithoutRevision`) — from StepSemantics
 - C7b (`header_stripping_harder`) — proved via the admissible completion-space model:
@@ -202,21 +202,122 @@ theorem SEVFactorization (d : Deposit PropLike Standard ErrorModel Provenance) :
 
 /-! ## Commitment 4: Redeemability External to Consensus -/
 
-/-- Three opaque evidence predicates for VerificationPath.
-    Being opaque, these cannot be constructed inside the formalization by
-    trivial means -- external evidence is required to produce witnesses. -/
-opaque path_route_exists : Deposit PropLike Standard ErrorModel Provenance →
-    ConstraintSurface → Prop
-opaque contact_was_made : Deposit PropLike Standard ErrorModel Provenance →
-    ConstraintSurface → Prop
-opaque verdict_discriminates : Deposit PropLike Standard ErrorModel Provenance →
+/-- Single opaque abstraction for surface-relative vindication evidence.
+
+    EpArch tracks **redeemability** — surface-relative vindication — not truth
+    simpliciter. The architecture must remain neutral between objective, institutional,
+    and preference-scoped claims, because those do not share an evaluation space.
+    "This theorem type-checks," "this food tastes good to me," "this interpretation is
+    acceptable under this jurisdiction" are all candidates for redeemability. There is
+    no single global truth function that discriminates across all of them, so EpArch
+    should not bake one in. For objective claims, redeemability coincides with truth
+    under the deposit's standard; for preference- or scope-relative claims, it means
+    answerability to the deposit's own constraint surface. The architecture is
+    intentionally neutral between these.
+
+    A second, independent reason: even within claims of one kind, realization varies
+    per deposit, not just per domain. In Lean alone, fresh elaboration, cache reuse,
+    and proof-object replay are genuinely different realizations of the vindication occurrence
+    for different deposits. A single concrete body would assert uniform implementation
+    across all deposits, which is false in any realistic system.
+
+    **Structural consequence of filling this opaque:** In any configuration where the
+    bank, challenge/repair mechanism, and forcing story are load-bearing, filling
+    `vindication_evidence` with a trivial body is self-contradictory: it asserts that
+    validation is immediate and uniform, which makes those primitives redundant —
+    redeemability becomes trivialized so the distinction between mediated and unmediated
+    validation collapses, nothing needs mediation, challenges have no contested ground,
+    the scarcity and constraint that make mediation necessary disappear so the pressure
+    that was supposed to force routing through bank and surface machinery is weakened or
+    gone, and the adversarial model has no surface to attack. Two configurations can fill
+    the opaque consistently. First, a system relaxed enough that those primitives are
+    already irrelevant — EpArch's modularity explicitly supports such configurations;
+    opting out of the bank or challenge/repair machinery is valid. But filling the opaque
+    there says nothing about configurations where those primitives are active: the opaque
+    is not load-bearing in that context, so filling it is consistent but does not generalise.
+    Second, a system whose deposit space is narrow and homogeneous enough that every deposit
+    genuinely shares the same vindication realization: a concrete uniform body is then correct
+    for that restricted domain. This is the kind of case EpArch.Meta.LeanKernel.VerificationPath
+    demonstrates — within the Lean elaboration domain, one concrete vindication occurrence
+    suffices, so a non-opaque parallel structure is sound. In both cases
+    the result is a configuration-specific instantiation. The opaque is load-bearing exactly
+    when the primitives it supports are.
+
+    A further consequence: as long as `vindication_evidence` remains opaque, any system
+    operating against it must accept that its vindication verdicts are not internally
+    self-certifying. The architecture cannot inspect the vindication mechanism from
+    inside the core theory, so it must remain compatible with being wrong and with
+    eventually recovering from error. That is precisely why challenge, repair, and
+    adversarial robustness remain necessary for any system that claims corrigibility,
+    safe withdrawal, or adversarial resilience: they are the machinery such a system
+    needs when it cannot guarantee its own verdicts from inside the core theory.
+
+    The three predicates `path_route_exists`, `contact_was_made`, `verdict_discriminates`
+    are transparent projections of this single opaque — three named aspects of one
+    completed vindication occurrence, not three independently meaningful process states.
+    Each name picks out a presuppositional reading of the same fact: that the occurrence
+    happened. The ordering between names is encoded by `verdict_implies_contact` and
+    `contact_implies_path`.
+
+    Domain instantiators discharge `vindication_evidence` by axiom (naming their trust
+    boundary explicitly) or by building a concrete non-opaque vindication witness.
+    See `EpArch.Meta.LeanKernel.VerificationPath` for a worked example of both
+    approaches. -/
+opaque vindication_evidence :
+    Deposit PropLike Standard ErrorModel Provenance →
     ConstraintSurface → Prop
 
-/-- A verification path: connects deposit to constraint surface.
-    The three evidence fields carry opaque Prop witnesses -- they cannot be
-    satisfied by constructing a record with trivially true Bool fields.
-    External evidence is required to inhabit path_route_exists, contact_was_made,
-    and verdict_discriminates. -/
+/-- Aspect 1 of a completed vindication occurrence: a route to the evaluative surface exists.
+    This name picks out the weakest presuppositional reading of `vindication_evidence`.
+    Formally identical to `contact_was_made` and `verdict_discriminates`; the distinction
+    is architectural, not semantic — it names what the occurrence presupposes, not a
+    separable intermediate state. -/
+def path_route_exists (d : Deposit PropLike Standard ErrorModel Provenance)
+    (cs : ConstraintSurface) : Prop :=
+  vindication_evidence d cs
+
+/-- Aspect 2 of a completed vindication occurrence: the evaluative surface was exercised.
+    Formally identical to `path_route_exists` and `verdict_discriminates`; the distinction
+    is architectural — it names the intermediate presuppositional reading. -/
+def contact_was_made (d : Deposit PropLike Standard ErrorModel Provenance)
+    (cs : ConstraintSurface) : Prop :=
+  vindication_evidence d cs
+
+/-- Aspect 3 of a completed vindication occurrence: the surface gave a nontrivial verdict.
+    "Nontrivial" means the surface can distinguish outcomes — proof checker, institution,
+    preference, benchmark, community acceptance rule. Does not mean "returned the objectively
+    correct truth verdict." Formally identical to `path_route_exists` and `contact_was_made`;
+    the distinction is architectural — it names the strongest presuppositional reading of
+    the occurrence. -/
+def verdict_discriminates (d : Deposit PropLike Standard ErrorModel Provenance)
+    (cs : ConstraintSurface) : Prop :=
+  vindication_evidence d cs
+
+/-- Vindication aspect ordering: a nontrivial verdict presupposes the surface was contacted.
+    Formally trivial (all three predicates share one backing opaque); architecturally
+    load-bearing — it encodes that the presuppositional order between names is not
+    arbitrary, even though no distinct intermediate states are modelled in core. -/
+theorem verdict_implies_contact
+    (d : Deposit PropLike Standard ErrorModel Provenance)
+    (cs : ConstraintSurface) :
+    verdict_discriminates d cs → contact_was_made d cs :=
+  fun h => h
+
+/-- Vindication aspect ordering: contacting a surface presupposes a route to it.
+    Formally trivial (all three predicates share one backing opaque); architecturally
+    load-bearing — it encodes that the presuppositional order between names is not
+    arbitrary, even though no distinct intermediate states are modelled in core. -/
+theorem contact_implies_path
+    (d : Deposit PropLike Standard ErrorModel Provenance)
+    (cs : ConstraintSurface) :
+    contact_was_made d cs → path_route_exists d cs :=
+  fun h => h
+
+/-- A verification path: connects deposit to constraint surface via all three vindication aspects.
+    The evidence fields all back onto the single opaque `vindication_evidence`, so the
+    structure cannot be trivially constructed — external evidence is required. The three
+    named fields encode the presuppositional ordering: path ≤ contact ≤ verdict, each
+    a different name for the same completed occurrence. -/
 structure VerificationPath where
   deposit   : Deposit PropLike Standard ErrorModel Provenance
   surface   : ConstraintSurface
@@ -271,8 +372,8 @@ theorem redeemable_implies_contact_and_discriminating
 
 /-! Commitment 4b: Consensus alone doesn't create redeemability.
     Proved structurally below: `intra_bubble_only` deposits cannot be redeemable
-    because redeemability requires `path_route_exists` (opaque external evidence)
-    while intra-bubble deposits provably have no such route. -/
+    because redeemability requires `vindication_evidence` (the opaque vindication
+    evidence) while intra-bubble deposits provably have no such. -/
 
 /-- A deposit is intra-bubble-only if it has no external route to any constraint surface.
     This is the structural condition that separates consensus from redeemability:

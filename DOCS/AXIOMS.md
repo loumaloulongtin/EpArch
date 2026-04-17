@@ -1,18 +1,53 @@
 # Axiom Declarations
 
-The formalization contains **zero `axiom` declarations**.
+The core formalization contains **zero `axiom` declarations**. All architectural results
+are proved theorems.
 
-> **Note:** “zero global axioms” does not mean “zero assumptions in an absolute sense.”
-> EpArch works with explicit base commitments and context-bundled conditions where appropriate;
-> those boundaries are made explicit rather than hidden.
-> That is intentional: the framework does not claim terminal epistemic closure,
-> and PRP rules out eliminating every assumption boundary altogether.
+> **Note on C4b non-vacuity:** `redeemability_requires_more_than_consensus` proves that
+> intra-bubble deposits cannot be redeemable — but the positive witness (`∃ d, redeemable d`)
+> is outside the core theory's scope. EpArch specifies the structure around validation;
+> it does not itself validate. Domain instantiators (agent OS, proof checker, legal process,
+> etc.) are responsible for discharging the positive side by supplying a concrete
+> instantiation of `vindication_evidence` (the opaque) for their domain — either by axiom
+> (naming the trust boundary explicitly) or by building a concrete non-opaque vindication witness.
+> `EpArch/Meta/LeanKernel/VerificationPath.lean` is one worked example of such an
+> instantiation — it is not imported in `Main.lean` and is not part of the core architectural claim.
 
 This document records the current assumption boundary and how the prior axiom surface was resolved.
 
 ---
 
 ## Current Assumption Boundary
+
+### Lean-Kernel VerificationPath Axiom
+
+**File:** `EpArch/Meta/LeanKernel/VerificationPath.lean`
+
+```lean
+axiom lean_kernel_verification_path
+    {Standard ErrorModel Provenance : Type}
+    (d : Deposit Prop Standard ErrorModel Provenance)
+    (h_prop : d.P) :
+    vindication_evidence d d.h.redeem
+```
+
+**What it asserts:** For any Lean deposit (claim is a `Prop`) that is proved (`h_prop : d.P`),
+the Lean kernel provides vindication evidence (`vindication_evidence d d.h.redeem`) against
+the deposit's own constraint surface. The single opaque covers all three aspects (route,
+contact, verdict) of the completed vindication occurrence in the Lean domain.
+
+**Why it is an axiom and not a theorem:** `vindication_evidence` is `opaque` in
+`Commitments.lean` by design — `path_route_exists`, `contact_was_made`, and
+`verdict_discriminates` are transparent projections of it. Any concrete body for
+`vindication_evidence` would commit the core theory to one domain's validation mechanism
+and break the domain-generality of every theorem about `redeemable`. This axiom names
+the Lean domain's trust boundary. Other domains (observation over time, RLHF, institutional
+assessment, peer challenge) would each supply their own analogous axiom.
+
+**Non-vacuity closed:** `redeemable_deposits_exist` (in the same file) now proves
+`∃ d, redeemable d` — the positive direction that was previously missing.
+
+---
 
 ### All 8 Commitments Proved — Standalone Theorems
 
@@ -40,8 +75,8 @@ see §Proved Theorems below.
 **C4b is proved.** `redeemability_requires_more_than_consensus` in `Commitments.lean`
 is derived from `intra_bubble_only` (structural predicate: ∀ cs, ¬path_route_exists d cs)
 and the gap between `consensus` (intra-bubble, grounded in `hasDeposit B P`) and
-`redeemable` (requires opaque external evidence: `path_route_exists`, `contact_was_made`,
-`verdict_discriminates`); see §Proved Theorems below.
+`redeemable` (requires `vindication_evidence` — single opaque; `path_route_exists`, `contact_was_made`,
+`verdict_discriminates` are transparent projections); see §Proved Theorems below.
 
 **C7b is proved.** The diagnosability / hardness result (`header_stripping_harder`,
 `metadata_stripping_strictly_enlarges`) is proved via the admissible completion-space
@@ -99,7 +134,7 @@ Key opaque primitives:
 | `agentTraction` | Basic.lean | Agent's private traction assignment (Claim → LadderStage); hook for psychology/cognition |
 | `ignores_bank_signal` | Basic.lean | Whether agent's review channel is closed (separate from `certainty_L`) |
 | `header_preserved` | Header.lean | Deposit has header intact (vs. stripped in transmission); `header_stripped` is a def: `¬header_preserved` |
-| `path_route_exists` / `contact_was_made` / `verdict_discriminates` | Commitments.lean | Opaque evidence predicates for VerificationPath (C4: redeemability external to consensus) |
+| `vindication_evidence` | Commitments.lean | Single opaque for surface-relative vindication evidence (C4: redeemability external to consensus). `path_route_exists`, `contact_was_made`, `verdict_discriminates` are transparent `def` projections. Inhabited via `lean_kernel_verification_path` axiom for the Lean domain; other domains supply their own. |
 | `pushback` | Commitments.lean | Agent-level contestation of a deposit; used in C6 repair-loop machinery |
 | `exportDep` / `TrustBridge` / `Revalidate` / `RepairAction` | Bank.lean | Abstract behavioral hooks (cross-bubble export, trust bridge, revalidation, repair action type) |
 | Adversarial/Base.lean opaques | Adversarial/Base.lean | 17 opaques constituting the adversarial model: attack channel (`AuditChannel`, `channel_capacity`, `attack_volume`), DDoS state (`ladder_overloaded`, `V_channel_exhausted`, etc.), countermeasures (`trust_bridge_on_hand`, `E_includes_threat`, etc.), cost primitives (`export_cost`, `import_defense_cost`). Note: `cheap_validator_reachable`, `transaction_reversible`, and `constraint_cheaply_testable` are **`def`s** (grounded as `d.h.τ > 0` or `τ > 0`), not opaques — see §Adversarial Model in THEOREMS.md |
@@ -145,7 +180,7 @@ All 8 commitments are now **proved**.  The table below records each commitment a
 | C6b (`NoSelfCorrectionWithoutRevision`) | Proved from StepSemantics |
 | C8 (`TemporalValidity`) | Proved from header τ definition |
 | C2 (`NoGlobalLedger`) | **Proved** as `WorldCtx.no_ledger_tradeoff` (EpArch CAP Theorem) from `W_partial_observability` + `obs_based` in `WorldCtx.lean` |
-| C4b (`ConsensusNotSufficient`) | **Proved** as `redeemability_requires_more_than_consensus` from `intra_bubble_only` + genuine consensus witness (`consensus B d.P`, grounded in `hasDeposit`) versus `redeemable` (opaque external evidence) in `Commitments.lean` |
+| C4b (`ConsensusNotSufficient`) | **Proved** as `redeemability_requires_more_than_consensus` from `intra_bubble_only` + genuine consensus witness (`consensus B d.P`, grounded in `hasDeposit`) versus `redeemable` (`vindication_evidence` opaque; `path_route_exists` / `contact_was_made` / `verdict_discriminates` are transparent projections) in `Commitments.lean` |
 | C7b (`HeaderStrippingHarder`) | **Proved** via admissible completion-space model: `metadata_stripping_strictly_enlarges` establishes strict inclusion admissible_full ⊂ admissible_stripped; `header_stripping_harder` is its numeric corollary (0 < 3 fields). `dispute_about B d` — an incoming same-type counter-deposit d' disagreeing on ≥1 header field — directly witnesses `has_alternative_completion d` via `dispute_about_to_alternative` (no type-universe condition). `cross_axis_dispute_about B d` — two counter-deposits dS, dE blaming S and E respectively — directly witnesses both axes for `proxy_battles`. `sticky B P d` (admissible-space multiplicity) proved by `stripped_dispute_is_sticky` from `dispute_about B d` alone; `proxy_battles B P d` (cross-axis underdetermination) proved by `stripped_dispute_has_proxy_battles` from `cross_axis_dispute_about B d` alone. **`has_cross_field_alternatives` premise entirely eliminated** — replaced by event-level export structure. `header_stripping_produces_pathology` takes `dispute_about` + `cross_axis_dispute_about`; zero opaque or type-universe hypotheses. |
 | C1 (`TractionAuthSplit`) | **Proved** as two mechanism-grounded theorems: `innovation_allows_traction_without_authorization` (`PreAuthTractionWitness`) + `caveated_authorization_does_not_force_certainty` (`BurdensomeAuthWitness`). |
 
@@ -161,20 +196,22 @@ All 8 commitments are now **proved**.  The table below records each commitment a
 
 ---
 
-## Axiom-Free Modules
+## Core Modules — No Axiom Declarations
 
-No `axiom` declarations appear anywhere in the codebase. All modules introduce
-only theorems, definitions, and opaque constants.
+All core architectural modules introduce only theorems, definitions, and opaque constants.
+No `axiom` declarations appear in the core build surface. The one named axiom in this
+repository is `lean_kernel_verification_path` in `EpArch/Meta/LeanKernel/VerificationPath.lean`,
+which is a worked domain instantiation outside the core claim (see above).
 
 | Module | Role |
 |--------|------|
 | `Basic.lean` | Core types |
 | `Header.lean` | S/E/V header structure |
-| `Bank.lean` | Bank substrate (concrete operators; `deposited`/`hasDeposit`/`knowledge_B`/`reliance_level`/`blast_radius` are defs; opaque: `withdraw`, `exportDep`, `TrustBridge`, `Revalidate`, `RepairAction`) |
+| `Bank.lean` | Bank substrate (concrete operators; `deposited`/`hasDeposit`/`knowledge_B`/`reliance_level`/`blast_radius` are defs; opaque: `exportDep`, `TrustBridge`, `Revalidate`, `RepairAction`) |
 | `Commitments.lean` | Structural commitments (all 8 proved as standalone theorems) |
 | `Invariants.lean` | Grounded operational invariants |
 | `Semantics/StepSemantics.lean` | Concrete step semantics (LTS core) |
 | `Semantics/LinkingAxioms.lean` | Grounded linking theorems (Step preconditions → architectural features) |
-| `Theorems/` | Derived theorems (10 sub-modules) |
+| `Theorems/` | Derived theorems (11 sub-modules) |
 | `EpArch/Concrete/` | Constructive concrete model (8 modules: Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity, Realizer, VerificationDepth, WorkedTraces) |
 | All others | Theorem-bearing or definitional surfaces only |
