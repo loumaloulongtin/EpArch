@@ -228,6 +228,16 @@ inductive VindicationRole
     for different deposits. A single concrete body would assert uniform implementation
     across all deposits, which is false in any realistic system.
 
+    **Structural consequence of filling this opaque:** A system in which truth flows
+    in uniformly and directly needs none of EpArch's bank primitives. Deposits would
+    always be immediately validated; there would be nothing to challenge, nothing to
+    repair, no contested verdicts to mediate. The bank becomes useless, the
+    challenge/repair mechanism loses its purpose, the forcing story fails (nothing
+    to compel an agent to route through a surface it doesn't control), and the
+    adversarial model collapses (no pathway to attack). Filling `vindication_evidence`
+    with a trivial body does not merely break C4b — it makes the entire primitive set
+    redundant by asserting that the world EpArch was built for does not exist.
+
     The three predicates `path_route_exists`, `contact_was_made`, `verdict_discriminates`
     are transparent projections of this single opaque — three roles of one underlying
     vindication concept, not three independent black boxes.
