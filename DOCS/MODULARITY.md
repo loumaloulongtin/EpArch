@@ -278,7 +278,7 @@ These rules prevent the registry, config, and docs from drifting apart.
 |---|---|
 | **I1** | `ClusterRegistry.lean` owns all routing and display. No other file defines `clusterEnabled` or the `toClusterTag` mappings. |
 | **I2** | `Config.lean` owns all proof carriers. Witness inductive constructors are the only place where theorem types are formally encoded against a `ClusterTag`. |
-| **I3** | Named `cluster_*` pack theorems (e.g. `commitments_pack`, `structural_theorems_unconditional`, `lts_theorems_step_universal`) remain the authoritative typed witnesses. Config.lean match arms must reference them by name, not re-prove inline. |
+| **I3** | Named `cluster_*` proof witnesses (e.g. `commitments_pack`, `structural_theorems_unconditional`, `lts_theorems_step_universal`) remain the authoritative typed witnesses — either `def X := upstream_name` re-exports or explicit `theorem` declarations where the signature needs stating separately. Config.lean match arms must reference them by name, not re-prove inline. |
 | **I4** | Every `ClusterTag` constructor that exists must have a matching witness constructor in `Config.lean` and a description in `ClusterRegistry.lean`. Orphaned tags are a build-time bug. |
 | **I5** | Documentation describes the cluster semantics as they exist now. Stale historical scaffolding (old transport wrappers, superseded pack shapes) must be removed — not left as comments or empty shells. |
 | **I6** | The cluster count (currently 30) is a documented fact. If you add or remove a cluster, update the count in this doc and in `README.md`. |

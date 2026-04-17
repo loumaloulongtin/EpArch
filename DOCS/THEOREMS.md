@@ -963,12 +963,6 @@ $$\text{PRP} \Rightarrow \neg\exists t_{\text{final}}.\, \forall t \geq t_{\text
 
 | Definition | File | Purpose |
 |------------|------|---------|
-| `OperationMask` | Meta/TheoremTransport.lean | 8-bool operation dependency record |
-| `mask_selfCorrection` | Meta/TheoremTransport.lean | Mask for RevisionGate |
-| `mask_safeWithdrawal` | Meta/TheoremTransport.lean | Mask for SafeWithdrawalGoal |
-| `mask_reliableExport` | Meta/TheoremTransport.lean | Mask for ReliableExportGoal |
-| `mask_soundDeposits` | Meta/TheoremTransport.lean | Mask for SoundDepositsGoal |
-| `mask_corrigibleLedger` | Meta/TheoremTransport.lean | Mask for CorrigibleLedgerGoal |
 | `SurjectiveCompatible` | Meta/TheoremTransport.lean | Compatible + πBubble/πDeposit surjective |
 | `VacuousSelfCorrects`/`VacuousHasRevision`/`VacuousRevise`/`VacuousSubmit`/`VacuousTruth` | Meta/TheoremTransport.lean | Disabled-operation predicates |
 
@@ -1396,9 +1390,9 @@ for each cluster.
 
 | Definition | File | Purpose |
 |------------|------|---------|
-| `ConstraintTag` | Meta/Config.lean | 7 constraint tags (distributed_agents … multi_agent_access) |
-| `GoalTag` | Meta/Config.lean | 5 health-goal tags (safeWithdrawal … selfCorrection) |
-| `WorldTag` | Meta/Config.lean | 8 world-bundle tags (lies_possible … ddos) |
+| `ConstraintTag` | Meta/ClusterRegistry.lean | 7 constraint tags (distributed_agents … multi_agent_access) |
+| `GoalTag` | Meta/ClusterRegistry.lean | 5 health-goal tags (safeWithdrawal … selfCorrection) |
+| `WorldTag` | Meta/ClusterRegistry.lean | 8 world-bundle tags (lies_possible … ddos) |
 | `EpArchConfig` | Meta/Config.lean | User-supplied config: lists of active constraints/goals/worlds |
 | `ClusterTag` | Meta/ClusterRegistry.lean | 30 cluster tags spanning Tiers 2–4, world obligations, constraint-modularity, and lattice-stability |
 | `EnabledConstraintCluster` | Meta/ClusterRegistry.lean | Sub-inductive: 7 Tier 2 forcing cluster tags |
@@ -1421,9 +1415,9 @@ for each cluster.
 | `allLatticeClusters` | Meta/ClusterRegistry.lean | Canonical list of 3 lattice-stability cluster tags |
 | `allClusters` | Meta/ClusterRegistry.lean | Canonical ordered list of all 30 ClusterTags (derived from 6 per-family lists) |
 | `clusterEnabled` | Meta/ClusterRegistry.lean | `EpArchConfig → ClusterTag → Bool` (computable routing); meta-modular and lattice always enabled |
-| `explainConfig` | Meta/Config.lean | `EpArchConfig → List ClusterTag` — enabled clusters |
+| `explainConfig` | Meta/ClusterRegistry.lean | `EpArchConfig → List ClusterTag` — enabled clusters |
 | `clusterValid` | Meta/Config.lean | `ClusterTag → Prop` — genuine proved proposition for each of the 30 clusters; 15 clusters use `prop_*` defs pinned at universe 0 to eliminate free universe variables |
-| `showConfig` | Meta/Config.lean | `EpArchConfig → List String` — `#eval`-able routing report |
+| `showConfig` | Meta/ClusterRegistry.lean | `EpArchConfig → List String` — `#eval`-able routing report |
 | `ConstraintProof` | Meta/Config.lean | Proof-carrying record: `statement : Prop`, `proof : statement` (Tier 2 only) |
 | `constraintProof` | Meta/Config.lean | `EnabledConstraintCluster → ConstraintProof` — real proposition + proof for each forcing cluster |
 | `MetaModularWitness` | Meta/Config.lean | Indexed proof carrier for constraint-modularity cluster (1 constructor: `.modular`) |
@@ -1448,7 +1442,6 @@ for each cluster.
 
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
-| `mem_enabledConstraintWitnesses_of_enabled` | Meta/Config.lean | `clusterEnabled cfg c.toClusterTag = true → âŸ¨c, constraintProof câŸ© âˆˆ (certify cfg).enabledConstraintWitnesses` | Completeness of Tier 2 witness list |
 | `mem_enabledGoalWitnesses_of_enabled` | Meta/Config.lean | `clusterEnabled cfg c.toClusterTag = true → âŸ¨c, goalWitness câŸ© âˆˆ ...` | Completeness of Tier 3 witness list |
 | `mem_enabledTier4Witnesses_of_enabled` | Meta/Config.lean | `clusterEnabled cfg c.toClusterTag = true → âŸ¨c, tier4Witness câŸ© âˆˆ ...` | Completeness of Tier 4 witness list |
 | `mem_enabledWorldWitnesses_of_enabled` | Meta/Config.lean | `clusterEnabled cfg c.toClusterTag = true → âŸ¨c, worldWitness câŸ© âˆˆ ...` | Completeness of world witness list |
@@ -1547,6 +1540,7 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 | `lean_has_revocation` | `HasRevocation LeanWorkingSystem` | `LeanGroundedRevocation` (sorry-tainted term → quarantine) |
 | `lean_has_bank` | `HasBank LeanWorkingSystem` | `LeanGroundedBank` (InitDef produced and consumed) |
 | `lean_has_redeemability` | `HasRedeemability LeanWorkingSystem` | `LeanGroundedRedeemability` (`#print axioms` audit path) |
+| `lean_has_granular_acl` | `HasGranularACL LeanWorkingSystem` | `LeanGroundedAuthorization` (kernel/user ACL boundary) |
 
 ### Architecture Layer — Properties and Forcing
 
