@@ -80,7 +80,7 @@ does what prevents confusion about where to look and where to edit.
 ### Theorem modules — source of actual proof content
 - `Minimality.lean` — Tier 2 seven individual lifting theorems.
 - `Convergence.lean` — `StructurallyForced`, `convergence_structural`, impossibility models, §1b–§7b alternative dismissals; seven per-dimension `*_forces_*` theorems; `SystemOperationalBundle W` and `WorldBridgeBundle W` record structures.
-- `Feasibility.lean` — `grounded_world_and_structure_force_bank_primitives` (explicit `Represents*` witnesses, no `WorldCtx`); `bundled_structure_forces_bank_primitives` (headline 4-argument form).
+- `WorldBridges.lean` — `grounded_world_and_structure_force_bank_primitives` (explicit `Represents*` witnesses, no `WorldCtx`); `bundled_structure_forces_bank_primitives` (headline 4-argument form).
 - `Theorems/BehavioralEquivalence.lean` — `GroundedBehavior`-indexed behavioral-equivalence results; step-bridge section grounds withdraw/challenge/tick via `ReadyState` witnesses and `behavior_from_step`.
 - `Health.lean`, `Meta/TheoremTransport.lean` — Tier 3 goal predicates and transport.
 - `Commitments.lean`, `Theorems/` (10 sub-modules), `Agent/*.lean`,

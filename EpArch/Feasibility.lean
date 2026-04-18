@@ -16,6 +16,7 @@ not carry the forcing story — that lives in EpArch.WorldBridges.
 
 - `world_bundles_feasible`: the three W_* bundles are jointly satisfiable
 - `commitments_feasible`: the 8 architectural commitments are jointly satisfiable
+- `realizer_exists`: a Realizer is non-empty (Nonempty EpArch.Realizer)
 - `existence_under_constraints_structural`: ∃ W, StructurallyForced W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W
 - `existence_under_constraints_embedding`: same, via ForcingEmbedding path
 
@@ -56,14 +57,6 @@ theorem world_bundles_feasible :
   refine ⟨EpArch.WorldWitness.WitnessCtx, ?_⟩
   exact EpArch.WorldWitness.all_bundles_satisfiable
 
-/-- Alias for backward compatibility -/
-theorem constraints_feasible :
-    ∃ C : @EpArch.WorldCtx.{0},
-      Nonempty C.W_lies_possible ∧
-      Nonempty C.W_bounded_verification ∧
-      Nonempty C.W_partial_observability :=
-  world_bundles_feasible
-
 
 /-! ## Commitment Feasibility -/
 
@@ -91,29 +84,11 @@ theorem commitments_feasible :
     (∃ d1 d2 t, ConcreteModel.c_fresh d1 t ∧ ConcreteModel.c_stale d2 t) :=
   ConcreteModel.all_commitments_satisfiable
 
-/-- Objective bundle is satisfiable: there exists at least one Realizer.
+/-- Non-vacuity: a Realizer is non-empty.
 
-    The Realizer packages the proof that all core commitments
-    are simultaneously satisfiable. -/
-theorem objectives_feasible : ∃ _ : EpArch.Realizer, True := by
-  exact ⟨EpArch.ConcreteRealizer, trivial⟩
-
-
-/-! ## System-Level Feasibility -/
-
-/-! ## Joint Feasibility -/
-
-/-- Joint feasibility: world constraints and objectives are both nonempty.
-
-    Kept for backward compatibility. The stronger `existence_under_constraints_structural`
-    is the preferred reference. -/
-theorem joint_feasible :
-    (∃ C : @EpArch.WorldCtx.{0},
-      Nonempty C.W_lies_possible ∧
-      Nonempty C.W_bounded_verification ∧
-      Nonempty C.W_partial_observability) ∧
-    (∃ _ : EpArch.Realizer, True) := by
-  exact ⟨constraints_feasible, objectives_feasible⟩
+    Theorem shape: `Nonempty EpArch.Realizer`.
+    Proof: direct constructor — `ConcreteRealizer` witnesses the type. -/
+theorem realizer_exists : Nonempty EpArch.Realizer := ⟨EpArch.ConcreteRealizer⟩
 
 
 /-! ## Structural Convergence (Existence)
@@ -127,13 +102,11 @@ theorem joint_feasible :
     primitives — without going through WellFormed. -/
 theorem existence_under_constraints_structural :
     ∃ W : WorkingSystem,
-      StructurallyForced W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W := by
-  refine ⟨EpArch.ConcreteInstance.ConcreteWorkingSystem, ?_⟩
-  refine ⟨EpArch.ConcreteInstance.concrete_structurally_forced,
-          EpArch.ConcreteInstance.concrete_satisfies_all_properties, ?_⟩
-  exact convergence_structural EpArch.ConcreteInstance.ConcreteWorkingSystem
-    EpArch.ConcreteInstance.concrete_structurally_forced
-    EpArch.ConcreteInstance.concrete_satisfies_all_properties
+      StructurallyForced W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W :=
+  ⟨EpArch.ConcreteInstance.ConcreteWorkingSystem,
+   EpArch.ConcreteInstance.concrete_structurally_forced,
+   EpArch.ConcreteInstance.concrete_satisfies_all_properties,
+   EpArch.ConcreteInstance.concrete_structural_convergence⟩
 
 /-- Headline theorem (embedding version): full chain from
     `ForcingEmbedding` through `StructurallyForced` to convergence. -/

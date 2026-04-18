@@ -201,7 +201,7 @@ convergence_structural → containsBankPrimitives`) is mechanical.
 
 ### `grounded_world_and_structure_force_bank_primitives`
 
-**File:** `EpArch/Feasibility.lean`
+**File:** `EpArch/WorldBridges.lean`
 
 Full explicit form: takes individual `Represents*` structural witnesses (one per dimension)
 plus explicit bridge hypotheses, without bundling them into `SystemOperationalBundle` /
@@ -216,10 +216,8 @@ the per-dimension obligations.
 | Theorem | Statement | Role |
 |---------|-----------|------|
 | `world_bundles_feasible` | `∃ C : WorldCtx, Nonempty C.W_lies_possible ∧ Nonempty C.W_bounded_verification ∧ Nonempty C.W_partial_observability` | W_* bundles jointly satisfiable; witnessed by `WitnessCtx` |
-| `constraints_feasible` | (alias for `world_bundles_feasible`) | Backward-compatible name |
 | `commitments_feasible` | All 8 commitments simultaneously satisfiable | Re-exports `EpArch.Concrete.Commitments.all_commitments_satisfiable` |
-| `objectives_feasible` | `∃ _ : EpArch.Realizer, True` | `Realizer` (commitment conjunction) is non-empty |
-| `joint_feasible` | World constraints + objectives both nonempty | Combines the two; kept for backward compat |
+| `realizer_exists` | `Nonempty EpArch.Realizer` | A Realizer exists; witnessed by `ConcreteRealizer` |
 
 ---
 

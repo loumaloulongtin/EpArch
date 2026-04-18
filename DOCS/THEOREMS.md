@@ -347,7 +347,7 @@ Seven independent theorems — one per EpArch dimension — each taking a single
 Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_without_feature ... h ...).elim` — classical case split with the abstract impossibility model closing the negative branch.
 
 
-### Headline Convergence Theorems (Feasibility.lean)
+### Headline Convergence Theorems (WorldBridges.lean)
 
 | Theorem | Signature | Role |
 |---------|-----------|------|
@@ -854,7 +854,7 @@ File: `Agent/Imposition.lean`
 | `bundled_structure_forces_bank_primitives` | WorldBridges.lean | `SystemOperationalBundle W → WorldBridgeBundle W → SatisfiesAllProperties W → containsBankPrimitives W` | Headline 4-argument form; no `WorldCtx` |
 | `world_bundles_feasible` | Feasibility.lean | World bundles satisfiable | World non-vacuity |
 | `commitments_feasible` | Feasibility.lean | 8 commitments satisfiable | Model non-vacuity |
-| `joint_feasible` | Feasibility.lean | Constraints + objectives jointly satisfiable | Non-vacuity |
+| `realizer_exists` | Feasibility.lean | `Nonempty EpArch.Realizer` | Realizer non-vacuity |
 | `all_bundles_satisfiable` | WorldWitness.lean | W_* bundles jointly satisfiable | World witness |
 | `all_commitments_satisfiable` | Concrete/Commitments.lean | 8 commitments have witnesses | Commitment witness |
 | `concrete_satisfies_all_properties` | Concrete/WorkingSystem.lean | ConcreteWorkingSystem satisfies all properties | Witness for success |
