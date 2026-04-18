@@ -3,8 +3,10 @@ EpArch.Theorems.Diagnosability — Observable Fields and Diagnosability
 
 Defines observability and diagnosability in terms of field sets:
 - ObservableFields (per-representation field lists)
-- Diagnosability (cardinality of observable fields)
+- diagnosability (cardinality of observable fields)
 - systematically_harder (partial order: fewer fields = harder to diagnose)
+- EpistemicFields (S/E/V sub-list; grounds the score-3 constant in Commitments)
+- epistemic_diagnosability (cardinality of EpistemicFields; drives header_preserved_diagnosability)
 
 Uses List Field rather than Finset to avoid Mathlib dependency.
 No time/cost claims — only structural availability of diagnostic moves.
@@ -104,5 +106,31 @@ theorem full_can_repair_any :
   intro f
   unfold canTargetRepair ObservableFields AllFields
   cases f <;> decide
+
+/-! ## Epistemic Fields
+
+This section exists to ground the score-3 constant used by
+`Commitments.header_preserved_diagnosability`. Rather than hard-setting `score := 3`,
+that definition delegates to `EpistemicFields.length` — so the number follows from
+the list, not from an assertion. -/
+
+/-- The S/E/V sub-list of AllFields, ordered to match the header struct.
+    Its length (3) is the source for `epistemic_diagnosability true = 3`
+    and thereby for `header_preserved_diagnosability`'s score. -/
+def EpistemicFields : List Field := [.S, .E, .V]
+
+/-- Epistemic diagnosability: the number of epistemic fields observable.
+    Full deposits expose all three; stripped deposits expose none.
+    Score 3 is derived, not hand-set. -/
+def epistemic_diagnosability (has_header : Bool) : Nat :=
+  if has_header then EpistemicFields.length else 0
+
+/-- Full deposits have epistemic diagnosability 3 (S, E, V). -/
+theorem epistemic_diagnosability_full : epistemic_diagnosability true = 3 := by
+  unfold epistemic_diagnosability EpistemicFields; rfl
+
+/-- Stripped deposits have epistemic diagnosability 0. -/
+theorem epistemic_diagnosability_stripped : epistemic_diagnosability false = 0 := by
+  unfold epistemic_diagnosability; rfl
 
 end EpArch.Diagnosability

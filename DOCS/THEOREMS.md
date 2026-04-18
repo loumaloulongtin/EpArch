@@ -108,7 +108,14 @@ $$h_1 \neq h_2 \land \text{claim}(h_1) = \text{claim}(h_2) \Rightarrow \text{str
 | `strip_reduces_diagnosability` | strip → diagnosability decreases | Monotonicity |
 | `stripped_no_field_repair` | Stripped can't target any field | Coarse repair |
 | `full_can_repair_any` | Full can target any field | Surgical repair |
-| `repair_requires_observability` | Repair granularity = observable fields | Equivalence |
+| `epistemic_diagnosability_full` | Epistemic diagnosability (S/E/V) = 3 for full deposits | Grounds score-3 constant |
+| `epistemic_diagnosability_stripped` | Epistemic diagnosability = 0 for stripped deposits | Grounds score-0 floor |
+
+### Bridge Theorems (Commitments.lean)
+
+| Theorem | Statement | Claim |
+|---------|-----------|-------------|
+| `epistemic_and_full_agree_on_stripped` | `epistemic_diagnosability false = diagnosability false` | Both models agree: stripped = 0 |
 
 ### Math Form
 
