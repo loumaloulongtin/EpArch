@@ -20,7 +20,7 @@ hypothesis bundles.
 - C3 (`SEVFactorization`)    — by rfl
 - C4b (`redeemability_requires_more_than_consensus`) — proved from `intra_bubble_only`
     and `consensus B d.P` (a genuine active deposit) versus `redeemable`
-    (requires `vindication_evidence` — single opaque backing the three staged predicates
+    (requires `vindication_evidence` — single opaque backing the three aspect predicates
     `path_route_exists`, `contact_was_made`, `verdict_discriminates`).
 - C5 (`ExportGating`)        — from the LTS export constructors
 - C6b (`NoSelfCorrectionWithoutRevision`) — from StepSemantics

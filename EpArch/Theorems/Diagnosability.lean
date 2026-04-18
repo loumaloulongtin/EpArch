@@ -3,8 +3,10 @@ EpArch.Theorems.Diagnosability — Observable Fields and Diagnosability
 
 Defines observability and diagnosability in terms of field sets:
 - ObservableFields (per-representation field lists)
-- Diagnosability (cardinality of observable fields)
+- diagnosability (cardinality of observable fields)
 - systematically_harder (partial order: fewer fields = harder to diagnose)
+- EpistemicFields (S/E/V sub-list; grounds the score-3 constant in Commitments)
+- epistemic_diagnosability (cardinality of EpistemicFields; drives header_preserved_diagnosability)
 
 Uses List Field rather than Finset to avoid Mathlib dependency.
 No time/cost claims — only structural availability of diagnostic moves.
@@ -107,11 +109,14 @@ theorem full_can_repair_any :
 
 /-! ## Epistemic Fields
 
-The epistemic triad (S, E, V) that determines belief quality.
-Subset of AllFields — these are the three targeted by disputes and diagnoses. -/
+This section exists to ground the score-3 constant used by
+`Commitments.header_preserved_diagnosability`. Rather than hard-setting `score := 3`,
+that definition delegates to `EpistemicFields.length` — so the number follows from
+the list, not from an assertion. -/
 
-/-- The three epistemic fields that determine belief quality.
-    Subset of AllFields: these are the ones targeted by disputes and diagnoses. -/
+/-- The S/E/V sub-list of AllFields, ordered to match the header struct.
+    Its length (3) is the source for `epistemic_diagnosability true = 3`
+    and thereby for `header_preserved_diagnosability`'s score. -/
 def EpistemicFields : List Field := [.S, .E, .V]
 
 /-- Epistemic diagnosability: the number of epistemic fields observable.
