@@ -16,6 +16,7 @@ not carry the forcing story — that lives in EpArch.WorldBridges.
 
 - `world_bundles_feasible`: the three W_* bundles are jointly satisfiable
 - `commitments_feasible`: the 8 architectural commitments are jointly satisfiable
+- `realizer_exists`: a Realizer is non-empty (Nonempty EpArch.Realizer)
 - `existence_under_constraints_structural`: ∃ W, StructurallyForced W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W
 - `existence_under_constraints_embedding`: same, via ForcingEmbedding path
 
@@ -83,7 +84,10 @@ theorem commitments_feasible :
     (∃ d1 d2 t, ConcreteModel.c_fresh d1 t ∧ ConcreteModel.c_stale d2 t) :=
   ConcreteModel.all_commitments_satisfiable
 
-/-- Non-vacuity: a Realizer exists. -/
+/-- Non-vacuity: a Realizer is non-empty.
+
+    Theorem shape: `Nonempty EpArch.Realizer`.
+    Proof: direct constructor — `ConcreteRealizer` witnesses the type. -/
 theorem realizer_exists : Nonempty EpArch.Realizer := ⟨EpArch.ConcreteRealizer⟩
 
 
