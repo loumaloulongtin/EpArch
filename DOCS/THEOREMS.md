@@ -347,7 +347,7 @@ Seven independent theorems — one per EpArch dimension — each taking a single
 Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_without_feature ... h ...).elim` — classical case split with the abstract impossibility model closing the negative branch.
 
 
-### Headline Convergence Theorems (Feasibility.lean)
+### Headline Convergence Theorems (WorldBridges.lean)
 
 | Theorem | Signature | Role |
 |---------|-----------|------|

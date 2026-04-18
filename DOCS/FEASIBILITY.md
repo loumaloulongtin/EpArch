@@ -201,7 +201,7 @@ convergence_structural → containsBankPrimitives`) is mechanical.
 
 ### `grounded_world_and_structure_force_bank_primitives`
 
-**File:** `EpArch/Feasibility.lean`
+**File:** `EpArch/WorldBridges.lean`
 
 Full explicit form: takes individual `Represents*` structural witnesses (one per dimension)
 plus explicit bridge hypotheses, without bundling them into `SystemOperationalBundle` /
