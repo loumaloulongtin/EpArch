@@ -2,17 +2,21 @@
 EpArch.Semantics.StepSemantics — Step Semantics (Labeled Transition System)
 
 Constructive operational semantics of the epistemic architecture.
-Defines a concrete LTS over SystemState with nine actions
-(Submit, Withdraw, Export, Challenge, Tick, Repair, Revoke, Promote, Inspect)
-and proves conditional linking results from operational
-preconditions rather than asserting them as axioms.
+Defines a concrete LTS over SystemState with eight bank-primitive actions
+(Submit, Withdraw, Challenge, Tick, Repair, Revoke, Promote,
+and Submit-with-source-attribution via submit_bridged) and proves conditional
+linking results from operational preconditions rather than asserting them as axioms.
+
+Export is not a bank primitive. Inter-bubble transfer is an agent-level workflow:
+Withdraw from source bubble, agent carries deposit, Submit (via submit_bridged)
+to target bubble. The agent vouches for the source; d.h.V records provenance.
 
 Bank defines WHAT the operators must satisfy (specification axioms).
 This module defines HOW they work: the Step relation's preconditions
 FORCE certain architectural features.
 
 Key exports:
-- ACLEntry, SystemState, Step (inductive LTS relation, 10 constructors)
+- SystemState, Step (inductive LTS relation, 8 constructors)
 - no_revision_no_correction (competition gate impossibility)
 - generic_invariant_preservation (step-preserved invariants)
 - Companion: EpArch.Semantics.LinkingAxioms (operational groundings)
@@ -26,14 +30,6 @@ namespace EpArch.StepSemantics
 
 universe u
 
-/-! ## ACL Entry -/
-
-/-- An ACL entry: who can access what deposit in which bubble. -/
-structure ACLEntry where
-  agent      : Agent
-  bubble     : Bubble
-  deposit_id : Nat  -- index into ledger
-
 /-! ## System State -/
 
 /-- SystemState: the global configuration of the epistemic system.
@@ -42,14 +38,13 @@ structure ACLEntry where
     - ledger: all deposits (across all bubbles)
     - bubbles: active bubbles in the system
     - clock: global time (for τ/TTL checks)
-    - acl_table: access control mappings
-    - trust_bridges: pairs of bubbles with established trust -/
+
+    Trust relationships are not recorded here. Whether an agent trusts a source
+    is per-deposit (d.h.acl) and per-agent, not a systemic bank-layer list. -/
 structure SystemState (PropLike Standard ErrorModel Provenance : Type u) where
   ledger      : List (Deposit PropLike Standard ErrorModel Provenance)
   bubbles     : List Bubble
   clock       : Time
-  acl_table   : List ACLEntry
-  trust_bridges : List (Bubble × Bubble)
   /-- Per-agent, per-claim Ladder state.  Pass-through on every Step (no Step ever
       modifies it — proved by `step_preserves_ladder_map`).  Default: Ignorance. -/
   ladder_map  : Agent → PropLike → LadderStage := fun _ _ => LadderStage.Ignorance
@@ -61,34 +56,27 @@ variable {PropLike Standard ErrorModel Provenance Reason Evidence : Type u}
 /-- Action: the inputs that drive state transitions.
 
     These correspond to the deposit lifecycle operators:
-    - Submit: candidate enters system
+    - Submit: deposit enters system (as Candidate, or as Deposited when agent carries bridge)
     - Withdraw: agent relies on deposit
-    - Export: deposit crosses bubble boundary
     - Challenge: deposit is contested
     - Tick: time advances (for TTL expiry)
     - Repair: address challenged field
-    - Revoke: remove deposit from circulation -/
+    - Revoke: remove deposit from circulation
+
+    Export is NOT a primitive bank action. Inter-bubble transfer is an agent-level
+    workflow: Withdraw from source bubble, agent carries the deposit, Submit to
+    target bubble. The agent vouches for the source (d.h.V records provenance);
+    the bank records the deposit — it does not verify the claimed source. -/
 inductive Action (PropLike Standard ErrorModel Provenance Reason Evidence : Type u) where
   | Submit (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance)
   | Withdraw (a : Agent) (B : Bubble) (d_idx : Nat)
-  | Export (B1 B2 : Bubble) (d_idx : Nat)
-  | Challenge (c : EpArch.Challenge PropLike Reason Evidence)
+  | Challenge (a : Agent) (B : Bubble) (c : EpArch.Challenge PropLike Reason Evidence)
   | Tick
-  | Repair (d_idx : Nat) (f : Field)
-  | Revoke (d_idx : Nat)
+  | Repair (a : Agent) (B : Bubble) (d_idx : Nat) (f : Field)
+  | Revoke (a : Agent) (B : Bubble) (d_idx : Nat)
   | Promote (a : Agent) (B : Bubble) (d_idx : Nat)
-  | Inspect (a : Agent) (B : Bubble) (d_idx : Nat)
 
 /-! ## Preconditions -/
-
-/-- Check if agent has ACL permission to withdraw deposit at index.
-    Open architecture: if the ACL table is empty, all agents are authorized
-    (no gating enforced). Otherwise, an explicit entry must match the
-    (agent, bubble, deposit_id) triple. -/
-def hasACLPermission (s : SystemState PropLike Standard ErrorModel Provenance)
-    (a : Agent) (B : Bubble) (d_idx : Nat) : Prop :=
-  s.acl_table = [] ∨
-  ∃ entry, entry ∈ s.acl_table ∧ entry.agent = a ∧ entry.bubble = B ∧ entry.deposit_id = d_idx
 
 /-- Check if deposit at index is in Deposited status.
     Deposit exists at index with status = .Deposited. -/
@@ -104,85 +92,9 @@ def isCandidate (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx
   ∃ d, s.ledger.get? d_idx = some d ∧ d.status = .Candidate
 
 
-/-- Check if agent has bank authority for the given bubble.
-    Bank authority is drawn from the same ACL table as withdrawal access —
-    a single authorization surface. Implementations decide what entries to
-    populate and at what granularity (per-deposit, per-bubble, per-agent).
-    Open mode: empty table → all agents have authority.
-    Gated mode: any entry matching (agent, bubble) suffices; deposit_id is not
-    constrained since bank operations are bubble-scoped, not deposit-scoped.
-    Required to run Promote and Inspect steps. -/
-def hasBankAuthority (s : SystemState PropLike Standard ErrorModel Provenance)
-    (a : Agent) (B : Bubble) : Prop :=
-  s.acl_table = [] ∨
-  ∃ entry, entry ∈ s.acl_table ∧ entry.agent = a ∧ entry.bubble = B
-
-/-- Check if agent has permission to submit a deposit to a bubble.
-    Open architecture: empty ACL table → any agent may submit (personal-bank /
-    open-submission mode). Non-empty table → an explicit (agent, bubble) entry
-    must exist, enabling closed-intake bubbles (corporate intranet, gated repos).
-    Required to run the submit step. -/
-def hasSubmitPermission (s : SystemState PropLike Standard ErrorModel Provenance)
-    (a : Agent) (B : Bubble) : Prop :=
-  s.acl_table = [] ∨
-  ∃ entry, entry ∈ s.acl_table ∧ entry.agent = a ∧ entry.bubble = B
-
-/-- Check if trust bridge exists between bubbles. -/
-def hasTrustBridge (s : SystemState PropLike Standard ErrorModel Provenance)
-    (B1 B2 : Bubble) : Prop :=
-  (B1, B2) ∈ s.trust_bridges ∨ (B2, B1) ∈ s.trust_bridges
-
-/-- Check if deposit's τ is still valid (not expired).
-    τ represents a creation/validation timestamp, and
-    τ_valid holds when the deposit was created at or before the current clock.
-
-    Concretized as Nat comparison to enable proofs.
-    τ_valid clock τ holds iff τ ≤ clock (deposit timestamp precedes clock). -/
-def τ_valid (clock : Time) (deposit_τ : Time) : Prop := deposit_τ ≤ clock
-
-/-! ## τ_valid Helper Lemmas -/
-
-/-- τ_valid is reflexive: a timestamp is valid at its own time. -/
-theorem τ_valid_refl (t : Time) : τ_valid t t := Nat.le_refl t
-
-/-- τ_valid is transitive in a useful way:
-    if τ1 is valid at clock1, and clock1 ≤ clock2, then τ1 is valid at clock2. -/
-theorem τ_valid_mono {clock1 clock2 τ : Time}
-    (h_valid : τ_valid clock1 τ) (h_mono : clock1 ≤ clock2) : τ_valid clock2 τ :=
-  Nat.le_trans h_valid h_mono
-
-/-- Ticking the clock preserves validity of existing deposits. -/
-theorem tick_preserves_validity {clock τ : Time}
-    (h : τ_valid clock τ) : τ_valid (clock + 1) τ :=
-  τ_valid_mono h (Nat.le_succ clock)
-
-/-- Any timestamp from the past is valid now. -/
-theorem past_is_valid {clock τ : Time} (h : τ ≤ clock) : τ_valid clock τ := h
-
-/-- Decidability of τ_valid (since Time = Nat). -/
-instance : DecidableRel τ_valid := fun clock τ => Nat.decLe τ clock
-
-/-! ## τ as Policy Predicate
-
-    τ_valid is a policy predicate for staleness/validity rather than
-    wall-clock time. This keeps three things separate:
-
-    1. No accidental commitments: we don't claim "harder" implies "slower"
-       without an explicit cost model.
-
-    2. Clean separation: τ captures structural validity (has this deposit
-       expired?) without requiring a specific relationship to real time.
-
-    3. Extensibility: a time-cost layer can be added later, but is not
-       required for the core competition-gate results. -/
-
-/-- Check if deposit at index has valid τ.
-    Deposit exists at index with τ_valid relative to the current clock. -/
-def isCurrentDeposit (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat) : Prop :=
-  ∃ d, s.ledger.get? d_idx = some d ∧ τ_valid s.clock d.h.τ
-
-/-- Check if deposit has header preserved (required for export).
-    Deposit exists at index with header_preserved = true. -/
+/-- Check if deposit has preserved header provenance.
+    Used by diagnosability and field-checkability predicates in Headers.lean
+    and Pathologies.lean. Not a Step gate (export is not a bank primitive). -/
 def depositHasHeader (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat) : Prop :=
   ∃ d, s.ledger.get? d_idx = some d ∧ header_preserved d
 
@@ -190,8 +102,10 @@ def depositHasHeader (s : SystemState PropLike Standard ErrorModel Provenance) (
 
 /-! ### List Helper Lemmas
 
-These lemmas provide the index manipulation tools needed for
-list-based ledger reasoning. -/
+NOTE: Lean 4.3.0 without Mathlib does not provide named lemmas for
+`List.get?_append_left`, `List.get?_set_eq`, `List.mem_append`, etc.
+The lemmas below are proven from scratch. They can be replaced with
+Mathlib equivalents if the project ever adopts Mathlib. -/
 
 /-- List append membership: a ∈ l₁ ++ l₂ ↔ a ∈ l₁ ∨ a ∈ l₂ -/
 theorem mem_append_iff {α : Type _} (a : α) (l₁ l₂ : List α) :
@@ -453,14 +367,6 @@ theorem updateDepositStatus_length
   unfold updateDepositStatus
   exact modifyAt_length ledger d_idx _
 
-/-- Add deposit to different bubble (for export). -/
-def addToNewBubble (ledger : List (Deposit PropLike Standard ErrorModel Provenance))
-    (d_idx : Nat) (B2 : Bubble)
-    : List (Deposit PropLike Standard ErrorModel Provenance) :=
-  match ledger.get? d_idx with
-  | some d => ledger ++ [{ d with bubble := B2, status := .Candidate }]
-  | none => ledger
-
 /-! ## Step Relation -/
 
 /-- Step: the labeled transition relation.
@@ -476,57 +382,60 @@ inductive Step : SystemState PropLike Standard ErrorModel Provenance →
 
   /-- Submit: new deposit enters as Candidate.
 
-      The submitting agent and bubble determine whether submission is permitted.
-      Open mode (empty ACL table): any agent may submit.
-      Closed mode: hasSubmitPermission gates who can create Candidates, enabling
-      corporate-intranet or gated-repo configurations. -/
+      The submitting agent and target bubble are recorded for attribution.
+      Authorization is an agent-level concern; the bank records the structural
+      deposit event. -/
   | submit (s : SystemState PropLike Standard ErrorModel Provenance)
-      (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance)
-      (h_submit : hasSubmitPermission s a d.bubble) :
+      (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance) :
       Step s (.Submit a d) { s with ledger := s.ledger ++ [{ d with status := .Candidate }] }
 
   /-- Withdraw: agent relies on deposit.
-      Preconditions: ACL permission, current timestamp, and Deposited status. -/
+      Precondition: Deposited status. Attribution (agent, bubble) recorded.
+      Authorization is an agent-level concern external to the bank's LTS. -/
   | withdraw (s : SystemState PropLike Standard ErrorModel Provenance)
       (a : Agent) (B : Bubble) (d_idx : Nat)
-      (h_acl : hasACLPermission s a B d_idx)
-      (h_current : isCurrentDeposit s d_idx)
       (h_deposited : isDeposited s d_idx) :
       Step s (.Withdraw a B d_idx) s  -- state unchanged by successful withdrawal
 
-  /-- Export with trust bridge: deposit crosses boundary without full revalidation. -/
-  | export_with_bridge (s : SystemState PropLike Standard ErrorModel Provenance)
-      (B1 B2 : Bubble) (d_idx : Nat)
-      (h_deposited : isDeposited s d_idx)
-      (h_header : depositHasHeader s d_idx)
-      (h_bridge : hasTrustBridge s B1 B2) :
-      Step s (.Export B1 B2 d_idx)
-        { s with ledger := addToNewBubble s.ledger d_idx B2 }
+  /-- Submit with source attribution: agent vouches that deposit came from B_src,
+      depositing it directly as Deposited.
 
-  /-- Export without trust bridge: requires full revalidation (enters as Candidate). -/
-  | export_revalidate (s : SystemState PropLike Standard ErrorModel Provenance)
-      (B1 B2 : Bubble) (d_idx : Nat)
-      (h_deposited : isDeposited s d_idx)
-      (h_header : depositHasHeader s d_idx)
-      (h_no_bridge : ¬hasTrustBridge s B1 B2) :
-      Step s (.Export B1 B2 d_idx)
-        { s with ledger := addToNewBubble s.ledger d_idx B2 }
+      The agent identifies the source bubble (B_src) for provenance attribution;
+      d.h.V should record the source chain. The bank does not verify the claimed
+      source — that is the agent's responsibility. The agent's vouching is the gate;
+      presenting this step IS the assertion that the source is trusted.
 
-  /-- Challenge: deposit enters quarantine. -/
+      No bank-side precondition: same reasoning as hasTrustBridge removal from
+      withdrawal. Trust relationships are per-deposit and per-agent, not systemic
+      bank-layer lists. -/
+  | submit_bridged (s : SystemState PropLike Standard ErrorModel Provenance)
+      (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance)
+      (B_src : Bubble) :
+      Step s (.Submit a d) { s with ledger := s.ledger ++ [{ d with status := .Deposited }] }
+
+  /-- Challenge: deposit enters quarantine.
+
+      Precondition: Deposited status. Agent and bubble recorded for attribution.
+      Authorization is an agent-level concern external to the bank's LTS. -/
   | challenge (s : SystemState PropLike Standard ErrorModel Provenance)
-      (c : EpArch.Challenge PropLike Reason Evidence) (d_idx : Nat)
+      (a : Agent) (B : Bubble) (c : EpArch.Challenge PropLike Reason Evidence) (d_idx : Nat)
       (h_deposited : isDeposited s d_idx) :
-      Step s (.Challenge c)
+      Step s (.Challenge a B c)
         { s with ledger := updateDepositStatus s.ledger d_idx .Quarantined }
 
-  /-- Tick: time advances. -/
-  | tick (s : SystemState PropLike Standard ErrorModel Provenance) (t' : Time) :
+  /-- Tick: time advances. Clock is monotone: t' must be ≥ s.clock. -/
+  | tick (s : SystemState PropLike Standard ErrorModel Provenance) (t' : Time)
+      (h_mono : s.clock ≤ t') :
       Step s .Tick { s with clock := t' }
 
-  /-- Revoke: deposit removed from circulation. -/
-  | revoke (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat)
+  /-- Revoke: deposit removed from circulation.
+
+      Precondition: Quarantined status. Agent and bubble recorded for attribution.
+      Authorization is an agent-level concern external to the bank's LTS. -/
+  | revoke (s : SystemState PropLike Standard ErrorModel Provenance)
+      (a : Agent) (B : Bubble) (d_idx : Nat)
       (h_quarantined : isQuarantined s d_idx) :
-      Step s (.Revoke d_idx)
+      Step s (.Revoke a B d_idx)
         { s with ledger := updateDepositStatus s.ledger d_idx .Revoked }
 
   /-- Repair: quarantined deposit re-enters as Candidate.
@@ -535,43 +444,27 @@ inductive Step : SystemState PropLike Standard ErrorModel Provenance →
       patching a claim does not bypass re-acceptance. The repair
       operator addresses a specific field but the deposit still
       must pass through Candidate status.
-
-      Precondition: deposit must be Quarantined. -/
+      Precondition: deposit must be Quarantined. Agent and bubble recorded for attribution. -/
   | repair (s : SystemState PropLike Standard ErrorModel Provenance)
-      (d_idx : Nat) (f : Field)
+      (a : Agent) (B : Bubble) (d_idx : Nat) (f : Field)
       (h_quarantined : isQuarantined s d_idx) :
-      Step s (.Repair d_idx f)
+      Step s (.Repair a B d_idx f)
         { s with ledger := updateDepositStatus s.ledger d_idx .Candidate }
 
   /-- Promote: bank operator advances a Candidate deposit to Deposited (live).
 
-      Only an authorized bank operator (hasBankAuthority) can run this step.
-      The deposit must be in Candidate status; after this step it is Deposited
-      and live in the bank. This is the only Step constructor that can produce
-      a .Deposited status entry — the formal basis of the bank authority theorem.
+      Along with `submit_bridged`, one of two Step constructors that can produce
+      a `.Deposited` entry. The deposit must be in Candidate status; after this
+      step it is Deposited and live in the bank.
 
       Implementations may use multi-stage internal validation pipelines between
       Candidate and Deposited; this step represents the minimal architectural
-      boundary at which a deposit becomes live. -/
+      boundary at which a deposit becomes live. Agent and bubble recorded for attribution. -/
   | promote (s : SystemState PropLike Standard ErrorModel Provenance)
       (a : Agent) (B : Bubble) (d_idx : Nat)
-      (h_auth : hasBankAuthority s a B)
       (h_candidate : isCandidate s d_idx) :
       Step s (.Promote a B d_idx)
         { s with ledger := updateDepositStatus s.ledger d_idx .Deposited }
-
-  /-- Inspect: bank authority agent reads a Candidate deposit.
-      Bank operators need to access Candidate deposits to promote them —
-      no agent can verify a deposit they cannot read. State unchanged
-      (inspection is non-destructive).
-      Preconditions: bank authority for the bubble, current timestamp,
-      Candidate status. -/
-  | inspect (s : SystemState PropLike Standard ErrorModel Provenance)
-      (a : Agent) (B : Bubble) (d_idx : Nat)
-      (h_auth : hasBankAuthority s a B)
-      (h_current : isCurrentDeposit s d_idx)
-      (h_pre : isCandidate s d_idx) :
-      Step s (.Inspect a B d_idx) s
 
 /-! ## Ladder Invariants
 
@@ -621,9 +514,9 @@ inductive Trace : SystemState PropLike Standard ErrorModel Provenance →
 /-- Is an action a "revision action" (Challenge or Revoke)?
     These are the actions that enable self-correction. -/
 def Action.isRevision : Action PropLike Standard ErrorModel Provenance Reason Evidence → Bool
-  | .Challenge _ => true
-  | .Revoke _    => true
-  | _            => false
+  | .Challenge _ _ _ => true
+  | .Revoke _ _ _    => true
+  | _                => false
 
 /-- Does a trace contain any revision action? -/
 def Trace.hasRevision : Trace (Reason := Reason) (Evidence := Evidence) s s' → Bool
@@ -726,8 +619,8 @@ theorem List.get?_some_lt' {α : Type u} (l : List α) (i : Nat) (x : α)
     Only Step.revoke sets status to Revoked.
 
     The key insight is:
-    - Submit/Export append elements, so existing indices unchanged
-    - New elements have status = Candidate ≠ Revoked
+    - Submit appends elements (Candidate or Deposited), so existing indices unchanged
+    - New elements have status ≠ Revoked
     - Withdraw/Tick don't modify ledger
     - Challenge/Revoke are revision actions (ruled out by h_not_rev) -/
 theorem step_non_revision_preserves_non_revoked
@@ -740,7 +633,7 @@ theorem step_non_revision_preserves_non_revoked
     ∀ d, s'.ledger.get? d_idx = some d → d.status ≠ .Revoked := by
   intro d hd h_status
   cases h_step with
-  | submit _ d_new _ =>
+  | submit _ d_new =>
     -- Submit appends [{ d_new with status := .Candidate }]
     -- s'.ledger = s.ledger ++ [{ d_new with status := .Candidate }]
     -- Case split: d_idx < s.ledger.length or d_idx = s.ledger.length
@@ -769,80 +662,44 @@ theorem step_non_revision_preserves_non_revoked
       cases hd
       -- d.status = Candidate ≠ Revoked
       exact DepositStatus.noConfusion h_status
-  | withdraw _ _ _ _ _ _ =>
+  | submit_bridged _ d_new _ =>
+    -- Submit_bridged appends [{ d_new with status := .Deposited }]
+    simp only at hd
+    by_cases h_in_orig : d_idx < s.ledger.length
+    · have h_eq : (s.ledger ++ [{ d_new with status := .Deposited }]).get? d_idx =
+          s.ledger.get? d_idx :=
+        List.get?_append_left' s.ledger _ d_idx h_in_orig
+      rw [h_eq] at hd
+      exact h_not_revoked d hd h_status
+    · have h_len : d_idx ≥ s.ledger.length := Nat.ge_of_not_lt h_in_orig
+      have h_idx_bound : d_idx < s.ledger.length + 1 := by
+        have := List.get?_some_lt' _ d_idx d hd
+        simp only [List.length_append, List.length] at this
+        exact this
+      have h_idx_eq : d_idx = s.ledger.length := Nat.le_antisymm (Nat.le_of_lt_succ h_idx_bound) h_len
+      have h_get_new : (s.ledger ++ [{ d_new with status := .Deposited }]).get? s.ledger.length =
+          some { d_new with status := .Deposited } := by
+        induction s.ledger with
+        | nil => rfl
+        | cons _head tail ih => simp [List.get?, ih]
+      rw [h_idx_eq] at hd
+      rw [h_get_new] at hd
+      cases hd
+      -- d.status = Deposited ≠ Revoked
+      exact DepositStatus.noConfusion h_status
+  | withdraw _ _ _ _ =>
     -- Withdraw doesn't change ledger at all
     exact h_not_revoked d hd h_status
-  | inspect _ _ _ _ _ _ =>
-    -- Inspect doesn't change ledger
-    exact h_not_revoked d hd h_status
-  | export_with_bridge B1 B2 d_export_idx _ _ _ =>
-    -- Export appends via addToNewBubble; similar to Submit
-    simp only at hd
-    unfold addToNewBubble at hd
-    -- addToNewBubble either appends or leaves unchanged
-    split at hd
-    · rename_i d_export _h_get_export
-      by_cases h_in_orig : d_idx < s.ledger.length
-      · have h_eq : (s.ledger ++ [{ d_export with bubble := B2, status := .Candidate }]).get? d_idx =
-            s.ledger.get? d_idx :=
-          List.get?_append_left' s.ledger _ d_idx h_in_orig
-        rw [h_eq] at hd
-        exact h_not_revoked d hd h_status
-      · have h_len : d_idx ≥ s.ledger.length := Nat.ge_of_not_lt h_in_orig
-        have h_idx_bound : d_idx < s.ledger.length + 1 := by
-          have := List.get?_some_lt' _ d_idx d hd
-          simp only [List.length_append, List.length] at this
-          exact this
-        have h_idx_eq : d_idx = s.ledger.length := Nat.le_antisymm (Nat.le_of_lt_succ h_idx_bound) h_len
-        have h_get_new : (s.ledger ++ [{ d_export with bubble := B2, status := .Candidate }]).get? s.ledger.length =
-            some { d_export with bubble := B2, status := .Candidate } := by
-          induction s.ledger with
-          | nil => rfl
-          | cons _head tail ih => simp [List.get?, ih]
-        rw [h_idx_eq] at hd
-        rw [h_get_new] at hd
-        cases hd
-        exact DepositStatus.noConfusion h_status
-    · -- addToNewBubble returns unchanged ledger when get? fails
-      exact h_not_revoked d hd h_status
-  | export_revalidate B1 B2 d_export_idx _ _ _ =>
-    -- Same logic as export_with_bridge
-    simp only at hd
-    unfold addToNewBubble at hd
-    split at hd
-    · rename_i d_export _h_get_export
-      by_cases h_in_orig : d_idx < s.ledger.length
-      · have h_eq : (s.ledger ++ [{ d_export with bubble := B2, status := .Candidate }]).get? d_idx =
-            s.ledger.get? d_idx :=
-          List.get?_append_left' s.ledger _ d_idx h_in_orig
-        rw [h_eq] at hd
-        exact h_not_revoked d hd h_status
-      · have h_len : d_idx ≥ s.ledger.length := Nat.ge_of_not_lt h_in_orig
-        have h_idx_bound : d_idx < s.ledger.length + 1 := by
-          have := List.get?_some_lt' _ d_idx d hd
-          simp only [List.length_append, List.length] at this
-          exact this
-        have h_idx_eq : d_idx = s.ledger.length := Nat.le_antisymm (Nat.le_of_lt_succ h_idx_bound) h_len
-        have h_get_new : (s.ledger ++ [{ d_export with bubble := B2, status := .Candidate }]).get? s.ledger.length =
-            some { d_export with bubble := B2, status := .Candidate } := by
-          induction s.ledger with
-          | nil => rfl
-          | cons _head tail ih => simp [List.get?, ih]
-        rw [h_idx_eq] at hd
-        rw [h_get_new] at hd
-        cases hd
-        exact DepositStatus.noConfusion h_status
-    · exact h_not_revoked d hd h_status
-  | challenge _ _ _ =>
+  | challenge _ _ _ _ _ =>
     -- Challenge is revision, but h_not_rev rules it out
     simp only [Action.isRevision] at h_not_rev
-  | tick _ =>
+  | tick _ _ =>
     -- Tick only changes clock, ledger unchanged
     exact h_not_revoked d hd h_status
-  | revoke _ _ =>
+  | revoke _ _ _ _ =>
     -- Revoke is revision, but h_not_rev rules it out
     simp only [Action.isRevision] at h_not_rev
-  | repair d_repair_idx _ h_quarantined =>
+  | repair _ _ d_repair_idx _ h_quarantined =>
     -- Repair: updateDepositStatus to Candidate
     -- Case split on whether d_idx is the repaired index
     simp only at hd
@@ -867,7 +724,7 @@ theorem step_non_revision_preserves_non_revoked
         get?_updateDepositStatus_ne s.ledger d_repair_idx d_idx .Candidate hne
       rw [h_get_unchanged] at hd
       exact h_not_revoked d hd h_status
-  | promote _ _ d_p_idx _ h_cand =>
+  | promote _ _ d_p_idx h_cand =>
     -- Promote: updateDepositStatus to Deposited at d_p_idx; .Deposited ≠ .Revoked
     simp only at hd
     cases Nat.decEq d_idx d_p_idx with
@@ -935,38 +792,28 @@ theorem step_no_revision_preserves_deposited
   let ⟨d, h_get, h_status⟩ := h_dep
   have h_in_orig : d_idx < s.ledger.length := List.get?_some_lt' s.ledger d_idx d h_get
   cases h_step with
-  | submit _ d_new _ =>
+  | submit _ d_new =>
     -- s'.ledger = s.ledger ++ [{ d_new with status := .Candidate }]
     refine ⟨d, ?_, h_status⟩
     exact (List.get?_append_left' s.ledger _ d_idx h_in_orig).trans h_get
-  | withdraw _ _ _ _ _ _ =>
+  | submit_bridged _ d_new _ =>
+    -- s'.ledger = s.ledger ++ [{ d_new with status := .Deposited }]
+    -- Existing deposit at d_idx is unchanged (append only)
+    refine ⟨d, ?_, h_status⟩
+    exact (List.get?_append_left' s.ledger _ d_idx h_in_orig).trans h_get
+  | withdraw _ _ _ _ =>
     -- Withdraw: s' = s (state unchanged)
     exact ⟨d, h_get, h_status⟩
-  | inspect _ _ _ _ _ _ =>
-    -- Inspect: s' = s (state unchanged)
-    exact ⟨d, h_get, h_status⟩
-  | export_with_bridge B1exp B2exp d_export_idx h_dep_exp _ _ =>
-    -- s'.ledger = addToNewBubble s.ledger d_export_idx B2exp (some branch)
-    -- Unfold in goal and reduce using h_get_exp (same pattern as export_creates_visibility)
-    let ⟨d_exp, h_get_exp, _⟩ := h_dep_exp
-    unfold isDeposited addToNewBubble
-    simp only [h_get_exp]
-    exact ⟨d, (List.get?_append_left' s.ledger _ d_idx h_in_orig).trans h_get, h_status⟩
-  | export_revalidate B1exp B2exp d_export_idx h_dep_exp _ _ =>
-    let ⟨d_exp, h_get_exp, _⟩ := h_dep_exp
-    unfold isDeposited addToNewBubble
-    simp only [h_get_exp]
-    exact ⟨d, (List.get?_append_left' s.ledger _ d_idx h_in_orig).trans h_get, h_status⟩
-  | challenge _ _ _ =>
+  | challenge _ _ _ _ _ =>
     -- Challenge is isRevision = true; contradicts h_not_rev
     simp only [Action.isRevision] at h_not_rev
-  | tick _ =>
+  | tick _ _ =>
     -- Tick: only clock changes; s'.ledger = s.ledger
     exact ⟨d, h_get, h_status⟩
-  | revoke _ _ =>
+  | revoke _ _ _ _ =>
     -- Revoke is isRevision = true; contradicts h_not_rev
     simp only [Action.isRevision] at h_not_rev
-  | repair d_repair_idx _ h_quarantined =>
+  | repair _ _ d_repair_idx _ h_quarantined =>
     -- Repair changes d_repair_idx from Quarantined → Candidate.
     -- Case: d_idx = d_repair_idx → the same deposit is both Deposited (h_dep)
     --   and Quarantined (h_quarantined), which is a contradiction.
@@ -985,7 +832,7 @@ theorem step_no_revision_preserves_deposited
           s.ledger.get? d_idx :=
         get?_updateDepositStatus_ne s.ledger d_repair_idx d_idx .Candidate hne
       exact ⟨d, h_unchanged ▸ h_get, h_status⟩
-  | promote _ _ d_p_idx _ h_cand =>
+  | promote _ _ d_p_idx h_cand =>
     -- Promote changes d_p_idx from Candidate → Deposited.
     -- Case: d_idx = d_p_idx → deposit was both Deposited (h_dep) and Candidate
     --   (h_cand), which is a contradiction.
@@ -1162,15 +1009,16 @@ def Legible
     (∃ d, s.ledger.get? d_idx = some d ∧ BrokenField d f) ∧
     HasRepairPath s d_idx f
 
-/-- A deposit "has S/E/V factorization" if its header contains
-    distinguishable S, E, V components — true by construction in this
-    model since Header includes S (standard), E (error), V (provenance). -/
+/-- Structural fact: all Deposits in this model have S/E/V factorization by
+    construction, because Header includes independent S, E, V fields.
+
+    NOTE: This definition is True for all Deposits in this model and is not
+    a discriminating predicate. It cannot be used to derive diagnosability or
+    field localizability -- those require `has_strong_SEV_factorization`, which
+    is a caller-supplied constraint on a BrokenField predicate. See below. -/
 def has_SEV_factorization
     (_d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
-  -- The deposit has a header with S, E, V fields that can be
-  -- independently challenged. In our model, this is true by construction
-  -- since Header includes S (standard), E (error), V (provenance).
-  True  -- Structurally true for all Deposits in our model
+  True
 
 /-- Factorization enables field identification.
 
@@ -1269,11 +1117,13 @@ theorem strong_sev_localizes_to_core_fields
 /-! ## Trace Metrics and Convergence
 
 Convergence is the property that disputes eventually resolve.
-Key insight: Headers enable field-specific challenges, which
-enable targeted repairs, which reduce resolution time.
-
-Without headers (stripped claims), challenges cannot specify
-which field is broken, so repair attempts are unfocused. -/
+Key insight: Headers make the suspected field *checkable* against
+the deposit's actual S/E/V structure (`depositHasHeader` ↔ `field_checkable`).
+Without headers, challenges can still name a field (all_challenges_field_specific
+is a pure Field-enum tautology), but the named field cannot be verified
+against deposit content — repair attempts are structurally unfocused.
+Headers are what make `field_checkable` load-bearing, not what create
+field-specificity in the first place. -/
 
 /-- Length of a trace (number of steps). -/
 def Trace.length : Trace (Reason := Reason) (Evidence := Evidence) s s' → Nat
@@ -1314,13 +1164,18 @@ def ConvergenceWitness.time
   w.trace.length
 
 /-- A challenge is "field-specific" if it targets a specific field.
-    All challenges in our model are field-specific by construction
-    (Challenge.suspected : Field). -/
+
+    NOTE: This is a pure `Field`-enum tautology -- `challenge_is_field_specific c`
+    holds for every `c` because `Field` has exactly these six constructors. It does
+    NOT imply any header-dependency. Headers are load-bearing for bridged submission
+    (agent presents provenance); challenge field-specificity is independent of headers. -/
 def challenge_is_field_specific
     (c : EpArch.Challenge PropLike Reason Evidence) : Prop :=
   c.suspected ∈ [.S, .E, .V, .τ, .redeemability, .acl]
 
-/-- All challenges are field-specific by construction. -/
+/-- All challenges are field-specific by construction.
+
+    Proof: pure Field-enum exhaustion. This holds independently of headers. -/
 theorem all_challenges_field_specific
     (c : EpArch.Challenge PropLike Reason Evidence) :
     challenge_is_field_specific c := by
@@ -1332,46 +1187,6 @@ theorem all_challenges_field_specific
   | τ => exact List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _)))
   | redeemability => exact List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _))))
   | acl => exact List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _)))))
-
-/-- Headers enable field-specific diagnosis.
-
-    If a deposit has its header preserved, then any challenge against it
-    can be field-specific (because the header contains the S/E/V structure). -/
-theorem headers_enable_field_diagnosis
-    (s : SystemState PropLike Standard ErrorModel Provenance)
-    (d_idx : Nat)
-    (_h_header : depositHasHeader s d_idx)
-    (c : EpArch.Challenge PropLike Reason Evidence) :
-    challenge_is_field_specific c := by
-  exact all_challenges_field_specific c
-
-/-- Field-specific challenges enable targeted repair.
-
-    A challenge that specifies the broken field enables repair
-    that targets just that field, rather than "try everything". -/
-def enables_targeted_repair
-    (c : EpArch.Challenge PropLike Reason Evidence) : Prop :=
-  challenge_is_field_specific c
-
-/-- HEADER-CONVERGENCE LINK:
-    Headers enable faster convergence by enabling field-specific challenges.
-
-    The argument:
-    1. Headers → field-specific diagnosis possible
-    2. Field-specific diagnosis → targeted repair possible
-    3. Targeted repair → fewer steps to resolution
-
-    This is formalized as: all challenges in our model are field-specific,
-    so headers enable us to *use* that field-specificity for diagnosis. -/
-theorem header_enables_efficient_resolution
-    (s : SystemState PropLike Standard ErrorModel Provenance)
-    (d_idx : Nat)
-    (_h_header : depositHasHeader s d_idx)
-    (_h_deposited : isDeposited s d_idx)
-    (c : EpArch.Challenge PropLike Reason Evidence) :
-    -- Any challenge is field-specific
-    challenge_is_field_specific c := by
-  exact all_challenges_field_specific c
 
 -- NOTE: `stripped_challenges_lack_grounding` was moved to EpArch.Theorems
 -- as `bridge_stripped_ungrounded`.
@@ -1426,9 +1241,9 @@ theorem all_traces_preserve_invariant
               Inv s → Inv s')
     (s0 : SystemState PropLike Standard ErrorModel Provenance)
     (h_init : Inv s0) :
-    ∀ s', (∃ _trace : Trace (Reason := Reason) (Evidence := Evidence) s0 s', True) → Inv s' := by
-  intro s' ⟨_trace, _⟩
-  exact generic_invariant_preservation Inv h_step s0 s' _trace h_init
+    ∀ s', Trace (Reason := Reason) (Evidence := Evidence) s0 s' → Inv s' := by
+  intro s' trace
+  exact generic_invariant_preservation Inv h_step s0 s' trace h_init
 
 
 /-- Invariant 1: All deposits in the ledger have valid status.
@@ -1436,27 +1251,21 @@ theorem all_traces_preserve_invariant
 def inv_valid_status (s : SystemState PropLike Standard ErrorModel Provenance) : Prop :=
   ∀ d, d ∈ s.ledger → d.status ∈ [.Deposited, .Candidate, .Quarantined, .Revoked]
 
-/-- Invariant 2: ACL entries reference valid deposit indices.
-    (No dangling ACL references) -/
-def inv_acl_indices_valid (s : SystemState PropLike Standard ErrorModel Provenance) : Prop :=
-  ∀ entry, entry ∈ s.acl_table → entry.deposit_id < s.ledger.length
-
-/-- Invariant 3: Trust bridges are symmetric.
-    (If B1 trusts B2, B2 trusts B1) -/
-def inv_bridges_symmetric (s : SystemState PropLike Standard ErrorModel Provenance) : Prop :=
-  ∀ B1 B2, (B1, B2) ∈ s.trust_bridges → (B2, B1) ∈ s.trust_bridges
-
 /-- Invariant 4: Bubbles referenced by deposits exist.
     (No deposits in unknown bubbles) -/
 def inv_bubbles_exist (s : SystemState PropLike Standard ErrorModel Provenance) : Prop :=
   ∀ d, d ∈ s.ledger → d.bubble ∈ s.bubbles
 
 /-- Invariant 5: Revoked deposits stay revoked.
-    (Revocation is terminal — no resurrection) -/
+    No Step transition can change a Revoked deposit to any other status.
+    Proved by case analysis: updateDepositStatus only fires with a precondition
+    (isDeposited, isQuarantined, or isCandidate) that contradicts .Revoked. -/
 def inv_revoked_terminal (s : SystemState PropLike Standard ErrorModel Provenance) : Prop :=
-  ∀ d, d ∈ s.ledger → d.status = .Revoked →
-    -- The deposit cannot transition to any other status
-    True  -- This is enforced by Step having no constructor that changes Revoked
+  ∀ (R E : Type u), ∀ d_idx d, s.ledger.get? d_idx = some d → d.status = .Revoked →
+    ∀ (s' : SystemState PropLike Standard ErrorModel Provenance)
+      (a : Action PropLike Standard ErrorModel Provenance R E),
+      Step (Reason := R) (Evidence := E) s a s' →
+      ∃ d', s'.ledger.get? d_idx = some d' ∧ d'.status = .Revoked
 
 /-- Invariant 6: Quarantine requires prior Deposited status.
     (Only active deposits can be challenged) -/
@@ -1467,8 +1276,8 @@ def inv_quarantine_from_deposited (_s : SystemState PropLike Standard ErrorModel
 /-- Combined well-formedness invariant. -/
 def WellFormedState (s : SystemState PropLike Standard ErrorModel Provenance) : Prop :=
   inv_valid_status s ∧
-  inv_acl_indices_valid s ∧
-  inv_bubbles_exist s
+  inv_bubbles_exist s ∧
+  inv_revoked_terminal s
 
 /-- Valid status is preserved by submit.
     New deposits enter as Candidate, which is a valid status. -/
@@ -1493,6 +1302,27 @@ theorem submit_preserves_valid_status
     rw [h_new]
     -- Candidate is in [.Deposited, .Candidate, .Quarantined, .Revoked]
     exact List.Mem.tail _ (List.Mem.head _)
+
+/-- Valid status is preserved by submit_bridged.
+    New deposits enter as Deposited, which is a valid status. -/
+theorem submit_bridged_preserves_valid_status
+    (s : SystemState PropLike Standard ErrorModel Provenance)
+    (d : Deposit PropLike Standard ErrorModel Provenance)
+    (h_inv : inv_valid_status s) :
+    inv_valid_status { s with ledger := s.ledger ++ [{ d with status := .Deposited }] } := by
+  unfold inv_valid_status at *
+  intro d' hd'
+  have h_mem := mem_append_iff d' s.ledger [{ d with status := .Deposited }]
+  rw [h_mem] at hd'
+  cases hd' with
+  | inl h_old =>
+    exact h_inv d' h_old
+  | inr h_new =>
+    have h_eq := mem_singleton d' { d with status := DepositStatus.Deposited }
+    rw [h_eq] at h_new
+    rw [h_new]
+    -- Deposited is in [.Deposited, .Candidate, .Quarantined, .Revoked]
+    exact List.Mem.head _
 
 /-- Valid status is preserved by withdraw (state unchanged). -/
 theorem withdraw_preserves_valid_status
@@ -1622,35 +1452,6 @@ theorem promote_preserves_valid_status
     -- Deposited is in [.Deposited, .Candidate, .Quarantined, .Revoked]
     exact List.Mem.head _
 
-/-- Export preserves valid status (appends Candidate). -/
-theorem export_preserves_valid_status
-    (s : SystemState PropLike Standard ErrorModel Provenance)
-    (d_idx : Nat) (B2 : Bubble)
-    (h_inv : inv_valid_status s) :
-    inv_valid_status { s with ledger := addToNewBubble s.ledger d_idx B2 } := by
-  unfold inv_valid_status addToNewBubble at *
-  intro d hd
-  -- addToNewBubble either returns original ledger (if idx invalid)
-  -- or appends a Candidate deposit
-  split at hd
-  · next d_orig _h_get =>
-    -- Appended case: ledger ++ [{ d_orig with bubble := B2, status := .Candidate }]
-    have h_mem := mem_append_iff d s.ledger [{ d_orig with bubble := B2, status := DepositStatus.Candidate }]
-    rw [h_mem] at hd
-    cases hd with
-    | inl h_old =>
-      -- d was in original ledger
-      exact h_inv d h_old
-    | inr h_new =>
-      -- d is the new exported deposit
-      have h_eq := mem_singleton d { d_orig with bubble := B2, status := DepositStatus.Candidate }
-      rw [h_eq] at h_new
-      rw [h_new]
-      -- Candidate is in [.Deposited, .Candidate, .Quarantined, .Revoked]
-      exact List.Mem.tail _ (List.Mem.head _)
-  · -- Original ledger case (no export happened)
-    exact h_inv d hd
-
 /-- STEP PRESERVATION THEOREM:
     Valid status is preserved by all Step transitions. -/
 theorem step_preserves_valid_status
@@ -1661,25 +1462,21 @@ theorem step_preserves_valid_status
     inv_valid_status s' := by
   -- Case analysis on the step type
   cases h_step
-  case submit a d _ =>
+  case submit a d =>
     exact submit_preserves_valid_status s d h_inv
+  case submit_bridged a d _ =>
+    exact submit_bridged_preserves_valid_status s d h_inv
   case withdraw =>
     exact h_inv
-  case inspect =>
-    exact h_inv
-  case export_with_bridge B1 B2 d_idx _ _ _ =>
-    exact export_preserves_valid_status s d_idx B2 h_inv
-  case export_revalidate B1 B2 d_idx _ _ _ =>
-    exact export_preserves_valid_status s d_idx B2 h_inv
-  case challenge c d_idx _ =>
+  case challenge _ _ _ d_idx _ =>
     exact challenge_preserves_valid_status s d_idx h_inv
-  case tick t' =>
+  case tick t' _ =>
     exact tick_preserves_valid_status s t' h_inv
-  case revoke d_idx _ =>
+  case revoke _ _ d_idx _ =>
     exact revoke_preserves_valid_status s d_idx h_inv
-  case repair d_idx f _ =>
+  case repair _ _ d_idx f _ =>
     exact repair_preserves_valid_status s d_idx h_inv
-  case promote a_p B_p d_p_idx _ _ =>
+  case promote a_p B_p d_p_idx _ =>
     exact promote_preserves_valid_status s d_p_idx h_inv
 
 /-- TRACE PRESERVATION:
@@ -1696,16 +1493,19 @@ theorem trace_preserves_valid_status
     have h_mid := step_preserves_valid_status _ _ a h_step h_inv
     exact ih h_mid
 
-/-- The separation invariant: traction ≠ authorization.
+/-- The separation invariant: traction vs. authorization are distinct concerns.
 
-    This is already enforced by the ACL/withdrawal gate structure:
-    - Traction = having the deposit (isDeposited)
-    - Authorization = having ACL permission (hasACLPermission)
+    In the abstract LTS, Step.withdraw requires only isDeposited (traction).
+    Authorization is an agent-level concern outside the bank's model.
 
-    These are checked *separately* in Step.withdraw. -/
+    - Traction = having the deposit (isDeposited) — bank-layer precondition
+    - Authorization = agent verifies identity externally; not a bank gate
+
+    These are separated: the bank records structural deposit facts; agents
+    carry credentials to the interaction. -/
 def inv_separation (_s : SystemState PropLike Standard ErrorModel Provenance) : Prop :=
-  -- For any withdrawal, both traction and authorization are required independently
-  -- This is structural: Step.withdraw has both h_deposited and h_acl as preconditions
+  -- Traction (isDeposited) is the bank's structural gate; authorization is agent-level.
+  -- This is structural: Step.withdraw requires isDeposited as its sole precondition.
   True
 
 /-- Separation is preserved by construction of Step. -/
@@ -1718,13 +1518,14 @@ theorem step_preserves_separation
   unfold inv_separation at *
   trivial
 
-/-- Auditability invariant: exports require headers.
+/-- Auditability invariant: header provenance is carried by the Deposit struct itself.
 
-    This is enforced by Step.export_with_bridge and Step.export_revalidate
-    both requiring depositHasHeader as a precondition. -/
+    Export is not a bank primitive (see Step.submit_bridged for the bridge path),
+    so there is no longer a Step-level gate on depositHasHeader. Auditability in the
+    sense of traceable provenance is upheld by the Header fields (S, E, V, tau)
+    that every Deposit carries. This definition is retained as a documentation anchor. -/
 def inv_auditability (_s : SystemState PropLike Standard ErrorModel Provenance) : Prop :=
-  -- Exports only occur for deposits with headers
-  -- This is structural: Step.export_* require h_header
+  -- Header provenance is structural: every Deposit.h carries S/E/V/tau fields.
   True
 
 /-- Auditability is preserved by construction of Step. -/
@@ -1739,26 +1540,17 @@ theorem step_preserves_auditability
 
 /-! ## Key Lemmas for Linking Axioms -/
 
-/-- Withdrawal requires all three gates.
-    This grounds `withdrawal_gates` from EpArch.Theorems. -/
-theorem withdrawal_requires_three_gates
+/-- Withdrawal requires Deposited status.
+    This grounds `withdrawal_gates` from EpArch.Theorems.
+    Authorization is an agent-level concern; the bank records that withdrawal happened. -/
+theorem withdrawal_requires_deposited
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (a : Agent) (B : Bubble) (d_idx : Nat)
     (h_step : Step (Reason := Reason) (Evidence := Evidence)
       s (.Withdraw a B d_idx) s') :
-    hasACLPermission s a B d_idx ∧ isCurrentDeposit s d_idx ∧ isDeposited s d_idx := by
+    isDeposited s d_idx := by
   cases h_step
-  refine ⟨?_, ?_, ?_⟩ <;> assumption
-
-/-- Export requires header preservation.
-    This grounds `export_requires_headers` from EpArch.Minimality. -/
-theorem export_requires_header
-    (s s' : SystemState PropLike Standard ErrorModel Provenance)
-    (B1 B2 : Bubble) (d_idx : Nat)
-    (h_step : Step (Reason := Reason) (Evidence := Evidence)
-      s (.Export B1 B2 d_idx) s') :
-    depositHasHeader s d_idx := by
-  cases h_step <;> assumption
+  assumption
 
 /-- Challenge requires field localization.
     This grounds `challenge_requires_field_localization` from EpArch.Invariants. -/
@@ -1773,21 +1565,28 @@ theorem challenge_has_field_localization
     This ensures the repair loop requires going through Challenge first. -/
 theorem repair_requires_quarantine
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
-    (d_idx : Nat) (f : Field)
+    (a : Agent) (B : Bubble) (d_idx : Nat) (f : Field)
     (h_step : Step (Reason := Reason) (Evidence := Evidence)
-      s (.Repair d_idx f) s') :
+      s (.Repair a B d_idx f) s') :
     isQuarantined s d_idx := by
   cases h_step
   assumption
 
-/-- Repair targets a specific field: the repair action includes field localization. -/
-theorem repair_targets_field
+/-- Repair records the targeted field: the action carries the field identity
+    and the repaired ledger transitions the deposit to Candidate status.
+
+    Theorem shape: given a Step.repair, the deposit at d_idx existed in the
+    pre-state with Quarantined status, and the post-state ledger is
+    updateDepositStatus applied at d_idx with .Candidate.
+    Proof: cases h_step; isQuarantined witness from h_quarantined; rfl for ledger. -/
+theorem repair_action_carries_field
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
-    (d_idx : Nat) (f : Field)
-    (_h_step : Step (Reason := Reason) (Evidence := Evidence)
-      s (.Repair d_idx f) s') :
-    ∃ f' : Field, f' = f := by
-  exact ⟨f, rfl⟩
+    (a : Agent) (B : Bubble) (d_idx : Nat) (f : Field)
+    (h_step : Step (Reason := Reason) (Evidence := Evidence)
+      s (.Repair a B d_idx f) s') :
+    (∃ d, s.ledger.get? d_idx = some d ∧ d.status = .Quarantined) ∧
+    s'.ledger = updateDepositStatus s.ledger d_idx .Candidate :=
+  ⟨repair_requires_quarantine s s' a B d_idx f h_step, by cases h_step; rfl⟩
 
 /-- Repair produces Candidate status: repaired deposits must be revalidated.
 
@@ -1796,9 +1595,9 @@ theorem repair_targets_field
     This grounds supersession_requires_validation operationally. -/
 theorem repair_produces_candidate
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
-    (d_idx : Nat) (f : Field)
+    (a : Agent) (B : Bubble) (d_idx : Nat) (f : Field)
     (h_step : Step (Reason := Reason) (Evidence := Evidence)
-      s (.Repair d_idx f) s') :
+      s (.Repair a B d_idx f) s') :
     s'.ledger = updateDepositStatus s.ledger d_idx .Candidate := by
   cases h_step
   rfl
@@ -1816,9 +1615,9 @@ theorem repair_produces_candidate
     means they must go through the bubble's Accept function again. -/
 theorem repair_resets_to_candidate
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
-    (d_idx : Nat) (f : Field)
+    (a : Agent) (B : Bubble) (d_idx : Nat) (f : Field)
     (h_step : Step (Reason := Reason) (Evidence := Evidence)
-      s (.Repair d_idx f) s') :
+      s (.Repair a B d_idx f) s') :
     ∀ d, s'.ledger.get? d_idx = some d →
       d.status = .Candidate ∨
       (∃ d_orig, s.ledger.get? d_idx = some d_orig ∧ d.status = d_orig.status) := by
@@ -1850,10 +1649,6 @@ theorem repair_resets_to_candidate
 def sys_has_bubbles (s : SystemState PropLike Standard ErrorModel Provenance) : Prop :=
   s.bubbles.length > 0 ∧ ∀ d, d ∈ s.ledger → d.bubble ∈ s.bubbles
 
-/-- Operational definition: system has trust bridges if bridge list is used. -/
-def sys_has_trust_bridges (s : SystemState PropLike Standard ErrorModel Provenance) : Prop :=
-  s.trust_bridges.length > 0
-
 /-- Operational definition: system has headers if deposits have preserved headers. -/
 def sys_has_headers (s : SystemState PropLike Standard ErrorModel Provenance) : Prop :=
   ∀ d, d ∈ s.ledger → header_preserved d
@@ -1861,6 +1656,91 @@ def sys_has_headers (s : SystemState PropLike Standard ErrorModel Provenance) : 
 /-- Operational definition: system has revocation if quarantine → revoke path exists. -/
 def sys_has_revocation (s : SystemState PropLike Standard ErrorModel Provenance) : Prop :=
   ∃ d_idx, isQuarantined s d_idx
+
+/-! ## Revocation-Terminal Invariant Proofs -/
+
+/-- Helper: a single Step from s cannot change the ledger entry at d_idx
+    if that entry has status .Revoked.
+
+    Proof strategy: cases on the Step constructor.
+    - submit/submit_bridged: appends; original index preserved by get?_append_left.
+    - withdraw/tick: ledger unchanged or clock-only change.
+    - challenge/revoke/repair/promote: updateDepositStatus at some index idx';
+      if idx' = d_idx, the precondition (isDeposited/isQuarantined/isCandidate)
+      contradicts d.status = .Revoked; else get?_updateDepositStatus_ne. -/
+theorem revoked_stay_revoked_one_step
+    (s s' : SystemState PropLike Standard ErrorModel Provenance)
+    (a : Action PropLike Standard ErrorModel Provenance Reason Evidence)
+    (d_idx : Nat) (d : Deposit PropLike Standard ErrorModel Provenance)
+    (h_get : s.ledger.get? d_idx = some d)
+    (h_revoked : d.status = .Revoked)
+    (h_step : Step (Reason := Reason) (Evidence := Evidence) s a s') :
+    s'.ledger.get? d_idx = some d := by
+  cases h_step with
+  | submit =>
+    exact (get?_append_left s.ledger _ d_idx (get?_implies_lt _ _ _ h_get)).trans h_get
+  | submit_bridged =>
+    -- submit_bridged appends [{ d with status := .Deposited }]; existing indices preserved
+    exact (get?_append_left s.ledger _ d_idx (get?_implies_lt _ _ _ h_get)).trans h_get
+  | withdraw => exact h_get
+  | challenge _ _ c_var d_ch h_dep =>
+    cases Nat.decEq d_ch d_idx with
+    | isTrue heq =>
+      let ⟨d_dep, h_dep_get, h_dep_status⟩ := h_dep
+      rw [heq, h_get] at h_dep_get
+      simp only [Option.some.injEq] at h_dep_get
+      have h_status : d.status = .Deposited := by rw [h_dep_get]; exact h_dep_status
+      exact absurd (h_revoked.symm.trans h_status) (by decide)
+    | isFalse hne =>
+      exact (get?_updateDepositStatus_ne s.ledger d_ch d_idx .Quarantined (Ne.symm hne)).trans h_get
+  | tick t' _ => exact h_get
+  | revoke _ _ d_rev h_q =>
+    cases Nat.decEq d_rev d_idx with
+    | isTrue heq =>
+      let ⟨d_q, h_q_get, h_q_status⟩ := h_q
+      rw [heq, h_get] at h_q_get
+      simp only [Option.some.injEq] at h_q_get
+      have h_status : d.status = .Quarantined := by rw [h_q_get]; exact h_q_status
+      exact absurd (h_revoked.symm.trans h_status) (by decide)
+    | isFalse hne =>
+      exact (get?_updateDepositStatus_ne s.ledger d_rev d_idx .Revoked (Ne.symm hne)).trans h_get
+  | repair _ _ d_rep _ h_q =>
+    cases Nat.decEq d_rep d_idx with
+    | isTrue heq =>
+      let ⟨d_q, h_q_get, h_q_status⟩ := h_q
+      rw [heq, h_get] at h_q_get
+      simp only [Option.some.injEq] at h_q_get
+      have h_status : d.status = .Quarantined := by rw [h_q_get]; exact h_q_status
+      exact absurd (h_revoked.symm.trans h_status) (by decide)
+    | isFalse hne =>
+      exact (get?_updateDepositStatus_ne s.ledger d_rep d_idx .Candidate (Ne.symm hne)).trans h_get
+  | promote a_p B_p d_prom h_cand =>
+    cases Nat.decEq d_prom d_idx with
+    | isTrue heq =>
+      let ⟨d_c, h_c_get, h_c_status⟩ := h_cand
+      rw [heq, h_get] at h_c_get
+      simp only [Option.some.injEq] at h_c_get
+      have h_status : d.status = .Candidate := by rw [h_c_get]; exact h_c_status
+      exact absurd (h_revoked.symm.trans h_status) (by decide)
+    | isFalse hne =>
+      exact (get?_updateDepositStatus_ne s.ledger d_prom d_idx .Deposited (Ne.symm hne)).trans h_get
+
+/-- The revoked-terminal invariant is preserved by every Step.
+
+    Proof: the invariant says "any Revoked deposit in s stays Revoked after any
+    step from s." To show it holds in s' too, we take a Revoked deposit in s' and
+    show any step from s' also preserves it -- this follows directly from
+    `revoked_stay_revoked_one_step`, which does not depend on the prior history. -/
+theorem step_preserves_revoked_terminal
+    (s s' : SystemState PropLike Standard ErrorModel Provenance)
+    (a : Action PropLike Standard ErrorModel Provenance Reason Evidence)
+    (_h_step : Step (Reason := Reason) (Evidence := Evidence) s a s')
+    (_h_inv : inv_revoked_terminal s) :
+    inv_revoked_terminal s' := by
+  unfold inv_revoked_terminal
+  intro R E d_idx d h_get h_revoked s'' a'' h_step_s'
+  exact ⟨d, revoked_stay_revoked_one_step s' s'' a'' d_idx d h_get h_revoked h_step_s',
+        h_revoked⟩
 
 /-- Operational definition: system has bank if ledger is non-empty (shared records exist). -/
 def sys_has_bank (s : SystemState PropLike Standard ErrorModel Provenance) : Prop :=
@@ -1871,20 +1751,8 @@ def sys_has_bank (s : SystemState PropLike Standard ErrorModel Provenance) : Pro
 def sys_has_redeemability (s : SystemState PropLike Standard ErrorModel Provenance) : Prop :=
   ∀ d, d ∈ s.ledger → d.status = .Deposited → s.ledger.length > 0
 
-/-! ## Coordination Lemma (toward `coordination_requires_bank`) -/
-
-/-- If two agents successfully withdraw the same deposit, they consulted the same ledger.
-    This is the operational grounding for "coordination requires bank". -/
-theorem coordination_uses_shared_ledger
-    (s : SystemState PropLike Standard ErrorModel Provenance)
-    (a1 a2 : Agent) (B : Bubble) (d_idx : Nat)
-    (_h1_acl : hasACLPermission s a1 B d_idx)
-    (_h2_acl : hasACLPermission s a2 B d_idx)
-    (_h_current : isCurrentDeposit s d_idx)
-    (h_deposited : isDeposited s d_idx) :
-    -- Both agents refer to the same ledger entry
-    ∃ d, s.ledger.get? d_idx = some d := by
-  let ⟨d, hd, _⟩ := h_deposited
-  exact ⟨d, hd⟩
+-- `coordination_uses_shared_ledger` was removed: it dropped all meaningful premises
+-- and duplicated `isDeposited` trivially. The grounded version lives in
+-- `EpArch.Semantics.LinkingAxioms.grounded_coordination_requires_bank`.
 
 end EpArch.StepSemantics

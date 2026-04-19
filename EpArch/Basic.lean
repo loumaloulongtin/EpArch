@@ -68,8 +68,9 @@ inductive Bubble where
   deriving DecidableEq, Repr, Inhabited
 
 /-- Time / staleness axis for τ / TTL
-    Deposits have shelf life; τ tracks currentness.
-    Concretized as Nat to enable τ_valid proofs. -/
+    Deposits carry a τ field as an opaque validity token; implementations
+    decide its semantics (timestamp, epoch counter, bool, etc.).
+    Concretized as Nat for concrete model witnesses. -/
 abbrev Time : Type := Nat
 
 /-- Access control list (who can withdraw / rely on a deposit)

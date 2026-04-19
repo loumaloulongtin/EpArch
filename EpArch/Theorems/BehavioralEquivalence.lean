@@ -18,11 +18,11 @@ routes that apply to different input constructors:
     witnesses directly — so for those three cases the main equivalence theorem
     *uses* actual `Step` firings, not mere unfolding.
 
-  **Definitional route** (export):
-    `ExportRequest` falls back to `behavior_step_consistent`, which is a pure
-    definitional equality.  Export has no full ready-state witness because
-    `header_preserved` is opaque — it operates over abstract types and cannot be
-    reflected into `depositHasHeader` for concrete `Deposit Unit Unit Unit Unit`.
+  **Definitional route** (ExportRequest → TimeAdvanced):
+    `ExportRequest` maps to `.Tick` — cross-bubble transfer is an agent-level workflow
+    (Withdraw in B_src, agent carries the deposit, `Step.submit_bridged` in B_tgt).
+    `Behavior` returns `.TimeAdvanced` for `ExportRequest`; `input_to_action` maps it to
+    `.Tick`.  The equivalence follows definitionally from `behavior_step_consistent`.
 
 `Behavior` is observationally constant over `GroundedBehavior`: outcome depends
 only on input shape, not witness content.  This is a design property of EpArch —
@@ -51,10 +51,9 @@ type checker enforces.
 - `behavior_from_step`         — same equality for systems with a live Step: the step witness
                                  confirms the state machine can reach the action, and the
                                  equality holds by case analysis on which constructor fired
-- `grounded_export_step`       — conditional: export Step fires given header + bridge
 - `working_systems_equivalent` — grounded systems are equivalent; for withdraw, challenge, and
                                  tick the equivalence is grounded in the existence of a live
-                                 Step from B's evidence; export falls back to definitional
+                                 Step from B's evidence; ExportRequest maps to TimeAdvanced (definitional)
 
 ## Extension Model
 
@@ -146,7 +145,7 @@ inductive Observation where
 def Behavior (_B : GroundedBehavior) (i : Input) : Observation :=
   match i with
   | .WithdrawRequest _ _ claim_id  => .WithdrawSuccess claim_id
-  | .ExportRequest _ target claim_id => .ExportSuccess claim_id target
+  | .ExportRequest _ _ _           => .TimeAdvanced
   | .ChallengeRequest _ _          => .ChallengeProcessed "quarantined"
   | .TimeAdvance _                 => .TimeAdvanced
 
@@ -251,9 +250,9 @@ private theorem canonLedger_get (n k : Nat) (hk : k < n + 1) :
     cannot be preserved losslessly in this direction. -/
 def input_to_action : Input → CAction
   | .WithdrawRequest a b d   => .Withdraw (.mk a) (.mk b) d
-  | .ExportRequest src tgt d => .Export (.mk src) (.mk tgt) d
+  | .ExportRequest _ _ _     => .Tick
   | .ChallengeRequest _ _    =>
-      .Challenge { P := (), reason := (), evidence := (), suspected := .S }
+      .Challenge (Agent.mk 0) (Bubble.mk 0) { P := (), reason := (), evidence := (), suspected := .S }
   | .TimeAdvance _           => .Tick
 
 /-! ### Action → Observation -/
@@ -262,21 +261,19 @@ def input_to_action : Input → CAction
 
     Reflects what `Step` produces at the observable boundary:
     - `.Withdraw _ _ d_idx` → deposit at `d_idx` was successfully relied on
-    - `.Export _ B2 d_idx`  → deposit crossed into target bubble `B2`
     - `.Challenge _`        → deposit entered `Quarantined` status
     - `.Tick`               → clock advanced
-    - `.Submit`, `.Repair`, `.Revoke` — not exposed as `Input` events;
-      mapped to `.TimeAdvanced` as a neutral fallback. -/
+    - `.Submit`, `.Repair`, `.Revoke`, `.Promote` — mapped to `.TimeAdvanced`.
+    Cross-bubble transfer (ExportRequest) maps to Tick/TimeAdvanced; inter-bubble workflow
+    is agent-level (Withdraw in B1 → agent → submit_bridged in B2). -/
 def observe_step_action : CAction → Observation
   | .Withdraw _ _  d_idx => .WithdrawSuccess d_idx
-  | .Export   _ B2 d_idx => .ExportSuccess d_idx B2.toNat
-  | .Challenge _         => .ChallengeProcessed "quarantined"
+  | .Challenge _ _ _         => .ChallengeProcessed "quarantined"
   | .Tick                => .TimeAdvanced
   | .Submit _ _          => .TimeAdvanced
-  | .Repair _ _          => .TimeAdvanced
-  | .Revoke _            => .TimeAdvanced
+  | .Repair _ _ _ _      => .TimeAdvanced
+  | .Revoke _ _ _        => .TimeAdvanced
   | .Promote _ _ _       => .TimeAdvanced
-  | .Inspect _ _ _       => .TimeAdvanced
 
 /-! ### Ready States -/
 
@@ -304,28 +301,19 @@ structure ReadyState (i : Input) where
 
     The concrete state has:
     - `ledger`      : canonical deposits at positions 0..d_idx (all `.Deposited`, τ = 0)
-    - `acl_table`   : one entry granting agent `a` on bubble `b` for deposit `d_idx`
-    - `clock`       : 0  (so τ_valid 0 0 holds on every canonic deposit)
-    - `trust_bridges`: empty (not needed for withdraw) -/
+    - `clock`       : 0 -/
 def withdraw_ready_state (B : GroundedBehavior) (a_n b_n d_idx : Nat) :
     ReadyState (.WithdrawRequest a_n b_n d_idx) :=
   let s : CState :=
     { ledger       := canonLedger d_idx
     , bubbles      := [.mk b_n]
-    , clock        := 0
-    , acl_table    := [{ agent := .mk a_n, bubble := .mk b_n, deposit_id := d_idx }]
-    , trust_bridges := [] }
+    , clock        := 0 }
   let _ := B.bank.produced        -- certificate field present: bank typechecks
   let _ := B.trust_bridges.downstream_via_bridge  -- certificate field present: trust_bridges typechecks
-  have h_acl : hasACLPermission s (.mk a_n) (.mk b_n) d_idx :=
-    Or.inr ⟨_, List.Mem.head _, rfl, rfl, rfl⟩
-  have h_current : isCurrentDeposit s d_idx :=
-    ⟨canonDeposit, canonLedger_get d_idx d_idx (Nat.lt_succ_self d_idx),
-     Nat.le_refl 0⟩
   have h_deposited : isDeposited s d_idx :=
     ⟨canonDeposit, canonLedger_get d_idx d_idx (Nat.lt_succ_self d_idx), rfl⟩
   { state := s
-  , fires := ⟨s, .withdraw s (.mk a_n) (.mk b_n) d_idx h_acl h_current h_deposited⟩ }
+  , fires := ⟨s, .withdraw s (.mk a_n) (.mk b_n) d_idx h_deposited⟩ }
 
 /-! ### Challenge Ready State -/
 
@@ -344,15 +332,14 @@ def challenge_ready_state (B : GroundedBehavior) (claim_id : Nat) (field : Strin
   let s : CState :=
     { ledger       := [canonDeposit]
     , bubbles      := []
-    , clock        := 0
-    , acl_table    := []
-    , trust_bridges := [] }
+    , clock        := 0 }
   let _ := B.revocation.can_revoke        -- certificate field present: revocation typechecks
   let _ := B.revocation.witness_is_invalid  -- certificate field present: witness_is_invalid typechecks
   have h_deposited : isDeposited s 0 :=
     ⟨canonDeposit, rfl, rfl⟩
   { state := s
-  , fires := ⟨_, .challenge s { P := (), reason := (), evidence := (), suspected := .S }
+  , fires := ⟨_, .challenge s (Agent.mk 0) (Bubble.mk 0)
+                  { P := (), reason := (), evidence := (), suspected := .S }
                   0 h_deposited⟩ }
 
 /-! ### Definitional Bridge -/
@@ -391,9 +378,10 @@ theorem behavior_from_step (B : GroundedBehavior) (i : Input) (s s' : CState)
     simp only [input_to_action] at h ⊢
     cases h
     simp [observe_step_action, Behavior]
-  | ExportRequest src tgt d =>
+  | ExportRequest _ _ _ =>
     simp only [input_to_action] at h ⊢
-    cases h <;> simp [observe_step_action, Behavior, Bubble.toNat]
+    cases h
+    simp [observe_step_action, Behavior]
   | ChallengeRequest c f =>
     simp only [input_to_action] at h ⊢
     cases h
@@ -403,19 +391,12 @@ theorem behavior_from_step (B : GroundedBehavior) (i : Input) (s s' : CState)
     cases h
     simp [observe_step_action, Behavior]
 
-/-- Export step fires conditionally, given header evidence and a trust bridge.
-    `depositHasHeader` is required explicitly because `header_preserved` is opaque
-    — `GroundedHeaders.header_preserved` is an abstract datum over abstract types
-    and cannot be reflected into `depositHasHeader` for concrete `Deposit Unit Unit Unit Unit`.
-    This is the one place where `ReadyState` construction remains conditional. -/
-theorem grounded_export_step
-    (s : CState) (B1 B2 : Bubble) (d_idx : Nat)
-    (h_deposited : isDeposited      s d_idx)
-    (h_header    : depositHasHeader s d_idx)
-    (h_bridge    : hasTrustBridge   s B1 B2) :
-    ∃ (s' : CState),
-      Step (Reason := Unit) (Evidence := Unit) s (.Export B1 B2 d_idx) s' :=
-  ⟨_, .export_with_bridge s B1 B2 d_idx h_deposited h_header h_bridge⟩
+/-
+  (Retired) grounded_export_step: export is not a bank primitive.
+  Inter-bubble transfer is an agent-level workflow: Withdraw in B1, agent carries deposit,
+  Submit with bridge credential in B2 (Step.submit_bridged).
+  See BridgeSubmitEntersDeposited in EpArch.Commitments for the new C5 theorem.
+-/
 
 end StepBridge
 
@@ -455,10 +436,10 @@ theorem working_systems_equivalent (B1 B2 : GroundedBehavior) :
     exact (behavior_from_step B1 _ _ _ h1).symm.trans (behavior_from_step B2 _ _ _ h2)
   | TimeAdvance ticks =>
     -- Tick has no preconditions; construct a concrete step inline.
-    let s₀ : CState := { ledger := [], bubbles := [], clock := 0, acl_table := [], trust_bridges := [] }
+    let s₀ : CState := { ledger := [], bubbles := [], clock := 0 }
     have ht : EpArch.StepSemantics.Step (Reason := Unit) (Evidence := Unit)
         s₀ (input_to_action (.TimeAdvance ticks)) { s₀ with clock := 1 } :=
-      EpArch.StepSemantics.Step.tick s₀ 1
+      EpArch.StepSemantics.Step.tick s₀ 1 (Nat.zero_le 1)
     exact (behavior_from_step B1 _ _ _ ht).symm.trans (behavior_from_step B2 _ _ _ ht)
 
 end EpArch

@@ -176,7 +176,7 @@ All 8 commitments are now **proved**.  The table below records each commitment a
 | Commitment | Resolution |
 |------------|------------|
 | C3 (`SEVFactorization`) | Proved by rfl |
-| C5 (`ExportGating`) | Proved from LTS export constructors |
+| C5 (`BridgeSubmitEntersDeposited`) | Proved from `Step.submit_bridged` (`BridgeSubmitEntersDeposited` in `Commitments.lean`; the former `ExportGating` commitment is retired — export is not a bank primitive) |
 | C6b (`NoSelfCorrectionWithoutRevision`) | Proved from StepSemantics |
 | C8 (`TemporalValidity`) | Proved from header τ definition |
 | C2 (`NoGlobalLedger`) | **Proved** as `WorldCtx.no_ledger_tradeoff` (EpArch CAP Theorem) from `W_partial_observability` + `obs_based` in `WorldCtx.lean` |
@@ -190,7 +190,7 @@ All 8 commitments are now **proved**.  The table below records each commitment a
 |--------------|------------|
 | `no_deposit_without_redeemability` | Removed: universally-quantified form was inconsistent. Intent expressed by `redeemable` predicate. |
 | `no_withdrawal_without_acl` | Replaced by `grounded_no_withdrawal_without_acl`, proved from `StepSemantics.Step.withdraw`. |
-| `no_export_without_gate` | Replaced by `grounded_no_export_without_gate`, proved from `StepSemantics.Step.export`. |
+| `no_export_without_gate` | Retired: export is not a bank primitive. Cross-bubble transfer is an agent-level workflow; `Step.submit_bridged` handles the bridge path (agent presents source bubble attribution; deposit enters directly as Deposited). No bank-side trust-bridge gate in the LTS. |
 | `deposit_kind` | Now a definition in `Commitments.lean`. |
 | `worldstate_requires_finite_τ` | Proved from the `deposit_kind` definition. |
 

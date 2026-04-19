@@ -59,7 +59,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | 9d | Kernel Verification Depth — `DepthClaim` constructive witness; `bounded_verify` budget decision procedure; `DepthWorldCtx` closes `W_bounded_verification` by construction (`Concrete/VerificationDepth.lean`) |
 | 10 | Adversarial Model — Attack structures, DDoS vectors, obligation theorems |
 | 11 | Repair Loop Semantics — Challenge-repair-revalidation cycle |
-| 12 | Withdrawal Gates — Three-gate model (Status ∧ ACL ∧ τ) |
+| 12 | Withdrawal Gates — Two-gate model (ACL ∧ Deposited). τ-currency is agent-level policy. |
 | 13 | Obligation Theorems — World ⇒ Mechanism (W_* bundles) |
 | 14 | Health → Necessity — Health goals force capability requirements |
 | 15 | Scope/Irrelevance — Substrate independence, extra-state erasure |

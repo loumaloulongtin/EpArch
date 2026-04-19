@@ -36,10 +36,10 @@ def IsBadDeposit (BrokenField : Deposit PropLike Standard ErrorModel Provenance 
 /-- Is an action a "contestation action" (Challenge, Revoke, or Repair)?
     These are the actions that enable error correction. -/
 def isContestationAction : Action PropLike Standard ErrorModel Provenance Reason Evidence → Bool
-  | .Challenge _ => true
-  | .Revoke _    => true
-  | .Repair _ _  => true
-  | _            => false
+  | .Challenge _ _ _ => true
+  | .Revoke _ _ _    => true
+  | .Repair _ _ _ _  => true
+  | _                => false
 
 /-- A restricted step relation: only non-contestation actions allowed. -/
 def RestrictedStep (s : SystemState PropLike Standard ErrorModel Provenance)
@@ -65,7 +65,7 @@ theorem frozen_canon_no_revocation
   intro d' h_get'
   let ⟨h_real_step, h_not_contest⟩ := h_step
   cases h_real_step with
-  | submit _ d_new _ =>
+  | submit _ d_new =>
     -- s'.ledger = s.ledger ++ [new], so get? d_idx unchanged for existing indices
     have h_lt : d_idx < s.ledger.length := get?_implies_lt s.ledger d_idx d h_get
     have h_same : (s.ledger ++ [{ d_new with status := .Candidate }]).get? d_idx = s.ledger.get? d_idx :=
@@ -75,64 +75,33 @@ theorem frozen_canon_no_revocation
     injection h_get' with h_eq
     rw [← h_eq]
     exact h_not_revoked
-  | withdraw _ _ _ _ _ _ =>
+  | withdraw _ _ _ _ =>
     -- s' = s, so d' = d
     simp_all
-  | inspect _ _ _ _ _ _ =>
-    -- s' = s, so d' = d
-    simp_all
-  | export_with_bridge _ B2 d_exp_idx _ _ _ =>
-    -- addToNewBubble either appends or leaves unchanged
-    -- For existing indices < s.ledger.length, get? is unchanged
+  | submit_bridged _ d_new _ =>
+    -- submit_bridged appends [{ d_new with status := .Deposited }]; existing indices preserved
     have h_lt : d_idx < s.ledger.length := get?_implies_lt s.ledger d_idx d h_get
-    -- addToNewBubble appends [new] or returns unchanged
-    -- Either way, existing indices unchanged
-    unfold addToNewBubble at h_get'
-    split at h_get'
-    · next d_exp _h_d_exp =>
-      -- some case: appended
-      have h_same : (s.ledger ++ [{ d_exp with bubble := B2, status := .Candidate }]).get? d_idx = s.ledger.get? d_idx :=
-        get?_append_left s.ledger [{ d_exp with bubble := B2, status := .Candidate }] d_idx h_lt
-      rw [h_same] at h_get'
-      rw [h_get] at h_get'
-      injection h_get' with h_eq
-      rw [← h_eq]
-      exact h_not_revoked
-    · -- none case: unchanged
-      rw [h_get] at h_get'
-      injection h_get' with h_eq
-      rw [← h_eq]
-      exact h_not_revoked
-  | export_revalidate _ B2 d_exp_idx _ _ _ =>
-    -- Same as export_with_bridge
-    have h_lt : d_idx < s.ledger.length := get?_implies_lt s.ledger d_idx d h_get
-    unfold addToNewBubble at h_get'
-    split at h_get'
-    · next d_exp _h_d_exp =>
-      have h_same : (s.ledger ++ [{ d_exp with bubble := B2, status := .Candidate }]).get? d_idx = s.ledger.get? d_idx :=
-        get?_append_left s.ledger [{ d_exp with bubble := B2, status := .Candidate }] d_idx h_lt
-      rw [h_same] at h_get'
-      rw [h_get] at h_get'
-      injection h_get' with h_eq
-      rw [← h_eq]
-      exact h_not_revoked
-    · rw [h_get] at h_get'
-      injection h_get' with h_eq
-      rw [← h_eq]
-      exact h_not_revoked
-  | challenge _ _ _ =>
+    have h_same : (s.ledger ++ [{ d_new with status := .Deposited }]).get? d_idx =
+        s.ledger.get? d_idx :=
+      get?_append_left s.ledger [{ d_new with status := .Deposited }] d_idx h_lt
+    rw [h_same] at h_get'
+    rw [h_get] at h_get'
+    injection h_get' with h_eq
+    rw [← h_eq]
+    exact h_not_revoked
+  | challenge _ _ _ _ _ =>
     -- Challenge is contestation, so h_not_contest gives False
     simp [isContestationAction] at h_not_contest
-  | tick _ =>
+  | tick _ _ =>
     -- s' only differs in clock, ledger unchanged
     simp_all
-  | revoke _ _ =>
+  | revoke _ _ _ _ =>
     -- Revoke is contestation
     simp [isContestationAction] at h_not_contest
-  | repair _ _ _ =>
+  | repair _ _ _ _ _ =>
     -- Repair is contestation
     simp [isContestationAction] at h_not_contest
-  | promote _ _ d_p_idx _ h_cand =>
+  | promote _ _ d_p_idx h_cand =>
     -- Promote: updateDepositStatus to Deposited; .Deposited ≠ .Revoked
     cases Nat.decEq d_idx d_p_idx with
     | isTrue heq =>
@@ -172,9 +141,9 @@ theorem allRestricted_implies_no_revision
     simp only [Trace.hasRevision]
     have h_not_rev : a.isRevision = false := by
       cases a with
-      | Submit _ _ | Withdraw _ _ _ | Export _ _ _ | Tick | Promote _ _ _ | Inspect _ _ _ =>
+      | Submit _ _ | Withdraw _ _ _ | Tick | Promote _ _ _ =>
         simp [Action.isRevision]
-      | Challenge _ | Revoke _ | Repair _ _ =>
+      | Challenge _ _ _ | Revoke _ _ _ | Repair _ _ _ _ =>
         simp [isContestationAction] at h_not_contest
     simp [h_not_rev, ih h_rest]
 
@@ -202,175 +171,6 @@ theorem frozen_canon_no_revocation_trace
     have h_eq : d = d'' := by injection h_get''
     rw [← h_eq]; exact h_not_revoked
   exact trace_no_revision_preserves_non_revoked s s' t h_no_rev d_idx h_init
-
-
-/-! ## Corner 7 — τ staleness gate (timeless justification fails under drift)
-
-    **Theorem shape:** If the system lacks τ-aware refresh gating, then
-    there exists a trace where an unrefreshed deposit remains action-authorizing
-    across time drift, whereas τ-aware policy blocks it.
-
-    **Implementation:** We show that withdrawal REQUIRES τ_valid (via
-    Step.withdraw precondition), so time drift without refresh blocks withdrawal. -/
-
-/-- Stale: a deposit's τ is no longer valid relative to the clock.
-    This is the negation of τ_valid. -/
-def Stale (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat) : Prop :=
-  ∃ d, s.ledger.get? d_idx = some d ∧ ¬τ_valid s.clock d.h.τ
-
-/-- CORNER 7 THEOREM: Withdrawal requires non-staleness.
-
-    The Step.withdraw constructor explicitly requires isCurrentDeposit,
-    which includes τ_valid. This is the τ gate. -/
-theorem withdrawal_requires_fresh
-    (s s' : SystemState PropLike Standard ErrorModel Provenance)
-    (a : Agent) (B : Bubble) (d_idx : Nat)
-    (h_step : Step (Reason := Reason) (Evidence := Evidence) s (.Withdraw a B d_idx) s') :
-    isCurrentDeposit s d_idx := by
-  cases h_step with
-  | withdraw _ _ _ _ h_current _ => exact h_current
-
-/-- CORNER 7 COROLLARY: Stale deposits cannot be withdrawn.
-
-    If a deposit is stale, no withdrawal step can fire for it.
-    This formalizes "timeless justification fails under drift." -/
-theorem stale_blocks_withdrawal
-    (s : SystemState PropLike Standard ErrorModel Provenance)
-    (a : Agent) (B : Bubble) (d_idx : Nat)
-    (h_stale : Stale s d_idx) :
-    ¬∃ s', Step (Reason := Reason) (Evidence := Evidence) s (.Withdraw a B d_idx) s' := by
-  intro ⟨s', h_step⟩
-  have h_current := withdrawal_requires_fresh s s' a B d_idx h_step
-  let ⟨d, h_get, h_not_valid⟩ := h_stale
-  let ⟨d', h_get', h_valid⟩ := h_current
-  -- d and d' are the same deposit at d_idx
-  rw [h_get] at h_get'
-  injection h_get' with h_eq
-  rw [← h_eq] at h_valid
-  exact h_not_valid h_valid
-
-/-- Time drift makes deposits stale.
-
-    If clock advances past deposit's τ, the deposit becomes stale.
-    This is the "drift" that τ-unaware systems ignore. -/
-theorem tick_can_cause_staleness
-    (s : SystemState PropLike Standard ErrorModel Provenance)
-    (d_idx : Nat) (d : Deposit PropLike Standard ErrorModel Provenance)
-    (h_get : s.ledger.get? d_idx = some d)
-    (new_clock : Time)
-    (h_past : new_clock < d.h.τ) :
-    Stale { s with clock := new_clock } d_idx := by
-  refine ⟨d, ?_, ?_⟩
-  · simp only [h_get]
-  · unfold τ_valid
-    exact Nat.not_le_of_gt h_past
-
-
-/-! ## Corner 9 — ACL/bubbles gate (leakage is structural if ACL ignored)
-
-    **Theorem shape:** If export ignores ACL, a restricted deposit can
-    become visible in a bubble lacking permission.
-
-    **Implementation:** We define visibility and show that export
-    preserves bubble assignment, making deposits visible in new bubbles. -/
-
-/-- A deposit is visible in a bubble if it exists in that bubble. -/
-def VisibleInBubble (s : SystemState PropLike Standard ErrorModel Provenance)
-    (B : Bubble) (d_idx : Nat) : Prop :=
-  ∃ d, s.ledger.get? d_idx = some d ∧ d.bubble = B
-
-/-- CORNER 9 THEOREM: Export makes deposits visible in new bubbles.
-
-    After an export step from B1 to B2, the exported deposit becomes
-    visible in B2 (as a new entry at the end of the ledger). -/
-theorem export_creates_visibility
-    (s s' : SystemState PropLike Standard ErrorModel Provenance)
-    (B1 B2 : Bubble) (d_idx : Nat)
-    (h_step : Step (Reason := Reason) (Evidence := Evidence) s (.Export B1 B2 d_idx) s')
-    (d : Deposit PropLike Standard ErrorModel Provenance)
-    (h_get : s.ledger.get? d_idx = some d) :
-    -- The new deposit at the end of s'.ledger is visible in B2
-    VisibleInBubble s' B2 s.ledger.length := by
-  cases h_step with
-  | export_with_bridge _ _ _ _ _ _ =>
-    unfold VisibleInBubble addToNewBubble
-    simp only [h_get]
-    -- s'.ledger = s.ledger ++ [{ d with bubble := B2, status := .Candidate }]
-    -- s'.ledger.get? s.ledger.length = some { d with bubble := B2, ... }
-    refine ⟨{ d with bubble := B2, status := .Candidate }, ?_, rfl⟩
-    -- Need: (s.ledger ++ [new]).get? s.ledger.length = some new
-    have _h_len : s.ledger.length < (s.ledger ++ [{ d with bubble := B2, status := .Candidate }]).length := by
-      simp [List.length_append]
-      exact Nat.lt_succ_self _
-    -- get? at length of original list gives the appended element
-    have h_get_append : (s.ledger ++ [{ d with bubble := B2, status := .Candidate }]).get? s.ledger.length =
-        some { d with bubble := B2, status := .Candidate } := by
-      induction s.ledger with
-      | nil => simp [List.get?]
-      | cons x xs ih =>
-        simp only [List.cons_append, List.get?, List.length]
-        exact ih
-    exact h_get_append
-  | export_revalidate _ _ _ _ _ _ =>
-    unfold VisibleInBubble addToNewBubble
-    simp only [h_get]
-    refine ⟨{ d with bubble := B2, status := .Candidate }, ?_, rfl⟩
-    have h_get_append : (s.ledger ++ [{ d with bubble := B2, status := .Candidate }]).get? s.ledger.length =
-        some { d with bubble := B2, status := .Candidate } := by
-      induction s.ledger with
-      | nil => simp [List.get?]
-      | cons x xs ih =>
-        simp only [List.cons_append, List.get?, List.length]
-        exact ih
-    exact h_get_append
-
-/-- CORNER 9 COROLLARY (A.S4): Export creates a Candidate copy in B2 — step alone suffices.
-
-    A cleaner statement than `export_creates_visibility`: the caller need not supply
-    the deposit or its `get?` proof.  An export Step carries the `isDeposited`
-    precondition internally, so we can extract the deposit and prove membership
-    directly.  The returned element has `bubble = B2` and `status = .Candidate`. -/
-theorem export_creates_B2_deposit
-    (s s' : SystemState PropLike Standard ErrorModel Provenance)
-    (B1 B2 : Bubble) (d_idx : Nat)
-    (h_step : Step (Reason := Reason) (Evidence := Evidence) s (.Export B1 B2 d_idx) s') :
-    ∃ d_new, d_new ∈ s'.ledger ∧ d_new.bubble = B2 ∧ d_new.status = .Candidate := by
-  cases h_step with
-  | export_with_bridge _ _ _ h_dep _ _ =>
-    let ⟨d, h_get, _⟩ := h_dep
-    refine ⟨{ d with bubble := B2, status := .Candidate }, ?_, rfl, rfl⟩
-    unfold addToNewBubble
-    simp only [h_get]
-    have h_m := mem_append_iff { d with bubble := B2, status := .Candidate } s.ledger
-                  [{ d with bubble := B2, status := .Candidate }]
-    rw [h_m]
-    exact Or.inr (List.Mem.head _)
-  | export_revalidate _ _ _ h_dep _ _ =>
-    let ⟨d, h_get, _⟩ := h_dep
-    refine ⟨{ d with bubble := B2, status := .Candidate }, ?_, rfl, rfl⟩
-    unfold addToNewBubble
-    simp only [h_get]
-    have h_m := mem_append_iff { d with bubble := B2, status := .Candidate } s.ledger
-                  [{ d with bubble := B2, status := .Candidate }]
-    rw [h_m]
-    exact Or.inr (List.Mem.head _)
-
-/-- CORNER 9 COROLLARY: Without ACL checks on export, any deposit can cross bubbles.
-
-    The current export steps require isDeposited and depositHasHeader,
-    but NOT ACL permission for the target bubble. This means exports
-    can create visibility in bubbles without permission checks.
-
-    This corners systems that ignore ACL on boundary crossing. -/
-theorem export_ignores_target_acl
-    (s : SystemState PropLike Standard ErrorModel Provenance)
-    (B1 B2 : Bubble) (d_idx : Nat)
-    (h_deposited : isDeposited s d_idx)
-    (h_header : depositHasHeader s d_idx)
-    (h_bridge : hasTrustBridge s B1 B2)
-    -- Note: NO ACL requirement for B2!
-    : ∃ s', Step (Reason := Reason) (Evidence := Evidence) s (.Export B1 B2 d_idx) s' := by
-  exact ⟨_, Step.export_with_bridge s B1 B2 d_idx h_deposited h_header h_bridge⟩
 
 
 /-! ## Lottery Gate (Operational)
@@ -417,22 +217,30 @@ theorem withdrawal_requires_deposited
     (h_step : Step (Reason := Reason) (Evidence := Evidence) s (.Withdraw a B d_idx) s') :
     isDeposited s d_idx := by
   cases h_step with
-  | withdraw _ _ _ _ _ h_dep => exact h_dep
+  | withdraw _ _ _ h_dep => exact h_dep
 
-/-- CORNER 2 THEOREM: New deposits enter as Candidate.
+/-- CORNER 2 THEOREM: Submissions enter as Candidate or Deposited.
 
-    Submissions cannot directly enter as Deposited — they must go through
-    the Candidate → Deposited lifecycle. -/
+    Plain `Step.submit` enters as Candidate (must go through promotion).
+    `Step.submit_bridged` enters as Deposited directly (agent vouches for source).
+    In both cases the new entry is in the ledger. The distinction is which path
+    the agent chose, not a bank-side precondition. -/
 theorem submit_produces_candidate
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance)
     (h_step : Step (Reason := Reason) (Evidence := Evidence) s (.Submit a d) s') :
-    ∃ d', d' ∈ s'.ledger ∧ d'.status = .Candidate := by
-  cases h_step
-  refine ⟨{ d with status := .Candidate }, ?_, rfl⟩
-  have h := mem_append_iff { d with status := DepositStatus.Candidate } s.ledger [{ d with status := DepositStatus.Candidate }]
-  rw [h]
-  exact Or.inr (List.Mem.head _)
+    ∃ d', d' ∈ s'.ledger ∧ (d'.status = .Candidate ∨ d'.status = .Deposited) := by
+  cases h_step with
+  | submit =>
+    refine ⟨{ d with status := .Candidate }, ?_, Or.inl rfl⟩
+    have h := mem_append_iff { d with status := DepositStatus.Candidate } s.ledger [{ d with status := DepositStatus.Candidate }]
+    rw [h]
+    exact Or.inr (List.Mem.head _)
+  | submit_bridged _ _ B_src =>
+    refine ⟨{ d with status := .Deposited }, ?_, Or.inr rfl⟩
+    have h := mem_append_iff { d with status := DepositStatus.Deposited } s.ledger [{ d with status := DepositStatus.Deposited }]
+    rw [h]
+    exact Or.inr (List.Mem.head _)
 
 /-- CORNER 2 COROLLARY: Candidate deposits cannot be withdrawn.
 

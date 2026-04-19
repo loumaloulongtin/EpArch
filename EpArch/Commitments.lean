@@ -22,7 +22,7 @@ hypothesis bundles.
     and `consensus B d.P` (a genuine active deposit) versus `redeemable`
     (requires `vindication_evidence` — single opaque backing the three aspect predicates
     `path_route_exists`, `contact_was_made`, `verdict_discriminates`).
-- C5 (`ExportGating`)        — from the LTS export constructors
+- C5 (`BridgeSubmitEntersDeposited`) — bridge credential enables direct Deposited entry
 - C6b (`NoSelfCorrectionWithoutRevision`) — from StepSemantics
 - C7b (`header_stripping_harder`) — proved via the admissible completion-space model:
     `metadata_stripping_strictly_enlarges` establishes that stripping strictly
@@ -394,46 +394,27 @@ theorem intra_bubble_not_redeemable
   exact h_intra vp.surface (h_dep ▸ vp.h_path)
 
 
-/-! ## Commitment 5: Export Gating -/
+/-! ## Commitment 5: Bridge-Mediated Submission -/
 
-/-- reliable_export: a cross-bubble transfer that went through the operational LTS.
-    Grounded in StepSemantics.Step.Export: reliability means the transfer actually
-    occurred via the Step machinery, which enforces gating preconditions
-    (depositHasHeader required by all export constructors, and either a trust bridge
-    OR forced revalidation to Candidate status by the LTS structure alone).
-    This mirrors reliably_self_corrects: grounded in the Step type, not in a
-    definitional conjunction over abstract predicates. -/
-def reliable_export {Reason Evidence : Type u} (B1 B2 : Bubble)
-    (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat) : Prop :=
-  ∃ s', StepSemantics.Step (Reason := Reason) (Evidence := Evidence) s (.Export B1 B2 d_idx) s'
+/-- COMMITMENT 5: Bridge-credentialed Submit enters as Deposited.
 
-/-- Reliable export implies the deposit was Deposited: Step.Export precondition. -/
-theorem reliable_implies_deposited {Reason Evidence : Type u} (B1 B2 : Bubble)
-    (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat) :
-    reliable_export (Reason := Reason) (Evidence := Evidence) B1 B2 s d_idx →
-    StepSemantics.isDeposited s d_idx := by
-  intro ⟨_, h_step⟩
-  cases h_step <;> assumption
+    When an agent vouches for a deposit coming from source bubble B_src,
+    `Step.submit_bridged` fires and the deposit enters the ledger as Deposited directly.
+    The agent is in the middle: the bank sees only a Submit; the agent's vouching
+    for the source is what produces Deposited status rather than Candidate.
 
-/-- Commitment 5: Every reliable export is gated by the operational LTS.
-    The Step inductive has exactly two Export constructors:
-    - export_with_bridge: hasTrustBridge is a required precondition.
-    - export_revalidate: ¬hasTrustBridge, and the LTS forces .Candidate on the new entry.
-    Ungated export is structurally non-constructible. -/
-theorem ExportGating {Reason Evidence : Type u} (B1 B2 : Bubble)
-    (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat) :
-    reliable_export (Reason := Reason) (Evidence := Evidence) B1 B2 s d_idx →
-    StepSemantics.hasTrustBridge s B1 B2 ∨
-    (¬StepSemantics.hasTrustBridge s B1 B2 ∧
-     ∃ sout : StepSemantics.SystemState PropLike Standard ErrorModel Provenance, ∃ d_new,
-       d_new ∈ sout.ledger ∧ d_new.status = .Candidate) := by
-  intro ⟨s', h_step⟩
-  cases EpArch.LinkingAxioms.export_gating_forced s s' B1 B2 d_idx h_step with
-  | inl h_bridge => exact Or.inl h_bridge
-  | inr h_inr =>
-      exact Or.inr (And.intro h_inr.1
-        (h_inr.2.elim (fun d_new h_spec =>
-          Exists.intro s' (Exists.intro d_new (And.intro h_spec.1 h_spec.2)))))
+    The bank does not verify the claimed source. Trust is per-deposit (d.h.acl)
+    and per-agent; the agent accepts responsibility by presenting this step. -/
+theorem BridgeSubmitEntersDeposited {Reason Evidence : Type u}
+    (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance)
+    (B_src : Bubble)
+    (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance) :
+    ∃ s', StepSemantics.Step (Reason := Reason) (Evidence := Evidence) s (.Submit a d) s' ∧
+          ∃ d_new, d_new ∈ s'.ledger ∧ d_new.status = .Deposited := by
+  refine ⟨_, StepSemantics.Step.submit_bridged s a d B_src, ?_⟩
+  exact ⟨{ d with status := .Deposited },
+    (StepSemantics.mem_append_iff _ s.ledger _).mpr (Or.inr (List.Mem.head _)),
+    rfl⟩
 
 
 /-! ## Commitment 6: Repair Loop (Contestability) -/
@@ -453,37 +434,40 @@ def lifecycle (_ : Bubble) (_ : Deposit PropLike Standard ErrorModel Provenance)
     Step.repair from the operational LTS. h_q (isQuarantined) is genuinely load-bearing:
     it is passed directly to Step.repair, whose constructor requires it as a precondition.
     Removing h_q causes the second conjunct to fail — it is structurally necessary,
-    not merely type-checked and discarded. -/
+    not merely type-checked and discarded.
+    The agent identity (a, B) shows that repair carries attribution.
+    h_q (isQuarantined) is genuinely load-bearing: it is passed directly to Step.repair,
+    whose constructor requires it as a precondition. -/
 theorem RepairLoopExists {Reason Evidence : Type u} (B : Bubble)
     (d : Deposit PropLike Standard ErrorModel Provenance)
     (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
-    (d_idx : Nat) (f : Field)
+    (a : Agent) (B' : Bubble) (d_idx : Nat) (f : Field)
     (_ : deposited B d)
     (h_q : StepSemantics.isQuarantined s d_idx) :
     (∃ trace, lifecycle B d trace) ∧
-    (∃ s', StepSemantics.Step (Reason := Reason) (Evidence := Evidence) s (.Repair d_idx f) s' ∧
+    (∃ s', StepSemantics.Step (Reason := Reason) (Evidence := Evidence) s (.Repair a B' d_idx f) s' ∧
            s'.ledger = StepSemantics.updateDepositStatus s.ledger d_idx .Candidate) := by
   constructor
   · exact ⟨[.Challenge, .Quarantine, .RepairOrRevoke, .Redeposit], by decide, by decide⟩
   · exact ⟨{ s with ledger := StepSemantics.updateDepositStatus s.ledger d_idx .Candidate },
-      StepSemantics.Step.repair s d_idx f h_q, rfl⟩
+      StepSemantics.Step.repair s a B' d_idx f h_q, rfl⟩
 
-/-- Standalone operational grounding: Step.repair is available from any quarantined state,
-    and resets the deposit to Candidate status.
+/-- Standalone operational grounding: Step.repair is available from any quarantined state
+    given an authorised agent, and resets the deposit to Candidate status.
     The second conjunct of RepairLoopExists above is a direct application of this theorem's
     content; grounded_RepairLoopExists is kept as a standalone lemma for contexts that need
     only the Step-level fact without the lifecycle-trace component. -/
 theorem grounded_RepairLoopExists
     {Reason Evidence : Type u}
     (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
-    (d_idx : Nat) (f : Field)
+    (a : Agent) (B : Bubble) (d_idx : Nat) (f : Field)
     (h_quarantined : StepSemantics.isQuarantined s d_idx) :
     let s' := { s with ledger :=
           StepSemantics.updateDepositStatus s.ledger d_idx .Candidate }
     ∃ _h_step : StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
-          s (.Repair d_idx f) s',
+          s (.Repair a B d_idx f) s',
       s'.ledger = StepSemantics.updateDepositStatus s.ledger d_idx .Candidate :=
-  ⟨StepSemantics.Step.repair s d_idx f h_quarantined, rfl⟩
+  ⟨StepSemantics.Step.repair s a B d_idx f h_quarantined, rfl⟩
 
 /-- A domain reliably self-corrects if there exist system states and a trace
     demonstrating that an erroneous deposit was caught and removed (Deposited → Revoked)
@@ -973,7 +957,7 @@ which covers C3/C7b/C8 but contains no commitment-specific result.
 The remaining commitments are proved as named theorems:
 - C1 — `innovation_allows_traction_without_authorization` + `caveated_authorization_does_not_force_certainty`
 - C2 — `WorldCtx.no_ledger_tradeoff`
-- C5 — `ExportGating`
+- C5 — `BridgeSubmitEntersDeposited`
 - C6b — `NoSelfCorrectionWithoutRevision`
 -/
 
@@ -996,7 +980,9 @@ theorem redeemability_requires_more_than_consensus
            deposit cannot be redeemed; consensus does not confer redeemability.
     - C7b: `header_stripping_harder` — stripped disputes are systematically harder to diagnose.
     - C8: `TemporalValidity` — refreshed and unrefreshed deposits are not equivalent.
-    C1, C2, C5, C6b are proved as named theorems (see their respective sections). -/
+    C1, C2, C5, C6b are proved as named theorems (see their respective sections).
+    C5 is now `BridgeSubmitEntersDeposited` (bridge credential → Deposited entry);
+    the former `ExportGating` theorem has been removed along with `Action.Export`. -/
 theorem commitments_pack :
     (∀ (d : Deposit PropLike Standard ErrorModel Provenance),
         ∃ (s : Standard) (e : ErrorModel) (v : Provenance),

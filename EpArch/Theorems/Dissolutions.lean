@@ -51,7 +51,7 @@ structure closure_puzzle where
   bank_auto_propagates : Bool := false
   /-- Structural invariant: bank_auto_propagates is always false.
       Construction-time constraint: encodes that the Step vocabulary has no
-      entailment-inference constructor (no `Step.Entail` among the 10 constructors). -/
+      entailment-inference constructor (no `Step.Entail` among the 8 constructors). -/
   bank_no_entailment : bank_auto_propagates = false
 
 /-- Certainty closes under known entailment (Ladder operation). -/

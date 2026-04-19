@@ -448,7 +448,7 @@ theorem bridge_stripped_ungrounded
 
 | Theorem                        | Module (Theorems.*)   | Operational Basis (EpArch.Semantics.StepSemantics)   |
 |-------------------------------|----------------------|-------------------------------------------|
-| `withdrawal_gates`            | `Withdrawal`         | `withdrawal_requires_three_gates`         |
+| `withdrawal_gates`            | `Withdrawal`         | `withdrawal_requires_two_gates`           |
 | `repair_enforces_revalidation`| `Withdrawal`         | `repair_produces_candidate`               |
 | `header_localization_link`    | `Headers`            | `grounded_export_requires_headers`        |
 
