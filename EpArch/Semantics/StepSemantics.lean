@@ -4,12 +4,12 @@ EpArch.Semantics.StepSemantics — Step Semantics (Labeled Transition System)
 Constructive operational semantics of the epistemic architecture.
 Defines a concrete LTS over SystemState with eight bank-primitive actions
 (Submit, Withdraw, Challenge, Tick, Repair, Revoke, Promote,
-and Submit-with-source-attribution via submit_bridged) and proves conditional
+and direct-register via Step.register) and proves conditional
 linking results from operational preconditions rather than asserting them as axioms.
 
 Export is not a bank primitive. Inter-bubble transfer is an agent-level workflow:
-Withdraw from source bubble, agent carries deposit, Submit (via submit_bridged)
-to target bubble. The agent vouches for the source; d.h.V records provenance.
+Withdraw from source bubble, agent carries deposit, register (via Step.register)
+to target bubble. d.h.V records provenance; the bank does not verify the source.
 
 Bank defines WHAT the operators must satisfy (specification axioms).
 This module defines HOW they work: the Step relation's preconditions
@@ -397,20 +397,20 @@ inductive Step : SystemState PropLike Standard ErrorModel Provenance →
       (h_deposited : isDeposited s d_idx) :
       Step s (.Withdraw a B d_idx) s  -- state unchanged by successful withdrawal
 
-  /-- Submit with source attribution: agent vouches that deposit came from B_src,
-      depositing it directly as Deposited.
+  /-- Direct registration: agent registers a deposit as immediately reliable,
+      entering it directly as Deposited without the Candidate queue.
 
-      The agent identifies the source bubble (B_src) for provenance attribution;
-      d.h.V should record the source chain. The bank does not verify the claimed
-      source — that is the agent's responsibility. The agent's vouching is the gate;
-      presenting this step IS the assertion that the source is trusted.
+      Presenting this constructor IS the agent's assertion that the deposit is
+      sufficiently grounded to skip bank intermediation — e.g., the agent directly
+      experienced the situation, or is carrying a deposit from another bubble and
+      vouches for its source. Provenance belongs in d.h.V; the bank records the
+      deposit without verifying the agent's grounds. No bank-side precondition.
 
-      No bank-side precondition: same reasoning as hasTrustBridge removal from
-      withdrawal. Trust relationships are per-deposit and per-agent, not systemic
-      bank-layer lists. -/
-  | submit_bridged (s : SystemState PropLike Standard ErrorModel Provenance)
-      (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance)
-      (B_src : Bubble) :
+      This is the broader replacement for the former submit_bridged constructor,
+      which conflated direct reliability with cross-bubble attribution in a single
+      constructor that carried an inert B_src parameter the bank never checked. -/
+  | register (s : SystemState PropLike Standard ErrorModel Provenance)
+      (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance) :
       Step s (.Submit a d) { s with ledger := s.ledger ++ [{ d with status := .Deposited }] }
 
   /-- Challenge: deposit enters quarantine.
@@ -453,7 +453,7 @@ inductive Step : SystemState PropLike Standard ErrorModel Provenance →
 
   /-- Promote: bank operator advances a Candidate deposit to Deposited (live).
 
-      Along with `submit_bridged`, one of two Step constructors that can produce
+      Along with `register`, one of two Step constructors that can produce
       a `.Deposited` entry. The deposit must be in Candidate status; after this
       step it is Deposited and live in the bank.
 
@@ -662,8 +662,8 @@ theorem step_non_revision_preserves_non_revoked
       cases hd
       -- d.status = Candidate ≠ Revoked
       exact DepositStatus.noConfusion h_status
-  | submit_bridged _ d_new _ =>
-    -- Submit_bridged appends [{ d_new with status := .Deposited }]
+  | register _ d_new =>
+    -- register appends [{ d_new with status := .Deposited }]
     simp only at hd
     by_cases h_in_orig : d_idx < s.ledger.length
     · have h_eq : (s.ledger ++ [{ d_new with status := .Deposited }]).get? d_idx =
@@ -796,7 +796,7 @@ theorem step_no_revision_preserves_deposited
     -- s'.ledger = s.ledger ++ [{ d_new with status := .Candidate }]
     refine ⟨d, ?_, h_status⟩
     exact (List.get?_append_left' s.ledger _ d_idx h_in_orig).trans h_get
-  | submit_bridged _ d_new _ =>
+  | register _ d_new =>
     -- s'.ledger = s.ledger ++ [{ d_new with status := .Deposited }]
     -- Existing deposit at d_idx is unchanged (append only)
     refine ⟨d, ?_, h_status⟩
@@ -1303,9 +1303,9 @@ theorem submit_preserves_valid_status
     -- Candidate is in [.Deposited, .Candidate, .Quarantined, .Revoked]
     exact List.Mem.tail _ (List.Mem.head _)
 
-/-- Valid status is preserved by submit_bridged.
+/-- Valid status is preserved by register.
     New deposits enter as Deposited, which is a valid status. -/
-theorem submit_bridged_preserves_valid_status
+theorem register_preserves_valid_status
     (s : SystemState PropLike Standard ErrorModel Provenance)
     (d : Deposit PropLike Standard ErrorModel Provenance)
     (h_inv : inv_valid_status s) :
@@ -1464,8 +1464,8 @@ theorem step_preserves_valid_status
   cases h_step
   case submit a d =>
     exact submit_preserves_valid_status s d h_inv
-  case submit_bridged a d _ =>
-    exact submit_bridged_preserves_valid_status s d h_inv
+  case register a d =>
+    exact register_preserves_valid_status s d h_inv
   case withdraw =>
     exact h_inv
   case challenge _ _ _ d_idx _ =>
@@ -1520,7 +1520,7 @@ theorem step_preserves_separation
 
 /-- Auditability invariant: header provenance is carried by the Deposit struct itself.
 
-    Export is not a bank primitive (see Step.submit_bridged for the bridge path),
+    Export is not a bank primitive (see Step.register for the direct-register path),
     so there is no longer a Step-level gate on depositHasHeader. Auditability in the
     sense of traceable provenance is upheld by the Header fields (S, E, V, tau)
     that every Deposit carries. This definition is retained as a documentation anchor. -/
@@ -1663,7 +1663,7 @@ def sys_has_revocation (s : SystemState PropLike Standard ErrorModel Provenance)
     if that entry has status .Revoked.
 
     Proof strategy: cases on the Step constructor.
-    - submit/submit_bridged: appends; original index preserved by get?_append_left.
+    - submit/register: appends; original index preserved by get?_append_left.
     - withdraw/tick: ledger unchanged or clock-only change.
     - challenge/revoke/repair/promote: updateDepositStatus at some index idx';
       if idx' = d_idx, the precondition (isDeposited/isQuarantined/isCandidate)
@@ -1679,8 +1679,8 @@ theorem revoked_stay_revoked_one_step
   cases h_step with
   | submit =>
     exact (get?_append_left s.ledger _ d_idx (get?_implies_lt _ _ _ h_get)).trans h_get
-  | submit_bridged =>
-    -- submit_bridged appends [{ d with status := .Deposited }]; existing indices preserved
+  | register =>
+    -- register appends [{ d with status := .Deposited }]; existing indices preserved
     exact (get?_append_left s.ledger _ d_idx (get?_implies_lt _ _ _ h_get)).trans h_get
   | withdraw => exact h_get
   | challenge _ _ c_var d_ch h_dep =>

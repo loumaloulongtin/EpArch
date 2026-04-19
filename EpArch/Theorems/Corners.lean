@@ -78,8 +78,8 @@ theorem frozen_canon_no_revocation
   | withdraw _ _ _ _ =>
     -- s' = s, so d' = d
     simp_all
-  | submit_bridged _ d_new _ =>
-    -- submit_bridged appends [{ d_new with status := .Deposited }]; existing indices preserved
+  | register _ d_new =>
+    -- register appends [{ d_new with status := .Deposited }]; existing indices preserved
     have h_lt : d_idx < s.ledger.length := get?_implies_lt s.ledger d_idx d h_get
     have h_same : (s.ledger ++ [{ d_new with status := .Deposited }]).get? d_idx =
         s.ledger.get? d_idx :=
@@ -222,7 +222,7 @@ theorem withdrawal_requires_deposited
 /-- CORNER 2 THEOREM: Submissions enter as Candidate or Deposited.
 
     Plain `Step.submit` enters as Candidate (must go through promotion).
-    `Step.submit_bridged` enters as Deposited directly (agent vouches for source).
+    `Step.register` enters as Deposited directly (agent registers directly).
     In both cases the new entry is in the ledger. The distinction is which path
     the agent chose, not a bank-side precondition. -/
 theorem submit_produces_candidate
@@ -236,7 +236,7 @@ theorem submit_produces_candidate
     have h := mem_append_iff { d with status := DepositStatus.Candidate } s.ledger [{ d with status := DepositStatus.Candidate }]
     rw [h]
     exact Or.inr (List.Mem.head _)
-  | submit_bridged _ _ B_src =>
+  | register _ _ =>
     refine ⟨{ d with status := .Deposited }, ?_, Or.inr rfl⟩
     have h := mem_append_iff { d with status := DepositStatus.Deposited } s.ledger [{ d with status := DepositStatus.Deposited }]
     rw [h]

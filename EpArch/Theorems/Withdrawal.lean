@@ -74,12 +74,12 @@ theorem repair_enforces_revalidation
   repair_produces_candidate s s' a B d_idx f h_step
 
 /-- Submit enforces valid-status entry: new deposits enter as Candidate (ordinary submit)
-    or Deposited (agent-vouched submit_bridged).
+    or Deposited (agent direct registration via `Step.register`).
 
     Ordinary `Step.submit` explicitly sets status := .Candidate.
-    `Step.submit_bridged` explicitly sets status := .Deposited,
-    bypassing the Candidate stage — the agent vouches for the source (B_src)
-    by presenting this step; no bank-side precondition applies. -/
+    `Step.register` explicitly sets status := .Deposited,
+    bypassing the Candidate stage — the agent registers the deposit directly;
+    no bank-side precondition applies. -/
 theorem submit_enforces_revalidation
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance)
@@ -93,7 +93,7 @@ theorem submit_enforces_revalidation
     have h := mem_append_iff { d with status := DepositStatus.Candidate } s.ledger [{ d with status := DepositStatus.Candidate }]
     rw [h]
     exact Or.inr (List.Mem.head _)
-  | submit_bridged _ _ _ =>
+  | register _ _ =>
     -- s'.ledger = s.ledger ++ [{ d with status := .Deposited }]
     refine ⟨{ d with status := .Deposited }, ?_, Or.inr rfl⟩
     have h := mem_append_iff { d with status := DepositStatus.Deposited } s.ledger [{ d with status := DepositStatus.Deposited }]

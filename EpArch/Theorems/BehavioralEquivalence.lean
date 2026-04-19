@@ -20,7 +20,7 @@ routes that apply to different input constructors:
 
   **Definitional route** (ExportRequest → TimeAdvanced):
     `ExportRequest` maps to `.Tick` — cross-bubble transfer is an agent-level workflow
-    (Withdraw in B_src, agent carries the deposit, `Step.submit_bridged` in B_tgt).
+    (Withdraw in B_src, agent carries the deposit, `Step.register` in B_tgt).
     `Behavior` returns `.TimeAdvanced` for `ExportRequest`; `input_to_action` maps it to
     `.Tick`.  The equivalence follows definitionally from `behavior_step_consistent`.
 
@@ -265,7 +265,7 @@ def input_to_action : Input → CAction
     - `.Tick`               → clock advanced
     - `.Submit`, `.Repair`, `.Revoke`, `.Promote` — mapped to `.TimeAdvanced`.
     Cross-bubble transfer (ExportRequest) maps to Tick/TimeAdvanced; inter-bubble workflow
-    is agent-level (Withdraw in B1 → agent → submit_bridged in B2). -/
+    is agent-level (Withdraw in B1 → agent → register in B2). -/
 def observe_step_action : CAction → Observation
   | .Withdraw _ _  d_idx => .WithdrawSuccess d_idx
   | .Challenge _ _ _         => .ChallengeProcessed "quarantined"
@@ -394,8 +394,8 @@ theorem behavior_from_step (B : GroundedBehavior) (i : Input) (s s' : CState)
 /-
   (Retired) grounded_export_step: export is not a bank primitive.
   Inter-bubble transfer is an agent-level workflow: Withdraw in B1, agent carries deposit,
-  Submit with bridge credential in B2 (Step.submit_bridged).
-  See BridgeSubmitEntersDeposited in EpArch.Commitments for the new C5 theorem.
+  direct registration in B2 (Step.register).
+  See DirectRegisterEntersDeposited in EpArch.Commitments for the C5 theorem.
 -/
 
 end StepBridge

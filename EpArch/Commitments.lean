@@ -22,7 +22,7 @@ hypothesis bundles.
     and `consensus B d.P` (a genuine active deposit) versus `redeemable`
     (requires `vindication_evidence` — single opaque backing the three aspect predicates
     `path_route_exists`, `contact_was_made`, `verdict_discriminates`).
-- C5 (`BridgeSubmitEntersDeposited`) — bridge credential enables direct Deposited entry
+- C5 (`DirectRegisterEntersDeposited`) — direct agent registration enables Deposited entry
 - C6b (`NoSelfCorrectionWithoutRevision`) — from StepSemantics
 - C7b (`header_stripping_harder`) — proved via the admissible completion-space model:
     `metadata_stripping_strictly_enlarges` establishes that stripping strictly
@@ -394,24 +394,25 @@ theorem intra_bubble_not_redeemable
   exact h_intra vp.surface (h_dep ▸ vp.h_path)
 
 
-/-! ## Commitment 5: Bridge-Mediated Submission -/
+/-! ## Commitment 5: Direct Agent Registration -/
 
-/-- COMMITMENT 5: Bridge-credentialed Submit enters as Deposited.
+/-- COMMITMENT 5: Direct-register Submit enters as Deposited.
 
-    When an agent vouches for a deposit coming from source bubble B_src,
-    `Step.submit_bridged` fires and the deposit enters the ledger as Deposited directly.
-    The agent is in the middle: the bank sees only a Submit; the agent's vouching
-    for the source is what produces Deposited status rather than Candidate.
+    When an agent registers a deposit directly (Step.register), the deposit
+    enters the ledger as Deposited without going through the Candidate queue.
+    The agent's decision to present this step is the sole gate: no bank-side
+    precondition applies. Provenance (source bubble, direct experience, etc.)
+    belongs in d.h.V and is the agent's responsibility to record.
 
-    The bank does not verify the claimed source. Trust is per-deposit (d.h.acl)
-    and per-agent; the agent accepts responsibility by presenting this step. -/
-theorem BridgeSubmitEntersDeposited {Reason Evidence : Type u}
+    This replaces the former BridgeSubmitEntersDeposited theorem, which was
+    scoped to cross-bubble transfer; direct registration is the correct general
+    characterization. -/
+theorem DirectRegisterEntersDeposited {Reason Evidence : Type u}
     (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance)
-    (B_src : Bubble)
     (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance) :
     ∃ s', StepSemantics.Step (Reason := Reason) (Evidence := Evidence) s (.Submit a d) s' ∧
           ∃ d_new, d_new ∈ s'.ledger ∧ d_new.status = .Deposited := by
-  refine ⟨_, StepSemantics.Step.submit_bridged s a d B_src, ?_⟩
+  refine ⟨_, StepSemantics.Step.register s a d, ?_⟩
   exact ⟨{ d with status := .Deposited },
     (StepSemantics.mem_append_iff _ s.ledger _).mpr (Or.inr (List.Mem.head _)),
     rfl⟩
@@ -957,7 +958,7 @@ which covers C3/C7b/C8 but contains no commitment-specific result.
 The remaining commitments are proved as named theorems:
 - C1 — `innovation_allows_traction_without_authorization` + `caveated_authorization_does_not_force_certainty`
 - C2 — `WorldCtx.no_ledger_tradeoff`
-- C5 — `BridgeSubmitEntersDeposited`
+- C5 — `DirectRegisterEntersDeposited`
 - C6b — `NoSelfCorrectionWithoutRevision`
 -/
 
@@ -981,7 +982,7 @@ theorem redeemability_requires_more_than_consensus
     - C7b: `header_stripping_harder` — stripped disputes are systematically harder to diagnose.
     - C8: `TemporalValidity` — refreshed and unrefreshed deposits are not equivalent.
     C1, C2, C5, C6b are proved as named theorems (see their respective sections).
-    C5 is now `BridgeSubmitEntersDeposited` (bridge credential → Deposited entry);
+    C5 is now `DirectRegisterEntersDeposited` (direct agent registration → Deposited entry);
     the former `ExportGating` theorem has been removed along with `Action.Export`. -/
 theorem commitments_pack :
     (∀ (d : Deposit PropLike Standard ErrorModel Provenance),

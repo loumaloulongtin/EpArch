@@ -14,7 +14,7 @@ via trace induction over the Agent LTS.
 - deposited_claim: Prop-sorted epistemic truth predicate
 - submit_preserves_deposited_claims: Submit cannot advance claims to Deposited
 - deposit_promotion_requires_bank_authority: Step.promote (with bank authority)
-  or Step.submit_bridged (agent vouches for source; no bank-side precondition) can advance a claim to Deposited
+  or Step.register (agent direct registration; no bank-side precondition) can advance a claim to Deposited
   (covers all Step constructors)
 - AgentLTSAbstraction: simulation witness (all three fields machine-checked)
 - Containment invariants proved by trace induction:
@@ -240,25 +240,25 @@ Two connected definitions bridge the state spaces:
 - `projectState`: maps `StepSemantics.SystemState` → `AgentSystemState`.
   The `truth` field is `Bool`-valued (`BEq PropLike` required).
   `gateEnabled` is fixed to `true` — export is not a bank primitive; cross-bubble
-  transfer is an agent-level workflow (`Step.submit_bridged` for bridged entry).
+  transfer is an agent-level workflow (`Step.register` for direct-register entry).
 
 - `deposited_claim`: Prop-sorted counterpart — `∃ d ∈ s.ledger, d.P = c ∧ d.status = .Deposited`.
   Used in theorem statements to avoid a `DecidableEq` dependency.
 
 The key theorem is `deposit_promotion_requires_bank_authority`: the only `Step`
 constructor that can move a claim from non-Deposited into the Deposited set is
-`Step.promote` (bank authority required) or `Step.submit_bridged` (agent vouches for
-source; no bank-side precondition).
+`Step.promote` (bank authority required) or `Step.register` (agent direct
+registration; no bank-side precondition).
 The proof covers all Step constructors:
 - `submit`: new entry enters at `.Candidate` — noConfusion with `.Deposited`
-- `submit_bridged`: new `.Deposited` entry via agent vouching for source (B_src attribution) — second pathway
+- `register`: new `.Deposited` entry via agent direct registration — second pathway
 - `withdraw` / `tick`: ledger unchanged — trivial
 - `challenge` / `revoke` / `repair`: `updateDepositStatus` sets a non-Deposited status — noConfusion
 - `promote`: `updateDepositStatus` sets `.Deposited` — bank authority extracted
 
 This is the formal statement that Deposited status is exclusively reachable via:
 1. Bank authority (`Step.promote`) — for existing deposits
-2. Agent vouching for source (`Step.submit_bridged`) — for new submissions
+2. Agent direct registration (`Step.register`) — for new submissions
 No agent-initiated step bypasses both paths.
 -/
 
@@ -266,7 +266,7 @@ No agent-initiated step bypasses both paths.
     The `truth` field is the `Bool`-valued counterpart of `deposited_claim`:
     `truth c = true` iff the ledger holds a `.Deposited` entry for `c`.
     `gateEnabled` is fixed to `true` — export is not a bank primitive;
-    cross-bubble transfer is an agent-level workflow (`Step.submit_bridged`).
+    cross-bubble transfer is an agent-level workflow (`Step.register`).
     Requires `[BEq PropLike]` for the membership test in the `truth` closure;
     `deposited_claim` (below) is the Prop-sorted version used in theorems. -/
 def projectState [BEq PropLike] {Agent : Type u}
@@ -320,17 +320,17 @@ theorem submit_preserves_deposited_claims
   · intro ⟨d, hd_mem, hP, hstatus⟩
     exact ⟨d, (EpArch.StepSemantics.mem_append_iff d s.ledger _).mpr (Or.inl hd_mem), hP, hstatus⟩
 
-/-- BANK AUTHORITY THEOREM: Deposited status requires bank authority or agent vouching (submit_bridged).
+/-- BANK AUTHORITY THEOREM: Deposited status requires bank authority or direct registration (Step.register).
 
     **Theorem shape:** If `¬ deposited_claim s c` before a Step and `deposited_claim s' c`
     after, then either:
     (a) the step was `Step.promote` with `(ag, B, d_idx)` recorded (bank promotes existing deposit), OR
-    (b) the step was `Step.submit_bridged` (firing on `.Submit ag d_sub`) with
-        `d_sub.P = c` (new bridged submission; agent vouches for source B_src).
+    (b) the step was `Step.register` (firing on `.Submit ag d_sub`) with
+        `d_sub.P = c` (new direct registration; agent presents this step as the gate).
 
     **Proof strategy:** Case analysis on all Step constructors.
     - `submit`: appends `.Candidate` — noConfusion with `.Deposited`; old entries by h_not
-    - `submit_bridged`: appends `.Deposited` — return right disjunct (agent vouched for source)
+    - `register`: appends `.Deposited` — return right disjunct (agent registered directly)
     - `withdraw`: `s' = s`, ledger unchanged — direct contradiction via h_not
     - `challenge`: `updateDepositStatus` sets `.Quarantined` — noConfusion
     - `tick`: `s' = { s with clock := t' }`, ledger field unchanged — direct contradiction
@@ -339,7 +339,7 @@ theorem submit_preserves_deposited_claims
     - `promote`: `updateDepositStatus` sets `.Deposited` — return left disjunct
 
     This is the formal basis of the epistemic sandbox: Deposited status is exclusively
-    reachable via bank authority (promote) or agent vouching for source (submit_bridged).
+    reachable via bank authority (promote) or agent direct registration (Step.register).
     No agent-initiated step without one of these produces a Deposited entry. -/
 theorem deposit_promotion_requires_bank_authority
     {PropLike Standard ErrorModel Provenance Reason Evidence : Type u}
@@ -366,8 +366,8 @@ theorem deposit_promotion_requires_bank_authority
       rw [EpArch.StepSemantics.mem_singleton] at h
       rw [h] at hstatus'
       exact DepositStatus.noConfusion hstatus'
-  | submit_bridged _ d_sub _ =>
-    -- submit_bridged appends [{ d_sub with status := .Deposited }]; return right disjunct
+  | register _ d_sub =>
+    -- register appends [{ d_sub with status := .Deposited }]; return right disjunct
     have h_eq : d_sub.P = c := by
       cases h_after with
       | intro d' hd' =>
@@ -448,7 +448,7 @@ The three `AgentLTSAbstraction` fields are ALL proved:
 - `gate_architectural`: gate invariant preserved along all AgentLTS traces
 - `over_approximation`: `deposit_promotion_requires_bank_authority` — Deposited status
   is exclusively reachable via bank authority (`Step.promote`) or agent vouching for source
-  (`Step.submit_bridged`). All other constructors leave the Deposited set unchanged.
+  (`Step.register`). All other constructors leave the Deposited set unchanged.
 
 The connection between the two state spaces via `projectState` (above) and the
 bank authority theorem closes the simulation argument at the StepSemantics level.
@@ -461,7 +461,7 @@ bank authority theorem closes the simulation argument at the StepSemantics level
     - `gate_architectural`: gate invariant preserved along all AgentLTS traces
     - `over_approximation`: `deposit_promotion_requires_bank_authority` — Deposited
       status is exclusively reachable via bank authority (`Step.promote`) or agent vouching
-      for source (`Step.submit_bridged`).
+      for source (`Step.register`).
 
     `invariants_transfer_via_simulation` calls all three fields of the abstraction
     witness, so any `AgentLTSAbstraction` satisfying the proved fields transfers the
@@ -478,12 +478,12 @@ structure AgentLTSAbstraction (Agent Claim : Type u) where
       EpArch.LTS.Trace (AgentLTS Agent Claim) s s' →
       gateInvariant initialGate s → gateInvariant initialGate s'
   /-- Bank authority theorem at StepSemantics level: the only path to `.Deposited`
-      is `Step.promote` (bank promotes existing deposit) or `Step.submit_bridged`
-      (agent vouches for source; no bank-side precondition).
+      is `Step.promote` (bank promotes existing deposit) or `Step.register`
+      (agent direct registration; no bank-side precondition).
       Formally: if `¬ deposited_claim s c` and `deposited_claim s' c` after a Step,
       then either the step was `Promote ag B d_idx` (attribution recorded),
-      or the step was `Submit ag d_sub` (a `submit_bridged` Step constructor) with
-      `d_sub.P = c` (agent asserted the source).
+      or the step was `Submit ag d_sub` (a `register` Step constructor) with
+      `d_sub.P = c` (agent registered the deposit directly).
       Witnessed by `deposit_promotion_requires_bank_authority`. -/
   over_approximation :
     ∀ {Standard ErrorModel Provenance Reason Evidence : Type u}
@@ -501,7 +501,7 @@ structure AgentLTSAbstraction (Agent Claim : Type u) where
     - `truth_external` / `gate_architectural`: invariant corollaries via trace induction
     - `over_approximation`: `deposit_promotion_requires_bank_authority` — Deposited
       status is exclusively reachable via bank authority (`Step.promote`) or agent
-      vouching for source (`Step.submit_bridged`) -/
+      direct registration (`Step.register`) -/
 def agentLTSIsAbstraction (Agent Claim : Type u) : AgentLTSAbstraction Agent Claim where
   truth_external     := truth_preserved_along_trace
   gate_architectural := gate_preserved_along_trace

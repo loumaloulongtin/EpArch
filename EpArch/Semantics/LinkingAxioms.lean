@@ -6,13 +6,13 @@ This file previously contained export-gating operational grounding theorems
 now-deleted `Action.Export` constructor.
 
 Export is not a bank primitive. Inter-bubble transfer is an agent-level workflow:
-the agent Withdraws from the source bubble, carries the deposit, then Submits to
-the target bubble via `Step.submit_bridged`. The bank records the event; it does
+the agent Withdraws from the source bubble, carries the deposit, then registers it
+in the target bubble via `Step.register`. The bank records the event; it does
 not verify the claimed source or maintain a trust-bridge registry. Trust relationships
 are per-deposit (d.h.acl) and per-agent, not systemic bank-layer lists.
 
 The export gating commitment (C5 in EpArch.Commitments) has been replaced by
-`BridgeSubmitEntersDeposited`: the bridge path is the agent-vouching submit path.
+`DirectRegisterEntersDeposited`: the direct-register path is the agent registration path.
 -/
 
 import EpArch.Semantics.StepSemantics

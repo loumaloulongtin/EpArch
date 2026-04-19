@@ -837,7 +837,7 @@ File: `Agent/Imposition.lean`
 | Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `lie_containment_principle` | Agent/Resilience.lean | Lies create untrusted deposits, don't flip truth | Epistemic sandbox |
-| `deposit_promotion_requires_bank_authority` | Agent/Resilience.lean | Deposited entries are produced only by `Step.promote` (structural status gate) or `Step.submit_bridged` (bridge path) | Bank gate |
+| `deposit_promotion_requires_bank_authority` | Agent/Resilience.lean | Deposited entries are produced only by `Step.promote` (structural status gate) or `Step.register` (direct agent registration; no bank-side precondition) | Bank gate |
 
 ---
 
