@@ -410,7 +410,7 @@ theorem intra_bubble_not_redeemable
 theorem DirectRegisterEntersDeposited {Reason Evidence : Type u}
     (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance)
     (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance) :
-    ∃ s', StepSemantics.Step (Reason := Reason) (Evidence := Evidence) s (.Submit a d) s' ∧
+    ∃ s', StepSemantics.Step (Reason := Reason) (Evidence := Evidence) s (.Register a d) s' ∧
           ∃ d_new, d_new ∈ s'.ledger ∧ d_new.status = .Deposited := by
   refine ⟨_, StepSemantics.Step.register s a d, ?_⟩
   exact ⟨{ d with status := .Deposited },

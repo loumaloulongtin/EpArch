@@ -263,14 +263,15 @@ def input_to_action : Input → CAction
     - `.Withdraw _ _ d_idx` → deposit at `d_idx` was successfully relied on
     - `.Challenge _`        → deposit entered `Quarantined` status
     - `.Tick`               → clock advanced
-    - `.Submit`, `.Repair`, `.Revoke`, `.Promote` — mapped to `.TimeAdvanced`.
+    - `.Submit`, `.Register`, `.Repair`, `.Revoke`, `.Promote` — mapped to `.TimeAdvanced`.
     Cross-bubble transfer (ExportRequest) maps to Tick/TimeAdvanced; inter-bubble workflow
-    is agent-level (Withdraw in B1 → agent → register in B2). -/
+    is agent-level (Withdraw in B1 → agent → Register in B2). -/
 def observe_step_action : CAction → Observation
   | .Withdraw _ _  d_idx => .WithdrawSuccess d_idx
   | .Challenge _ _ _         => .ChallengeProcessed "quarantined"
   | .Tick                => .TimeAdvanced
   | .Submit _ _          => .TimeAdvanced
+  | .Register _ _        => .TimeAdvanced
   | .Repair _ _ _ _      => .TimeAdvanced
   | .Revoke _ _ _        => .TimeAdvanced
   | .Promote _ _ _       => .TimeAdvanced

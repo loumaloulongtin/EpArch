@@ -171,11 +171,12 @@ repair quarantine requirement, submit Candidate lifecycle. -/
     Like `structural_theorems_unconditional`, no model parameter varies here:
     these hold by virtue of what the `Step` constructors require and produce.
 
-    (1) Withdrawal gate: `Step.Withdraw` fires only with Deposited status (bank consultation).
+    (1) Withdrawal gate: `Step.withdraw` fires only with Deposited status (bank consultation).
         Authorization is agent-level; not a bank gate.
-    (2) Repair revalidation: `Step.Repair` produces Candidate status in the ledger.
-    (3) Repair quarantine: `Step.Repair` requires Quarantined input status.
-    (4) Submit Candidate: `Step.Submit` ensures at least one Candidate deposit. -/
+    (2) Repair revalidation: `Step.repair` produces Candidate status in the ledger.
+    (3) Repair quarantine: `Step.repair` requires Quarantined input status.
+    (4) Submit Candidate: `Action.Submit` / `Step.submit` ensures a new Candidate deposit.
+    (5) Register Deposited: `Action.Register` / `Step.register` ensures a new Deposited deposit. -/
 theorem lts_theorems_step_universal {Reason Evidence : Type} :
     (∀ (s s' : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
        (B : Bubble) (a : Agent) (d_idx : Nat),
@@ -196,12 +197,17 @@ theorem lts_theorems_step_universal {Reason Evidence : Type} :
        (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance),
        StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
          s (StepSemantics.Action.Submit a d) s' →
-       ∃ d', d' ∈ s'.ledger ∧ (d'.status = DepositStatus.Candidate ∨
-                                d'.status = DepositStatus.Deposited)) :=
+       ∃ d', d' ∈ s'.ledger ∧ d'.status = DepositStatus.Candidate) ∧
+    (∀ (s s' : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
+       (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance),
+       StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
+         s (StepSemantics.Action.Register a d) s' →
+       ∃ d', d' ∈ s'.ledger ∧ d'.status = DepositStatus.Deposited) :=
   ⟨fun s s' B a d_idx h => withdrawal_gates s s' B a d_idx h,
    fun s s' a B d_idx f h => repair_enforces_revalidation s s' a B d_idx f h,
    fun s s' a B d_idx f h => repair_requires_prior_challenge s s' a B d_idx f h,
-   fun s s' a d h    => submit_enforces_revalidation s s' a d h⟩
+   fun s s' a d h    => submit_enforces_revalidation s s' a d h,
+   fun s s' a d h    => register_enters_deposited s s' a d h⟩
 
 
 /-! ## §3c  All Five Health Goals Transport Through ConcreteBankModel

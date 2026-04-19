@@ -325,8 +325,8 @@ theorem submit_preserves_deposited_claims
     **Theorem shape:** If `¬ deposited_claim s c` before a Step and `deposited_claim s' c`
     after, then either:
     (a) the step was `Step.promote` with `(ag, B, d_idx)` recorded (bank promotes existing deposit), OR
-    (b) the step was `Step.register` (firing on `.Submit ag d_sub`) with
-        `d_sub.P = c` (new direct registration; agent presents this step as the gate).
+    (b) the step was `Step.register` (firing on `.Register ag d_sub`) with
+        `d_sub.P = c` (new direct registration; agent presents this action as the gate).
 
     **Proof strategy:** Case analysis on all Step constructors.
     - `submit`: appends `.Candidate` — noConfusion with `.Deposited`; old entries by h_not
@@ -353,10 +353,11 @@ theorem deposited_claim_arises_from_promote_or_register
       a = .Promote ag B d_idx)
     ∨ (∃ (ag : EpArch.Agent)
          (d_sub : EpArch.Deposit PropLike Standard ErrorModel Provenance),
-      a = .Submit ag d_sub ∧ d_sub.P = c) := by
+      a = .Register ag d_sub ∧ d_sub.P = c) := by
   cases step with
   | submit _ _ =>
     -- s' = { s with ledger := s.ledger ++ [{ d with status := .Candidate }] }
+    -- .Candidate ≠ .Deposited, so h_after is absurd
     apply absurd h_after; intro ⟨d', hd', hP', hstatus'⟩
     simp only at hd'
     rw [EpArch.StepSemantics.mem_append_iff] at hd'
@@ -482,7 +483,7 @@ structure AgentLTSAbstraction (Agent Claim : Type u) where
       (agent direct registration; no bank-side precondition).
       Formally: if `¬ deposited_claim s c` and `deposited_claim s' c` after a Step,
       then either the step was `Promote ag B d_idx` (attribution recorded),
-      or the step was `Submit ag d_sub` (a `register` Step constructor) with
+      or the step was `Register ag d_sub` (a `register` Step constructor) with
       `d_sub.P = c` (agent registered the deposit directly).
       Witnessed by `deposited_claim_arises_from_promote_or_register`. -/
   over_approximation :
@@ -495,7 +496,7 @@ structure AgentLTSAbstraction (Agent Claim : Type u) where
         a = .Promote ag B d_idx)
       ∨ (∃ (ag : EpArch.Agent)
            (d_sub : EpArch.Deposit Claim Standard ErrorModel Provenance),
-        a = .Submit ag d_sub ∧ d_sub.P = c)
+        a = .Register ag d_sub ∧ d_sub.P = c)
 /-- Canonical abstraction witness, proved from the containment corollaries.
     All three fields are backed by machine-checked proofs:
     - `truth_external` / `gate_architectural`: invariant corollaries via trace induction

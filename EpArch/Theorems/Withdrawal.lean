@@ -73,29 +73,38 @@ theorem repair_enforces_revalidation
     s'.ledger = updateDepositStatus s.ledger d_idx .Candidate :=
   repair_produces_candidate s s' a B d_idx f h_step
 
-/-- Submit enforces valid-status entry: new deposits enter as Candidate (ordinary submit)
-    or Deposited (agent direct registration via `Step.register`).
+/-- Submit enforces Candidate entry: ordinary submissions enter as Candidate.
 
-    Ordinary `Step.submit` explicitly sets status := .Candidate.
-    `Step.register` explicitly sets status := .Deposited,
-    bypassing the Candidate stage — the agent registers the deposit directly;
-    no bank-side precondition applies. -/
+    `Step.submit` explicitly sets status := .Candidate.
+    `Action.Register` / `Step.register` is a separate action that enters Deposited
+    directly — see `register_enters_deposited` below. -/
 theorem submit_enforces_revalidation
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance)
     (h_step : Step (Reason := Reason) (Evidence := Evidence)
       s (.Submit a d) s') :
-    ∃ d', d' ∈ s'.ledger ∧ (d'.status = .Candidate ∨ d'.status = .Deposited) := by
+    ∃ d', d' ∈ s'.ledger ∧ d'.status = .Candidate := by
   cases h_step with
   | submit =>
-    -- s'.ledger = s.ledger ++ [{ d with status := .Candidate }]
-    refine ⟨{ d with status := .Candidate }, ?_, Or.inl rfl⟩
+    refine ⟨{ d with status := .Candidate }, ?_, rfl⟩
     have h := mem_append_iff { d with status := DepositStatus.Candidate } s.ledger [{ d with status := DepositStatus.Candidate }]
     rw [h]
     exact Or.inr (List.Mem.head _)
-  | register _ _ =>
-    -- s'.ledger = s.ledger ++ [{ d with status := .Deposited }]
-    refine ⟨{ d with status := .Deposited }, ?_, Or.inr rfl⟩
+
+/-- Register enters Deposited: direct-registration submissions bypass the Candidate queue.
+
+    `Step.register` (firing on `Action.Register`) explicitly sets status := .Deposited.
+    No bank-side precondition applies; the agent's choice to present `Action.Register`
+    is the sole gate. -/
+theorem register_enters_deposited
+    (s s' : SystemState PropLike Standard ErrorModel Provenance)
+    (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance)
+    (h_step : Step (Reason := Reason) (Evidence := Evidence)
+      s (.Register a d) s') :
+    ∃ d', d' ∈ s'.ledger ∧ d'.status = .Deposited := by
+  cases h_step with
+  | register =>
+    refine ⟨{ d with status := .Deposited }, ?_, rfl⟩
     have h := mem_append_iff { d with status := DepositStatus.Deposited } s.ledger [{ d with status := DepositStatus.Deposited }]
     rw [h]
     exact Or.inr (List.Mem.head _)

@@ -291,14 +291,20 @@ inductive Tier4Witness : EnabledTier4Cluster → Type 1 where
         (∀ (s s' : StepSemantics.SystemState PL SL EL PrL)
            (a : Agent) (B : Bubble) (d_idx : Nat) (f : Field),
            StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
-             s (StepSemantics.Action.Repair a B d_idx f) s' →
+             s (StepSemantics.Action.Repair a B d_idx f) s' ->
            StepSemantics.isQuarantined s d_idx) ∧
         (∀ (s s' : StepSemantics.SystemState PL SL EL PrL)
            (a : Agent) (d : Deposit PL SL EL PrL),
            StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
              s (StepSemantics.Action.Submit a d) s' →
            ∃ d', d' ∈ s'.ledger ∧
-             (d'.status = DepositStatus.Candidate ∨ d'.status = DepositStatus.Deposited))) →
+             d'.status = DepositStatus.Candidate) ∧
+        (∀ (s s' : StepSemantics.SystemState PL SL EL PrL)
+           (a : Agent) (d : Deposit PL SL EL PrL),
+           StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
+             s (StepSemantics.Action.Register a d) s' →
+           ∃ d', d' ∈ s'.ledger ∧
+             d'.status = DepositStatus.Deposited)) →
       Tier4Witness .tier4_lts_universal
   | bankGoalsCompat :
       (∀ (E : ExtModel) (C : CoreModel) (_ : Compatible E C)
@@ -537,8 +543,12 @@ def clusterValid (c : ClusterTag) : Prop :=
            (a : Agent) (d : Deposit PL SL EL PrL),
            StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
              s (StepSemantics.Action.Submit a d) s' →
-           ∃ d', d' ∈ s'.ledger ∧ (d'.status = DepositStatus.Candidate ∨
-                                    d'.status = DepositStatus.Deposited))
+           ∃ d', d' ∈ s'.ledger ∧ d'.status = DepositStatus.Candidate) ∧
+        (∀ (s s' : StepSemantics.SystemState PL SL EL PrL)
+           (a : Agent) (d : Deposit PL SL EL PrL),
+           StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
+             s (StepSemantics.Action.Register a d) s' →
+           ∃ d', d' ∈ s'.ledger ∧ d'.status = DepositStatus.Deposited)
   -- Tier 4 bank_goals (2): theorems at universe 0
   | .tier4_bank_goals_compat => prop_tier4_bank_goals_compat
   | .tier4_bank_goals_surj   => prop_tier4_bank_goals_surj

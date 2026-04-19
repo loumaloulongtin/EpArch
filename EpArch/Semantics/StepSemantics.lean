@@ -2,14 +2,15 @@
 EpArch.Semantics.StepSemantics — Step Semantics (Labeled Transition System)
 
 Constructive operational semantics of the epistemic architecture.
-Defines a concrete LTS over SystemState with eight bank-primitive actions
-(Submit, Withdraw, Challenge, Tick, Repair, Revoke, Promote,
-and direct-register via Step.register) and proves conditional
-linking results from operational preconditions rather than asserting them as axioms.
+Defines a concrete LTS over SystemState with nine bank-primitive actions
+(Submit, Register, Withdraw, Challenge, Tick, Repair, Revoke, Promote)
+and proves conditional linking results from operational preconditions
+rather than asserting them as axioms.
 
 Export is not a bank primitive. Inter-bubble transfer is an agent-level workflow:
-Withdraw from source bubble, agent carries deposit, register (via Step.register)
-to target bubble. d.h.V records provenance; the bank does not verify the source.
+Withdraw from source bubble, agent carries deposit, Register (Action.Register /
+Step.register) to target bubble. d.h.V records provenance; the bank does not
+verify the source.
 
 Bank defines WHAT the operators must satisfy (specification axioms).
 This module defines HOW they work: the Step relation's preconditions
@@ -56,20 +57,25 @@ variable {PropLike Standard ErrorModel Provenance Reason Evidence : Type u}
 /-- Action: the inputs that drive state transitions.
 
     These correspond to the deposit lifecycle operators:
-    - Submit: deposit enters system (`Step.submit` → Candidate; `Step.register` → Deposited;
-               both fire on `Action.Submit` — traces see Submit, proofs distinguish the constructor)
-    - Withdraw: agent relies on deposit
+    - Submit:    deposit enters system as Candidate (`Step.submit` → Candidate)
+    - Register:  deposit enters system as Deposited (`Step.register` → Deposited);
+                 the agent's choice to present this action is itself the assertion
+                 that the deposit is already sufficiently grounded. The two entry
+                 paths are now action-distinguishable, so traces can observe which
+                 path was taken.
+    - Withdraw:  agent relies on deposit
     - Challenge: deposit is contested
-    - Tick: time advances (for TTL expiry)
-    - Repair: address challenged field
-    - Revoke: remove deposit from circulation
+    - Tick:      time advances (for TTL expiry)
+    - Repair:    address challenged field
+    - Revoke:    remove deposit from circulation
 
     Export is NOT a primitive bank action. Inter-bubble transfer is an agent-level
-    workflow: Withdraw from source bubble, agent carries the deposit, Submit to
+    workflow: Withdraw from source bubble, agent carries the deposit, Register to
     target bubble. The agent vouches for the source (d.h.V records provenance);
     the bank records the deposit — it does not verify the claimed source. -/
 inductive Action (PropLike Standard ErrorModel Provenance Reason Evidence : Type u) where
   | Submit (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance)
+  | Register (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance)
   | Withdraw (a : Agent) (B : Bubble) (d_idx : Nat)
   | Challenge (a : Agent) (B : Bubble) (c : EpArch.Challenge PropLike Reason Evidence)
   | Tick
@@ -401,18 +407,17 @@ inductive Step : SystemState PropLike Standard ErrorModel Provenance →
   /-- Direct registration: agent registers a deposit as immediately reliable,
       entering it directly as Deposited without the Candidate queue.
 
-      Presenting this constructor IS the agent's assertion that the deposit is
-      sufficiently grounded to skip bank intermediation — e.g., the agent directly
-      experienced the situation, or is carrying a deposit from another bubble and
-      vouches for its source. Provenance belongs in d.h.V; the bank records the
-      deposit without verifying the agent's grounds. No bank-side precondition.
+      Presenting `Action.Register` IS the agent's assertion that the deposit is
+      already sufficiently grounded — e.g., the agent directly experienced the
+      situation, or is carrying a deposit from another bubble and vouches for its
+      source. Provenance belongs in d.h.V; the bank records the deposit without
+      verifying the agent's grounds. No bank-side precondition.
 
-      This is the broader replacement for the former submit_bridged constructor,
-      which conflated direct reliability with cross-bubble attribution in a single
-      constructor that carried an inert B_src parameter the bank never checked. -/
+      `Action.Register` is now trace-distinguishable from `Action.Submit`:
+      a trace observer can see which entry path was taken. -/
   | register (s : SystemState PropLike Standard ErrorModel Provenance)
       (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance) :
-      Step s (.Submit a d) { s with ledger := s.ledger ++ [{ d with status := .Deposited }] }
+      Step s (.Register a d) { s with ledger := s.ledger ++ [{ d with status := .Deposited }] }
 
   /-- Challenge: deposit enters quarantine.
 
@@ -1521,7 +1526,7 @@ theorem step_preserves_separation
 
 /-- Auditability invariant: header provenance is carried by the Deposit struct itself.
 
-    Export is not a bank primitive (see Step.register for the direct-register path),
+    Export is not a bank primitive (see Action.Register / Step.register for the direct-register path),
     so there is no longer a Step-level gate on depositHasHeader. Auditability in the
     sense of traceable provenance is upheld by the Header fields (S, E, V, tau)
     that every Deposit carries. This definition is retained as a documentation anchor. -/

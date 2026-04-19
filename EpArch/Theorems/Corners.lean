@@ -141,7 +141,7 @@ theorem allRestricted_implies_no_revision
     simp only [Trace.hasRevision]
     have h_not_rev : a.isRevision = false := by
       cases a with
-      | Submit _ _ | Withdraw _ _ _ | Tick | Promote _ _ _ =>
+      | Submit _ _ | Register _ _ | Withdraw _ _ _ | Tick | Promote _ _ _ =>
         simp [Action.isRevision]
       | Challenge _ _ _ | Revoke _ _ _ | Repair _ _ _ _ =>
         simp [isContestationAction] at h_not_contest
@@ -220,12 +220,10 @@ theorem withdrawal_requires_deposited
   cases h_step with
   | withdraw _ _ _ h_dep => exact h_dep
 
-/-- CORNER 2 THEOREM: Submissions enter as Candidate or Deposited.
+/-- CORNER 2 THEOREM: Plain submissions enter as Candidate.
 
-    Plain `Step.submit` enters as Candidate (must go through promotion).
-    `Step.register` enters as Deposited directly (agent registers directly).
-    In both cases the new entry is in the ledger. The distinction is which path
-    the agent chose, not a bank-side precondition. -/
+    `Step.submit` fires on `Action.Submit` and appends a `.Candidate` entry.
+    For direct registration (`.Deposited`), see `register_enters_deposited`. -/
 theorem submit_enters_candidate_or_deposited
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance)
@@ -235,11 +233,6 @@ theorem submit_enters_candidate_or_deposited
   | submit =>
     refine ⟨{ d with status := .Candidate }, ?_, Or.inl rfl⟩
     have h := mem_append_iff { d with status := DepositStatus.Candidate } s.ledger [{ d with status := DepositStatus.Candidate }]
-    rw [h]
-    exact Or.inr (List.Mem.head _)
-  | register _ _ =>
-    refine ⟨{ d with status := .Deposited }, ?_, Or.inr rfl⟩
-    have h := mem_append_iff { d with status := DepositStatus.Deposited } s.ledger [{ d with status := DepositStatus.Deposited }]
     rw [h]
     exact Or.inr (List.Mem.head _)
 
