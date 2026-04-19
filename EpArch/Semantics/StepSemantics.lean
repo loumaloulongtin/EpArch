@@ -56,7 +56,8 @@ variable {PropLike Standard ErrorModel Provenance Reason Evidence : Type u}
 /-- Action: the inputs that drive state transitions.
 
     These correspond to the deposit lifecycle operators:
-    - Submit: deposit enters system (as Candidate, or as Deposited when agent carries bridge)
+    - Submit: deposit enters system (`Step.submit` → Candidate; `Step.register` → Deposited;
+               both fire on `Action.Submit` — traces see Submit, proofs distinguish the constructor)
     - Withdraw: agent relies on deposit
     - Challenge: deposit is contested
     - Tick: time advances (for TTL expiry)
@@ -1167,8 +1168,8 @@ def ConvergenceWitness.time
 
     NOTE: This is a pure `Field`-enum tautology -- `challenge_is_field_specific c`
     holds for every `c` because `Field` has exactly these six constructors. It does
-    NOT imply any header-dependency. Headers are load-bearing for bridged submission
-    (agent presents provenance); challenge field-specificity is independent of headers. -/
+    NOT imply any header-dependency. Headers are load-bearing for diagnosability and
+    field-checkability; challenge field-specificity is independent of headers. -/
 def challenge_is_field_specific
     (c : EpArch.Challenge PropLike Reason Evidence) : Prop :=
   c.suspected ∈ [.S, .E, .V, .τ, .redeemability, .acl]
@@ -1752,7 +1753,7 @@ def sys_has_redeemability (s : SystemState PropLike Standard ErrorModel Provenan
   ∀ d, d ∈ s.ledger → d.status = .Deposited → s.ledger.length > 0
 
 -- `coordination_uses_shared_ledger` was removed: it dropped all meaningful premises
--- and duplicated `isDeposited` trivially. The grounded version lives in
--- `EpArch.Semantics.LinkingAxioms.grounded_coordination_requires_bank`.
+-- and duplicated `isDeposited` trivially. LinkingAxioms.lean is retired; the operational
+-- grounding for bank necessity is `EpArch.Minimality.private_coordination_forces_bank`.
 
 end EpArch.StepSemantics

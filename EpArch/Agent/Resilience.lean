@@ -13,7 +13,7 @@ via trace induction over the Agent LTS.
 - projectState: maps StepSemantics.SystemState → AgentSystemState
 - deposited_claim: Prop-sorted epistemic truth predicate
 - submit_preserves_deposited_claims: Submit cannot advance claims to Deposited
-- deposit_promotion_requires_bank_authority: Step.promote (with bank authority)
+- deposited_claim_arises_from_promote_or_register: Step.promote (with bank authority)
   or Step.register (agent direct registration; no bank-side precondition) can advance a claim to Deposited
   (covers all Step constructors)
 - AgentLTSAbstraction: simulation witness (all three fields machine-checked)
@@ -245,7 +245,7 @@ Two connected definitions bridge the state spaces:
 - `deposited_claim`: Prop-sorted counterpart — `∃ d ∈ s.ledger, d.P = c ∧ d.status = .Deposited`.
   Used in theorem statements to avoid a `DecidableEq` dependency.
 
-The key theorem is `deposit_promotion_requires_bank_authority`: the only `Step`
+The key theorem is `deposited_claim_arises_from_promote_or_register`: the only `Step`
 constructor that can move a claim from non-Deposited into the Deposited set is
 `Step.promote` (bank authority required) or `Step.register` (agent direct
 registration; no bank-side precondition).
@@ -341,7 +341,7 @@ theorem submit_preserves_deposited_claims
     This is the formal basis of the epistemic sandbox: Deposited status is exclusively
     reachable via bank authority (promote) or agent direct registration (Step.register).
     No agent-initiated step without one of these produces a Deposited entry. -/
-theorem deposit_promotion_requires_bank_authority
+theorem deposited_claim_arises_from_promote_or_register
     {PropLike Standard ErrorModel Provenance Reason Evidence : Type u}
     (s s' : EpArch.StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
     (a : EpArch.StepSemantics.Action PropLike Standard ErrorModel Provenance Reason Evidence)
@@ -446,8 +446,8 @@ AgentLTS preserves: truth (external, not agent-controlled), gate (architectural)
 The three `AgentLTSAbstraction` fields are ALL proved:
 - `truth_external`: truth invariant preserved along all AgentLTS traces
 - `gate_architectural`: gate invariant preserved along all AgentLTS traces
-- `over_approximation`: `deposit_promotion_requires_bank_authority` — Deposited status
-  is exclusively reachable via bank authority (`Step.promote`) or agent vouching for source
+- `over_approximation`: `deposited_claim_arises_from_promote_or_register` — Deposited status
+  is exclusively reachable via bank authority (`Step.promote`) or agent direct registration
   (`Step.register`). All other constructors leave the Deposited set unchanged.
 
 The connection between the two state spaces via `projectState` (above) and the
@@ -459,9 +459,9 @@ bank authority theorem closes the simulation argument at the StepSemantics level
     All three fields carry machine-checked proof content:
     - `truth_external`: truth invariant preserved along all AgentLTS traces
     - `gate_architectural`: gate invariant preserved along all AgentLTS traces
-    - `over_approximation`: `deposit_promotion_requires_bank_authority` — Deposited
-      status is exclusively reachable via bank authority (`Step.promote`) or agent vouching
-      for source (`Step.register`).
+    - `over_approximation`: `deposited_claim_arises_from_promote_or_register` — Deposited
+      status is exclusively reachable via bank authority (`Step.promote`) or agent direct
+      registration (`Step.register`).
 
     `invariants_transfer_via_simulation` calls all three fields of the abstraction
     witness, so any `AgentLTSAbstraction` satisfying the proved fields transfers the
@@ -484,7 +484,7 @@ structure AgentLTSAbstraction (Agent Claim : Type u) where
       then either the step was `Promote ag B d_idx` (attribution recorded),
       or the step was `Submit ag d_sub` (a `register` Step constructor) with
       `d_sub.P = c` (agent registered the deposit directly).
-      Witnessed by `deposit_promotion_requires_bank_authority`. -/
+      Witnessed by `deposited_claim_arises_from_promote_or_register`. -/
   over_approximation :
     ∀ {Standard ErrorModel Provenance Reason Evidence : Type u}
       (s s' : EpArch.StepSemantics.SystemState Claim Standard ErrorModel Provenance)
@@ -499,14 +499,14 @@ structure AgentLTSAbstraction (Agent Claim : Type u) where
 /-- Canonical abstraction witness, proved from the containment corollaries.
     All three fields are backed by machine-checked proofs:
     - `truth_external` / `gate_architectural`: invariant corollaries via trace induction
-    - `over_approximation`: `deposit_promotion_requires_bank_authority` — Deposited
+    - `over_approximation`: `deposited_claim_arises_from_promote_or_register` — Deposited
       status is exclusively reachable via bank authority (`Step.promote`) or agent
       direct registration (`Step.register`) -/
 def agentLTSIsAbstraction (Agent Claim : Type u) : AgentLTSAbstraction Agent Claim where
   truth_external     := truth_preserved_along_trace
   gate_architectural := gate_preserved_along_trace
   over_approximation := fun s s' a step c h_not h_after =>
-    deposit_promotion_requires_bank_authority s s' a step c h_not h_after
+    deposited_claim_arises_from_promote_or_register s s' a step c h_not h_after
 
 /-- Containment invariants hold given an abstraction witness.
 

@@ -51,7 +51,7 @@ design requirements.
 2. Scoped Bubbles — no global ledger; validation is local             [proved: CAP theorem]
 3. S/E/V Factorization — three independent header fields              [proved: by rfl]
 4. Redeemability External — constraint surface outside consensus      [proved: structural]
-5. Export Gating — cross-bubble transfer requires validation          [proved: LTS]
+5. Direct Registration — agent registers deposit as Deposited directly          [proved: LTS]
 6. Repair Loop — challenged deposits can be revised                   [proved: StepSemantics]
 7. Header Stripping → Harder Disputes — less metadata = less diagnosable [proved: completion-space model]
 8. Temporal Validity — deposits expire (τ/TTL marks)                  [proved: header def]
@@ -454,7 +454,7 @@ theorem RepairLoopExists {Reason Evidence : Type u} (B : Bubble)
       StepSemantics.Step.repair s a B' d_idx f h_q, rfl⟩
 
 /-- Standalone operational grounding: Step.repair is available from any quarantined state
-    given an authorised agent, and resets the deposit to Candidate status.
+    given any agent in that state, and resets the deposit to Candidate status.
     The second conjunct of RepairLoopExists above is a direct application of this theorem's
     content; grounded_RepairLoopExists is kept as a standalone lemma for contexts that need
     only the Step-level fact without the lifecycle-trace component. -/

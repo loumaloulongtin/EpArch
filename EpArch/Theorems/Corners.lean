@@ -50,7 +50,7 @@ def RestrictedStep (s : SystemState PropLike Standard ErrorModel Provenance)
 /-- CORNER 6 THEOREM: Under restricted transitions (no contestation),
     deposited items cannot become revoked.
 
-    Key insight: Submit/Withdraw/Export/Tick don't revoke deposits.
+    Key insight: Submit/Withdraw/Tick don't revoke deposits.
     Only Revoke can produce .Revoked status, and it's blocked. -/
 theorem frozen_canon_no_revocation
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
@@ -205,7 +205,8 @@ theorem lottery_no_deposit_blocks_withdraw
     before it can be withdrawn.
 
     **Implementation:** We show that withdrawal requires Deposited status,
-    and new submissions enter as Candidate, so there's a mandatory gap. -/
+    and new submissions enter as Candidate (via `Step.submit`) or Deposited (via
+    `Step.register`), so there's a mandatory gap between ordinary submission and withdrawal. -/
 
 /-- CORNER 2 THEOREM: Withdrawal requires Deposited status.
 
@@ -225,7 +226,7 @@ theorem withdrawal_requires_deposited
     `Step.register` enters as Deposited directly (agent registers directly).
     In both cases the new entry is in the ledger. The distinction is which path
     the agent chose, not a bank-side precondition. -/
-theorem submit_produces_candidate
+theorem submit_enters_candidate_or_deposited
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance)
     (h_step : Step (Reason := Reason) (Evidence := Evidence) s (.Submit a d) s') :

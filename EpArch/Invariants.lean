@@ -109,9 +109,12 @@ theorem worldstate_requires_finite_τ
 These invariants are protocol requirements, not behavioral universals.
 
 Real systems violate them — and that's exactly why:
-- Export without trust-bridge → contamination propagates
 - Headerless challenges → repair fails, disputes persist
 - Infinite τ on world-state → stale claims cause failures
+
+ACL enforcement and export gating are concrete-model or agent-policy concerns;
+they are not abstract LTS invariants. The abstract `StepSemantics.Step.withdraw`
+gates only on `Deposited` status; ACL checking is a concrete-model addition.
 
 The invariants specify what must hold for health; violations
 predict degradation, not impossibility. -/
@@ -126,8 +129,10 @@ structure InvariantViolation where
 
 def invariant_violation_table : List InvariantViolation := [
   ⟨"No deposit without RedeemabilityRef", "Relativism leak"⟩,
-  ⟨"No withdrawal without ACL", "Access control breach"⟩,
-  ⟨"No export without gate", "Contamination propagates"⟩,
+  -- Note: ACL enforcement is a concrete-model addition; abstract LTS gates withdrawal on Deposited status only.
+  ⟨"No withdrawal without ACL", "Access control breach (concrete model)"⟩,
+  -- Note: export gating is an agent-policy concern; abstract LTS has no export gate.
+  ⟨"No export without gate", "Contamination propagates (concrete/policy level)"⟩,
   ⟨"Challenge must specify field", "Repair loop fails"⟩,
   ⟨"τ finite for world-state", "Staleness invisible"⟩
 ]
@@ -146,7 +151,8 @@ structure AttackSurface where
 def architecture_attack_surfaces : List AttackSurface := [
   ⟨"Bubbles are optional", "Global ledger permits innovation + coordination"⟩,
   ⟨"Binary validation suffices", "Stable repair without field localization"⟩,
-  ⟨"Export needs no gating", "Reliable transfer without revalidation or trust"⟩,
+  -- Note: abstract LTS has no export gate; this attack surface applies at the concrete/policy level.
+  ⟨"Export needs no gating", "Reliable transfer without revalidation or trust (concrete/policy level)"⟩,
   ⟨"Consensus = redeemability", "Distinguish knowledge from shared belief by agreement alone"⟩,
   ⟨"Certainty substitutes for authorization", "Private traction reliably coordinates"⟩,
   ⟨"Headers don't matter for disputes", "Headerless disputes resolve equally"⟩,

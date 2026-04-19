@@ -1,10 +1,10 @@
 # Operational Semantics Documentation
 
-This document describes the canonical operational semantics for the EpArch formalization. Every deposit lifecycle step — submission (including trust-bridge path), withdrawal, challenge, repair, revocation, promotion — is modeled as a typed transition with explicit preconditions. Safety properties follow by induction over `Trace` sequences using the `generic_invariant_preservation` template; invariants are maintained by construction, not checked ex-post.
+This document describes the canonical operational semantics for the EpArch formalization. Every deposit lifecycle step — submission, withdrawal, challenge, repair, revocation, promotion — is modeled as a typed transition with explicit preconditions. Safety properties follow by induction over `Trace` sequences using the `generic_invariant_preservation` template; invariants are maintained by construction, not checked ex-post.
 
 **Design choice:** Preconditions are encoded directly into the `Step` constructors rather than checked at runtime. This means the type system enforces structural status gates (`isDeposited`, `isQuarantined`, `isCandidate`) and clock monotonicity statically — a violation is a type error, not a runtime failure. Authorization is an agent-level concern: the bank records deposit events; agents carry credentials to the interaction.
 
-**Export is not a bank primitive.** Inter-bubble transfer is an agent-level workflow: the agent Withdraws from B_src, carries the deposit (and any bridge credential), and Submits to B_tgt. `Step.submit_bridged` handles the trust-bridge case where the agent presents a standing inter-bubble credential and gets `Deposited` status directly.
+**Export is not a bank primitive.** Inter-bubble transfer is an agent-level workflow: the agent Withdraws from B_src, carries the deposit (recording provenance in `d.h.V`), and Submits to B_tgt. `Step.register` handles the direct-registration case where the agent presents a deposit that enters `Deposited` status immediately — a trust bridge is one possible reason an agent uses this path, but it is not a bank-side precondition.
 
 ## StepSemantics as Canonical LTS
 
@@ -48,7 +48,7 @@ inductive Step : SystemState → Action → SystemState → Prop where
   | submit : (s : SystemState) → (a : Agent) → (d : Deposit) →
       Step s (.Submit a d) { s with ledger := s.ledger ++ [{ d with status := .Candidate }] }
 
-  | submit_bridged : (s : SystemState) → (a : Agent) → (d : Deposit) → (B_src : Bubble) →
+  | register : (s : SystemState) → (a : Agent) → (d : Deposit) →
       Step s (.Submit a d) { s with ledger := s.ledger ++ [{ d with status := .Deposited }] }
 
   | withdraw : (s : SystemState) → (a : Agent) → (B : Bubble) → (d_idx : Nat) →
@@ -76,7 +76,7 @@ inductive Step : SystemState → Action → SystemState → Prop where
       Step s (.Promote a B d_idx) { s with ledger := updateDepositStatus s.ledger d_idx .Deposited }
 ```
 
-Eight constructors total. Two fire on `Action.Submit` (`submit` → Candidate, `submit_bridged` → Deposited); the rest are one-to-one with their Action variant. All agent-initiated constructors carry a named agent and bubble for attribution; `tick` carries only the monotonicity witness. Preconditions are purely structural ledger reads — no ACL tables, bank-authority lists, or trust-bridge registries in the bank's LTS.
+Eight constructors total. Two fire on `Action.Submit` (`submit` → Candidate, `register` → Deposited); the rest are one-to-one with their Action variant. All agent-initiated constructors carry a named agent and bubble for attribution; `tick` carries only the monotonicity witness. Preconditions are purely structural ledger reads — no ACL tables, bank-authority lists, or trust-bridge registries in the bank's LTS.
 
 ### Trace Type (Multi-Step Reachability)
 
@@ -115,8 +115,8 @@ Key insight: Most safety properties are **encoded as preconditions** on Step con
 
 | Action | Step constructor(s) | Key Preconditions |
 |--------|---------------------|-------------------|
-| `Submit` | `submit` | *(none — open submission)* |
-| `Submit` (bridged) | `submit_bridged` | *(none — agent vouches by presenting the step)* |
+| `Submit` | `submit` | *(none — open submission; enters as Candidate)* |
+| `Submit` | `register` | *(none — agent registers directly; enters as Deposited)* |
 | `Withdraw` | `withdraw` | `isDeposited` |
 | `Challenge` | `challenge` | `isDeposited` |
 | `Repair` | `repair` | `isQuarantined` |
@@ -137,8 +137,8 @@ Because preconditions are structural rather than checked post-hoc, the encoding 
 | Operation | What the type forces |
 |-----------|----------------------|
 | `Withdraw` | Cannot exist unless the deposit is in `Deposited` status |
-| `Submit` (plain) | No structural precondition; deposit enters as `Candidate` |
-| `Submit` (bridged) | No structural precondition; agent presents source bubble attribution; deposit enters directly as `Deposited` |
+| `Submit` (`submit`) | No structural precondition; deposit enters as `Candidate` |
+| `Submit` (`register`) | No structural precondition; agent registers directly; deposit enters as `Deposited` |
 | `Promote` | Cannot exist unless the deposit is in `Candidate` status |
 | `Challenge` | Cannot fire unless the deposit is in `Deposited` status |
 | `Repair` / `Revoke` | Cannot fire unless the deposit is already in `Quarantined` status |
@@ -164,4 +164,4 @@ Because preconditions are structural rather than checked post-hoc, the encoding 
 This file specifies the canonical operational semantics: transition structure, precondition encoding, and the trace-level safety pattern. It is about structural preconditions and preservation, not runtime implementation details or empirical systems. Core proofs live in `Semantics/StepSemantics.lean`; containment arguments live in `Agent/Resilience.lean` and transport back via simulation.
 
 One companion file lives in the same `Semantics/` folder and shares the same base import:
-- `Semantics/LinkingAxioms.lean`: proves that Step preconditions *force* the seven architectural features (operational groundings for linking theorems in Minimality.lean/Commitments.lean).
+- `Semantics/LinkingAxioms.lean`: retired. The operational groundings it formerly provided are now covered structurally by `Minimality.lean` and `Convergence.lean`.

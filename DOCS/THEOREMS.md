@@ -1,4 +1,4 @@
-# Theorem Inventory
+﻿# Theorem Inventory
 
 This document catalogs the proved theorems in the formalization, organized by argumentative role.
 
@@ -34,7 +34,7 @@ This document catalogs the proved theorems in the formalization, organized by ar
 |---------|------|-----------|-------------|
 | `candidate_blocks_withdrawal` | Theorems/Corners.lean | Candidate status blocks withdrawal | Lottery dissolution |
 | `withdrawal_requires_deposited` | Theorems/Corners.lean | Must be Deposited to withdraw | Bank gates |
-| `submit_produces_candidate` | Theorems/Corners.lean | Submit creates Candidate status | Lifecycle |
+| `submit_enters_candidate_or_deposited` | Theorems/Corners.lean | Submit enters Candidate (plain) or Deposited (register) | Lifecycle |
 | `authorization_implies_traction` | Theorems/Corners.lean | Authorization → Traction (one direction) | Core split |
 | `innovation_allows_traction_without_authorization` | Commitments.lean | Traction without authorization (other direction) | Core split |
 
@@ -128,7 +128,7 @@ $$f \notin \text{ObservableFields}(d) \Rightarrow \neg\text{canTargetRepair}(f, 
 
 ## Bucket 5: τ (Temporal Validity)
 
-**Role:** Time creates pressure for maintenance. `τ` is stored as a data field in `Header`; agents query it via `isCurrentDeposit`. Tick monotonicity (`h_mono : s.clock ≤ t'`) is a structural Step gate, not a configurable policy.
+**Role:** Time creates pressure for maintenance. `τ` is stored as a data field in `Header`; agents decide when to act on it at the policy layer. Tick monotonicity (`h_mono : s.clock ≤ t'`) is a structural Step gate, not a configurable policy.
 
 **Architectural note (Issue 18):** The former Corner 7 theorems (`stale_blocks_withdrawal`, `tick_can_cause_staleness`, `withdrawal_requires_fresh`) were retired when `isCurrentDeposit` was removed as a `Step.withdraw` precondition. Tau-expiry is now agent-level policy, not an LTS gate. The bank records `τ`; the agent decides whether to act on it.
 
@@ -137,16 +137,12 @@ $$f \notin \text{ObservableFields}(d) \Rightarrow \neg\text{canTargetRepair}(f, 
 | Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `tick_monotone` | Semantics/StepSemantics.lean | `Step.tick` requires `s.clock ≤ t'` | Clock monotonicity enforced by type |
-| `isCurrentDeposit` | Semantics/StepSemantics.lean | Agent-queryable predicate: deposit’s τ window is open | Utility for agent policy |
-| `isCurrentDeposit_false_when_expired` | Semantics/StepSemantics.lean (optional utility lemma) | `d.h.t ≤ s.clock → ¬isCurrentDeposit s d_idx` | τ-expiry makes predicate false |
 
 ### Math Form
 
 $$\text{tick}(s, t') \text{ requires } s.\text{clock} \leq t'$$
 
-$$d.\tau \leq \text{clock} \Rightarrow \neg\text{isCurrentDeposit}(s, d)$$
-
-Note: `isCurrentDeposit` is **not** a `Step.withdraw` gate. A bounded-budget agent queries it as part of its own eviction policy before issuing `Step.withdraw`; the bank’s only gate on withdrawal is `isDeposited`.
+Note: τ-expiry is **not** a `Step.withdraw` gate. A bounded-budget agent decides at the policy layer whether to act on a deposit’s τ field before issuing `Step.withdraw`; the bank’s only gate on withdrawal is `isDeposited`.
 
 ---
 
@@ -275,19 +271,19 @@ have been retired in favour of these structural forms.
 
 ---
 
-## Bucket 9: Grounded Minimality (Semantics/LinkingAxioms.lean)
+## Bucket 9: Grounded Minimality (Semantics/LinkingAxioms.lean — Retired)
 
-**Role:** Each architectural feature is necessary for specific capabilities.
+**Role:** This bucket listed theorems that formerly lived in `LinkingAxioms.lean`. That file is now retired. The operational groundings it provided are superseded by the structural forcing theorems in `Minimality.lean` and `Convergence.lean` (Bucket 9b). See `Semantics/LinkingAxioms.lean` for the retirement note.
 
-| Theorem | File | Statement | Claim |
-|---------|------|-----------|-------------|
-| `grounded_coordination_requires_bank` | Semantics/LinkingAxioms.lean | Coordination → Bank | Bank necessity |
-| `grounded_export_requires_headers` | Semantics/LinkingAxioms.lean | Export → Headers | Header necessity |
-| `grounded_bounded_audit_requires_bridges` | Semantics/LinkingAxioms.lean | Bounded audit → Bridges | Bridge necessity |
-| `grounded_no_bridge_forces_revalidation` | Semantics/LinkingAxioms.lean | No bridge → revalidate | Export cost |
-| `grounded_revocation_requires_quarantine` | Semantics/LinkingAxioms.lean | Revocation → Quarantine | Quarantine necessity |
-| `grounded_distributed_agents_require_bubbles` | Semantics/LinkingAxioms.lean | Distributed → Bubbles | Bubble necessity |
-| `grounded_truth_pressure_requires_redeemability` | Semantics/LinkingAxioms.lean | Truth pressure → Redeemability | Redeemability necessity |
+| Theorem | Former File | Status |
+|---------|-------------|--------|
+| `grounded_coordination_requires_bank` | Semantics/LinkingAxioms.lean | Retired — see `private_coordination_forces_bank` (Minimality.lean) |
+| `grounded_export_requires_headers` | Semantics/LinkingAxioms.lean | Retired — see `discriminating_import_forces_headers` (Convergence.lean) |
+| `grounded_bounded_audit_requires_bridges` | Semantics/LinkingAxioms.lean | Retired — see `bounded_verification_forces_trust_bridges` (Convergence.lean) |
+| `grounded_no_bridge_forces_revalidation` | Semantics/LinkingAxioms.lean | Retired |
+| `grounded_revocation_requires_quarantine` | Semantics/LinkingAxioms.lean | Retired — see `monotonic_lifecycle_forces_revocation` (Convergence.lean) |
+| `grounded_distributed_agents_require_bubbles` | Semantics/LinkingAxioms.lean | Retired — see `disagreement_forces_bubbles` (Convergence.lean) |
+| `grounded_truth_pressure_requires_redeemability` | Semantics/LinkingAxioms.lean | Retired — see `closed_endorsement_forces_redeemability` (Convergence.lean) |
 
 ---
 
@@ -361,7 +357,7 @@ Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_w
 
 ## Bucket 9c: Observation-Boundary Equivalence (Theorems/BehavioralEquivalence.lean)
 
-**Role:** Proves that any two `GroundedBehavior` certificates produce identical observations on all inputs. `Behavior B i` is determined solely by the input constructor — not by the structural content of `B`. The step-bridge section operationally grounds this: for withdraw, challenge, and tick inputs, a concrete `Step` is constructed at Unit types and structurally consumed via `cases h`, so the equality is derived *through* an actual firing. The `ChallengeRequest` input falls back to definitional equality (input maps to a concrete `Challenge` action with default `Agent.mk 0 / Bubble.mk 0`; ready-state needs only `isDeposited`, which the concrete `canonDeposit` entry satisfies directly).
+**Role:** Proves that any two `GroundedBehavior` certificates produce identical observations on all inputs. `Behavior B i` is determined solely by the input constructor — not by the structural content of `B`. The step-bridge section operationally grounds this: for withdraw, challenge, and tick inputs, a concrete `Step` is constructed at Unit types and structurally consumed via `cases h`, so the equality is derived *through* an actual firing. For `ChallengeRequest`, `challenge_ready_state` constructs a concrete ready state (single `.Deposited` entry satisfying `isDeposited`) and the equality is derived through that firing.
 
 **Certificate semantics:** `GroundedBehavior` is intentionally domain-agnostic — its fields carry abstract type parameters (`Entry`, `Claim`, etc.) that a domain fills in with its own types. `B` is a type-level certificate confirming the caller's features typecheck against EpArch's mechanism signatures; it does not construct the `CState` and does not guarantee design quality. The `let _ :=` lines in the ready-state builders confirm certificate field presence only. A domain instantiator (EV charging, finance, Lean kernel) that wants mechanically grounded evidence replaces those lines with substantive obligations over their own types. The kernel enforces the observation boundary contract; domain correctness is the instantiator's responsibility.
 
@@ -447,19 +443,18 @@ un-bypassable at the concrete model level.
 | `repair_requires_prior_challenge` | Theorems/Withdrawal.lean | Repair requires quarantine | Challenge first |
 | `challenge_has_field_localization` | Semantics/StepSemantics.lean | Challenge targets field | Field-specific |
 | `repair_requires_quarantine` | Semantics/StepSemantics.lean | Repair needs quarantine | State gate |
-| `repair_targets_field` | Semantics/StepSemantics.lean | Repair addresses field | Surgical |
+| `repair_action_carries_field` | Semantics/StepSemantics.lean | Repair carries field; connects to quarantine precondition | Surgical |
 | `repair_produces_candidate` | Semantics/StepSemantics.lean | Repair → Candidate | Back to start |
 | `repair_resets_to_candidate` | Semantics/StepSemantics.lean | Full cycle reset | Lifecycle |
 
 ---
 
-## Bucket 12: Withdrawal Gates (Two-Gate Model)
+## Bucket 12: Withdrawal Gate (Single-Gate Model)
 
-**Role:** Withdrawal requires ACL permission and Deposited status. τ-currency management is agent-level policy; the bank enforces only structural access control and deposit liveness.
+**Role:** Withdrawal requires `Deposited` status. That is the abstract LTS's only gate. τ-currency management is agent-level policy; ACL checking is a concrete-model addition. The bank enforces only structural deposit liveness.
 
 | Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
-| `withdrawal_requires_two_gates` | Semantics/StepSemantics.lean | ACL ∧ Deposited | Two gates |
 | `withdrawal_gates` | Theorems/Withdrawal.lean | Withdrawal preconditions | Gate theorem |
 | `canWithdrawAt_iff_gates` | Theorems/Withdrawal.lean | CanWithdraw ↔ gates | Equivalence |
 | `withdrawal_requires_canWithdrawAt` | Theorems/Withdrawal.lean | Step requires predicate | Enforcement |
@@ -764,7 +759,7 @@ $$\text{PRP} \Rightarrow \neg\exists t_{\text{final}}.\, \forall t \geq t_{\text
 
 C1, C2, C4b, C5, C6b are proved as named theorems in `Commitments.lean`
 (see `innovation_allows_traction_without_authorization`, `WorldCtx.no_ledger_tradeoff`,
-`redeemability_requires_more_than_consensus`, `ExportGating`, `NoSelfCorrectionWithoutRevision`).
+`redeemability_requires_more_than_consensus`, `DirectRegisterEntersDeposited` (replaces retired `ExportGating`), `NoSelfCorrectionWithoutRevision`).
 
 ### Cluster B: Structural Unconditional
 
@@ -811,7 +806,7 @@ pullback that `Compatible` alone cannot provide. `SurjectiveCompatible` adds
 
 $$\forall E \supseteq C_{\text{bank}},\; G(C_{\text{bank}}) \Rightarrow G(\text{forget}(E)) \text{ for } G \in \{\text{SafeWithdrawal, ReliableExport, SoundDeposits, SelfCorrection, Corrigible}_\forall\}$$
 
-$$\text{Step}_{\text{withdraw}} \Rightarrow \text{ACL} \land \tau\text{-valid} \land \text{Deposited} \quad (\text{for every } SystemState)$$
+$$\text{Step}_{\text{withdraw}} \Rightarrow \text{Deposited} \quad (\text{for every } SystemState)$$
 
 ### Design-Imposition Theorems (Tier A — Proved)
 
