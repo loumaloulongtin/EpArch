@@ -1151,7 +1151,7 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 
 **Role:** Self-referential demonstration that Lean's own type-checking kernel is a valid, fully-grounded EpArch instantiation. Two layers are proved: (1) `LeanKernelCtx : WorldCtx` satisfies three W_* world-assumption bundles with kernel-specific interpretations (`sorry` ↔ lies, heartbeat ↔ bounded verification, proof irrelevance ↔ partial observability); (2) `LeanWorkingSystem : WorkingSystem` satisfies all seven architectural features, `PartialWellFormed allConstraints`, and `containsBankPrimitives` — both by direct construction and by the structural convergence path. Self-referential note: this file is type-checked by the same kernel it models.
 
-**Files:** `Meta/LeanKernel/World.lean` (world + architecture layers, OleanStaleness), `Meta/LeanKernel/SFailure.lean` (S-field failure taxonomy)
+**Files:** `Meta/LeanKernel/World.lean` (world + architecture layers, OleanStaleness), `Meta/LeanKernel/SFailure.lean` (S-field failure taxonomy), `Meta/LeanKernel/RepairLoop.lean` (full S/E/V lifecycle witness)
 
 ### World Layer (LeanKernelCtx — WorldCtx Instantiation)
 
@@ -1214,5 +1214,21 @@ $$\text{containsBankPrimitives}(\text{LeanWorkingSystem}) \quad \text{(directly 
 |------|-----------|---------------|
 | `olean_stale_when_source_changed` | `0 < r.compiled_at → source_changed epoch r → compute_status (olean_as_deposit r path) epoch = .Stale` | A changed source makes the `.olean` deposit stale; τ = compiled_at falls below the current epoch |
 | `stale_olean_blocks_withdrawal` | `0 < r.compiled_at → source_changed epoch r → ¬ c_can_withdraw … (olean_as_deposit r path) epoch` | Stale `.olean` cannot be withdrawn; `c_can_withdraw` requires `compute_status = .Deposited` |
+
+### Repair Loop — Full S/E/V Lifecycle Witness (RepairLoop.lean)
+
+The Lean elaboration cycle is a concrete instance of the full EpArch deposit lifecycle.
+S = programmer's declared type signature; E = elaborator challenge record (file, line, expected, actual);
+V = import list (each entry is a grounding-chain node). The file is self-referential:
+it passed all three stages and the `.olean` settles the ladder at `Certainty`.
+
+| Name | Statement | Role |
+|------|-----------|------|
+| `v_failure_blocks_redemption` | `v.missing_mod ∉ v.candidate.imports` | Broken import severs V chain; extracts structural invariant `not_imported` from `LeanVFailure` |
+| `e_failure_enables_localized_repair` | `canTargetRepair true Field.E` | Error record makes Field.E observable; delegates to `full_can_repair_any Field.E` |
+| `no_error_means_global_repair_scope` | `∀ f : Field, ¬canTargetRepair false f` | Stripped header = no field targetable; delegates to `stripped_no_field_repair` |
+| `repair_scope_contracts_with_headers` | `∃ f, canTargetRepair true f ∧ ¬canTargetRepair false f` | Headers strictly narrow scope; witness Field.E |
+| `s_upgrade_on_compilation` | `LeanKernelCtx.Truth (lean_compiled_deposit d) (lean_compiled_deposit d)` | S upgrades from programmer-asserted to kernel-verified on successful elaboration |
+| `source_change_reopens_repair_loop` | `source_changed epoch r → compute_status (olean_as_deposit r path) epoch = .Stale` | Source change forces `.Stale`; ladder moves from Certainty back to re-verification; delegates to `olean_stale_when_source_changed` |
 
 ---
