@@ -321,7 +321,9 @@ gate's two outcomes and the multi-hop independence property. -/
     trusted, provided content identity holds. The number of hops is irrelevant;
     only the final hash check at each machine boundary matters.
 
-    **Theorem shape:** `actual_hash = r.sourceHash` implies `c_valid_export = true`.
+    **Theorem shape:** `c_valid_export (olean_export_req r path r.sourceHash ...) = true` —
+    presenting the stored hash directly as the credential makes the gate succeed;
+    no hypothesis required.
     **Proof strategy:** unfold `c_valid_export`, `olean_export_req`,
     `olean_trust_bridge`; reduce `Option.any`; `decide_eq_true_eq` closes the
     resulting Boolean equality goal via reflexivity of `Array UInt8` equality. -/
@@ -334,7 +336,7 @@ theorem olean_hash_match_imports (r : OleanRecord) (path : CProp)
 /-- HASH MISMATCH = REJECTED IMPORT
 
     When the credential does not match the compiled hash, `c_import_deposit`
-    returns `none` -- re-elaboration is required before the deposit is trusted.
+    returns `none` — re-elaboration is required before the deposit is trusted.
 
     **Theorem shape:** `bad_hash` not equal to `r.sourceHash` implies
     `c_import_deposit req = none`.

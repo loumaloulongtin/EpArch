@@ -906,7 +906,11 @@ The Lean build system's cache invalidation is the deposit staleness lifecycle
 from EpArch.Concrete.Types concretely instantiated: a compiled `.olean` is a
 deposit whose τ is the source epoch at compilation; `compute_status` returns
 `.Stale` once the source advances past that epoch; a stale artifact blocks
-withdrawal (use). -/
+withdrawal (use).
+
+`OleanRecord` carries three fields: `compiled_at` (the deposit τ), `last_refreshed`
+(the last cache refresh epoch), and `sourceHash` (the hash embedded by the compiler
+for cross-machine content-addressed trust — see the Cross-Machine sub-section below). -/
 
 section OleanStaleness
 open EpArch.ConcreteModel
@@ -936,6 +940,21 @@ def olean_as_deposit (r : OleanRecord) (path : CProp) : CDeposit :=
 /-- Source change = staleness: source epoch has advanced past τ. -/
 def source_changed (current_epoch : CTime) (r : OleanRecord) : Prop :=
   r.compiled_at < current_epoch
+
+/-! ## Cross-Machine Trust Model
+
+The two definitions below extend the epoch model with content-addressed trust.
+An `.olean` is admitted to a new machine not because the epoch is fresh but
+because the locally-recomputed hash matches the hash embedded at compile time.
+No private key, no certificate chain — the auth mode is `.byToken`, and the
+presenting machine's identity is irrelevant; only the hash credential matters.
+
+`olean_trust_bridge` encodes the gate check as a `CTrustBridge`; `olean_export_req`
+packages the deposit with the auth credential. The epoch-staleness fields
+(`compiled_at`, `last_refreshed`) are orthogonal — both models coexist in
+`OleanRecord` without conflict. The three theorems that use these defs live in
+`RepairLoop.lean` (`olean_hash_match_imports`, `olean_hash_mismatch_rejects`,
+`olean_multi_hop_both_gates_required`). -/
 
 /-- The trust bridge that an `.olean` implicitly asserts: accept if and only if
     the receiving machine's source hash matches the compiled hash.

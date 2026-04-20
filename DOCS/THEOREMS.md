@@ -1223,7 +1223,16 @@ $$\text{containsBankPrimitives}(\text{LeanWorkingSystem}) \quad \text{(directly 
 
 ### .olean Cache as Deposit Lifecycle (OleanStaleness)
 
-`OleanRecord` maps a compiled object-file artifact to a `CDeposit` by setting τ = `compiled_at` (the source epoch at build time).
+`OleanRecord` maps a compiled object-file artifact to a `CDeposit` by setting τ = `compiled_at` (the source epoch at build time). It also carries `sourceHash : ByteArray` — the hash embedded by the compiler for cross-machine trust checks; this field is orthogonal to the epoch model.
+
+Two defs extend the model for cross-machine trust (used by theorems in `RepairLoop.lean`):
+
+| Name | Type | Interpretation |
+|------|------|---------------|
+| `olean_trust_bridge` | `OleanRecord → CTrustBridge` | `.byToken` bridge: gate passes iff the receiving machine's `actual_hash.data = r.sourceHash.data`; presenter identity irrelevant |
+| `olean_export_req` | `OleanRecord → CProp → ByteArray → … → CExportRequest` | Packages the `.olean` deposit with `olean_trust_bridge` and the supplied hash as `auth_token`; `revalidated := false` |
+
+Epoch-staleness theorems:
 
 | Name | Statement | Interpretation |
 |------|-----------|---------------|
@@ -1249,5 +1258,13 @@ interpretation, not a separate ladder theorem in this file.
 | `s_upgrade_on_compilation` | `LeanKernelCtx.Truth true true` | S upgrades from programmer-asserted to kernel-verified; proxy model, `rfl`; parameterless |
 | `cache_hit_not_stale` | `lean_cache_hit r epoch → compute_status (olean_as_deposit r path) epoch ≠ .Stale` | Fresh cache (strict epoch condition) does not trigger staleness; eliminates .Revoked and .Stale branches |
 | `source_change_reopens_repair_loop` | `source_changed epoch r → compute_status (olean_as_deposit r path) epoch = .Stale` | Source change forces `.Stale`; architecturally read as re-entry from cache-settlement into re-verification; delegates to `olean_stale_when_source_changed` |
+
+Cross-machine trust theorems (from `World.lean` defs `olean_trust_bridge` + `olean_export_req`):
+
+| Name | Statement | Interpretation |
+|------|-----------|---------------|
+| `olean_hash_match_imports` | `c_valid_export (olean_export_req r path r.sourceHash …) = true` | Presenting the stored hash as the credential makes the gate succeed; the number of machines the artifact traversed is irrelevant |
+| `olean_hash_mismatch_rejects` | `bad_hash ≠ r.sourceHash → c_import_deposit (olean_export_req r path bad_hash …) = none` | Hash mismatch closes the gate; deposit is not admitted; re-elaboration required |
+| `olean_multi_hop_both_gates_required` | `c_import_deposit (olean_export_req rA … rA.sourceHash …) ≠ none ∧ c_import_deposit (olean_export_req rB … rB.sourceHash …) ≠ none` | Gate fires at every edge in the dependency DAG; no hop is gate-free; proved by `simp [olean_hash_match_imports]` on each conjunct |
 
 ---
