@@ -906,17 +906,25 @@ The Lean build system's cache invalidation is the deposit staleness lifecycle
 from EpArch.Concrete.Types concretely instantiated: a compiled `.olean` is a
 deposit whose τ is the source epoch at compilation; `compute_status` returns
 `.Stale` once the source advances past that epoch; a stale artifact blocks
-withdrawal (use). -/
+withdrawal (use).
+
+`OleanRecord` carries three fields: `compiled_at` (the deposit τ), `last_refreshed`
+(the last cache refresh epoch), and `sourceHash` (the hash embedded by the compiler
+for cross-machine content-addressed trust — see the Cross-Machine sub-section below). -/
 
 section OleanStaleness
 open EpArch.ConcreteModel
 
-/-- An `.olean` record: epoch the artifact was compiled at, epoch last refreshed. -/
+/-- An `.olean` record: epoch the artifact was compiled at, epoch last refreshed,
+    and the source hash embedded by the compiler for cross-machine trust checks. -/
 structure OleanRecord where
   /-- Source epoch at compilation time — the τ field of the deposit. -/
   compiled_at : CTime
   /-- Epoch of the last successful `lake build` refresh. -/
   last_refreshed : CTime
+  /-- Hash of the `.lean` source embedded at compile time.
+      Used by the receiving machine to verify content identity without re-elaboration. -/
+  sourceHash : ByteArray
 
 /-- The `.olean` as a `CDeposit`.
     τ = `compiled_at`: current while source is unchanged; expired once
@@ -932,6 +940,49 @@ def olean_as_deposit (r : OleanRecord) (path : CProp) : CDeposit :=
 /-- Source change = staleness: source epoch has advanced past τ. -/
 def source_changed (current_epoch : CTime) (r : OleanRecord) : Prop :=
   r.compiled_at < current_epoch
+
+/-! ## Cross-Machine Trust Model
+
+The two definitions below extend the epoch model with content-addressed trust.
+An `.olean` is admitted to a new machine not because the epoch is fresh but
+because the locally-recomputed hash matches the hash embedded at compile time.
+No private key, no certificate chain — the auth mode is `.byToken`, and the
+presenting machine's identity is irrelevant; only the hash credential matters.
+
+`olean_trust_bridge` encodes the gate check as a `CTrustBridge`; `olean_export_req`
+packages the deposit with the auth credential. The epoch-staleness fields
+(`compiled_at`, `last_refreshed`) are orthogonal — both models coexist in
+`OleanRecord` without conflict. The three theorems that use these defs live in
+`RepairLoop.lean` (`olean_hash_match_imports`, `olean_hash_mismatch_rejects`,
+`olean_multi_hop_both_gates_required`). -/
+
+/-- The trust bridge that an `.olean` implicitly asserts: accept if and only if
+    the receiving machine's source hash matches the compiled hash.
+
+    Auth mode: `.byToken` — the presenting machine's identity is irrelevant;
+    only the hash credential matters. This is content-addressed trust, not PKI.
+    Equality is checked via `decide (bytes.data = r.sourceHash.data)`: comparing
+    the underlying `Array UInt8` fields, since `Array UInt8` has `DecidableEq`
+    (via `UInt8 : Fin 256`) while `ByteArray` lacks a synthesized `BEq` or
+    `DecidableEq` instance in Lean 4.3.0. -/
+def olean_trust_bridge (r : OleanRecord) : CTrustBridge :=
+  { auth  := .byToken (fun bytes => decide (bytes.data = r.sourceHash.data))
+    scope := [] }
+
+/-- A cross-machine export request: the `.olean` deposit exported to a new machine,
+    with the actual source hash supplied as the auth credential.
+
+    The presenting agent's identity plays no role; the gate fires on hash equality
+    alone. `revalidated` is false: no re-elaboration has occurred. -/
+def olean_export_req (r : OleanRecord) (path : CProp)
+    (actual_hash : ByteArray) (src tgt : CBubble) (a : CAgent) : CExportRequest :=
+  { deposit          := olean_as_deposit r path
+    source           := src
+    target           := tgt
+    presenting_agent := a
+    via_trust_bridge := some (olean_trust_bridge r)
+    revalidated      := false
+    auth_token       := some actual_hash }
 
 /-- A changed source makes `compute_status = .Stale`.
     First branch (τ = 0) is excluded by `hτ`; second branch fires because
