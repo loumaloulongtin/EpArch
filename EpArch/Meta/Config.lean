@@ -31,7 +31,7 @@ EpArch.Meta.Config (this file) — proof-carrying layer:
   `metaModularWitness`, `latticeWitness`: one indexed inductive per family,
   constructors store the real transport theorem as a Prop-valued argument.
 - **Named witnesses** — `cluster_*` in §5b: universe-polymorphic standalone theorems
-  for all 30 clusters, the authoritative typed form.
+  for all 31 clusters, the authoritative typed form.
 
 ## Usage
 
@@ -134,7 +134,10 @@ def constraintSpec (c : EnabledConstraintCluster) : ConstraintClusterSpec :=
           proof     := fun _W sf => sf.forcing .redeemability }
       | .forcing_multi_agent => {
           statement := ∀ W : WorkingSystem, StructurallyForced W → handles_multi_agent W → HasGranularACL W
-          proof     := fun _W sf => sf.forcing .authorization } }
+          proof     := fun _W sf => sf.forcing .authorization }
+      | .forcing_bounded_storage => {
+          statement := ∀ W : WorkingSystem, StructurallyForced W → handles_storage W → HasStorageManagement W
+          proof     := fun _W sf => sf.forcing .storage } }
 
 /-- Extract the proof carrier for constraint cluster `c` from `constraintSpec`. -/
 def constraintProof (c : EnabledConstraintCluster) : ConstraintProof := (constraintSpec c).witness
@@ -479,10 +482,10 @@ private def prop_lattice_pack : Prop :=
      RevisionGate.{0} C → RevisionGate.{0} (forget.{0} R.ext))
 
 
-/-! ## §4g  Cluster Validity — All 30 Clusters Wired
+/-! ## §4g  Cluster Validity — All 31 Clusters Wired
 
-`clusterValid c` is the machine-proved proposition for all 30 clusters.
-- Tier 2 (7): inline forcing propositions via `constraintSpec`.
+`clusterValid c` is the machine-proved proposition for all 31 clusters.
+- Tier 2 (8): inline forcing propositions via `constraintSpec`.
 - Tier 3 Goal (6): `prop_goal_*` — the transport theorem at universe 0.
 - Tier 4 (3 inline + 2 via `prop_tier4_bank_goals_*`).
 - World (4 inline adversarial + 4 via `prop_world_*`).
@@ -495,11 +498,11 @@ This eliminates all free universe variables, allowing the defs to appear as
 match-arm values of `clusterValid : ClusterTag → Prop`. -/
 
 /-- A cluster is valid: `clusterValid c` is the machine-proved proposition for all
-    30 clusters.  Tier 2 and the 8 inline Tier 4/World/Meta clusters use raw
+    31 clusters.  Tier 2 and the 8 inline Tier 4/World/Meta clusters use raw
     propositions; the remaining 15 use `prop_*` defs pinned at universe 0 (see §4g). -/
 def clusterValid (c : ClusterTag) : Prop :=
   match c with
-  -- Tier 2 (7): forcing propositions via constraintSpec
+  -- Tier 2 (8): forcing propositions via constraintSpec
   | .forcing_distributed_agents => (constraintSpec .forcing_distributed_agents).witness.statement
   | .forcing_bounded_audit      => (constraintSpec .forcing_bounded_audit).witness.statement
   | .forcing_export             => (constraintSpec .forcing_export).witness.statement
@@ -507,6 +510,7 @@ def clusterValid (c : ClusterTag) : Prop :=
   | .forcing_coordination       => (constraintSpec .forcing_coordination).witness.statement
   | .forcing_truth              => (constraintSpec .forcing_truth).witness.statement
   | .forcing_multi_agent        => (constraintSpec .forcing_multi_agent).witness.statement
+  | .forcing_bounded_storage    => (constraintSpec .forcing_bounded_storage).witness.statement
   -- Tier 3 Goal (6): transport theorems at universe 0
   | .goal_safeWithdrawal       => prop_goal_safeWithdrawal
   | .goal_reliableExport       => prop_goal_reliableExport
@@ -672,7 +676,7 @@ private theorem enabledLatticeCluster_mem_all (c : EnabledLatticeCluster) :
 /-! ## §5  Soundness: `clusterEnabled cfg c = true → clusterValid c` -/
 
 /-- `clusterEnabled` is sound: every cluster it marks enabled satisfies `clusterValid`.
-    All 30 clusters are non-trivially closed: Tier 2 by `constraintSpec.witness.proof`,
+    All 31 clusters are non-trivially closed: Tier 2 by `constraintSpec.witness.proof`,
     inline Tier 4/World/Meta clusters by the corresponding theorem, and the 15
     `prop_*`-wrapped clusters by the corresponding transport/lattice/world theorem. -/
 theorem clusterEnabled_sound (cfg : EpArchConfig) (c : ClusterTag)
@@ -686,6 +690,7 @@ theorem clusterEnabled_sound (cfg : EpArchConfig) (c : ClusterTag)
   | .forcing_coordination       => exact (constraintSpec .forcing_coordination).witness.proof
   | .forcing_truth              => exact (constraintSpec .forcing_truth).witness.proof
   | .forcing_multi_agent        => exact (constraintSpec .forcing_multi_agent).witness.proof
+  | .forcing_bounded_storage    => exact (constraintSpec .forcing_bounded_storage).witness.proof
   | .goal_safeWithdrawal        => exact transport_safe_withdrawal
   | .goal_reliableExport        => exact transport_reliable_export
   | .goal_soundDeposits         => exact transport_sound_deposits
@@ -730,11 +735,11 @@ cluster and holds machine-checked evidence that each one is valid. -/
 
 /-- A certified bundle: the enabled clusters for `cfg`, with proofs.
 
-    **Layer 1 (routing):** `enabled`, `complete`, `sound` — all 30 cluster tags.
+    **Layer 1 (routing):** `enabled`, `complete`, `sound` — all 31 cluster tags.
     `sound` proves `clusterValid c` non-trivially for every enabled cluster.
 
     **Layer 2 (constraint proofs):** `constraintWitnesses` — full `ConstraintProof`
-    for all seven Tier 2 forcing clusters (total, config-independent).
+    for all eight Tier 2 forcing clusters (total, config-independent).
     `enabledConstraintWitnesses` — filtered to only the clusters enabled by `cfg`.
 
     **Layer 3 (indexed witnesses):** `goalWitnesses`, `worldWitnesses`, `tier4Witnesses`
@@ -742,7 +747,7 @@ cluster and holds machine-checked evidence that each one is valid. -/
     `enabledGoalWitnesses`, `enabledWorldWitnesses`, `enabledTier4Witnesses` — filtered
     to only the clusters enabled by `cfg` (using dependent pairs `Σ c, WitnessType c`).
 
-    **Layer 4 (proof-content):** `cluster_*` witnesses in §5b cover all 30 clusters. -/
+    **Layer 4 (proof-content):** `cluster_*` witnesses in §5b cover all 31 clusters. -/
 structure CertifiedProjection (cfg : EpArchConfig) where
   /-- The list of enabled clusters (equal to `explainConfig cfg`). -/
   enabled                   : List ClusterTag
@@ -752,7 +757,7 @@ structure CertifiedProjection (cfg : EpArchConfig) where
       clusters this is the raw proposition; for the 15 `prop_*`-wrapped clusters
       this is the theorem statement pinned at universe 0 (see §4g). -/
   sound                     : ∀ c, c ∈ enabled → clusterValid c
-  /-- Tier 2 proof carriers (all seven, config-independent).
+  /-- Tier 2 proof carriers (all eight, config-independent).
       `constraintWitnesses c` delivers the real proposition and proof for
       forcing cluster `c` regardless of which constraints `cfg` enables. -/
   constraintWitnesses        : (c : EnabledConstraintCluster) → ConstraintProof
@@ -1048,7 +1053,7 @@ def cluster_world_ddos := ddos_causes_verification_collapse_of_W
 
 -- ── Constraint-modularity meta-theorems ───────────────────────────────────────
 
-/-- Cluster `.meta_modular`: the seven EpArch constraints are independent modules. -/
+/-- Cluster `.meta_modular`: the eight EpArch constraints are independent modules. -/
 def cluster_meta_modular := modular
 
 
@@ -1071,11 +1076,11 @@ def cluster_lattice_pack := modularity_pack
 
 Uncomment `#eval` lines to inspect routing interactively. -/
 
-/-- Full EpArch configuration: all seven constraints, all five goals, all eight worlds. -/
+/-- Full EpArch configuration: all eight constraints, all five goals, all eight worlds. -/
 def fullConfig : EpArchConfig where
   constraints := [.distributed_agents, .bounded_audit, .export_across_boundaries,
                   .adversarial_pressure, .coordination_need, .truth_pressure,
-                  .multi_agent_access]
+                  .multi_agent_access, .bounded_storage]
   goals       := [.safeWithdrawal, .reliableExport, .corrigibleLedger,
                   .soundDeposits, .selfCorrection]
   worlds      := [.lies_possible, .bounded_verification, .partial_observability,

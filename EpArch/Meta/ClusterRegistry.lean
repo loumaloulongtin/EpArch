@@ -1,7 +1,7 @@
 /-
 EpArch.Meta.ClusterRegistry — Cluster Tag Registry and Routing
 
-Defines the EpArchConfig language, the 30 ClusterTag values and their
+Defines the EpArchConfig language, the 31 ClusterTag values and their
 per-family enumerations, the authoritative allXxxClusters lists, and the
 routing/display functions.
 
@@ -16,7 +16,7 @@ namespace EpArch.Meta.Config
 
 /-! ## §1  Configuration Language -/
 
-/-- The seven architectural constraints.  Each tag maps to one forcing theorem
+/-- The eight architectural constraints.  Each tag maps to one forcing theorem
     in `EpArch.Minimality`. -/
 inductive ConstraintTag where
   | distributed_agents
@@ -26,6 +26,7 @@ inductive ConstraintTag where
   | coordination_need
   | truth_pressure
   | multi_agent_access
+  | bounded_storage
   deriving DecidableEq, BEq, Repr
 
 /-- The five health goals from `EpArch.Health`. -/
@@ -60,10 +61,10 @@ structure EpArchConfig where
 
 /-! ## §2  Cluster Tags -/
 
-/-- The 30 theorem clusters certified in EpArch Tiers 2–4 plus world-bundle obligations,
+/-- The 31 theorem clusters certified in EpArch Tiers 2–4 plus world-bundle obligations,
     constraint-modularity meta-theorems, and lattice-stability results. -/
 inductive ClusterTag where
-  -- Tier 2: constraint-forcing theorems (7 clusters)
+  -- Tier 2: constraint-forcing theorems (8 clusters)
   | forcing_distributed_agents
   | forcing_bounded_audit
   | forcing_export
@@ -71,6 +72,7 @@ inductive ClusterTag where
   | forcing_coordination
   | forcing_truth
   | forcing_multi_agent
+  | forcing_bounded_storage
   -- Tier 3: health-goal transport theorems (6 clusters)
   | goal_safeWithdrawal
   | goal_reliableExport
@@ -108,11 +110,11 @@ Six `EnabledXxxCluster` inductives — one per family — enable per-family proo
 carriers in EpArch.Meta.Config.  Tier 2 uses a direct `ConstraintProof` record;
 all other families use indexed inductive witness carriers. -/
 
-/-- The seven Tier 2 constraint-forcing clusters. -/
+/-- The eight Tier 2 constraint-forcing clusters. -/
 inductive EnabledConstraintCluster where
   | forcing_distributed_agents | forcing_bounded_audit | forcing_export
   | forcing_adversarial | forcing_coordination | forcing_truth
-  | forcing_multi_agent
+  | forcing_multi_agent | forcing_bounded_storage
   deriving DecidableEq, BEq, Repr
 
 /-- The six Tier 3 health-goal transport clusters. -/
@@ -197,6 +199,10 @@ def constraintMeta : EnabledConstraintCluster → ConstraintClusterMeta
       globalTag   := .forcing_multi_agent
       enabledBy   := fun cfg => cfg.constraints.contains .multi_agent_access
       description := "[Tier 2] multi_agent_access -> HasGranularACL  (uniform_access_forces_acl)" }
+  | .forcing_bounded_storage => {
+      globalTag   := .forcing_bounded_storage
+      enabledBy   := fun cfg => cfg.constraints.contains .bounded_storage
+      description := "[Tier 2] bounded_storage -> HasStorageManagement  (bounded_storage_forces_storage_management)" }
 
 
 /-- Embed a constraint cluster into the global tag space.
@@ -253,14 +259,14 @@ The per-family canonical lists live here (not in EpArch.Meta.Config) because the
 are metadata objects — pure enumeration facts, no proofs.  The global
 `allClusters` list is derived from them so ordering stays consistent
 automatically.  `constraintClusterOfTag?` enables Tier 2 routing
-to dispatch through `constraintMeta` without re-enumerating the seven
+to dispatch through `constraintMeta` without re-enumerating the eight
 forcing constructors. -/
 
-/-- All seven Tier 2 constraint-forcing clusters, in canonical order. -/
+/-- All eight Tier 2 constraint-forcing clusters, in canonical order. -/
 def allConstraintClusters : List EnabledConstraintCluster :=
   [.forcing_distributed_agents, .forcing_bounded_audit, .forcing_export,
    .forcing_adversarial, .forcing_coordination, .forcing_truth,
-   .forcing_multi_agent]
+   .forcing_multi_agent, .forcing_bounded_storage]
 
 /-- All six Tier 3 health-goal transport clusters, in canonical order. -/
 def allGoalClusters : List EnabledGoalCluster :=
@@ -286,7 +292,7 @@ def allMetaModularClusters : List EnabledMetaModularCluster :=
 def allLatticeClusters : List EnabledLatticeCluster :=
   [.lattice_graceful, .lattice_sub_safety, .lattice_pack]
 
-/-- All 30 cluster tags, in canonical order.  Derived from the per-family lists
+/-- All 31 cluster tags, in canonical order.  Derived from the per-family lists
     so ordering stays consistent with those lists automatically.
     Used by `explainConfig`. -/
 def allClusters : List ClusterTag :=
@@ -300,7 +306,7 @@ def allClusters : List ClusterTag :=
 /-- Reverse lookup: given a `ClusterTag`, return the matching
     `EnabledConstraintCluster` if it is a Tier 2 forcing tag, or `none`
     otherwise.  Used by `clusterEnabled` to dispatch Tier 2 cases through
-    `constraintMeta` without re-enumerating the seven forcing constructors. -/
+    `constraintMeta` without re-enumerating the eight forcing constructors. -/
 def constraintClusterOfTag? (t : ClusterTag) : Option EnabledConstraintCluster :=
   allConstraintClusters.find? fun c => c.toClusterTag == t
 

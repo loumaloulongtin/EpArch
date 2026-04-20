@@ -237,6 +237,7 @@ def concreteSystemSpec : SystemSpec where
   has_shared_ledger := true       -- CGlobalLedger
   has_redeemability := true       -- CConstraintSurface
   has_granular_acl := true        -- CACL provides agent-specific access control
+  has_storage_management := true  -- Storage management enforces capacity bounds
 
 /-! ## Concrete GroundedX Witnesses
 
@@ -246,7 +247,7 @@ not depend on `EpArch.ConcreteModel` details.
 
 These witnesses are **minimal by design**: their purpose is to prove that the
 `SystemSpec` is satisfiable (non-vacuous) — that there exists *some* system
-instantiating all seven dimensions. A non-vacuity proof requires one instance,
+instantiating all eight dimensions. A non-vacuity proof requires one instance,
 not a realistic one. The tiny private inductives (`ConcScopeLabel`, etc.) and
 trivial predicates are the smallest possible constructions that discharge each
 `GroundedXStrict` obligation. For a realistic instantiation, see
@@ -332,7 +333,16 @@ private def concAuthorization : GroundedAuthorization where
   cannot_commit := by decide
   may_commit    := rfl
 
-/-- The concrete working system: all seven proof-carrying option fields set
+/-- Minimal bounded-storage witness.
+    State is a singleton; count = 1 > budget = 0 establishes the overflow. -/
+private def concStorage : GroundedStorage where
+  State          := ConcEntry
+  count          := fun _ => 1
+  budget         := 0
+  overflow_state := .entry
+  exceeds        := by decide
+
+/-- The concrete working system: all eight proof-carrying option fields set
     from concrete domain evidence. -/
 def ConcreteWorkingSystem : WorkingSystem where
   spec             := concreteSystemSpec
@@ -343,6 +353,7 @@ def ConcreteWorkingSystem : WorkingSystem where
   bank_ev          := some concBank.toStrict
   redeemability_ev := some concRedeemability.toStrict
   authorization_ev := some concAuthorization.toStrict
+  storage_ev       := some concStorage.toStrict
 
 
 /-! ## Has* Predicates Hold for Concrete Model
@@ -377,6 +388,10 @@ theorem concrete_has_granular_acl : HasGranularACL ConcreteWorkingSystem := by
   unfold HasGranularACL ConcreteWorkingSystem concreteSystemSpec
   rfl
 
+theorem concrete_has_storage_management : HasStorageManagement ConcreteWorkingSystem := by
+  unfold HasStorageManagement ConcreteWorkingSystem concreteSystemSpec
+  rfl
+
 /-- Concrete model contains all Bank primitives.
     This is the consistency proof: the spec is satisfiable. -/
 theorem concrete_contains_bank_primitives :
@@ -390,19 +405,20 @@ theorem concrete_contains_bank_primitives :
   · exact concrete_has_bank
   · exact concrete_has_redeemability
   · exact concrete_has_granular_acl
+  · exact concrete_has_storage_management
 
 
 /-! ## Operational Properties Hold
 
 The concrete model also satisfies the handles_* predicates. -/
 
-/-- Concrete model satisfies ALL seven operational properties. -/
+/-- Concrete model satisfies ALL eight operational properties. -/
 theorem concrete_satisfies_all_properties :
     SatisfiesAllProperties ConcreteWorkingSystem := by
   intro P; cases P <;>
   simp [handles_pressure, handles_distributed_agents, handles_bounded_audit,
         handles_export, handles_adversarial, handles_coordination,
-        handles_truth_pressure, handles_multi_agent,
+        handles_truth_pressure, handles_multi_agent, handles_storage,
         ConcreteWorkingSystem, Option.isSome]
 
 
@@ -427,6 +443,7 @@ def concrete_forcing_embedding : ForcingEmbedding ConcreteWorkingSystem where
     | .bank          => Or.inl concrete_has_bank
     | .redeemability => Or.inl concrete_has_redeemability
     | .authorization => Or.inl concrete_has_granular_acl
+    | .storage       => Or.inl concrete_has_storage_management
 
 /-- The concrete model is structurally forced.
     Reads the stored `GroundedXStrict` witnesses from `ConcreteWorkingSystem`
@@ -442,6 +459,7 @@ theorem concrete_structurally_forced : StructurallyForced ConcreteWorkingSystem 
     | .bank          => concrete_has_bank
     | .redeemability => concrete_has_redeemability
     | .authorization => concrete_has_granular_acl
+    | .storage       => concrete_has_storage_management
   evidence := {
     scope_consequence := fun G heq => by
       have hrfl : ConcreteWorkingSystem.bubbles_ev = some concBubbles.toStrict := rfl
@@ -470,7 +488,11 @@ theorem concrete_structurally_forced : StructurallyForced ConcreteWorkingSystem 
     authorization_consequence := fun G heq => by
       have hrfl : ConcreteWorkingSystem.authorization_ev = some concAuthorization.toStrict := rfl
       rw [hrfl] at heq; injection heq with hG; subst hG
-      exact concAuthorization.toStrict.no_flat_tier }
+      exact concAuthorization.toStrict.no_flat_tier
+    storage_consequence := fun G heq => by
+      have hrfl : ConcreteWorkingSystem.storage_ev = some concStorage.toStrict := rfl
+      rw [hrfl] at heq; injection heq with hG; subst hG
+      exact concStorage.toStrict.no_unbounded_accumulation }
 
 /-- Structural convergence applies to the concrete model.
     Full chain: ForcingEmbedding → StructurallyForced → convergence. -/

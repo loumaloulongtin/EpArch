@@ -11,10 +11,11 @@ constraints of imperfect agents under permanent challenge pressure force
 a specific set of structural features.
 
 The formalization proves these claims:
-1. Seven constraints (distributed agents, bounded audit, export across boundaries,
-   adversarial pressure, coordination need, truth pressure, multi-agent authorization)
+1. Eight constraints (distributed agents, bounded audit, export across boundaries,
+   adversarial pressure, coordination need, truth pressure, multi-agent authorization,
+   bounded storage management)
    each force a specific architectural feature (bubbles, trust bridges, headers,
-   revocation, shared ledger, redeemability, granular ACL).
+   revocation, shared ledger, redeemability, granular ACL, storage management).
 2. Removing any feature breaks a necessary property (impossibility theorems).
 3. All knowledge-managing systems satisfying the constraints converge on the
    same primitive cluster (convergence theorem).

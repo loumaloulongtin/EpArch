@@ -148,7 +148,7 @@ theorem world_assumptions_force_bank_primitives (C : WorldCtx)
     containsBankPrimitives W
 ```
 
-A working system that satisfies `WorldAwareSystem` (seven feature implications — three behind W_* guards,
+A working system that satisfies `WorldAwareSystem` (eight feature implications — three behind W_* guards,
 four unconditional)
 and `SatisfiesAllProperties` necessarily contains Bank primitives when all three W_* bundles
 hold. All three bundles are consumed: removing any one leaves the corresponding feature
@@ -164,7 +164,7 @@ theorem structurally_forced_is_world_aware (C : WorldCtx) (W : WorkingSystem)
 ```
 
 Every `StructurallyForced` system satisfies `WorldAwareSystem` for any `WorldCtx`.
-Proof by weakening: `StructurallyForced` asserts the seven implications *unconditionally*;
+Proof by weakening: `StructurallyForced` asserts the eight implications *unconditionally*;
 `WorldAwareSystem` only requires three of them *behind W_* guards*. Ignoring the guards
 gives `WorldAwareSystem` as a strict weakening.
 
@@ -242,7 +242,7 @@ Split from the former `ConcreteLedgerModel.lean` into eight focused modules:
 - `Concrete/Types.lean` — concrete types (CProp, CDeposit, CBubble, …)
 - `Concrete/Commitments.lean` — C1–C8 commitment witnesses + `all_commitments_satisfiable`
 - `Concrete/WorkingSystem.lean` — behavioral equivalence, grounding, `ConcreteWorkingSystem`
-- `Concrete/DeficientSystems.lean` — seven deficient-system bridge-impossibility witnesses
+- `Concrete/DeficientSystems.lean` — eight deficient-system bridge-impossibility witnesses
 - `Concrete/NonVacuity.lean` — advanced non-vacuity: traces, legibility, convergence
 - `Concrete/Realizer.lean` — `Realizer` and `SuccessfulSystem` type packaging
 - `Concrete/VerificationDepth.lean` — `DepthClaim` constructive witness, `bounded_verify`

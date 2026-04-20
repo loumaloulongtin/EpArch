@@ -134,7 +134,7 @@ inductive Observation where
 
 /-- The observation produced by a grounded system on a given input.
 
-    `B : GroundedBehavior` is the type-level certificate that all seven features
+    `B : GroundedBehavior` is the type-level certificate that all eight features
     exist — not a runtime-inspected flag.  It is the authority under which the
     success outcomes below are admissible: because `B` witnesses a functional
     bank, trust bridges, and revocation mechanism, every input has a well-defined

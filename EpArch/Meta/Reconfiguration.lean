@@ -8,8 +8,8 @@ self-heal without an explicit agent action.
 
 Key exports:
 - WorkingSystem.addBubbles / addTrustBridges / addHeaders / addRevocation /
-  addBank / addRedeemability / addAuthorization — additive capability defs
-- pwf_add_bubbles .. pwf_add_authorization — PartialWellFormed extension theorems
+  addBank / addRedeemability / addAuthorization / addStorageManagement — additive capability defs
+- pwf_add_bubbles .. pwf_add_storage_management — PartialWellFormed extension theorems
 - quarantine_requires_challenge — Quarantined status requires Step.challenge
 - StatusImproves — deposit status improvement order
 - no_self_healing_bank — every status improvement is driven by an explicit action
@@ -80,6 +80,13 @@ def WorkingSystem.addAuthorization (W : WorkingSystem)
   { W with authorization_ev := some ev,
            spec := { W.spec with has_granular_acl := true } }
 
+/-- Extend a WorkingSystem with storage-management evidence.
+    Sets storage_ev and spec.has_storage_management; all other fields unchanged. -/
+def WorkingSystem.addStorageManagement (W : WorkingSystem)
+    (ev : GroundedStorageStrict) : WorkingSystem :=
+  { W with storage_ev := some ev,
+           spec := { W.spec with has_storage_management := true } }
+
 end EpArch
 
 namespace EpArch.Meta.Reconfiguration
@@ -94,13 +101,13 @@ variable {PropLike Standard ErrorModel Provenance Reason Evidence : Type _}
 Each `pwf_add_X` theorem extends an existing `PartialWellFormed W S` certificate to
 cover one additional constraint dimension, producing `PartialWellFormed (W.addX ev) { S with X_flag := true }`.
 
-Uniform proof pattern across all seven theorems:
+Uniform proof pattern across all eight theorems:
 
 - **Activated dimension** (`X_flag`): the goal `handles_X (W.addX ev) ↔ HasX (W.addX ev)`
   reduces to `True ↔ True` after unfolding. `addX` sets `X_ev := some ev` (so `isSome = true`)
   and `spec.X_flag := true`; both sides become `true = true`. Closed by `simp [Option.isSome]`.
 
-- **Six preserved dimensions** (`Y_flag ≠ X_flag`): `addX` does not touch `Y_ev` or
+- **Seven preserved dimensions** (`Y_flag ≠ X_flag`): `addX` does not touch `Y_ev` or
   `spec.Y_flag`. After `simp [handles_Y, HasY, WorkingSystem.addX]` reduces via struct-update
   transparency to `handles_Y W ↔ HasY W`, `exact h.wf_Y hY` supplies the biconditional
   already established in `h`. -/
@@ -131,7 +138,10 @@ theorem pwf_add_bubbles (W : WorkingSystem) (S : ConstraintSubset)
         exact h.wf_truth_pressure ht
     wf_multi_agent    := fun hm => by
         simp [handles_multi_agent, HasGranularACL, WorkingSystem.addBubbles]
-        exact h.wf_multi_agent hm }
+        exact h.wf_multi_agent hm
+    wf_storage        := fun hs => by
+        simp [handles_storage, HasStorageManagement, WorkingSystem.addBubbles]
+        exact h.wf_storage hs }
 
 /-- Adding trust-bridge evidence activates the `bounded_audit` biconditional.
 
@@ -159,7 +169,10 @@ theorem pwf_add_trust_bridges (W : WorkingSystem) (S : ConstraintSubset)
         exact h.wf_truth_pressure ht
     wf_multi_agent    := fun hm => by
         simp [handles_multi_agent, HasGranularACL, WorkingSystem.addTrustBridges]
-        exact h.wf_multi_agent hm }
+        exact h.wf_multi_agent hm
+    wf_storage        := fun hs => by
+        simp [handles_storage, HasStorageManagement, WorkingSystem.addTrustBridges]
+        exact h.wf_storage hs }
 
 /-- Adding header evidence activates the `export_across` biconditional.
 
@@ -187,7 +200,10 @@ theorem pwf_add_headers (W : WorkingSystem) (S : ConstraintSubset)
         exact h.wf_truth_pressure ht
     wf_multi_agent    := fun hm => by
         simp [handles_multi_agent, HasGranularACL, WorkingSystem.addHeaders]
-        exact h.wf_multi_agent hm }
+        exact h.wf_multi_agent hm
+    wf_storage        := fun hs => by
+        simp [handles_storage, HasStorageManagement, WorkingSystem.addHeaders]
+        exact h.wf_storage hs }
 
 /-- Adding revocation evidence activates the `adversarial` biconditional.
 
@@ -215,7 +231,10 @@ theorem pwf_add_revocation (W : WorkingSystem) (S : ConstraintSubset)
         exact h.wf_truth_pressure ht
     wf_multi_agent    := fun hm => by
         simp [handles_multi_agent, HasGranularACL, WorkingSystem.addRevocation]
-        exact h.wf_multi_agent hm }
+        exact h.wf_multi_agent hm
+    wf_storage        := fun hs => by
+        simp [handles_storage, HasStorageManagement, WorkingSystem.addRevocation]
+        exact h.wf_storage hs }
 
 /-- Adding bank evidence activates the `coordination` biconditional.
 
@@ -243,7 +262,10 @@ theorem pwf_add_bank (W : WorkingSystem) (S : ConstraintSubset)
         exact h.wf_truth_pressure ht
     wf_multi_agent    := fun hm => by
         simp [handles_multi_agent, HasGranularACL, WorkingSystem.addBank]
-        exact h.wf_multi_agent hm }
+        exact h.wf_multi_agent hm
+    wf_storage        := fun hs => by
+        simp [handles_storage, HasStorageManagement, WorkingSystem.addBank]
+        exact h.wf_storage hs }
 
 /-- Adding redeemability evidence activates the `truth_pressure` biconditional.
 
@@ -271,7 +293,10 @@ theorem pwf_add_redeemability (W : WorkingSystem) (S : ConstraintSubset)
         simp [handles_truth_pressure, HasRedeemability, WorkingSystem.addRedeemability, Option.isSome]
     wf_multi_agent    := fun hm => by
         simp [handles_multi_agent, HasGranularACL, WorkingSystem.addRedeemability]
-        exact h.wf_multi_agent hm }
+        exact h.wf_multi_agent hm
+    wf_storage        := fun hs => by
+        simp [handles_storage, HasStorageManagement, WorkingSystem.addRedeemability]
+        exact h.wf_storage hs }
 
 /-- Adding authorization evidence activates the `multi_agent` biconditional.
 
@@ -299,7 +324,41 @@ theorem pwf_add_authorization (W : WorkingSystem) (S : ConstraintSubset)
         simp [handles_truth_pressure, HasRedeemability, WorkingSystem.addAuthorization]
         exact h.wf_truth_pressure ht
     wf_multi_agent    := fun _ => by
-        simp [handles_multi_agent, HasGranularACL, WorkingSystem.addAuthorization, Option.isSome] }
+        simp [handles_multi_agent, HasGranularACL, WorkingSystem.addAuthorization, Option.isSome]
+    wf_storage        := fun hs => by
+        simp [handles_storage, HasStorageManagement, WorkingSystem.addAuthorization]
+        exact h.wf_storage hs }
+
+/-- Adding storage-management evidence activates the `bounded_storage` biconditional.
+
+    **Theorem shape:** `PartialWellFormed (W.addStorageManagement ev) { S with bounded_storage := true }`.
+    **Proof strategy:** see section banner above. -/
+theorem pwf_add_storage_management (W : WorkingSystem) (S : ConstraintSubset)
+    (h : PartialWellFormed W S) (ev : GroundedStorageStrict) :
+    PartialWellFormed (W.addStorageManagement ev) { S with bounded_storage := true } :=
+  { wf_distributed    := fun hd => by
+        simp [handles_distributed_agents, HasBubbles, WorkingSystem.addStorageManagement]
+        exact h.wf_distributed hd
+    wf_bounded_audit  := fun hb => by
+        simp [handles_bounded_audit, HasTrustBridges, WorkingSystem.addStorageManagement]
+        exact h.wf_bounded_audit hb
+    wf_export         := fun he => by
+        simp [handles_export, HasHeaders, WorkingSystem.addStorageManagement]
+        exact h.wf_export he
+    wf_adversarial    := fun ha => by
+        simp [handles_adversarial, HasRevocation, WorkingSystem.addStorageManagement]
+        exact h.wf_adversarial ha
+    wf_coordination   := fun hc => by
+        simp [handles_coordination, HasBank, WorkingSystem.addStorageManagement]
+        exact h.wf_coordination hc
+    wf_truth_pressure := fun ht => by
+        simp [handles_truth_pressure, HasRedeemability, WorkingSystem.addStorageManagement]
+        exact h.wf_truth_pressure ht
+    wf_multi_agent    := fun hm => by
+        simp [handles_multi_agent, HasGranularACL, WorkingSystem.addStorageManagement]
+        exact h.wf_multi_agent hm
+    wf_storage        := fun _ => by
+        simp [handles_storage, HasStorageManagement, WorkingSystem.addStorageManagement, Option.isSome] }
 
 
 /-! ========================================================================

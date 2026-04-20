@@ -8,8 +8,8 @@ above the abstract structural machinery and below the concrete witnesses.
 
 ## Headline Theorems
 
-- `grounded_world_and_structure_force_bank_primitives`: the full 26-parameter
-  convergence theorem — uses seven Represents* witnesses plus per-dimension bridge
+- `grounded_world_and_structure_force_bank_primitives`: the full parameter-explicit
+  convergence theorem — uses eight Represents* witnesses plus per-dimension bridge
   hypotheses to constructively derive containsBankPrimitives.
 - `bundled_structure_forces_bank_primitives`: the packaged 4-argument form
   using SystemOperationalBundle + WorldBridgeBundle.
@@ -100,12 +100,12 @@ theorem w_partial_obs_forces_redeemability (C : @EpArch.WorldCtx.{0})
     forcing implications are grounded in C's world assumptions (for those that
     have W_* bundle counterparts) and by structural analysis (for the rest).
 
-    Three of the seven StructurallyForced implications are justified by W_* bundles:
+    Three of the eight StructurallyForced implications are justified by W_* bundles:
     - trust_forcing         ← W_bounded_verification (verification_only_import_incomplete)
     - revocation_forcing    ← W_lies_possible        (monotonic_no_exit)
     - redeemability_forcing ← W_partial_observability (closed_system_unfalsifiable)
 
-    Four are unconditional: scope, headers, bank, and authorization.
+    Five are unconditional: scope, headers, bank, authorization, and storage.
     Their forcing is system-internal — a system carrying the corresponding
     `GroundedXStrict` evidence self-certifies the impossibility regardless of
     any world assumption.
@@ -119,7 +119,10 @@ theorem w_partial_obs_forces_redeemability (C : @EpArch.WorldCtx.{0})
         no_flat_tier, derived from the system's
         own authorization evidence without any world-semantic premise.  The parallel is
         exact: scope forcing is also self-certifying (AgentDisagreement is internal to
-        the system), and scope is unconditional for the same reason. -/
+        the system), and scope is unconditional for the same reason.
+
+    Storage is also unconditional: no W_* bundle corresponds to bounded storage;
+    GroundedStorageStrict self-certifies the impossibility via no_unbounded_accumulation. -/
 def WorldAwareSystem (C : @EpArch.WorldCtx.{0}) (W : WorkingSystem) : Prop :=
   (C.W_bounded_verification  → handles_bounded_audit W    → HasTrustBridges W)  ∧
   (C.W_lies_possible         → handles_adversarial W      → HasRevocation W)    ∧
@@ -127,7 +130,8 @@ def WorldAwareSystem (C : @EpArch.WorldCtx.{0}) (W : WorkingSystem) : Prop :=
   (handles_distributed_agents W → HasBubbles W) ∧
   (handles_export W             → HasHeaders W)  ∧
   (handles_coordination W       → HasBank W) ∧
-  (handles_multi_agent W        → HasGranularACL W)
+  (handles_multi_agent W        → HasGranularACL W) ∧
+  (handles_storage W            → HasStorageManagement W)
 
 /-- A working system satisfying WorldAwareSystem and SatisfiesAllProperties,
     in a world satisfying all three W_* bundles, necessarily contains Bank primitives.
@@ -149,14 +153,15 @@ theorem world_assumptions_force_bank_primitives (C : @EpArch.WorldCtx.{0})
     (h_sat : SatisfiesAllProperties W) :
     containsBankPrimitives W := by
   -- Name each component of WorldAwareSystem's And-chain for legibility.
-  -- Order matches the definition: trust ∧ revocation ∧ redeemability ∧ scope ∧ headers ∧ bank ∧ authorization
+  -- Order matches the definition: trust ∧ revocation ∧ redeemability ∧ scope ∧ headers ∧ bank ∧ authorization ∧ storage
   have h_trust_wa   := h_wa.1
   have h_rev_wa     := h_wa.2.1
   have h_redeem_wa  := h_wa.2.2.1
   have h_scope_wa   := h_wa.2.2.2.1
   have h_headers_wa := h_wa.2.2.2.2.1
   have h_bank_wa    := h_wa.2.2.2.2.2.1
-  have h_auth_wa    := h_wa.2.2.2.2.2.2
+  have h_auth_wa    := h_wa.2.2.2.2.2.2.1
+  have h_storage_wa := h_wa.2.2.2.2.2.2.2
   have h_sf : StructurallyForced W :=
     { forcing := fun P h => match P with
         | .scope         => h_scope_wa h
@@ -166,6 +171,7 @@ theorem world_assumptions_force_bank_primitives (C : @EpArch.WorldCtx.{0})
         | .bank          => h_bank_wa h
         | .redeemability => h_redeem_wa Wo h
         | .authorization => h_auth_wa h
+        | .storage       => h_storage_wa h
       evidence := {
         scope_consequence         := fun G _h_ev => G.no_flat_resolver
         trust_consequence         := fun G _h_ev => G.bridge_forces_acceptance
@@ -173,12 +179,13 @@ theorem world_assumptions_force_bank_primitives (C : @EpArch.WorldCtx.{0})
         revocation_consequence    := fun G _h_ev => G.has_invalid_revocable_witness
         bank_consequence          := fun G _h_ev => G.has_shared_entry
         redeemability_consequence := fun G _h_ev => G.has_constrained_redeemable_witness
-        authorization_consequence := fun G _h_ev => G.no_flat_tier } }
+        authorization_consequence := fun G _h_ev => G.no_flat_tier
+        storage_consequence       := fun G _h_ev => G.no_unbounded_accumulation } }
   exact (grounded_evidence_consequences W h_sf h_sat).1
 
 /-- Any StructurallyForced system satisfies WorldAwareSystem for any WorldCtx.
 
-    Proof by weakening: StructurallyForced asserts all seven capability→feature
+    Proof by weakening: StructurallyForced asserts all eight capability→feature
     implications *unconditionally*, while WorldAwareSystem only requires three of
     them *conditionally* (behind W_* hypothesis guards).  Ignoring the W_* guard
     via `fun _ =>` discharges each conditional, reducing WorldAwareSystem to a
@@ -186,14 +193,15 @@ theorem world_assumptions_force_bank_primitives (C : @EpArch.WorldCtx.{0})
 theorem structurally_forced_is_world_aware (C : @EpArch.WorldCtx.{0}) (W : WorkingSystem)
     (h_sf : StructurallyForced W) : WorldAwareSystem C W :=
   -- Tuple order must match WorldAwareSystem's And-chain:
-  -- (trust) ∧ (revocation) ∧ (redeemability) ∧ (scope) ∧ (headers) ∧ (bank) ∧ (authorization)
+  -- (trust) ∧ (revocation) ∧ (redeemability) ∧ (scope) ∧ (headers) ∧ (bank) ∧ (authorization) ∧ (storage)
   ⟨fun _ => h_sf.forcing .trust,
    fun _ => h_sf.forcing .revocation,
    fun _ => h_sf.forcing .redeemability,
    h_sf.forcing .scope,
    h_sf.forcing .headers,
    h_sf.forcing .bank,
-   h_sf.forcing .authorization⟩
+   h_sf.forcing .authorization,
+   h_sf.forcing .storage⟩
 
 /-- Zero-hypothesis corollary: the concrete working system contains Bank primitives
     with no free assumptions.
@@ -222,11 +230,11 @@ theorem kernel_world_forces_bank_primitives :
 
 
 /-- Any working system that carries explicit structural-scenario witnesses for all
-    seven EpArch dimensions and satisfies all operational properties necessarily
+    eight EpArch dimensions and satisfies all operational properties necessarily
     contains Bank primitives.
 
     This theorem replaces `world_assumptions_force_bank_primitives` + `WorldAwareSystem`
-    as the headline convergence result.  `WorldAwareSystem` bundles the seven
+    as the headline convergence result.  `WorldAwareSystem` bundles the eight
     capability→feature implications as opaque Prop conjuncts; here each implication
     is unpacked into a named `Represents*` structure (structural data) plus an
     auditable bridge hypothesis (per-dimension forcing evidence):
@@ -239,10 +247,10 @@ theorem kernel_world_forces_bank_primitives :
     | Revocation    | `RepresentsMonotonicLifecycle`   | absent revocation, accepted state escapes at n_rev   |
     | Bank          | `RepresentsPrivateCoordination`  | absent ledger, both agents access the same deposit   |
     | Redeemability | `RepresentsClosedEndorsement`    | absent redeemability, endorsed claim is falsifiable  |
-
     | Authorization | `RepresentsUniformAccess`        | absent granular ACL, a flat predicate represents both the submission and commit tiers |
+    | Storage       | `RepresentsBoundedCapacity`      | absent storage management, all active-deposit states stay within budget |
 
-    All seven `ForcingEmbedding` fields are constructed inline from the witnesses —
+    All eight `ForcingEmbedding` fields are constructed inline from the witnesses —
     none are stated as opaque system-design axioms.  `embedding_to_structurally_forced`
     and `convergence_structural` then close the proof mechanically. -/
 theorem grounded_world_and_structure_force_bank_primitives
@@ -255,6 +263,7 @@ theorem grounded_world_and_structure_force_bank_primitives
     (Rp : RepresentsPrivateCoordination W)
     (Re : RepresentsClosedEndorsement W)
     (Ra : RepresentsUniformAccess W)
+    (Rs : RepresentsBoundedCapacity W)
     -- Scope: absent bubbles, a flat acceptance function must cover both agents
     (flat_accept : ¬HasBubbles W → Rd.Claim → Prop)
     (hflat₁ : ∀ h c, flat_accept h c ↔ Rd.accept₁ c)
@@ -280,9 +289,11 @@ theorem grounded_world_and_structure_force_bank_primitives
     -- Authorization: absent granular ACL, a flat predicate represents both tiers
     (h_no_acl_flat : ¬HasGranularACL W → ∃ f : Ra.Agent → Ra.Claim → Prop,
         (∀ a c, f a c ↔ Ra.can_propose a c) ∧ (∀ a c, f a c ↔ Ra.can_commit a c))
+    -- Storage: absent storage management, all active-deposit states stay within budget
+    (h_storage_bounded : ¬HasStorageManagement W → ∀ s : Rs.State, Rs.count s ≤ Rs.budget)
     (h_sat : SatisfiesAllProperties W) :
     containsBankPrimitives W := by
-  -- Construct h_sf from the seven Represents* scenario witnesses.
+  -- Construct h_sf from the eight Represents* scenario witnesses.
   have h_sf : StructurallyForced W := by
     apply embedding_to_structurally_forced
     constructor
@@ -310,6 +321,10 @@ theorem grounded_world_and_structure_force_bank_primitives
       · exact Or.inr ⟨Re.toClosed hre, c_re, h_endorsed, h_fals hre⟩
     · -- authorization: use uniform_access_acl_embed from Scenarios
       exact uniform_access_acl_embed W Ra h_no_acl_flat h
+    · -- storage: absent storage management, BridgeStorage is constructible
+      by_cases hst : HasStorageManagement W
+      · exact Or.inl hst
+      · exact Or.inr ⟨Rs.toStorage, h_storage_bounded hst⟩
   -- .1 extracts containsBankPrimitives.
   exact (grounded_evidence_consequences W h_sf h_sat).1
 
@@ -327,7 +342,7 @@ theorem grounded_world_and_structure_force_bank_primitives
 
     | Bundle                   | Dimensions                                    |
     |--------------------------|-----------------------------------------------|
-    | `SystemOperationalBundle`| scope · headers · bank · authorization        |
+    | `SystemOperationalBundle`| scope · headers · bank · authorization · storage |
     | `WorldBridgeBundle`      | revocation · trust · redeemability            |
 
     **World-agnostic status:** No `WorldCtx` or W_* bundle appears in this
@@ -347,7 +362,7 @@ theorem bundled_structure_forces_bank_primitives
     (h_sat : SatisfiesAllProperties W) :
     containsBankPrimitives W :=
   grounded_world_and_structure_force_bank_primitives W
-    O.Rd B.Rb O.Ri B.Rm O.Rp B.Re O.Ra
+    O.Rd B.Rb O.Ri B.Rm O.Rp B.Re O.Ra O.Rs
     O.flat_accept O.hflat₁ O.hflat₂
     B.h_trust_all
     O.f_import O.h_unif O.h_sound O.h_complete
@@ -355,6 +370,7 @@ theorem bundled_structure_forces_bank_primitives
     O.shared_deposit O.h_access₁ O.h_access₂
     B.c_re B.h_endorsed B.h_fals
     O.h_no_acl_flat
+    O.h_storage_bounded
     h_sat
 
 end EpArch.WorldBridges

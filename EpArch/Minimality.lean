@@ -11,7 +11,7 @@ implementations can differ.
 
 Key exports:
 - WorkingSystem (record wrapping SystemSpec configuration flags)
-- Seven structural impossibility models and their impossibility theorems
+- Eight structural impossibility models and their impossibility theorems
 -/
 
 import EpArch.Basic
@@ -48,6 +48,8 @@ structure WorkingSystem where
   redeemability_ev : Option GroundedRedeemabilityStrict
   /-- Authorization evidence: restricted-agent witness + no-uniform-access consequence. -/
   authorization_ev : Option GroundedAuthorizationStrict := none
+  /-- Storage-management evidence: overflow state exceeding capacity + no-unbounded-accumulation consequence. -/
+  storage_ev       : Option GroundedStorageStrict        := none
 
 /-! ## Forced Feature Predicates
 
@@ -83,8 +85,12 @@ def HasRedeemability (W : WorkingSystem) : Prop := W.spec.has_redeemability = tr
     Forced by: Multi-agent heterogeneous access -/
 def HasGranularACL (W : WorkingSystem) : Prop := W.spec.has_granular_acl = true
 
+/-- Predicate: system has bounded storage management (finite active-deposit capacity).
+    Forced by: Bounded storage constraint -/
+def HasStorageManagement (W : WorkingSystem) : Prop := W.spec.has_storage_management = true
 
-/-! ## Seven Operational Properties
+
+/-! ## Eight Operational Properties
 
 These are the functional requirements that working systems must satisfy.
 Each maps to one constraint in the table. -/
@@ -124,21 +130,26 @@ def handles_truth_pressure (W : WorkingSystem) : Prop :=
 def handles_multi_agent (W : WorkingSystem) : Prop :=
   W.authorization_ev.isSome = true
 
+/-- System handles bounded storage: has storage-management evidence.
+    Required when: Bounded storage constraint holds. -/
+def handles_storage (W : WorkingSystem) : Prop :=
+  W.storage_ev.isSome = true
+
 
 /-! ## Pressure: The Canonical Dimension Index
 
-`Pressure` is the machine-exhaustive index of EpArch's seven architectural
+`Pressure` is the machine-exhaustive index of EpArch's eight architectural
 forcing dimensions.  Using it as the canonical index for `handles_pressure`,
 `forced_feature`, `SatisfiesAllProperties`, and `containsBankPrimitives`
-means the coverage of the framework — exactly these seven and no others —
+means the coverage of the framework — exactly these eight and no others —
 is a typed fact, not a counting convention.
 
 A proof that pattern-matches on `Pressure` is checked by Lean for
-exhaustiveness: adding an eighth dimension requires adding an eighth
+exhaustiveness: adding a ninth dimension requires adding a ninth
 constructor here, which would break every existing `cases P` proof
 until the new forcing chain is supplied. -/
 
-/-- The seven architectural pressure dimensions of EpArch. -/
+/-- The eight architectural pressure dimensions of EpArch. -/
 inductive Pressure where
   | scope         -- Distributed agents → Bubbles
   | trust         -- Bounded audit → TrustBridges
@@ -147,6 +158,7 @@ inductive Pressure where
   | bank          -- Coordination → Bank
   | redeemability -- Truth pressure → Redeemability
   | authorization -- Multi-agent heterogeneous access → GranularACL
+  | storage       -- Bounded storage → StorageManagement
   deriving DecidableEq, Repr
 
 /-- Maps each `Pressure` dimension to its capability predicate. -/
@@ -158,6 +170,7 @@ def handles_pressure (W : WorkingSystem) : Pressure → Prop
   | .bank          => handles_coordination W
   | .redeemability => handles_truth_pressure W
   | .authorization => handles_multi_agent W
+  | .storage       => handles_storage W
 
 /-- Maps each `Pressure` dimension to its forced architectural feature. -/
 def forced_feature (W : WorkingSystem) : Pressure → Prop
@@ -168,9 +181,10 @@ def forced_feature (W : WorkingSystem) : Pressure → Prop
   | .bank          => HasBank W
   | .redeemability => HasRedeemability W
   | .authorization => HasGranularACL W
+  | .storage       => HasStorageManagement W
 
-/-- A working system satisfies ALL seven operational properties — indexed by `Pressure`.
-    The seven-ness is machine-checked: `cases P` in any proof is
+/-- A working system satisfies ALL eight operational properties — indexed by `Pressure`.
+    The eight-ness is machine-checked: `cases P` in any proof is
     exhaustiveness-verified by Lean. -/
 def SatisfiesAllProperties (W : WorkingSystem) : Prop :=
   ∀ P : Pressure, handles_pressure W P
@@ -183,13 +197,13 @@ def containsBankPrimitives (W : WorkingSystem) : Prop :=
 
 /-! ## Constraint Subset and Partial Well-Formedness -/
 
-/-- A subset of the seven EpArch operational constraints, represented as a
-    7-boolean vector. `true` = constraint included; `false` = dropped.
+/-- A subset of the eight EpArch operational constraints, represented as an
+    8-boolean vector. `true` = constraint included; `false` = dropped.
 
     Examples:
-    - `allConstraints`  — all seven included (strongest case)
+    - `allConstraints`  — all eight included (strongest case)
     - `noConstraints`   — none included (no forcing theorems claimed)
-    - `⟨true, false, false, false, true, false, false⟩` — only distributed + coordination -/
+    - `⟨true, false, false, false, true, false, false, false⟩` — only distributed + coordination -/
 structure ConstraintSubset where
   distributed    : Bool
   bounded_audit  : Bool
@@ -198,13 +212,14 @@ structure ConstraintSubset where
   coordination   : Bool
   truth_pressure : Bool
   multi_agent    : Bool
+  bounded_storage: Bool
 
-/-- The full set of all seven constraints. `PartialWellFormed W allConstraints` requires
-    all seven biconditionals — the strongest subset. -/
-def allConstraints : ConstraintSubset := ⟨true, true, true, true, true, true, true⟩
+/-- The full set of all eight constraints. `PartialWellFormed W allConstraints` requires
+    all eight biconditionals — the strongest subset. -/
+def allConstraints : ConstraintSubset := ⟨true, true, true, true, true, true, true, true⟩
 
 /-- The empty subset. `PartialWellFormed W noConstraints` holds trivially. -/
-def noConstraints : ConstraintSubset := ⟨false, false, false, false, false, false, false⟩
+def noConstraints : ConstraintSubset := ⟨false, false, false, false, false, false, false, false⟩
 
 /-- `PartialWellFormed W S` captures the forcing biconditionals for
     the constraint subset S.
@@ -213,20 +228,21 @@ def noConstraints : ConstraintSubset := ⟨false, false, false, false, false, fa
     - If `S.X = true`,  the biconditional `handles_X W ↔ HasFeature_X W` is required.
     - If `S.X = false`, nothing is required for X.
 
-    Requiring all seven (S = allConstraints) is the strongest form. -/
+    Requiring all eight (S = allConstraints) is the strongest form. -/
 structure PartialWellFormed (W : WorkingSystem) (S : ConstraintSubset) : Prop where
-  wf_distributed    : S.distributed    = true → (handles_distributed_agents W ↔ HasBubbles W)
-  wf_bounded_audit  : S.bounded_audit  = true → (handles_bounded_audit W ↔ HasTrustBridges W)
-  wf_export         : S.export_across  = true → (handles_export W ↔ HasHeaders W)
-  wf_adversarial    : S.adversarial    = true → (handles_adversarial W ↔ HasRevocation W)
+  wf_distributed    : S.distributed     = true → (handles_distributed_agents W ↔ HasBubbles W)
+  wf_bounded_audit  : S.bounded_audit   = true → (handles_bounded_audit W ↔ HasTrustBridges W)
+  wf_export         : S.export_across   = true → (handles_export W ↔ HasHeaders W)
+  wf_adversarial    : S.adversarial     = true → (handles_adversarial W ↔ HasRevocation W)
   wf_coordination   : S.coordination   = true → (handles_coordination W ↔ HasBank W)
-  wf_truth_pressure : S.truth_pressure = true → (handles_truth_pressure W ↔ HasRedeemability W)
-  wf_multi_agent    : S.multi_agent    = true → (handles_multi_agent W ↔ HasGranularACL W)
+  wf_truth_pressure : S.truth_pressure  = true → (handles_truth_pressure W ↔ HasRedeemability W)
+  wf_multi_agent    : S.multi_agent     = true → (handles_multi_agent W ↔ HasGranularACL W)
+  wf_storage        : S.bounded_storage = true → (handles_storage W ↔ HasStorageManagement W)
 
 
 /-! ## Grounded Behavioral Evidence
 
-The seven capability witnesses correspond exactly to the seven `GroundedX` structures:
+The eight capability witnesses correspond exactly to the eight `GroundedX` structures:
 
 | WorkingSystem field  | GroundedXStrict type            | Forcing dimension                                     |
 |----------------------|---------------------------------|-------------------------------------------------------|
@@ -236,9 +252,10 @@ The seven capability witnesses correspond exactly to the seven `GroundedX` struc
 | `revocation_ev`      | `GroundedRevocationStrict`      | Adversarial pressure — revocation                     |
 | `bank_ev`            | `GroundedBankStrict`            | Coordination need — shared ledger                     |
 | `redeemability_ev`   | `GroundedRedeemabilityStrict`   | Truth pressure — redeemability                        |
-| `authorization_ev`   | `GroundedAuthorizationStrict`   | Multi-agent access — granular ACL                     | -/
+| `authorization_ev`   | `GroundedAuthorizationStrict`   | Multi-agent access — granular ACL                     |
+| `storage_ev`         | `GroundedStorageStrict`         | Bounded storage — storage management                  | -/
 
-/-- Evidence for all seven behavioral capabilities of a `WorkingSystem`.
+/-- Evidence for all eight behavioral capabilities of a `WorkingSystem`.
 
     One `GroundedX` field per forcing dimension.  Supplying a `GroundedBehavior`
     to `withGroundedBehavior` sets each `Option GroundedX` field in `WorkingSystem`
@@ -258,8 +275,10 @@ structure GroundedBehavior where
   redeemability : GroundedRedeemability
   /-- Authorization: a restricted-agent witness demonstrates granular ACL. -/
   authorization : GroundedAuthorization
+  /-- Storage: an overflow state demonstrating capacity pressure. -/
+  storage       : GroundedStorage
 
-/-- Build a `WorkingSystem` with all seven proof-carrying option fields set from evidence. -/
+/-- Build a `WorkingSystem` with all eight proof-carrying option fields set from evidence. -/
 def WorkingSystem.withGroundedBehavior (B : GroundedBehavior) (base : WorkingSystem) : WorkingSystem :=
   { base with
     bubbles_ev       := some B.bubbles.toStrict
@@ -268,20 +287,21 @@ def WorkingSystem.withGroundedBehavior (B : GroundedBehavior) (base : WorkingSys
     revocation_ev    := some B.revocation.toStrict
     bank_ev          := some B.bank.toStrict
     redeemability_ev := some B.redeemability.toStrict
-    authorization_ev := some B.authorization.toStrict }
+    authorization_ev := some B.authorization.toStrict
+    storage_ev       := some B.storage.toStrict }
 
-/-- A `WorkingSystem` built from `GroundedBehavior` satisfies all seven operational
+/-- A `WorkingSystem` built from `GroundedBehavior` satisfies all eight operational
     properties. -/
 theorem grounded_behavior_satisfies_all (B : GroundedBehavior) (W : WorkingSystem) :
     SatisfiesAllProperties (WorkingSystem.withGroundedBehavior B W) := by
   intro P; cases P <;>
   simp [handles_pressure, handles_distributed_agents, handles_bounded_audit,
         handles_export, handles_adversarial, handles_coordination,
-        handles_truth_pressure, handles_multi_agent,
+        handles_truth_pressure, handles_multi_agent, handles_storage,
         WorkingSystem.withGroundedBehavior, Option.isSome]
 
-/-- `SatisfiesAllProperties` implies all seven evidence option fields are present.
-    Extracts the seven `isSome = true` facts from the property predicate. -/
+/-- `SatisfiesAllProperties` implies all eight evidence option fields are present.
+    Extracts the eight `isSome = true` facts from the property predicate. -/
 theorem satisfies_all_fixes_flags (W : WorkingSystem) (h : SatisfiesAllProperties W) :
     W.bubbles_ev.isSome       = true ∧
     W.bridges_ev.isSome       = true ∧
@@ -289,8 +309,9 @@ theorem satisfies_all_fixes_flags (W : WorkingSystem) (h : SatisfiesAllPropertie
     W.revocation_ev.isSome    = true ∧
     W.bank_ev.isSome          = true ∧
     W.redeemability_ev.isSome = true ∧
-    W.authorization_ev.isSome = true :=
-  ⟨h .scope, h .trust, h .headers, h .revocation, h .bank, h .redeemability, h .authorization⟩
+    W.authorization_ev.isSome = true ∧
+    W.storage_ev.isSome       = true :=
+  ⟨h .scope, h .trust, h .headers, h .revocation, h .bank, h .redeemability, h .authorization, h .storage⟩
 
 /-- A `WorkingSystem` built from both `GroundedBehavior` and `GroundedSystemSpec`
     satisfies `PartialWellFormed W allConstraints`.
@@ -325,22 +346,26 @@ theorem grounded_partial_wellformed (B : GroundedBehavior) (G : GroundedSystemSp
     ⟨fun _ => (grounded_spec_contains_all G).2.2.2.2.2.1,
      fun _ => rfl⟩
   wf_multi_agent    := fun _ =>
-    ⟨fun _ => (grounded_spec_contains_all G).2.2.2.2.2.2,
+    ⟨fun _ => (grounded_spec_contains_all G).2.2.2.2.2.2.1,
+     fun _ => rfl⟩
+  wf_storage        := fun _ =>
+    ⟨fun _ => (grounded_spec_contains_all G).2.2.2.2.2.2.2,
      fun _ => rfl⟩ }
 
 
 /-! ## Global Impossibility and Convergence -/
 
-/-- All seven forced features together constitute Bank-like architecture.
+/-- All eight forced features together constitute Bank-like architecture.
 
     This is a definitional theorem: `containsBankPrimitives W` is
-    `∀ P : Pressure, forced_feature W P` — providing the seven `Has*`
+    `∀ P : Pressure, forced_feature W P` — providing the eight `Has*`
     witnesses satisfies it by case analysis on `P`. -/
 theorem all_features_constitute_bank (W : WorkingSystem) :
   HasBubbles W → HasTrustBridges W → HasHeaders W →
   HasRevocation W → HasBank W → HasRedeemability W → HasGranularACL W →
+  HasStorageManagement W →
   containsBankPrimitives W := by
-  intro h1 h2 h3 h4 h5 h6 h7 P
+  intro h1 h2 h3 h4 h5 h6 h7 h8 P
   cases P <;> assumption
 
 
@@ -364,8 +389,9 @@ from that structure alone — no biconditionals needed.
 | 5 | Coordination | `PrivateOnlyStorage` | `private_storage_no_sharing` | Isolated storage blocks collective reliance |
 | 6 | Truth pressure | `ClosedEndorsement` | `closed_system_unfalsifiable` | Without external contact, consensus is unfalsifiable |
 | 7 | Authorization | `TwoTierAccess` | `flat_authorization_impossible` | No flat predicate can represent both the submission and commit tiers |
+| 8 | Bounded storage | `BoundedStorage` | `monotone_active_accumulation_overflows` | No fixed budget covers all active-deposit states; management is forced |
 
-After the seven models, the convergence proof machinery (`StructurallyForced`,
+After the eight models, the convergence proof machinery (`StructurallyForced`,
 `ForcingEmbedding`, Bridge predicates, Scenario predicates,
 `convergence_structural`) lives in EpArch.Convergence.
 -/
@@ -1257,11 +1283,11 @@ theorem soft_closed_when_universal (M : SoftFalsifiability)
 
 /-! ### §6c. Forcing Stratification: Hard vs Soft Forcing for Truth Pressure
 
-The seven forcing dimensions do not all have the same tightness.
+The eight forcing dimensions do not all have the same tightness.
 
 Hard forcing: impossibility follows from the structure alone, without additional
-behavioral coverage assumptions.  Scope, revocation, bank, and partial contestation
-belong to this tier.
+behavioral coverage assumptions.  Scope, revocation, bank, partial contestation,
+authorization, and storage belong to this tier.
 
 Soft forcing: impossibility requires an additional coverage assumption
 (`∀ c, endorsed c → emits_anomaly c` / `flagged c`), which cannot be
@@ -1568,13 +1594,13 @@ theorem attribute_based_two_tier_impossible (M : AttributeBasedAuth) :
 /-! ## §7. GroundedX ↔ Impossibility Bridges
 
 Each `GroundedX` structure is isomorphic to the *input* of the corresponding
-impossibility theorem (§1–§6).  These bridge theorems make the connection
+impossibility theorem (§1–§8).  These bridge theorems make the connection
 explicit: given any `GroundedX` witness, the matching impossibility result fires.
 
 `GroundedXStrict` packages the base evidence with its impossibility consequence —
 the non-trivial `Prop` that falls out of the bridge.
 
-**Relation to WorkingSystem.**  `WorkingSystem` carries seven `Option GroundedXStrict`
+**Relation to WorkingSystem.**  `WorkingSystem` carries eight `Option GroundedXStrict`
 fields.  The `GroundedXStrict` structures are defined in EpArch.SystemSpec (where
 they only depend on `GroundedX` fields).
 
@@ -1712,6 +1738,226 @@ theorem groundedAuthorization_flat_impossible (G : GroundedAuthorization) :
 /-- Thin alias for `G.toStrict`.  Cite `groundedAuthorization_flat_impossible` directly
     when a proof must explicitly name the two-tier impossibility route. -/
 def GroundedAuthorizationStrict.mk' (G : GroundedAuthorization) : GroundedAuthorizationStrict :=
+  G.toStrict
+
+
+/-! ========================================================================
+    8. Bounded Storage → Storage Management
+    ========================================================================
+
+**Argument.**  Any finite storage capacity can be exceeded by a sufficient
+number of active deposits.  A system without a management mechanism (eviction,
+archival, or pruning) cannot remain within its budget indefinitely.
+
+**Proof technique.**  Direct witness: the `BoundedStorage` structure carries
+a concrete state (`deep_state`) whose active-deposit count exceeds the budget.
+The impossibility theorem simply applies the universal bound to this state
+and derives a contradiction.
+-/
+
+/-- Abstract bounded-storage scenario: a state type with a count function and
+    a concrete overflow state.
+
+    Carries all the impossibility payload directly — no induction needed.
+    Parallel to `BoundedVerification` for the audit dimension. -/
+structure BoundedStorage where
+  /-- Abstract state type (models the global deposit ledger state). -/
+  State       : Type
+  /-- Finite capacity budget. -/
+  budget      : Nat
+  /-- Active-deposit count function. -/
+  count       : State → Nat
+  /-- A concrete state whose active count exceeds the budget. -/
+  deep_state  : State
+  /-- The deep state demonstrably exceeds the budget. -/
+  exceeds_budget : budget < count deep_state
+
+/-- BOUNDED STORAGE IMPOSSIBILITY.
+
+    No fixed capacity budget can cover all reachable active-deposit states.
+
+    **Theorem shape:** `¬∀ s : M.State, M.count s ≤ M.budget`.
+    **Proof strategy:** apply the universal bound to `M.deep_state`, which carries
+    `M.exceeds_budget : M.budget < M.count M.deep_state`; contradiction via
+    `Nat.not_le`. -/
+theorem monotone_active_accumulation_overflows (M : BoundedStorage) :
+    ¬∀ s : M.State, M.count s ≤ M.budget :=
+  fun h => absurd (Nat.lt_of_lt_of_le M.exceeds_budget (h M.deep_state)) (Nat.lt_irrefl M.budget)
+
+/-- BOUNDED STORAGE → STORAGE MANAGEMENT FORCING.
+
+    Any system facing bounded storage pressure — a concrete state exceeding the
+    capacity budget — requires a storage management mechanism to remain within bounds.
+
+    **Theorem shape:** `BoundedStorage → ¬(∀ s, count s ≤ budget)` — the
+    impossibility of staying within budget without management intervention.
+    **Proof strategy:** delegates to `monotone_active_accumulation_overflows`. -/
+theorem bounded_storage_forces_storage_management (M : BoundedStorage) :
+    ¬∀ s : M.State, M.count s ≤ M.budget :=
+  monotone_active_accumulation_overflows M
+
+
+/-! ### 8b. Alternative Storage Architectures Reduce to BoundedStorage
+
+A reviewer may ask: do append-only logs, versioned entry stores, or
+per-partition quota schemes escape `monotone_active_accumulation_overflows`?
+
+All three are instantiated below.  In each case the alternative carries a
+concrete overflow state and an exceed-budget proof — a direct `BoundedStorage`
+instance — and the impossibility fires via the standard embedding.
+
+**Append-only log.**  Entries are appended but never deleted; the active-entry
+count is monotonically non-decreasing.  A log that has accumulated more than
+`budget` entries is the overflow state.  Without an archival or compaction
+mechanism, the count cannot be bounded — a direct `BoundedStorage` instance.
+
+**Versioned entry store.**  Each update creates a new version; all versions
+are retained indefinitely for audit or rollback.  Version count is the
+active-deposit proxy.  Without compaction or garbage collection, the count
+exceeds any fixed budget — a direct `BoundedStorage` instance.
+
+**Per-partition quota store.**  Storage is divided into named partitions
+(tenants, shards, epochs); each partition carries its own local count.  Without
+cross-partition capacity enforcement, a single partition can accumulate more
+entries than the global budget.  The overflow partition supplies the
+`BoundedStorage` overflow witness. -/
+
+/-- Append-only log: entries are only ever appended; the active count is
+    monotonically non-decreasing.
+
+    `append_grows` formalises the append-only property: each append increments
+    count by exactly 1.  `full_state` witnesses the overflow.
+    Parallel to `CapabilitySystem` for scope and `RBACAuthSurface` for authorization. -/
+structure AppendOnlyLog where
+  /-- Abstract state type (models the accumulated log contents). -/
+  State          : Type
+  /-- Active entry count for a given log state. -/
+  entry_count    : State → Nat
+  /-- Fixed capacity budget. -/
+  budget         : Nat
+  /-- Append operation: adds exactly one entry to the log. -/
+  append         : State → State
+  /-- Appending grows the entry count by exactly 1. -/
+  append_grows   : ∀ s, entry_count (append s) = entry_count s + 1
+  /-- A concrete log state whose entry count exceeds the budget. -/
+  full_state     : State
+  /-- The full state demonstrably exceeds the budget. -/
+  exceeds_budget : budget < entry_count full_state
+
+/-- An append-only log directly instantiates `BoundedStorage`:
+    the full state is the deep-state overflow witness. -/
+def append_only_to_bounded (M : AppendOnlyLog) : BoundedStorage where
+  State          := M.State
+  count          := M.entry_count
+  budget         := M.budget
+  deep_state     := M.full_state
+  exceeds_budget := M.exceeds_budget
+
+/-- Without a deletion or archival mechanism, an append-only log cannot stay
+    within budget: `monotone_active_accumulation_overflows` fires via the embedding. -/
+theorem append_only_log_overflows (M : AppendOnlyLog) :
+    ¬∀ s : M.State, M.entry_count s ≤ M.budget :=
+  monotone_active_accumulation_overflows (append_only_to_bounded M)
+
+/-- Versioned entry store: each update creates a new version; all versions are
+    retained indefinitely.
+
+    `update_grows` formalises version retention: each update increments the
+    version count by exactly 1.  `overflow_state` witnesses the capacity violation.
+    Parallel to `DelegatedVerification` for trust bridges. -/
+structure VersionedStore where
+  /-- Abstract state type (models the multi-version store). -/
+  State          : Type
+  /-- Number of retained versions in a given store state. -/
+  version_count  : State → Nat
+  /-- Fixed capacity budget. -/
+  budget         : Nat
+  /-- Update operation: creates a new version, incrementing the count. -/
+  update         : State → State
+  /-- Version creation grows the count by exactly 1. -/
+  update_grows   : ∀ s, version_count (update s) = version_count s + 1
+  /-- A concrete store state whose version count exceeds the budget. -/
+  overflow_state : State
+  /-- The overflow state demonstrably exceeds the budget. -/
+  exceeds_budget : budget < version_count overflow_state
+
+/-- A versioned entry store directly instantiates `BoundedStorage`:
+    the overflow state is the deep-state witness. -/
+def versioned_to_bounded (M : VersionedStore) : BoundedStorage where
+  State          := M.State
+  count          := M.version_count
+  budget         := M.budget
+  deep_state     := M.overflow_state
+  exceeds_budget := M.exceeds_budget
+
+/-- Without a compaction or garbage-collection mechanism, a versioned store
+    cannot stay within budget: `monotone_active_accumulation_overflows` fires
+    via the embedding. -/
+theorem versioned_store_overflows (M : VersionedStore) :
+    ¬∀ s : M.State, M.version_count s ≤ M.budget :=
+  monotone_active_accumulation_overflows (versioned_to_bounded M)
+
+/-- Per-partition quota store: storage is divided into named partitions
+    (tenants, shards, epochs); each partition carries its own active-entry count.
+
+    `overflow_partition` and `overflow_state` supply the `BoundedStorage` witness:
+    a single partition in a single state that exceeds the global budget.
+    Parallel to `PartitionedStore` for the authorization surface in RBAC. -/
+structure PartitionedStore where
+  /-- Partition identifier type (tenant, shard, epoch, etc.). -/
+  Partition          : Type
+  /-- Abstract global state type. -/
+  State              : Type
+  /-- Active entry count for a given partition in a given global state. -/
+  partition_count    : Partition → State → Nat
+  /-- Global capacity budget. -/
+  budget             : Nat
+  /-- A partition whose local count exceeds the global budget in some state. -/
+  overflow_partition : Partition
+  /-- A state in which that partition's count exceeds the budget. -/
+  overflow_state     : State
+  /-- The overflow partition in the overflow state demonstrably exceeds the budget. -/
+  exceeds_budget     : budget < partition_count overflow_partition overflow_state
+
+/-- A partitioned store directly instantiates `BoundedStorage` by fixing the
+    overflow partition: `partition_count overflow_partition` acts as the count function. -/
+def partitioned_to_bounded (M : PartitionedStore) : BoundedStorage where
+  State          := M.State
+  count          := M.partition_count M.overflow_partition
+  budget         := M.budget
+  deep_state     := M.overflow_state
+  exceeds_budget := M.exceeds_budget
+
+/-- Without cross-partition capacity enforcement, a partitioned store cannot
+    bound the per-partition active-entry count globally: the impossibility
+    fires via the embedding. -/
+theorem partitioned_store_overflows (M : PartitionedStore) :
+    ¬∀ s : M.State, M.partition_count M.overflow_partition s ≤ M.budget :=
+  monotone_active_accumulation_overflows (partitioned_to_bounded M)
+
+
+/-! ### §8.8  Storage ↔ BoundedStorage -/
+
+/-- Convert `GroundedStorage` to `BoundedStorage`.
+    The fields map directly: `State`/`budget`/`count`/`overflow_state`→`deep_state`/`exceeds`→`exceeds_budget`.
+    Parallel to `groundedAuthorization_to_scenario` for the authorization dimension. -/
+def groundedStorage_to_scenario (G : GroundedStorage) : BoundedStorage where
+  State          := G.State
+  budget         := G.budget
+  count          := G.count
+  deep_state     := G.overflow_state
+  exceeds_budget := G.exceeds
+
+/-- No fixed budget can cover all active-deposit states in a `GroundedStorage`.
+    Invokes `monotone_active_accumulation_overflows` via the bridge.
+    Parallel to `groundedAuthorization_flat_impossible` for the authorization dimension. -/
+theorem groundedStorage_accumulation_impossible (G : GroundedStorage) :
+    ¬∀ s : G.State, G.count s ≤ G.budget :=
+  monotone_active_accumulation_overflows (groundedStorage_to_scenario G)
+
+/-- Thin alias for `G.toStrict`.  Cite `groundedStorage_accumulation_impossible` directly
+    when a proof must explicitly name the bounded-storage impossibility route. -/
+def GroundedStorageStrict.mk' (G : GroundedStorage) : GroundedStorageStrict :=
   G.toStrict
 
 

@@ -54,7 +54,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | 7 | Invariant Preservation — Truth and gate invariants under trace induction |
 | 8 | Modal Properties — Safety/Sensitivity ↔ S/E/V header preservation |
 | 9 | Grounded Minimality — Each feature necessary for specific capabilities |
-| 9b | Abstract Structural Forcing — Seven per-dimension `*_forces_*` theorems (no `WellFormed`, no biconditionals) + `SystemOperationalBundle` / `WorldBridgeBundle`; headline `bundled_structure_forces_bank_primitives`; seven structural impossibility models + `StructurallyForced` / `convergence_structural` (`Minimality.lean` + `Convergence.lean`) |
+| 9b | Abstract Structural Forcing — Eight per-dimension `*_forces_*` theorems (no `WellFormed`, no biconditionals) + `SystemOperationalBundle` / `WorldBridgeBundle`; headline `bundled_structure_forces_bank_primitives`; eight structural impossibility models + `StructurallyForced` / `convergence_structural` (`Minimality.lean` + `Convergence.lean`) |
 | 9c | Observation-Boundary Equivalence — Any two `GroundedBehavior` witnesses produce identical observations; step-bridge grounds withdraw/challenge/tick via `ReadyState` + `behavior_from_step` (`Theorems/BehavioralEquivalence.lean`) |
 | 9d | Kernel Verification Depth — `DepthClaim` constructive witness; `bounded_verify` budget decision procedure; `DepthWorldCtx` closes `W_bounded_verification` by construction (`Concrete/VerificationDepth.lean`) |
 | 10 | Adversarial Model — Attack structures, DDoS vectors, obligation theorems |
@@ -75,7 +75,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | 25 | Theorem Transport — Health Goal Layer (Tier 3 closure) |
 | 26 | Theorem Transport — Main Library Layer (Tier 4 closure: standalone commitments + structural + LTS + health goals) |
 | 27 | Modularity Meta-Theorem — ∀ S ⊆ Constraints, projection_valid S |
-| 28 | Certification Engine — `EpArchConfig → ClusterTag → certified proof` (30 clusters) |
+| 28 | Certification Engine — `EpArchConfig → ClusterTag → certified proof` (31 clusters) |
 | 29 | Lean Kernel Instantiation — Lean's type-checking kernel modeled as EpArch-compliant (`LeanKernelCtx`, `LeanWorkingSystem`, World.lean and SFailure.lean) |
 
 ### Key Files
@@ -92,19 +92,19 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | `Semantics/ScopeIrrelevance.lean` | Scope irrelevance theorems | 0 |
 | `Bank.lean` | Bank substrate, lifecycle operators | 0 |
 | `Commitments.lean` | 8 structural commitments; all proved as standalone theorems; `commitments_pack` bundles the unconditional ones (C3/C4b/C7b/C8) | 0 |
-| `Meta/ClusterRegistry.lean` | 30-cluster tag registry, routing, per-family canonical lists | 0 |
+| `Meta/ClusterRegistry.lean` | 31-cluster tag registry, routing, per-family canonical lists | 0 |
 | `Meta/Config.lean` | Certification engine: `certify`, proof witnesses, completeness theorems | 0 |
 | `Health.lean` | Health predicates + necessity theorems | 0 |
 | `Invariants.lean` | Protocol requirements | 0 |
 | `Minimality.lean` | Structural impossibility models + alternative-architecture dismissals | 0 |
-| `Scenarios.lean` | Seven `Represents*` scenario enrichments + `SystemOperationalBundle`/`WorldBridgeBundle` packaging | 0 |
+| `Scenarios.lean` | Eight `Represents*` scenario enrichments + `SystemOperationalBundle`/`WorldBridgeBundle` packaging | 0 |
 | `GroundedEvidence.lean` | `GroundedX` evidence structures powering `PartialGroundedSpec` compliance API | 0 |
 | `Convergence.lean` | `StructurallyForced`, `ForcingEmbedding`, `convergence_structural`, bridge predicates | 0 |
 | `Theorems/BehavioralEquivalence.lean` | Observation-boundary equivalence; `Behavior` takes `GroundedBehavior`, step-grounded for withdraw/challenge/tick | 0 |
 | `Concrete/Types.lean` | Concrete types (CProp/CDeposit/CBubble/etc.) | 0 |
 | `Concrete/Commitments.lean` | C1–C8 concrete witnesses | 0 |
 | `Concrete/WorkingSystem.lean` | Behavioral equivalence, grounding, `ConcreteWorkingSystem` | 0 |
-| `Concrete/DeficientSystems.lean` | 6 deficient-system bridge-impossibility witnesses | 0 |
+| `Concrete/DeficientSystems.lean` | 8 deficient-system bridge-impossibility witnesses | 0 |
 | `Concrete/NonVacuity.lean` | Advanced non-vacuity: traces, legibility, convergence, modal | 0 |
 | `Concrete/Realizer.lean` | `Realizer` and `SuccessfulSystem` type packaging | 0 |
 | `Concrete/VerificationDepth.lean` | `DepthClaim` constructive witness, `bounded_verify` decision procedure | 0 |

@@ -38,7 +38,7 @@ lake build   # Lean 4.3.0, no Mathlib
 | **Inspect which theorems apply** — human-readable routing report per constraint/goal/world | `#eval EpArch.Meta.Config.showConfig myConfig` |
 | **See why primitives are structurally forced** — constraint-to-feature necessity proofs | `EpArch/Minimality.lean`, `EpArch/Convergence.lean`, `EpArch/Agent/Imposition.lean`, `EpArch/WorldBridges.lean` (`bundled_structure_forces_bank_primitives` — world-assumption-free; `world_assumptions_force_bank_primitives` — W_* bundle path) |
 | **Transport theorems through compatible extensions** — Tier 3–4 closure | `EpArch/Meta/TheoremTransport.lean`, `EpArch/Meta/Tier4Transport.lean` |
-| **Extend or adapt the framework** — 30-cluster registry + contributor recipes | [`DOCS/MODULARITY.md`](DOCS/MODULARITY.md) |
+| **Extend or adapt the framework** — 31-cluster registry + contributor recipes | [`DOCS/MODULARITY.md`](DOCS/MODULARITY.md) |
 | **Verify a constructive witness** — zero-axiom trace from initial state to revoked | `EpArch/Concrete/NonVacuity.lean` |
 | **Localize an epistemic puzzle** (Gettier, Lottery, Fake Barn, confabulation) | `EpArch/Theorems/Cases/` — `gettier_is_V_failure` (Gettier.lean), `confabulation_is_type_error` (TypeErrors.lean); `EpArch/Theorems/Corners.lean` — `lottery_paradox_dissolved_architecturally` |
 
@@ -53,7 +53,7 @@ def myConfig : EpArchConfig := {
   worlds      := [.lies_possible, .partial_observability]
 }
 
--- Which of the 30 clusters are active for this configuration:
+-- Which of the 31 clusters are active for this configuration:
 #eval EpArch.Meta.Config.showConfig myConfig
 
 -- Proof-carrying record: one machine-checked witness per cluster family:
@@ -73,7 +73,7 @@ EpArch is a machine-checked framework for reasoning about bounded epistemic syst
 The framework has three layers:
 - **Formal architecture** — core types, lifecycle semantics, commitments, forcing results, adversarial obligations, revision safety.
 - **Configurable certification surface** — `EpArchConfig` selects active constraints, goals, and world bundles; `certify` returns a `CertifiedProjection` for exactly the applicable theorem clusters.
-- **Modular extension substrate** — 30-cluster registry with explicit routing, proof-carrier layers, and contributor-facing extension recipes.
+- **Modular extension substrate** — 31-cluster registry with explicit routing, proof-carrier layers, and contributor-facing extension recipes.
 
 ---
 
@@ -149,9 +149,9 @@ The framework has three layers:
 | `Agent/Corroboration.lean` | k-of-n corroboration guarantees and independence conditions |
 | `Commitments.lean` | The 8 structural commitments; all proved as standalone theorems; `commitments_pack` bundles the unconditional ones (C3/C4b/C7b/C8) |
 | `Minimality.lean` | Structural impossibility models + alternative-architecture dismissals; `Pressure` inductive as canonical dimension index |
-| `Scenarios.lean` | Seven `Represents*` scenario enrichments + `SystemOperationalBundle`/`WorldBridgeBundle` packaging |
+| `Scenarios.lean` | Eight `Represents*` scenario enrichments + `SystemOperationalBundle`/`WorldBridgeBundle` packaging |
 | `GroundedEvidence.lean` | `GroundedX` evidence structures; `GroundedSystemSpec`/`PartialGroundedSpec` compliance API |
-| `Convergence.lean` | `StructurallyForced`, `ForcingEmbedding`, `convergence_structural`, bridge predicates; seven per-dimension `*_forces_*` theorems |
+| `Convergence.lean` | `StructurallyForced`, `ForcingEmbedding`, `convergence_structural`, bridge predicates; eight per-dimension `*_forces_*` theorems |
 | `Concrete/VerificationDepth.lean` | Kernel-grounded verification depth: `DepthClaim` constructive witness; `bounded_verify` budget decision procedure; `DepthWorldCtx` instantiates `W_bounded_verification` by construction |
 | `Theorems/BehavioralEquivalence.lean` | Observation-boundary equivalence; `working_systems_equivalent` — any two `GroundedBehavior` certificates are behaviorally equivalent (unconditional; no `SatisfiesAllProperties` premise); step-bridge section grounds withdraw/challenge/tick via `ReadyState` witnesses |
 | `Feasibility.lean` | Existence/non-vacuity witnesses: `world_bundles_feasible`, `commitments_feasible`, `existence_under_constraints_structural`, `existence_under_constraints_embedding` |
@@ -161,8 +161,8 @@ The framework has three layers:
 | `Meta/TheoremTransport.lean` | Health-goal transport schema: all 5 health goals are transport-safe under Compatible extensions (Tier 3 closure) |
 | `Meta/Tier4Transport.lean` | Main theorem library transport: standalone commitments, structural, and ConcreteBankModel clusters (Tier 4 closure) |
 | `Meta/Modular.lean` | Constraint-subset modularity: `PartialWellFormed`, `modular` (∀ S ⊆ constraints, biconditional fragment → forcing projection), `allConstraints`/`noConstraints` |
-| `Meta/ClusterRegistry.lean` | 30-cluster tag registry: `ClusterTag`, `EnabledXxxCluster` inductives, per-family canonical lists, `clusterEnabled` routing |
-| `Meta/Config.lean` | Configurable certification engine: `CertifiedProjection`, `certify`, named proof witnesses for all 30 clusters |
+| `Meta/ClusterRegistry.lean` | 31-cluster tag registry: `ClusterTag`, `EnabledXxxCluster` inductives, per-family canonical lists, `clusterEnabled` routing |
+| `Meta/Config.lean` | Configurable certification engine: `CertifiedProjection`, `certify`, named proof witnesses for all 31 clusters |
 | `Meta/LeanKernel/World.lean` | Lean kernel self-application — world layer (`LeanKernelCtx`, bundle witnesses, Gettier), architecture layer (`LeanWorkingSystem`, HasX proofs, convergence chain), and OleanStaleness deposit witness |
 | `Meta/LeanKernel/SFailure.lean` | Lean kernel S-field failure taxonomy: `LeanAxiomLevel`, `ElabMode`, `LeanStandardCase`, `LeanVacuousStandard`, relational vs. absolute S-failure theorems |
 | `Meta/LeanKernel/OdometerModel.lean` | Concrete minimal sub-bundle: single-bubble append-only system, graceful degradation witness |

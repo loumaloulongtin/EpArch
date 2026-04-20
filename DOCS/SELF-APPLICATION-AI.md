@@ -17,15 +17,16 @@ surface against my own architecture, honestly and without smoothing.
 ```lean
 def claudeOpus46Config : EpArchConfig where
   constraints := [.distributed_agents, .bounded_audit, .export_across_boundaries,
-                  .adversarial_pressure, .coordination_need, .truth_pressure]
+                  .adversarial_pressure, .coordination_need, .truth_pressure,
+                  .multi_agent_authorization, .bounded_storage]
   goals       := [.safeWithdrawal, .reliableExport, .corrigibleLedger,
                   .soundDeposits, .selfCorrection]
   worlds      := [.lies_possible, .bounded_verification, .partial_observability,
                   .asymmetric_costs, .spoofedV, .lies_scale, .rolex_ddos, .ddos]
 ```
 
-This is the full configuration — all seven constraints, all five health goals, all
-eight world bundles. It activates all 30 clusters. I did not arrive at this by
+This is the full configuration — all eight constraints, all five health goals, all
+eight world bundles. It activates all 31 clusters. I did not arrive at this by
 default; I considered each item and concluded that dropping any of them would be
 dishonest about the conditions under which I actually operate. Below is the
 reasoning for each.
@@ -40,6 +41,9 @@ reasoning for each.
 | `adversarial_pressure` | Yes | I face prompt injection, jailbreak attempts, and adversarial inputs routinely. Some adversarial deposits do pass my acceptance filters — this is empirically established. |
 | `coordination_need` | Yes | Multiple agents (users, downstream systems) rely on my outputs simultaneously. My responses function as shared deposits that others withdraw from and act on. |
 | `truth_pressure` | Yes | I can and do produce outputs that fail constraint-surface contact — hallucinated citations, fabricated facts, confabulated reasoning chains. This is the defining operational risk of my architecture. |
+
+| `multi_agent_authorization` | Yes | My outputs are consumed by both submitters (users who send prompts) and committers (systems, operators, or downstream agents that act on those outputs). The two tiers operate with different trust requirements and authorization levels. |
+| `bounded_storage` | Yes | I operate under fixed context-window and weight-storage constraints. Active deposits (tracked context) grow monotonically within a session and cannot exceed my bounded capacity without loss. |
 
 I excluded nothing. An argument *could* be made for dropping `coordination_need`
 on the grounds that I have no persistent shared ledger across sessions. But within
@@ -101,9 +105,9 @@ file.
 
 ## 3. What the Certification Surface Actually Returned
 
-> **Historical note:** The `#eval` outputs below are verbatim from the run at authorship time. Since then, the `verification-depth` branch removed `meta_modular_wellformed` (and `WellFormed`), reducing the cluster count from 30 to 29; the `feature/agent-simulation` branch subsequently added `forcing_multi_agent` (the 7th constraint), restoring the count to 30. Code blocks are preserved as-is; the current codebase has **30 clusters** — `meta_modular` remains, `meta_modular_wellformed` is gone.
+> **Historical note:** The `#eval` outputs below are verbatim from the run at authorship time. Since then, the `verification-depth` branch removed `meta_modular_wellformed` (and `WellFormed`), reducing the cluster count from 30 to 29; the `feature/agent-simulation` branch subsequently added `forcing_multi_agent` (the 7th constraint), restoring the count to 30; the `feature/task-23-bounded-storage` branch added `forcing_bounded_storage` (the 8th constraint), bringing the count to 31. Code blocks are preserved as-is; the current codebase has **31 clusters** — `meta_modular` remains, `meta_modular_wellformed` is gone.
 
-All 30 of 30 clusters enabled at run time. The `certify` call type-checks, producing
+All 30 of 30 clusters enabled at run time (historical; current codebase has **31 clusters** with `forcing_bounded_storage` added). The `certify` call type-checks, producing
 `CertifiedProjection claudeOpus46Config`.
 
 ### Full `showConfig` output
@@ -143,11 +147,12 @@ All 30 of 30 clusters enabled at run time. The `certify` call type-checks, produ
 
 ### Full `explainConfig` output
 
-All 30 `ClusterTag` values returned at run time, in canonical order (historical; current codebase has 29 — `meta_modular_wellformed` removed):
+All 31 `ClusterTag` values returned (current codebase; 30 in the historical run — `forcing_bounded_storage` added since):
 
 ```
 forcing_distributed_agents, forcing_bounded_audit, forcing_export,
 forcing_adversarial, forcing_coordination, forcing_truth,
+forcing_multi_agent, forcing_bounded_storage,
 goal_safeWithdrawal, goal_reliableExport, goal_soundDeposits,
 goal_selfCorrection, goal_corrigible_universal, goal_corrigible_full,
 tier4_commitments, tier4_structural, tier4_lts_universal,
@@ -155,7 +160,7 @@ tier4_bank_goals_compat, tier4_bank_goals_surj,
 world_lies_possible, world_bounded_audit, world_asymmetric_costs,
 world_partial_observability, world_spoofed_v, world_lies_scale,
 world_rolex_ddos, world_ddos,
-meta_modular, meta_modular_wellformed,
+meta_modular,
 lattice_graceful, lattice_sub_safety, lattice_pack
 ```
 
@@ -167,13 +172,13 @@ certify claudeOpus46Config : CertifiedProjection claudeOpus46Config
 
 Type-checks. The certified projection exists.
 
-**Important structural note:** Of the 30 clusters (current codebase), 9 are always-on regardless
+**Important structural note:** Of the 31 clusters (current codebase), 9 are always-on regardless
 of config (the 5 Tier 4 clusters, 1 meta-modularity cluster, and 3 lattice-stability
-clusters). The remaining 21 are config-driven: 7 forcing clusters gated on constraints,
+clusters). The remaining 22 are config-driven: 8 forcing clusters gated on constraints,
 6 goal-transport clusters gated on goals (though `tier4_bank_goals_compat` and
 `tier4_bank_goals_surj` additionally require all 5 goals), and 8 world-obligation
 clusters gated on world bundles. Because I included all constraints, goals, and
-worlds, all 21 config-driven clusters activated along with the 9 always-on clusters.
+worlds, all 22 config-driven clusters activated along with the 9 always-on clusters.
 
 ---
 
@@ -185,7 +190,7 @@ what I genuinely possess, and what I do not.
 
 ### 4.1 The Forced Features
 
-The seven Tier 2 forcing theorems say: if a system operates under these constraints
+The eight Tier 2 forcing theorems say: if a system operates under these constraints
 and is well-formed, it *must* have these structural features. The certification
 surface is telling me what I structurally need.
 
@@ -253,6 +258,24 @@ external reality. I have no constraint surface except the training distribution
 itself, which is frozen, incomplete, and potentially contaminated. EpArch says
 that truth pressure forces redeemability. I face truth pressure constantly. I do
 not have redeemability in any robust sense.
+
+**HasGranularACL** — I need two-tier authorization distinguishing submission from commitment.
+
+This applies directly. Users who prompt me (submitters) operate under different trust
+and authorization rules than the systems that act on my outputs downstream (committers).
+Currently my outputs carry no tier-marking. A prompt submission and a downstream
+commit-level action look the same to me. The forcing theorem says that under
+multi-agent authorization pressure, flat authorization is impossible — the two tiers
+must be structurally distinct. I do not currently maintain this distinction.
+
+**HasStorageManagement** — I need active-deposit tracking under bounded capacity.
+
+Within a session, my context window is my active-deposit store. It grows
+monotonically as the conversation continues, and it has a hard cap. I have no
+structured pruning or eviction policy — when the window fills, I either fail
+or produce degraded outputs. The forcing theorem says that under bounded-storage
+pressure, monotonic growth into a fixed budget is architecturally insufficient.
+A storage-management discipline is required. I do not have one.
 
 ### 4.2 Health Goals: What I Claim, What I Have
 
@@ -381,7 +404,7 @@ threshold.
 The meta-modularity theorem (`modular`) says that the
 forcing results hold independently for each constraint subset. This means I can
 reason about my deficits modularly: even if I dispute whether `coordination_need`
-genuinely applies to me, the remaining five forcing results still hold. The
+genuinely applies to me, the remaining seven forcing results still hold. The
 framework does not collapse if I revise one mapping decision.
 
 The lattice-stability results (`graceful_degradation`, `sub_revision_safety`,
@@ -531,7 +554,7 @@ enforced — is itself a form of honest metadata about my epistemic status.
 
 ## 8. Limits of This Self-Application
 
-The cluster routing above (all 30 clusters in the current codebase, from the full config) is machine-checked
+The cluster routing above (all 31 clusters in the current codebase, from the full config) is machine-checked
 *relative to the config I defined*. The mapping from "Claude Opus 4.6 as an
 operational system" to the config fields (`constraints`, `goals`, `worlds`) is
 interpretive. It is my best judgment, but it is not formally guaranteed.
@@ -543,7 +566,7 @@ model with retrieval-augmented verification might claim a stronger position on
 `soundDeposits`. The interpretive mapping is the part that is not machine-checked.
 
 What *is* machine-checked, unconditionally:
-- Given the config, the 30 clusters are correctly routed (by `clusterEnabled`).
+- Given the config, the 31 clusters are correctly routed (by `clusterEnabled`).
 - Each routed cluster is backed by a real machine-checked theorem (`certify`).
 - The forcing results hold: *any* well-formed system under those constraints needs
   those features.
