@@ -8,7 +8,7 @@ predicates that design-imposition theorems target.
 This file consolidates predicates previously scattered across multiple files into:
 1. Abstract mechanism predicates (Prop-level, for agent reasoning)
 2. CoreModel mechanism predicates (for EpArch.Health integration)
-3. CoreModel-to-Scenario projections and bridge theorems (Imposition wiring)
+3. CoreModel-indexed canonical counterexample witnesses and bridge theorems (Imposition wiring)
 
 ## Design
 
@@ -17,10 +17,12 @@ Mechanism predicates answer: "What capability does the system have?"
 - NOT the implementation details
 - Just: does the mechanism exist?
 
-Bridge theorems connect CoreModel predicates to the Imposition necessity results
-in EpArch.Agent.Imposition: each states that a CoreModel lacking capability X
+Bridge theorems connect CoreModel capability-absence predicates to the Imposition necessity
+results in EpArch.Agent.Imposition: each states that a CoreModel lacking capability X
 cannot satisfy the corresponding architectural goal for the canonical failure-mode
-scenario. Proofs delegate to the counterexample proofs in Imposition.
+scenario. Proofs delegate to the counterexample proofs in Imposition. The `coreToX`
+functions instantiate the canonical scenario under a `¬CoreHasX M` hypothesis; they
+do not derive scenario fields from CoreModel internals.
 
 -/
 
@@ -95,8 +97,12 @@ def CoreHasCheapValidator (M : CoreModel) : Prop :=
   ∃ (B : M.sig.Bubble) (d : M.sig.Deposit),
     M.ops.verifyWithin B d (M.ops.effectiveTime B)
 
-/-- CoreModel has export gate: some deposit is verifiable as truth at some bubble,
-    enabling error interception at deposit export boundaries. -/
+/-- CoreModel has export gate: at least one deposit is verifiable as truth at some bubble.
+
+    `CoreOps` carries no dedicated export-gate primitive. This predicate captures
+    the reachability of truth-verification (`ops.truth B d`) that an export gate
+    would require — a system lacking any truth-verifiable deposit at any bubble
+    cannot intercept incorrect observations at export boundaries. -/
 def CoreHasExportGate (M : CoreModel) : Prop :=
   ∃ (B : M.sig.Bubble) (d : M.sig.Deposit), M.ops.truth B d
 
@@ -126,20 +132,22 @@ def FullMechanismSuite (M : MechanismBundle) : Prop :=
   HasScopedAudit M.hasScopedAudit
 
 
-/-! ## CoreModel-to-Scenario Projections
+/-! ## Canonical Failure-Mode Scenario Witnesses
 
-Projection functions embed CoreModel failure modes into the Imposition scenario types.
-Each function maps a CoreModel lacking capability X to the concrete scenario that
-witnesses the X failure mode. The ¬CoreHasX hypothesis documents that the projection
-is valid precisely because the model lacks the capability.
+Each function instantiates the canonical Imposition failure-mode scenario under a
+`¬CoreHasX M` hypothesis. The `CoreModel` and its negated capability hypothesis are
+parameters for indexing purposes; the scenario fields are not computed from CoreModel
+operations. The functions witness that the `¬CoreHasX` shape matches the scenario
+shape used by the corresponding Imposition counterexample theorem.
 -/
 
 section
 open EpArch.Agent
 
-/-- Project a CoreModel without revision into a withdrawal scenario.
-    The scenario has hasReversibility = false, reflecting that no bubble in M
-    carries a revision operator. -/
+/-- Canonical failure-mode scenario for a CoreModel without revision capability.
+    Instantiates the withdrawal counterexample: mistakeOccurred = true,
+    harmIsPermanent = true, hasReversibility = false. The `¬CoreHasRevision M`
+    hypothesis indexes this instantiation to the CoreModel failure condition. -/
 def coreToWithdrawalScenario (_M : CoreModel) (_h_no_rev : ¬CoreHasRevision _M) :
     WithdrawalScenario where
   mistakeOccurred  := true
@@ -147,14 +155,18 @@ def coreToWithdrawalScenario (_M : CoreModel) (_h_no_rev : ¬CoreHasRevision _M)
   hasReversibility := false
   no_rev_permanent := fun _ _ => rfl
 
-/-- Project a CoreModel without cheap validator into a deposit scenario.
-    The scenario witnesses cost overrun: claim cost = budget + 1 exceeds budget. -/
+/-- Canonical failure-mode scenario for a CoreModel without cheap validator.
+    Instantiates the deposit counterexample: claimCost = budget + 1 > budget,
+    hasValidator = false. The `¬CoreHasCheapValidator M` hypothesis indexes this
+    instantiation to the CoreModel failure condition. -/
 def coreToDepositScenario (_M : CoreModel) (_h_no_val : ¬CoreHasCheapValidator _M)
     (budget : Nat) : DepositScenario :=
   deposit_counterexample budget
 
-/-- Project a CoreModel without export gate into an export scenario.
-    The scenario witnesses silent error propagation: observation incorrect, export not blocked. -/
+/-- Canonical failure-mode scenario for a CoreModel without export gate.
+    Instantiates the export counterexample: observationCorrect = false,
+    exportBlocked = false, hasGate = false. The `¬CoreHasExportGate M` hypothesis
+    indexes this instantiation to the CoreModel failure condition. -/
 def coreToExportScenario (_M : CoreModel) (_h_no_gate : ¬CoreHasExportGate _M) :
     ExportScenario :=
   export_counterexample
@@ -163,9 +175,10 @@ def coreToExportScenario (_M : CoreModel) (_h_no_gate : ¬CoreHasExportGate _M) 
 /-! ## CoreModel Bridge Theorems
 
 These theorems connect the Imposition necessity results to the CoreModel. Each theorem
-states that a CoreModel lacking capability X cannot satisfy the corresponding
-architectural goal for the canonical failure-mode scenario. Proofs delegate to the
-genuine counterexample proofs in EpArch.Agent.Imposition.
+states that a CoreModel lacking capability X cannot satisfy the corresponding architectural
+goal for the canonical failure-mode scenario. Proofs delegate to the genuine counterexample
+proofs in EpArch.Agent.Imposition. The `coreToX` functions index the canonical scenario to
+the CoreModel failure condition; they do not derive scenario fields from CoreModel internals.
 -/
 
 /-- BRIDGE THEOREM — Reversibility
@@ -174,8 +187,8 @@ genuine counterexample proofs in EpArch.Agent.Imposition.
     canonical failure-mode scenario (mistakeOccurred = true, harmIsPermanent = true).
 
     **Theorem shape:** ¬CoreHasRevision M → h_goal → False.
-    **Proof strategy:** Project M via coreToWithdrawalScenario (hasReversibility = false),
-    then delegate to safe_withdrawal_needs_reversibility. -/
+    **Proof strategy:** Instantiate the canonical withdrawal counterexample under the
+    ¬CoreHasRevision hypothesis, then delegate to safe_withdrawal_needs_reversibility. -/
 theorem core_no_revision_violates_safe_withdrawal
     (M : CoreModel)
     (h_no_rev : ¬CoreHasRevision M)
@@ -191,8 +204,8 @@ theorem core_no_revision_violates_safe_withdrawal
     canonical cost-overrun scenario (claimCost = budget + 1 > budget).
 
     **Theorem shape:** ¬CoreHasCheapValidator M → h_goal → False.
-    **Proof strategy:** Project M via coreToDepositScenario (cost exceeds budget),
-    then delegate to sound_deposits_need_cheap_validator. -/
+    **Proof strategy:** Instantiate the canonical deposit counterexample under the
+    ¬CoreHasCheapValidator hypothesis, then delegate to sound_deposits_need_cheap_validator. -/
 theorem core_no_validator_violates_sound_deposits
     (M : CoreModel)
     (h_no_val : ¬CoreHasCheapValidator M)
@@ -209,8 +222,8 @@ theorem core_no_validator_violates_sound_deposits
     canonical silent-error scenario (observationCorrect = false, exportBlocked = false).
 
     **Theorem shape:** ¬CoreHasExportGate M → h_goal → False.
-    **Proof strategy:** Project M via coreToExportScenario (observation incorrect, export unblocked),
-    then delegate to reliable_export_needs_gate. -/
+    **Proof strategy:** Instantiate the canonical export counterexample under the
+    ¬CoreHasExportGate hypothesis, then delegate to reliable_export_needs_gate. -/
 theorem core_no_gate_violates_reliable_export
     (M : CoreModel)
     (h_no_gate : ¬CoreHasExportGate M)
