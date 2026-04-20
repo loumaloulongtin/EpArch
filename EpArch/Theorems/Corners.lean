@@ -138,7 +138,7 @@ theorem frozen_canon_no_revocation
       injection h_get' with h_eq'
       rw [← h_eq']
       exact h_not_revoked
-  | update _ _ d_upd d_new d_old h_ex_upd h_st _ _ _ =>
+  | update _ _ d_upd d_new d_old h_ex_upd h_st _ _ =>
     -- update replaces d_upd; d_new.status = d_old.status; if d_idx = d_upd, d = d_old so d_new.status ≠ .Revoked
     cases Nat.decEq d_idx d_upd with
     | isTrue heq =>

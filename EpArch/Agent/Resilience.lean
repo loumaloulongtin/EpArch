@@ -320,27 +320,28 @@ theorem submit_preserves_deposited_claims
   · intro ⟨d, hd_mem, hP, hstatus⟩
     exact ⟨d, (EpArch.StepSemantics.mem_append_iff d s.ledger _).mpr (Or.inl hd_mem), hP, hstatus⟩
 
-/-- DEPOSITED-ENTRY THEOREM: Deposited status requires bank promotion or agent direct registration.
+/-- DEPOSITED-ENTRY THEOREM: Deposited status requires bank promotion, direct registration,
+    or status-preserving update of an existing Deposited entry.
 
     **Theorem shape:** If `¬ deposited_claim s c` before a Step and `deposited_claim s' c`
-    after, then either:
-    (a) the step was `Step.promote` with `(ag, B, d_idx)` recorded (bank promotes existing deposit), OR
-    (b) the step was `Step.register` (firing on `.Register ag d_sub`) with
-        `d_sub.P = c` (new direct registration; agent presents this action as the gate).
+    after, then one of:
+    (a) the step was `Step.promote` with `(ag, B, d_idx)` recorded, OR
+    (b) the step was `Step.register` with `d_sub.P = c` (agent direct registration), OR
+    (c) the step was `Step.update` with `d_new.P = c` applied to a Deposited entry,
+        preserving Deposited status while replacing the slot contents.
 
     **Proof strategy:** Case analysis on all Step constructors.
-    - `submit`: appends `.Candidate` — noConfusion with `.Deposited`; old entries by h_not
-    - `register`: appends `.Deposited` — return right disjunct (agent registered directly)
-    - `withdraw`: `s' = s`, ledger unchanged — direct contradiction via h_not
-    - `challenge`: `updateDepositStatus` sets `.Quarantined` — noConfusion
-    - `tick`: `s' = { s with clock := t' }`, ledger field unchanged — direct contradiction
-    - `revoke`: `updateDepositStatus` sets `.Revoked` — noConfusion
-    - `repair`: `updateDepositStatus` sets `.Candidate` — noConfusion
-    - `promote`: `updateDepositStatus` sets `.Deposited` — return left disjunct
-
-    This is the formal basis of the epistemic sandbox: Deposited status is exclusively
-    reachable via bank authority (promote) or agent direct registration (Step.register).
-    No agent-initiated step without one of these produces a Deposited entry. -/
+    - `submit`: appends `.Candidate` — noConfusion; old entries by h_not.
+    - `register`: appends `.Deposited` — return right disjunct (b).
+    - `withdraw`: ledger unchanged — h_not.
+    - `challenge`: sets `.Quarantined` — noConfusion.
+    - `tick`: ledger unchanged — h_not.
+    - `revoke`: sets `.Revoked` — noConfusion.
+    - `repair`: sets `.Candidate` — noConfusion.
+    - `promote`: sets `.Deposited` — return left disjunct (a).
+    - `purge`: sets `.Purged` — noConfusion.
+    - `update`: status-preserving; if the slot was Deposited and d_new.P = c, return (c);
+      all other entries traced back to s via mem_modifyAt — h_not. -/
 theorem deposited_claim_arises_from_promote_or_register
     {PropLike Standard ErrorModel Provenance Reason Evidence : Type u}
     (s s' : EpArch.StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
@@ -353,7 +354,10 @@ theorem deposited_claim_arises_from_promote_or_register
       a = .Promote ag B d_idx)
     ∨ (∃ (ag : EpArch.Agent)
          (d_sub : EpArch.Deposit PropLike Standard ErrorModel Provenance),
-      a = .Register ag d_sub ∧ d_sub.P = c) := by
+      a = .Register ag d_sub ∧ d_sub.P = c)
+    ∨ (∃ (ag : EpArch.Agent) (B : EpArch.Bubble) (d_idx : Nat)
+         (d_new : EpArch.Deposit PropLike Standard ErrorModel Provenance),
+      a = .Update ag B d_idx d_new ∧ d_new.P = c) := by
   cases step with
   | submit _ _ =>
     -- s' = { s with ledger := s.ledger ++ [{ d with status := .Candidate }] }
@@ -382,7 +386,7 @@ theorem deposited_claim_arises_from_promote_or_register
           rw [EpArch.StepSemantics.mem_singleton] at hnew
           subst hnew
           exact hP'
-    exact Or.inr ⟨_, d_sub, rfl, h_eq⟩
+    exact Or.inr (Or.inl ⟨_, d_sub, rfl, h_eq⟩)
   | withdraw _ _ _ _ =>
     exact absurd h_after h_not
   | challenge _ _ _ _ _ =>
@@ -433,7 +437,7 @@ theorem deposited_claim_arises_from_promote_or_register
     -- Step.promote sets .Deposited via updateDepositStatus; return promote witness
     exact Or.inl ⟨ag, B, d_idx, rfl⟩
   | purge _ _ _ _ _ _ _ =>
-    -- purge sets .Purged at d_idx; .Purged ≠ .Deposited → h_after is absurd
+    -- purge sets .Purged; .Purged ≠ .Deposited
     apply absurd h_after; intro ⟨d', hd', hP', hstatus'⟩
     simp only at hd'
     unfold EpArch.StepSemantics.updateDepositStatus at hd'
@@ -446,21 +450,27 @@ theorem deposited_claim_arises_from_promote_or_register
       | intro x hx =>
         rw [← hx.2] at hstatus'
         exact DepositStatus.noConfusion hstatus'
-  | update _ _ _ d_new d_old h_ex h_status h_not_dep _ _ =>
-    -- update replaces d_idx with d_new; h_not_dep ensures d_new.status ≠ .Deposited
-    apply absurd h_after; intro ⟨d', hd', hP', hstatus'⟩
-    simp only at hd'
-    cases EpArch.StepSemantics.mem_modifyAt s.ledger _ _ d' hd' with
-    | inl h =>
-      cases h with
-      | intro x hx => exact h_not ⟨d', hx.2 ▸ hx.1, hP', hstatus'⟩
-    | inr h =>
-      cases h with
-      | intro x hx =>
-        -- hx.2 : d_new = d'; after rw, hstatus' : d_new.status = .Deposited
-        rw [← hx.2] at hstatus'
-        exact h_not_dep (h_status.symm.trans hstatus')
-
+  | update ag B d_upd d_new _ _ _ _ _ =>
+    -- status-preserving update: entries outside d_upd trace back via mem_modifyAt;
+    -- the new slot content is d_new, so if d_new.P = c return the third disjunct
+    cases h_after with
+    | intro d' hd' =>
+      have hd'_mem : d' ∈ (EpArch.StepSemantics.modifyAt s.ledger d_upd (fun _ => d_new)) :=
+        hd'.1
+      have hP' : d'.P = c := hd'.2.1
+      have hstatus' : d'.status = .Deposited := hd'.2.2
+      simp only at hd'_mem
+      cases EpArch.StepSemantics.mem_modifyAt s.ledger _ _ d' hd'_mem with
+      | inl h =>
+        -- d' came from s.ledger unchanged; contradicts h_not
+        cases h with
+        | intro x hx => exact absurd ⟨d', hx.2 ▸ hx.1, hP', hstatus'⟩ h_not
+      | inr h =>
+        -- d' is the new deposit d_new placed at d_upd; return the update witness
+        cases h with
+        | intro x hx =>
+          -- hx.2 : d_new = d'; so d_new.P = c
+          exact Or.inr (Or.inr ⟨ag, B, d_upd, d_new, rfl, hx.2.symm ▸ hP'⟩)
 
 /-! ## Simulation Relation to Operational Semantics
 
@@ -506,13 +516,13 @@ structure AgentLTSAbstraction (Agent Claim : Type u) where
     ∀ (initialGate : Bool) {s s' : AgentSystemState Agent Claim},
       EpArch.LTS.Trace (AgentLTS Agent Claim) s s' →
       gateInvariant initialGate s → gateInvariant initialGate s'
-  /-- Deposited-entry theorem at StepSemantics level: the only path to `.Deposited`
-      is `Step.promote` (bank promotes existing deposit) or `Step.register`
-      (agent direct registration; no bank-side precondition).
+  /-- Deposited-entry theorem at StepSemantics level: the only paths to `.Deposited`
+      are `Step.promote` (bank promotes existing deposit), `Step.register`
+      (agent direct registration), or `Step.update` on an already-Deposited entry
+      (status-preserving update of live content).
       Formally: if `¬ deposited_claim s c` and `deposited_claim s' c` after a Step,
-      then either the step was `Promote ag B d_idx` (attribution recorded),
-      or the step was `Register ag d_sub` (a `register` Step constructor) with
-      `d_sub.P = c` (agent registered the deposit directly).
+      then the step was `Promote`, `Register ag d_sub` with `d_sub.P = c`, or
+      `Update ag B d_idx d_new` with `d_new.P = c`.
       Witnessed by `deposited_claim_arises_from_promote_or_register`. -/
   over_approximation :
     ∀ {Standard ErrorModel Provenance Reason Evidence : Type u}
@@ -525,6 +535,9 @@ structure AgentLTSAbstraction (Agent Claim : Type u) where
       ∨ (∃ (ag : EpArch.Agent)
            (d_sub : EpArch.Deposit Claim Standard ErrorModel Provenance),
         a = .Register ag d_sub ∧ d_sub.P = c)
+      ∨ (∃ (ag : EpArch.Agent) (B : EpArch.Bubble) (d_idx : Nat)
+           (d_new : EpArch.Deposit Claim Standard ErrorModel Provenance),
+        a = .Update ag B d_idx d_new ∧ d_new.P = c)
 /-- Canonical abstraction witness, proved from the containment corollaries.
     All three fields are backed by machine-checked proofs:
     - `truth_external` / `gate_architectural`: invariant corollaries via trace induction
