@@ -181,7 +181,7 @@ theorem WorldCtx.kernel_redundant_without_lies (C : WorldCtx)
 | `ddos_causes_verification_collapse` | `ddos_causes_verification_collapse_of_W` | `W_ddos` |
 | `collapse_causes_centralization` | `collapse_causes_centralization_of_W` | `W_collapse_centralization` |
 | `lies_scale` | `lies_scale_of_W` | `W_lies_scale` |
-| `rolex_ddos_structural_equivalence` | `rolex_ddos_structural_equivalence_of_W` | `W_rolex_ddos` |
+| `rolex_ddos_share_path_failure` | `rolex_ddos_share_path_failure_structure` | `W_ddos` |
 | *(cheap validator)* | `cheap_validator_maintains_path_of_W` | `W_cheap_validator` |
 | *(trust bridge)* | `trust_bridge_maintains_path_of_W` | `W_trust_bridge` |
 | *(reversibility)* | `reversibility_maintains_path_after_τ_compress_of_W` | `W_reversibility` |

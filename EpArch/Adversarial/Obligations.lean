@@ -231,7 +231,7 @@ theorem ddos_to_centralization_of_W
 These two theorems derive `¬PathExists` from the collapse chain without
 additional W assumptions. `collapsed_to_path_failure` is purely structural
 (zero W assumptions). `rolex_ddos_share_path_failure_structure` uses
-`W_ddos` to complete the DDoS arm through the `collapse_exhausts_tau` bridge.
+`W_ddos` to complete the DDoS arm via the `h_exhausts_tau` hypothesis.
 -/
 
 /-- STRUCTURAL THEOREM: Verification collapse blocks any PathExists witness.

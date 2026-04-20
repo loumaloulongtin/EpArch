@@ -308,7 +308,7 @@ The type system then mechanically excludes all and only the theorems that depend
 | `W_asymmetric_costs` | `export_cost`, `defense_cost`, `asymmetry` | Cost-asymmetry obligation theorems | WorldCtx.lean | Not providing proof |
 | `W_spoofedV` | `broken_chain_no_path` | `spoofed_V_blocks_path_of_W` | Adversarial/Obligations.lean | Not providing proof |
 | `W_lies_scale` | (lies-scale fields) | `lies_scale_of_W` | Adversarial/Obligations.lean | Not providing proof |
-| `W_rolex_ddos` | (rolex/ddos fields) | `rolex_ddos_structural_equivalence_of_W` | Adversarial/Obligations.lean | Not providing proof |
+| `W_ddos` (rolex/ddos path-failure) | `h_exhausts_tau` (hypothesis parameter) | `rolex_ddos_share_path_failure_structure`, `collapsed_to_path_failure` | Adversarial/Obligations.lean | Not providing proof |
 | `W_ddos` | (ddos fields) | `ddos_causes_verification_collapse_of_W`, `ddos_to_centralization_of_W` | Adversarial/Obligations.lean | Not providing proof |
 
 **Transport:** `transport_lies_possible`, `transport_lie_possible` in `WorldCtx.lean` — world bundles are already transported through compatible extensions.

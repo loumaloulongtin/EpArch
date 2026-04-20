@@ -176,8 +176,8 @@ opaque denial_triggered : Agent → Prop
       any individual verification step.
 
     The consequence chain (τ exhaustion → `¬PathExists`) is closed by
-    `W_ddos.collapse_exhausts_tau` (one W-field) and
-    `collapsed_to_path_failure` (purely structural theorem). -/
+    the `h_exhausts_tau` hypothesis supplied to `rolex_ddos_share_path_failure_structure`
+    and `collapsed_to_path_failure` (purely structural theorem). -/
 def verification_collapsed (a : Agent) (channels : List AuditChannel) : Prop :=
   channels ≠ [] ∧ ∀ c, c ∈ channels → channel_overwhelmed c
 
