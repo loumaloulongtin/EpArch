@@ -817,6 +817,24 @@ File: `Agent/Imposition.lean`
 | `sound_deposits_need_cheap_validator` | PRP + bounded audit need cheap validators | CheapValidator |
 | `reliable_export_needs_gate` | Fallible observation needs export gates | ExportGate |
 
+### CoreModel–Imposition Bridge Theorems
+
+Pattern: `¬CoreHasX M → AgentGoal → False` — connects CoreModel capability predicates to the Imposition necessity results.
+File: `Mechanisms.lean`
+
+Each theorem projects a CoreModel lacking capability X into the canonical failure-mode
+scenario, then delegates to the corresponding Imposition counterexample proof.
+
+| Theorem | Capability Predicate | Delegation Target |
+|---------|---------------------|------------------|
+| `core_no_revision_violates_safe_withdrawal` | `¬CoreHasRevision M` | `safe_withdrawal_needs_reversibility` |
+| `core_no_validator_violates_sound_deposits` | `¬CoreHasCheapValidator M` | `sound_deposits_need_cheap_validator` |
+| `core_no_gate_violates_reliable_export` | `¬CoreHasExportGate M` | `reliable_export_needs_gate` |
+
+Projection functions (`coreToWithdrawalScenario`, `coreToDepositScenario`, `coreToExportScenario`)
+map a CoreModel lacking capability X to the Imposition scenario type with the corresponding
+flag set to `false`.
+
 ### Budget Forcing (Corner 8)
 
 | Theorem | File | Statement | Claim |

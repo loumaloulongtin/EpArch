@@ -8,7 +8,7 @@ predicates that design-imposition theorems target.
 This file consolidates predicates previously scattered across multiple files into:
 1. Abstract mechanism predicates (Prop-level, for agent reasoning)
 2. CoreModel mechanism predicates (for EpArch.Health integration)
-3. Mappings between the two levels
+3. CoreModel-to-Scenario projections and bridge theorems (Imposition wiring)
 
 ## Design
 
@@ -17,13 +17,17 @@ Mechanism predicates answer: "What capability does the system have?"
 - NOT the implementation details
 - Just: does the mechanism exist?
 
-Bridge theorems prove equivalence (↔) between these predicates and Health capabilities.
+Bridge theorems connect CoreModel predicates to the Imposition necessity results
+in EpArch.Agent.Imposition: each states that a CoreModel lacking capability X
+cannot satisfy the corresponding architectural goal for the canonical failure-mode
+scenario. Proofs delegate to the counterexample proofs in Imposition.
 
 -/
 
 import EpArch.Basic
 import EpArch.Semantics.RevisionSafety
 import EpArch.Health
+import EpArch.Agent.Imposition
 
 namespace EpArch.Mechanisms
 
@@ -85,6 +89,17 @@ def CoreHasSubmission (M : CoreModel) : Prop :=
   ∃ (a : M.sig.Agent) (B : M.sig.Bubble) (d : M.sig.Deposit),
     M.ops.submit a B d
 
+/-- CoreModel has cheap validator: verification can be completed within the effective time
+    budget at some bubble, enabling cost-bounded claim validation. -/
+def CoreHasCheapValidator (M : CoreModel) : Prop :=
+  ∃ (B : M.sig.Bubble) (d : M.sig.Deposit),
+    M.ops.verifyWithin B d (M.ops.effectiveTime B)
+
+/-- CoreModel has export gate: some deposit is verifiable as truth at some bubble,
+    enabling error interception at deposit export boundaries. -/
+def CoreHasExportGate (M : CoreModel) : Prop :=
+  ∃ (B : M.sig.Bubble) (d : M.sig.Deposit), M.ops.truth B d
+
 
 /-! ## Mechanism Bundle
 
@@ -111,34 +126,101 @@ def FullMechanismSuite (M : MechanismBundle) : Prop :=
   HasScopedAudit M.hasScopedAudit
 
 
-/-! ## Mechanism-Health Bridge Theorems
+/-! ## CoreModel-to-Scenario Projections
 
-These connect mechanism predicates to Health capabilities.
+Projection functions embed CoreModel failure modes into the Imposition scenario types.
+Each function maps a CoreModel lacking capability X to the concrete scenario that
+witnesses the X failure mode. The ¬CoreHasX hypothesis documents that the projection
+is valid precisely because the model lacks the capability.
 -/
 
-/-- Core-level revision is equivalent to Health's HasRevisionCapability. -/
-theorem revision_hooks_iff_capability (M : CoreModel) :
-    CoreHasRevision M ↔ EpArch.HasRevisionCapability M := by
-  constructor <;> intro h <;> exact h
+section
+open EpArch.Agent
 
-/-- Self-correction is equivalent to Health's HasSelfCorrectionCapability. -/
-theorem self_correction_iff_capability (M : CoreModel) :
-    CoreHasSelfCorrection M ↔ EpArch.HasSelfCorrectionCapability M := by
-  constructor <;> intro h <;> exact h
+/-- Project a CoreModel without revision into a withdrawal scenario.
+    The scenario has hasReversibility = false, reflecting that no bubble in M
+    carries a revision operator. -/
+def coreToWithdrawalScenario (_M : CoreModel) (_h_no_rev : ¬CoreHasRevision _M) :
+    WithdrawalScenario where
+  mistakeOccurred  := true
+  harmIsPermanent  := true
+  hasReversibility := false
+  no_rev_permanent := fun _ _ => rfl
+
+/-- Project a CoreModel without cheap validator into a deposit scenario.
+    The scenario witnesses cost overrun: claim cost = budget + 1 exceeds budget. -/
+def coreToDepositScenario (_M : CoreModel) (_h_no_val : ¬CoreHasCheapValidator _M)
+    (budget : Nat) : DepositScenario :=
+  deposit_counterexample budget
+
+/-- Project a CoreModel without export gate into an export scenario.
+    The scenario witnesses silent error propagation: observation incorrect, export not blocked. -/
+def coreToExportScenario (_M : CoreModel) (_h_no_gate : ¬CoreHasExportGate _M) :
+    ExportScenario :=
+  export_counterexample
 
 
-/-! ## Mechanism Claims
+/-! ## CoreModel Bridge Theorems
 
-These are the mechanism claims stated in terms of CoreModel
-to ensure revision-gate alignment.
+These theorems connect the Imposition necessity results to the CoreModel. Each theorem
+states that a CoreModel lacking capability X cannot satisfy the corresponding
+architectural goal for the canonical failure-mode scenario. Proofs delegate to the
+genuine counterexample proofs in EpArch.Agent.Imposition.
 -/
 
-/-- Self-correction requires revision.
+/-- BRIDGE THEOREM — Reversibility
 
-    This is exactly RevisionGate M from EpArch.Semantics.RevisionSafety. -/
-theorem self_correction_requires_revision_gate (M : CoreModel) :
-    (∀ B, M.ops.selfCorrects B → M.ops.hasRevision B) ↔ RevisionGate M := by
-  constructor <;> intro h <;> exact h
+    If CoreModel has no revision capability, safe withdrawal fails for the
+    canonical failure-mode scenario (mistakeOccurred = true, harmIsPermanent = true).
+
+    **Theorem shape:** ¬CoreHasRevision M → h_goal → False.
+    **Proof strategy:** Project M via coreToWithdrawalScenario (hasReversibility = false),
+    then delegate to safe_withdrawal_needs_reversibility. -/
+theorem core_no_revision_violates_safe_withdrawal
+    (M : CoreModel)
+    (h_no_rev : ¬CoreHasRevision M)
+    (h_goal : EpArch.Agent.SafeWithdrawalGoal
+                ((coreToWithdrawalScenario M h_no_rev).mistakeOccurred = true)
+                ((coreToWithdrawalScenario M h_no_rev).harmIsPermanent = true)) :
+    False :=
+  safe_withdrawal_needs_reversibility (coreToWithdrawalScenario M h_no_rev) rfl rfl h_goal
+
+/-- BRIDGE THEOREM — Cheap Validator
+
+    If CoreModel has no cheap validator, sound deposits fail for the
+    canonical cost-overrun scenario (claimCost = budget + 1 > budget).
+
+    **Theorem shape:** ¬CoreHasCheapValidator M → h_goal → False.
+    **Proof strategy:** Project M via coreToDepositScenario (cost exceeds budget),
+    then delegate to sound_deposits_need_cheap_validator. -/
+theorem core_no_validator_violates_sound_deposits
+    (M : CoreModel)
+    (h_no_val : ¬CoreHasCheapValidator M)
+    (budget : Nat)
+    (h_goal : EpArch.Agent.SoundDepositsGoal
+                (coreToDepositScenario M h_no_val budget).claimCost
+                (coreToDepositScenario M h_no_val budget).budget) :
+    False :=
+  sound_deposits_need_cheap_validator (coreToDepositScenario M h_no_val budget) rfl h_goal
+
+/-- BRIDGE THEOREM — Export Gate
+
+    If CoreModel has no export gate, reliable export fails for the
+    canonical silent-error scenario (observationCorrect = false, exportBlocked = false).
+
+    **Theorem shape:** ¬CoreHasExportGate M → h_goal → False.
+    **Proof strategy:** Project M via coreToExportScenario (observation incorrect, export unblocked),
+    then delegate to reliable_export_needs_gate. -/
+theorem core_no_gate_violates_reliable_export
+    (M : CoreModel)
+    (h_no_gate : ¬CoreHasExportGate M)
+    (h_goal : EpArch.Agent.ReliableExportGoal
+                ((coreToExportScenario M h_no_gate).observationCorrect = true)
+                ((coreToExportScenario M h_no_gate).exportBlocked = true)) :
+    False :=
+  reliable_export_needs_gate (coreToExportScenario M h_no_gate) rfl h_goal
+
+end
 
 
 end EpArch.Mechanisms
