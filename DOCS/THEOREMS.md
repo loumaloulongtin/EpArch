@@ -447,6 +447,8 @@ un-bypassable at the concrete model level.
 | `repair_action_carries_field` | Semantics/StepSemantics.lean | Repair carries field; connects to quarantine precondition | Surgical |
 | `repair_produces_candidate` | Semantics/StepSemantics.lean | Repair → Candidate | Back to start |
 | `repair_resets_to_candidate` | Semantics/StepSemantics.lean | Full cycle reset | Lifecycle |
+| `quarantine_requires_challenge` | Meta/Reconfiguration.lean | ¬isQuarantined before + isQuarantined after Step → action was `Challenge` | No spontaneous quarantine |
+| `no_self_healing_bank` | Meta/Reconfiguration.lean | StatusImproves d.status d'.status across Step → action ≠ `Tick` | No anonymous Bank improvement |
 
 ---
 
@@ -1031,6 +1033,19 @@ universally-quantified theorem over all subsets of the seven constraints, and a
 |---------|------|-----------|------|
 | `partial_no_constraints` | Meta/Modular.lean | `PartialWellFormed W noConstraints` holds for every W | Base case: empty subset |
 | `modular` | Meta/Modular.lean | `∀ S W, PartialWellFormed W S → projection_valid S W` | **The meta-theorem** |
+
+### Safe Reconfiguration
+
+**Files:** `Meta/Reconfiguration.lean` (capability extension + LTS-level gate theorems) · `Meta/Modular.lean` (subset ordering + relaxation)
+
+| Theorem | File | Statement | Role |
+|---------|------|-----------|------|
+| `ConstraintSubset.le` | Meta/Modular.lean | `S ≤ S'` iff every flag active in S is active in S' | Defines the relaxation/strengthening order |
+| `pwf_subset_mono` | Meta/Modular.lean | `S ≤ S' → PartialWellFormed W S' → PartialWellFormed W S` | Downward monotonicity: weaker profile inherits well-formedness |
+| `safe_relaxation` | Meta/Modular.lean | `PartialWellFormed W allConstraints → ∀ t, projection_valid (s t) W` | Relaxing active constraints does not break forcing claims for W |
+| `pwf_add_bubbles` … `pwf_add_authorization` | Meta/Reconfiguration.lean | `PartialWellFormed W S → PartialWellFormed (W.addX ev) { S with X := true }` | Adding a capability preserves prior well-formedness and activates the matching constraint biconditional |
+| `quarantine_requires_challenge` | Meta/Reconfiguration.lean | ¬isQuarantined before + isQuarantined after Step → action was `Challenge` | No spontaneous quarantine; challenge is the unique quarantine gate |
+| `no_self_healing_bank` | Meta/Reconfiguration.lean | StatusImproves d.status d'.status across Step → action ≠ `Tick` | No anonymous/agentless Bank improvement |
 
 ### Math Form
 

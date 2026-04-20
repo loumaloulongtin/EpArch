@@ -1,8 +1,10 @@
 /-
 EpArch.Meta.Reconfiguration — Safe Reconfiguration Theorems
 
-Proves that WorkingSystem capability additions are bank-inert and that the
-Bank cannot self-heal without an explicit agent action.
+Proves that capability additions preserve PartialWellFormed certificates;
+the addX functions are bank-inert by type, since they transform WorkingSystem
+configuration rather than SystemState. Also proves that the Bank cannot
+self-heal without an explicit agent action.
 
 Key exports:
 - WorkingSystem.addBubbles / addTrustBridges / addHeaders / addRevocation /
