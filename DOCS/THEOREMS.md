@@ -1220,7 +1220,9 @@ $$\text{containsBankPrimitives}(\text{LeanWorkingSystem}) \quad \text{(directly 
 The Lean elaboration cycle is a concrete instance of the full EpArch deposit lifecycle.
 S = programmer's declared type signature; E = elaborator challenge record (file, line, expected, actual);
 V = import list (each entry is a grounding-chain node). The file is self-referential:
-it passed all three stages and the `.olean` settles the ladder at `Certainty`.
+it passed all three stages. The `.olean` / staleness results provide the formal
+cache-settlement and doorbell facts; the `Certainty` framing is the architectural
+interpretation, not a separate ladder theorem in this file.
 
 | Name | Statement | Role |
 |------|-----------|------|
@@ -1231,6 +1233,6 @@ it passed all three stages and the `.olean` settles the ladder at `Certainty`.
 | `repair_scope_contracts_with_headers` | `∃ f, canTargetRepair true f ∧ ¬canTargetRepair false f` | Headers strictly narrow scope; witness Field.E |
 | `s_upgrade_on_compilation` | `LeanKernelCtx.Truth true true` | S upgrades from programmer-asserted to kernel-verified; proxy model, `rfl`; parameterless |
 | `cache_hit_not_stale` | `lean_cache_hit r epoch → compute_status (olean_as_deposit r path) epoch ≠ .Stale` | Fresh cache (strict epoch condition) does not trigger staleness; eliminates .Revoked and .Stale branches |
-| `source_change_reopens_repair_loop` | `source_changed epoch r → compute_status (olean_as_deposit r path) epoch = .Stale` | Source change forces `.Stale`; ladder moves from Certainty back to re-verification; delegates to `olean_stale_when_source_changed` |
+| `source_change_reopens_repair_loop` | `source_changed epoch r → compute_status (olean_as_deposit r path) epoch = .Stale` | Source change forces `.Stale`; architecturally read as re-entry from cache-settlement into re-verification; delegates to `olean_stale_when_source_changed` |
 
 ---
