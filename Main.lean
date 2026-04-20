@@ -185,6 +185,7 @@ import EpArch.Meta.TheoremTransport  -- Generic theorem transport schema (Tier 3
 import EpArch.Meta.Tier4Transport    -- Main theorem library transport (Tier 4 closure)
 import EpArch.Meta.LeanKernel.OdometerModel  -- Odometer sub-model: concrete minimal EpArch instance
 import EpArch.Meta.Modular     -- Modularity meta-theorem: ∀ S ⊆ constraints, projection_valid S
+import EpArch.Meta.Reconfiguration  -- Safe reconfiguration: addX × 7, quarantine gate, no-self-heal
 import EpArch.Meta.Config      -- Configurable certification engine: EpArchConfig → ClusterTag → certified proof
 import EpArch.Meta.LeanKernel.World     -- Self-referential: Lean kernel world + architecture + OleanStaleness
 import EpArch.Meta.LeanKernel.SFailure     -- Lean kernel S-field failure taxonomy

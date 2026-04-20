@@ -244,4 +244,60 @@ theorem partial_modular (S : ConstraintSubset) (pgs : PartialGroundedSpec S) :
     projection_valid S (PartialGroundedSpec.toWorkingSystem S pgs) :=
   modular S _ (partial_grounded_is_partial_wellformed S pgs)
 
+
+/-! ## Constraint Subset Ordering and Safe Relaxation
+
+These results answer the reconfiguration question: "Is the bank broken when
+you change the active constraint profile?" For the relaxation direction, the
+answer is no — a system certified for `allConstraints` satisfies any smaller
+profile without modification. -/
+
+/-- Subset ordering on ConstraintSubset: S ≤ S' iff every flag active in S is
+    also active in S'. Relaxing a policy means moving to a smaller subset. -/
+def ConstraintSubset.le (S S' : ConstraintSubset) : Prop :=
+  (S.distributed    = true → S'.distributed    = true) ∧
+  (S.bounded_audit  = true → S'.bounded_audit  = true) ∧
+  (S.export_across  = true → S'.export_across  = true) ∧
+  (S.adversarial    = true → S'.adversarial    = true) ∧
+  (S.coordination   = true → S'.coordination   = true) ∧
+  (S.truth_pressure = true → S'.truth_pressure = true) ∧
+  (S.multi_agent    = true → S'.multi_agent    = true)
+
+/-- Every constraint subset is ≤ allConstraints.
+    Proof: allConstraints has all flags true; any implication into true is trivial. -/
+theorem le_allConstraints (S : ConstraintSubset) : ConstraintSubset.le S allConstraints :=
+  ⟨fun _ => rfl, fun _ => rfl, fun _ => rfl, fun _ => rfl,
+   fun _ => rfl, fun _ => rfl, fun _ => rfl⟩
+
+/-- PartialWellFormed is monotone downward in the subset ordering.
+    If W satisfies all biconditionals in S', it satisfies those in any S ≤ S'.
+    Proof: each wf_X field is forwarded through the corresponding implication
+    in h_sub: S.X = true → S'.X = true, then h.wf_X supplies the biconditional. -/
+theorem pwf_subset_mono {W : WorkingSystem} {S S' : ConstraintSubset}
+    (h_sub : ConstraintSubset.le S S') (h : PartialWellFormed W S') :
+    PartialWellFormed W S :=
+  { wf_distributed    := fun hd => h.wf_distributed    (h_sub.1               hd)
+    wf_bounded_audit  := fun hb => h.wf_bounded_audit  (h_sub.2.1             hb)
+    wf_export         := fun he => h.wf_export          (h_sub.2.2.1           he)
+    wf_adversarial    := fun ha => h.wf_adversarial     (h_sub.2.2.2.1         ha)
+    wf_coordination   := fun hc => h.wf_coordination   (h_sub.2.2.2.2.1       hc)
+    wf_truth_pressure := fun ht => h.wf_truth_pressure (h_sub.2.2.2.2.2.1     ht)
+    wf_multi_agent    := fun hm => h.wf_multi_agent    (h_sub.2.2.2.2.2.2     hm) }
+
+/-- SAFE CONSTRAINT RELAXATION.
+
+    A system certified for `allConstraints` satisfies `projection_valid` for
+    any time-indexed relaxing policy. Reconfiguring to a less-demanding
+    constraint profile never breaks the forcing theorems for active constraints.
+    No change to W is needed — the bank is unaffected by policy changes.
+
+    Proof: for any t, `s t ≤ allConstraints` (by `le_allConstraints`), so
+    `pwf_subset_mono` reduces `h0` to `PartialWellFormed W (s t)`, and
+    `modular` delivers `projection_valid (s t) W`. -/
+theorem safe_relaxation
+    {T : Type _} (W : WorkingSystem) (s : T → ConstraintSubset)
+    (h0 : PartialWellFormed W allConstraints) :
+    ∀ t, projection_valid (s t) W :=
+  fun t => modular (s t) W (pwf_subset_mono (le_allConstraints (s t)) h0)
+
 end EpArch.Meta.Modular
