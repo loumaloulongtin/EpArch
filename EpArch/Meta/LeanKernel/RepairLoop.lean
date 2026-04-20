@@ -387,7 +387,9 @@ witnesses the S/E/V repair loop." The Lean elaborator ran the three stages:
   during elaboration. All challenges were resolved; E is now empty.
 - S upgrade: the kernel type-checked the file. S is now kernel-verified.
 
-The `.olean` was written. The ladder settled at `LadderStage.Certainty`.
+The `.olean` was written. The cache-settlement facts are formalized by the
+not-Stale / Stale theorems above; the `LadderStage.Certainty` reading is the
+architectural interpretation, not a separate ladder theorem in this file.
 
 The file being in the repo at all is proof the loop terminated in state 4 —
 compiled clean, S upgraded, `.olean` written — and the cache is the proof
