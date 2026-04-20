@@ -12,7 +12,7 @@ import list, where each entry is a grounding-chain node.
 
 Main exports:
 - LeanCandidateDeposit, LeanVFailure, LeanEFailure — deposit states
-- v_failure_blocks_redemption — broken import severs the V chain
+- v_failure_severs_provenance — broken import severs the V chain
 - e_failure_has_genuine_mismatch — E record carries a real type mismatch
 - e_field_is_repair_target — Field.E is observable with a header
 - no_error_means_global_repair_scope — stripped header = no targeting
@@ -58,19 +58,23 @@ structure LeanCandidateDeposit where
 
 /-- V failure: a missing import severs the provenance chain.
 
-    Structural invariant: `not_imported` asserts the broken module is
-    genuinely absent from the candidate's import list. Without this field,
-    the structure would be three unrelated strings — the invariant is what
-    makes a `LeanVFailure` mean what it claims. -/
+    Two structural invariants make the record non-vacuous:
+    - `not_imported`: the broken module is genuinely absent from the
+      candidate's import list — this is what makes the structure mean
+      what it claims (three unrelated strings carry no V-failure content).
+    - `broken_name_nonempty`: the unresolvable identifier is a real name,
+      not an empty string. -/
 structure LeanVFailure where
   /-- The candidate whose V chain is broken -/
-  candidate    : LeanCandidateDeposit
+  candidate          : LeanCandidateDeposit
   /-- The module not in candidate.imports -/
-  missing_mod  : String
+  missing_mod        : String
   /-- The identifier that cannot be resolved -/
-  broken_name  : String
+  broken_name        : String
   /-- Structural invariant: missing_mod is genuinely absent -/
-  not_imported : missing_mod ∉ candidate.imports
+  not_imported       : missing_mod ∉ candidate.imports
+  /-- Structural invariant: the unresolvable identifier is a real name -/
+  broken_name_nonempty : broken_name ≠ ""
 
 /-- E failure: a type mismatch populates the E field with localization data.
 
@@ -103,7 +107,7 @@ each hypothesis load-bearing. The diagnosability theorems are parameterless:
 `canTargetRepair` is a property of the `has_header` flag, not of any
 particular failure record. -/
 
-/-- V failure blocks redemption.
+/-- V failure severs the provenance chain.
 
     A broken import severs the V chain at name-resolution time — the
     elaborator cannot locate the referenced name and rejects the term before
@@ -114,7 +118,7 @@ particular failure record. -/
 
     **Theorem shape:** the missing module is not in the candidate's import list.
     **Proof strategy:** extract the `not_imported` structural invariant field. -/
-theorem v_failure_blocks_redemption (v : LeanVFailure) :
+theorem v_failure_severs_provenance (v : LeanVFailure) :
     v.missing_mod ∉ v.candidate.imports :=
   v.not_imported
 
@@ -207,19 +211,21 @@ theorem s_upgrade_on_compilation : LeanKernelCtx.Truth true true :=
   -- Truth true true = (true = true); rfl closes it immediately
   rfl
 
-/-! ## Ladder Settlement and Doorbell
+/-! ## Olean Staleness and the Doorbell
 
-The `.olean` staleness machinery from `World.lean` wired to the ladder and
-LTS model. In the `CTime` proxy model, `compiled_at` is the deposit τ (TTL):
-the cache is fresh while `current_epoch < compiled_at`, and stale once
+The `.olean` staleness machinery from `World.lean` connected to the LTS model.
+In the `CTime` proxy model, `compiled_at` is the deposit τ (TTL): the cache
+is fresh while `current_epoch < compiled_at`, and stale once
 `compiled_at ≤ current_epoch`. A cache hit is therefore the condition
 `current_epoch < compiled_at` — the compiled timestamp is strictly ahead of
-the clock. Once the cache hits, Lean executes `Step.withdraw` against the
-`.olean` without re-elaborating; the ladder settles at `LadderStage.Certainty`.
-A source change advances `current_epoch` past `compiled_at`, the deposit
-becomes `.Stale`, and the kernel re-enters the repair loop from the top.
-RevisionSafety guarantees the doorbell is never removed — a settled claim
-can always be rechallenged if its grounding changes. -/
+the clock.
+
+Ladder interpretation (not proved here — this is the conceptual mapping):
+the `.Stale` / not-Stale dichotomy corresponds to `LadderStage.Certainty`
+(cache fresh, withdrawal without re-elaboration) vs. re-entry from the top
+(source changed, new candidate deposit). The formal content of this section
+is the staleness theorem and its negation; the ladder framing is the
+architectural reading of those two outcomes. -/
 
 /-- Cache hit predicate: compiled epoch matches last-refresh epoch and the
     current epoch is strictly below the compiled timestamp.
@@ -235,8 +241,10 @@ can always be rechallenged if its grounding changes. -/
     case `.Stale` too. The strict inequality used here is therefore the
     tightest honest encoding of "not yet stale" in this proxy model.
 
-    When the condition holds, Lean executes `Step.withdraw` against the cached
-    `.olean` without re-elaborating — the ladder sits at `LadderStage.Certainty`. -/
+    When the condition holds, Lean does not re-enter the repair loop: the
+    `.olean` deposit is used without re-elaboration. The ladder interpretation
+    of this outcome is `LadderStage.Certainty`; that interpretation is not
+    proved here, it is the conceptual reading of `cache_hit_not_stale`. -/
 def lean_cache_hit (r : OleanRecord) (current_epoch : CTime) : Prop :=
   r.compiled_at = r.last_refreshed ∧ current_epoch < r.compiled_at
 
@@ -277,8 +285,9 @@ theorem cache_hit_not_stale (r : OleanRecord) (path : CProp)
 
     **Theorem shape:** source_changed → compute_status = .Stale.
     **Proof strategy:** delegates entirely to `olean_stale_when_source_changed`
-    from `World.lean`; no new content. The connection to the ladder framing
-    is made explicit here. -/
+    from `World.lean`; no new content. The ladder interpretation (doorbell =
+    return to re-verification) is the architectural reading of this staleness
+    result; it is not itself a formal theorem in this file. -/
 theorem source_change_reopens_repair_loop (r : OleanRecord) (path : CProp)
     (current_epoch : CTime)
     (ht   : 0 < r.compiled_at)

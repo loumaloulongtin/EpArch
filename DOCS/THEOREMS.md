@@ -1224,7 +1224,7 @@ it passed all three stages and the `.olean` settles the ladder at `Certainty`.
 
 | Name | Statement | Role |
 |------|-----------|------|
-| `v_failure_blocks_redemption` | `v.missing_mod ∉ v.candidate.imports` | Broken import severs V chain; extracts structural invariant `not_imported` from `LeanVFailure` |
+| `v_failure_severs_provenance` | `v.missing_mod ∉ v.candidate.imports` | Broken import severs V chain; extracts structural invariant `not_imported` from `LeanVFailure` |
 | `e_failure_has_genuine_mismatch` | `e.expected ≠ e.actual` | E record carries a real type mismatch; extracts structural invariant `type_mismatch` from `LeanEFailure` |
 | `e_field_is_repair_target` | `canTargetRepair true Field.E` | With header present, Field.E is observable; delegates to `full_can_repair_any Field.E`; parameterless |
 | `no_error_means_global_repair_scope` | `∀ f : Field, ¬canTargetRepair false f` | Stripped header = no field targetable; delegates to `stripped_no_field_repair` |
