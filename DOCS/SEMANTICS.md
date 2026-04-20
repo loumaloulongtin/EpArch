@@ -4,7 +4,7 @@ This document describes the canonical operational semantics for the EpArch forma
 
 **Design choice:** Preconditions are encoded directly into the `Step` constructors rather than checked at runtime. This means the type system enforces structural status gates (`isDeposited`, `isQuarantined`, `isCandidate`) and clock monotonicity statically — a violation is a type error, not a runtime failure. Authorization is an agent-level concern: the bank records deposit events; agents carry credentials to the interaction.
 
-**Export is not a bank primitive.** Inter-bubble transfer is an agent-level workflow: the agent Withdraws from B_src, carries the deposit (recording provenance in `d.h.V`), and Submits to B_tgt. `Step.register` handles the direct-registration case where the agent presents a deposit that enters `Deposited` status immediately — a trust bridge is one possible reason an agent uses this path, but it is not a bank-side precondition.
+**Export is not a bank primitive.** Inter-bubble transfer is an agent-level workflow: the agent Withdraws from B_src, carries the deposit (recording provenance in `d.h.V`), and submits or registers it in B_tgt depending on import policy. `Action.Submit` / `Step.submit` enters the deposit as Candidate (subject to bank promotion); `Action.Register` / `Step.register` enters it as Deposited immediately — the agent's choice of action is itself the assertion that the deposit is already sufficiently grounded. A trust bridge is one reason an agent uses the Register path, but it is not a bank-side precondition.
 
 ## StepSemantics as Canonical LTS
 
@@ -139,7 +139,7 @@ Because preconditions are structural rather than checked post-hoc, the encoding 
 |-----------|----------------------|
 | `Withdraw` | Cannot exist unless the deposit is in `Deposited` status |
 | `Submit` (`submit`) | No structural precondition; deposit enters as `Candidate` |
-| `Submit` (`register`) | No structural precondition; agent registers directly; deposit enters as `Deposited` |
+| `Register` (`register`) | No structural precondition; agent registers directly; deposit enters as `Deposited` |
 | `Promote` | Cannot exist unless the deposit is in `Candidate` status |
 | `Challenge` | Cannot fire unless the deposit is in `Deposited` status |
 | `Repair` / `Revoke` | Cannot fire unless the deposit is already in `Quarantined` status |

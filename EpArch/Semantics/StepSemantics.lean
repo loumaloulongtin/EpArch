@@ -20,7 +20,8 @@ Key exports:
 - SystemState, Step (inductive LTS relation, 8 constructors)
 - no_revision_no_correction (competition gate impossibility)
 - generic_invariant_preservation (step-preserved invariants)
-- Companion: EpArch.Semantics.LinkingAxioms (operational groundings)
+- Former companion EpArch.Semantics.LinkingAxioms is retired; operational groundings
+  now live in EpArch.Minimality and EpArch.Convergence.
 -/
 
 import EpArch.Basic

@@ -204,9 +204,10 @@ theorem lottery_no_deposit_blocks_withdraw
     blocks premature authorization. A deposit must pass through validation
     before it can be withdrawn.
 
-    **Implementation:** We show that withdrawal requires Deposited status,
-    and new submissions enter as Candidate (via `Step.submit`) or Deposited (via
-    `Step.register`), so there's a mandatory gap between ordinary submission and withdrawal. -/
+    **Implementation:** We show that withdrawal requires Deposited status.
+    Ordinary submissions enter as Candidate via `Action.Submit` / `Step.submit`;
+    direct registrations enter as Deposited via `Action.Register` / `Step.register`.
+    Either way, a plain submission cannot be withdrawn without passing through promotion. -/
 
 /-- CORNER 2 THEOREM: Withdrawal requires Deposited status.
 

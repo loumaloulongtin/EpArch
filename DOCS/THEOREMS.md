@@ -769,7 +769,7 @@ C1, C2, C4b, C5, C6b are proved as named theorems in `Commitments.lean`
 
 | Theorem | File | Statement | Role |
 |---------|------|-----------|------|
-| `lts_theorems_step_universal` | Meta/Tier4Transport.lean | withdrawal_gates ∧ repair_enforces_revalidation ∧ repair_requires_prior_challenge ∧ submit_enforces_revalidation | Packages four LTS facts as universally valid for all SystemState/Step |
+| `lts_theorems_step_universal` | Meta/Tier4Transport.lean | withdrawal_gates ∧ repair_enforces_revalidation ∧ repair_requires_prior_challenge ∧ submit_enforces_revalidation ∧ register_enters_deposited | Packages five LTS facts as universally valid for all SystemState/Step |
 
 ### Cluster C: Concrete Bank Bridge
 
