@@ -822,19 +822,17 @@ File: `Agent/Imposition.lean`
 Pattern: `¬CoreHasX M → AgentGoal → False` — connects CoreModel capability predicates to the Imposition necessity results.
 File: `Mechanisms.lean`
 
-Each theorem instantiates the canonical Imposition failure-mode scenario under a `¬CoreHasX M`
-hypothesis, then delegates to the corresponding Imposition counterexample proof.
+Each theorem calls the canonical Imposition counterexample directly. The `M : CoreModel` and
+`_h_no_X` parameters scope the claim to a specific CoreModel lacking capability X. They are
+unused in the proof body because the `Imposition` scenario flags are `Bool` while `CoreOps`
+predicates are `Prop` — this Bool↔Prop gap prevents deriving scenario flags from CoreModel
+operations.
 
 | Theorem | Capability Predicate | Delegation Target |
 |---------|---------------------|------------------|
 | `core_no_revision_violates_safe_withdrawal` | `¬CoreHasRevision M` | `safe_withdrawal_needs_reversibility` |
 | `core_no_validator_violates_sound_deposits` | `¬CoreHasCheapValidator M` | `sound_deposits_need_cheap_validator` |
 | `core_no_gate_violates_reliable_export` | `¬CoreHasExportGate M` | `reliable_export_needs_gate` |
-
-The `coreToX` functions (`coreToWithdrawalScenario`, `coreToDepositScenario`, `coreToExportScenario`)
-instantiate the canonical Imposition failure-mode scenario under a `¬CoreHasX M` hypothesis.
-They do not compute scenario fields from CoreModel data; they witness the matching scenario
-shape used by the Imposition counterexample theorem.
 
 ### Budget Forcing (Corner 8)
 
