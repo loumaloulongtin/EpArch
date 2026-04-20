@@ -150,3 +150,14 @@ The theorems in `EpArch.Adversarial.Concrete` (`invalid_export_requires_reval_or
 over the current `c_valid_export` definition, which dispatches on `CTrustBridgeAuth`.
 They hold for both modes because the proofs only rely on the absence of any bridge
 (`via_trust_bridge = none`), not on which auth variant is present.
+
+The `.byToken` path is concretely instantiated by `olean_trust_bridge` in
+`EpArch.Meta.LeanKernel.World` (the `OleanStaleness` section). The bridge
+checks `decide (bytes.data = r.sourceHash.data)` — comparing `Array UInt8`
+fields rather than `ByteArray` directly, since `ByteArray` lacks a synthesized
+`BEq` or `DecidableEq` instance in Lean 4.3.0. The key architectural claim is
+unchanged: the presenting machine's identity is irrelevant; only content
+identity (hash equality) matters. `olean_hash_match_imports`,
+`olean_hash_mismatch_rejects`, and `olean_multi_hop_both_gates_required` in
+`EpArch.Meta.LeanKernel.RepairLoop` prove the gate's two outcomes and the
+multi-hop independence property for this concrete instantiation.
