@@ -1,11 +1,11 @@
 /-
 EpArch.Scenarios — Scenario Enrichment Predicates for Structural Convergence
 
-Seven Represents* structures that enrich a WorkingSystem with concrete scenario data,
+Eight Represents* structures that enrich a WorkingSystem with concrete scenario data,
 enabling the abstract structural impossibility models from EpArch.Minimality to fire
 on specific systems.  Also defines the bundled witness packages used by Feasibility.
 
-Seven scenarios:
+Eight scenarios:
   1. RepresentsDisagreement         (scope / bubbles dimension)
   2. RepresentsPrivateCoordination  (bank dimension)
   3. RepresentsMonotonicLifecycle   (revocation dimension)
@@ -13,9 +13,10 @@ Seven scenarios:
   5. RepresentsBoundedVerification  (trust bridges dimension)
   6. RepresentsClosedEndorsement    (redeemability dimension)
   7. RepresentsUniformAccess        (authorization / granular ACL dimension)
+  8. RepresentsBoundedCapacity      (storage management dimension)
 
 Bundled packages:
-  SystemOperationalBundle -- scope + headers + bank + authorization dimensions
+  SystemOperationalBundle -- scope + headers + bank + authorization + storage dimensions
   WorldBridgeBundle       -- revocation + trust + redeemability dimensions
 
 Consumers: EpArch.Feasibility, EpArch.Concrete.DeficientSystems.
@@ -618,15 +619,96 @@ theorem uniform_access_acl_embed
   · exact Or.inr ⟨R.toScenario, h_no_acl_flat h⟩
 
 
+/-! ### Scenario 8: Bounded Capacity (Bounded Storage → Storage Management)
+
+When active-deposit volume grows without eviction or archival, a concrete
+overflow state witnesses that no fixed capacity budget covers all states.
+Without storage management, the system cannot remain within its budget.
+
+`RepresentsBoundedCapacity` enriches a `WorkingSystem` with a concrete overflow
+state whose active-deposit count exceeds the capacity budget.  The bridge
+condition ("without storage management, all states stay within budget") lives
+in `SystemOperationalBundle` as `h_storage_bounded`, following the same pattern
+as `flat_accept`, `f_import`, `shared_deposit`, and `h_no_acl_flat`. -/
+
+/-- A system represents a bounded-capacity scenario if it has a concrete
+    state whose active-deposit count exceeds the declared capacity budget.
+
+    The bridge condition ("without storage management, all active-deposit states
+    stay within the budget") lives in `SystemOperationalBundle` as
+    `h_storage_bounded`, following the same structural pattern as the other
+    five architectural-dimension bridge hypotheses. -/
+structure RepresentsBoundedCapacity (W : WorkingSystem) where
+  /-- Abstract state type (models the global deposit-ledger state). -/
+  State        : Type
+  /-- Finite capacity budget. -/
+  budget       : Nat
+  /-- Active-deposit count function. -/
+  count        : State → Nat
+  /-- A concrete state whose count exceeds the budget. -/
+  overflow     : State
+  /-- The overflow state demonstrably exceeds the budget. -/
+  exceeds      : budget < count overflow
+
+/-- Extract `BoundedStorage` from a `RepresentsBoundedCapacity` witness. -/
+def RepresentsBoundedCapacity.toStorage {W : WorkingSystem}
+    (R : RepresentsBoundedCapacity W) : BoundedStorage where
+  State          := R.State
+  budget         := R.budget
+  count          := R.count
+  deep_state     := R.overflow
+  exceeds_budget := R.exceeds
+
+/-- **Right-branch embedding (storage direction).**
+
+    A system with bounded-capacity needs and no storage management:
+    `monotone_active_accumulation_overflows` fires to prove that no fixed
+    budget can cover all active-deposit states. -/
+theorem bounded_capacity_without_storage_embeds
+    (W : WorkingSystem)
+    (R : RepresentsBoundedCapacity W)
+    (_h_no_storage : ¬HasStorageManagement W)
+    (h_all : ∀ s : R.State, R.count s ≤ R.budget) :
+    False :=
+  monotone_active_accumulation_overflows R.toStorage h_all
+
+/-- **Per-dimension structural forcing (storage management).**
+
+    Any system carrying a `RepresentsBoundedCapacity` witness and evidence that
+    all active-deposit states stay within budget absent storage management is
+    forced to have storage management.  No `handles_storage W` required. -/
+theorem bounded_capacity_forces_storage_management
+    (W : WorkingSystem) (R : RepresentsBoundedCapacity W)
+    (h_bounded : ¬HasStorageManagement W → ∀ s : R.State, R.count s ≤ R.budget) :
+    HasStorageManagement W := by
+  by_cases h : HasStorageManagement W
+  · exact h
+  · exact (bounded_capacity_without_storage_embeds W R h (h_bounded h)).elim
+
+/-- **Full embedding (storage direction): handles_storage → HasStorageManagement.**
+
+    Given a `RepresentsBoundedCapacity` witness and a bridge hypothesis, a system
+    that handles storage is forced to declare `HasStorageManagement`. -/
+theorem bounded_capacity_storage_embed
+    (W : WorkingSystem)
+    (R : RepresentsBoundedCapacity W)
+    (h_storage_bounded : ¬HasStorageManagement W → ∀ s : R.State, R.count s ≤ R.budget)
+    (h : handles_storage W) :
+    HasStorageManagement W ∨ BridgeStorage W := by
+  by_cases hst : HasStorageManagement W
+  · exact Or.inl hst
+  · exact Or.inr ⟨R.toStorage, h_storage_bounded hst⟩
+
+
 /-! ## Bundled Witness Packages
 
-Two structures replace the 20+ loose parameters of the all-seven forcing theorem
+Two structures replace the 20+ loose parameters of the all-eight forcing theorem
 with named records, separated by the nature of the evidence they carry.
 
-**`SystemOperationalBundle W`** — the four *architectural* dimensions:
-scope disagreement, discriminating import, private coordination, uniform access.
-These are purely operational/topological facts about the system.  They have no
-world-semantic counterpart in `WorldCtx`.
+**`SystemOperationalBundle W`** — the five *architectural* dimensions:
+scope disagreement, discriminating import, private coordination, uniform access,
+bounded capacity.  These are purely operational/topological facts about the system.
+They have no world-semantic counterpart in `WorldCtx`.
 
 **`WorldBridgeBundle W`** — the three *world-adjacent* dimensions:
 monotonic lifecycle (revocation), bounded verification (trust), closed
@@ -635,9 +717,9 @@ bundles, but the `Represents*` instances and their bridge hypotheses are
 W-specific data that cannot be derived from W_* bundles alone.  A future
 bridge layer may close that gap; for now they are supplied explicitly. -/
 
-/-- Bundled witnesses for the four purely architectural dimensions:
+/-- Bundled witnesses for the five purely architectural dimensions:
     scope (disagreement), headers (discriminating import), bank (coordination),
-    authorization (uniform access).
+    authorization (uniform access), and storage (bounded capacity).
 
     Each field group is: a `Represents*` structural witness followed by the
     per-dimension bridge hypothesis that makes the impossible scenario
@@ -673,6 +755,11 @@ structure SystemOperationalBundle (W : WorkingSystem) where
       the structural witness record. -/
   h_no_acl_flat : ¬HasGranularACL W → ∃ f : Ra.Agent → Ra.Claim → Prop,
       (∀ a c, f a c ↔ Ra.can_propose a c) ∧ (∀ a c, f a c ↔ Ra.can_commit a c)
+  /-- Storage dimension: a bounded-capacity scenario witness. -/
+  Rs : RepresentsBoundedCapacity W
+  /-- Without storage management, all active-deposit states stay within the budget.
+      Architecturally parallel to the other bridge conditions in this bundle. -/
+  h_storage_bounded : ¬HasStorageManagement W → ∀ s : Rs.State, Rs.count s ≤ Rs.budget
 
 /-- Bundled witnesses for the three world-adjacent dimensions:
     revocation (adversarial/lies), trust (bounded verification),

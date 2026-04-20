@@ -1,8 +1,8 @@
 /-
 EpArch.SystemSpec — System Specification
 
-`SystemSpec` structure (seven Bool capability flags), `spec_has_X` predicates,
-`DecidablePred` instances, `containsAllFeatures`, `fullBankSpec`, and the seven
+`SystemSpec` structure (eight Bool capability flags), `spec_has_X` predicates,
+`DecidablePred` instances, `containsAllFeatures`, `fullBankSpec`, and the eight
 minimal specs missing exactly one feature each (for impossibility witnesses).
 
 Grounded evidence types (`GroundedX`, `GroundedXStrict`, `GroundedSystemSpec`)
@@ -50,6 +50,10 @@ structure SystemSpec where
   /-- System has granular access-control (non-trivial ACL differentiating agents).
       Forced by: Multi-agent heterogeneous access constraint. -/
   has_granular_acl : Bool := false
+
+  /-- System has bounded storage management (finite active-deposit capacity).
+      Forced by: Bounded storage constraint. -/
+  has_storage_management : Bool := false
   deriving DecidableEq, Repr
 
 
@@ -79,6 +83,9 @@ def spec_has_redeemability (spec : SystemSpec) : Prop := spec.has_redeemability 
 /-- Predicate: spec has granular access-control. -/
 def spec_has_granular_acl (spec : SystemSpec) : Prop := spec.has_granular_acl = true
 
+/-- Predicate: spec has bounded storage management. -/
+def spec_has_storage_management (spec : SystemSpec) : Prop := spec.has_storage_management = true
+
 
 /-! ## Decidability Instances
 
@@ -107,16 +114,19 @@ instance : DecidablePred spec_has_redeemability := fun spec =>
 instance : DecidablePred spec_has_granular_acl := fun spec =>
   if h : spec.has_granular_acl = true then isTrue h else isFalse h
 
+instance : DecidablePred spec_has_storage_management := fun spec =>
+  if h : spec.has_storage_management = true then isTrue h else isFalse h
+
 
 /-! ## Full Spec Predicate
 
-A system has "all Bank primitives" iff all seven features are present. -/
+A system has "all Bank primitives" iff all eight features are present. -/
 
 /-- A system specification contains all Bank primitives. -/
 def containsAllFeatures (spec : SystemSpec) : Prop :=
   spec_has_bubbles spec ∧ spec_has_trust_bridges spec ∧ spec_has_headers spec ∧
   spec_has_revocation spec ∧ spec_has_bank spec ∧ spec_has_redeemability spec ∧
-  spec_has_granular_acl spec
+  spec_has_granular_acl spec ∧ spec_has_storage_management spec
 
 /-- The "full Bank spec" — a spec with all features enabled. -/
 def fullBankSpec : SystemSpec where
@@ -127,12 +137,13 @@ def fullBankSpec : SystemSpec where
   has_shared_ledger := true
   has_redeemability := true
   has_granular_acl := true
+  has_storage_management := true
 
 /-- Full spec has all features. -/
 theorem fullBankSpec_contains_all : containsAllFeatures fullBankSpec := by
   simp [containsAllFeatures, spec_has_bubbles, spec_has_trust_bridges, spec_has_headers,
         spec_has_revocation, spec_has_bank, spec_has_redeemability, spec_has_granular_acl,
-        fullBankSpec]
+        spec_has_storage_management, fullBankSpec]
 
 
 /-! ## Minimal Specs (for impossibility witnesses)
@@ -148,6 +159,7 @@ def specWithoutBubbles : SystemSpec where
   has_shared_ledger := true
   has_redeemability := true
   has_granular_acl := true
+  has_storage_management := true
 
 /-- Spec missing trust bridges. -/
 def specWithoutBridges : SystemSpec where
@@ -158,6 +170,7 @@ def specWithoutBridges : SystemSpec where
   has_shared_ledger := true
   has_redeemability := true
   has_granular_acl := true
+  has_storage_management := true
 
 /-- Spec missing headers. -/
 def specWithoutHeaders : SystemSpec where
@@ -168,6 +181,7 @@ def specWithoutHeaders : SystemSpec where
   has_shared_ledger := true
   has_redeemability := true
   has_granular_acl := true
+  has_storage_management := true
 
 /-- Spec missing revocation. -/
 def specWithoutRevocation : SystemSpec where
@@ -178,6 +192,7 @@ def specWithoutRevocation : SystemSpec where
   has_shared_ledger := true
   has_redeemability := true
   has_granular_acl := true
+  has_storage_management := true
 
 /-- Spec missing shared ledger (bank). -/
 def specWithoutBank : SystemSpec where
@@ -188,6 +203,7 @@ def specWithoutBank : SystemSpec where
   has_shared_ledger := false
   has_redeemability := true
   has_granular_acl := true
+  has_storage_management := true
 
 /-- Spec missing redeemability. -/
 def specWithoutRedeemability : SystemSpec where
@@ -198,6 +214,7 @@ def specWithoutRedeemability : SystemSpec where
   has_shared_ledger := true
   has_redeemability := false
   has_granular_acl := true
+  has_storage_management := true
 
 
 /-! ## Witness theorems: each minimal spec lacks its feature -/
@@ -218,7 +235,22 @@ def specWithoutGranularACL : SystemSpec where
   has_shared_ledger := true
   has_redeemability := true
   has_granular_acl := false
+  has_storage_management := true
 
 theorem specWithoutGranularACL_lacks_granular_acl : ¬spec_has_granular_acl specWithoutGranularACL := by decide
+
+/-- Spec missing storage management (all other features enabled). -/
+def specWithoutStorageManagement : SystemSpec where
+  has_bubble_separation := true
+  has_trust_bridges := true
+  preserves_headers := true
+  has_revocation := true
+  has_shared_ledger := true
+  has_redeemability := true
+  has_granular_acl := true
+  has_storage_management := false
+
+theorem specWithoutStorageManagement_lacks_storage_management :
+    ¬spec_has_storage_management specWithoutStorageManagement := by decide
 
 end EpArch

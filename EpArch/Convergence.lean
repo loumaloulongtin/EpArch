@@ -2,7 +2,7 @@
 EpArch.Convergence — Convergence Theorem and Structural Proof Machinery
 
 The central convergence theorem: any WorkingSystem that is StructurallyForced
-and satisfies all seven forcing dimensions necessarily contains Bank primitives.
+and satisfies all eight forcing dimensions necessarily contains Bank primitives.
 
 Key exports:
 - StructurallyForced (forward-only forcing implications, capability → feature)
@@ -25,7 +25,7 @@ namespace EpArch
 
 /-! ## StructurallyForced: Forward-Direction Forcing
 
-`StructurallyForced` packages the seven `handles_X → HasY` forcing implications
+`StructurallyForced` packages the eight `handles_X → HasY` forcing implications
 as a single universally-quantified field indexed by `Pressure`.  Pattern-matching
 on `Pressure` is machine-exhaustive: if a new dimension is added, every `cases P`
 proof requires a new case.
@@ -33,12 +33,12 @@ proof requires a new case.
 Each `handles_pressure W P → forced_feature W P` instance is independently
 justified by a structural impossibility model in EpArch.Minimality. -/
 
-/-- The seven structural impossibility consequences readable from a `WorkingSystem`'s
+/-- The eight structural impossibility consequences readable from a `WorkingSystem`'s
     stored `GroundedXStrict` evidence.
 
     Separated from `StructurallyForced` so that the forcing interface and the
     evidence-readout bundle remain conceptually distinct.  When strict evidence
-    is present the consequence is already carried by the value — these seven fields
+    is present the consequence is already carried by the value — these eight fields
     simply expose it. -/
 structure EvidenceConsequences (W : WorkingSystem) : Prop where
   /-- Scope separation is structurally forced: no flat resolver can represent both scopes. -/
@@ -67,22 +67,25 @@ structure EvidenceConsequences (W : WorkingSystem) : Prop where
   authorization_consequence : ∀ G : GroundedAuthorizationStrict, W.authorization_ev = some G →
       ¬∃ (f : G.base.Agent → G.base.Claim → Prop),
           (∀ a c, f a c ↔ G.base.can_propose a c) ∧ (∀ a c, f a c ↔ G.base.can_commit a c)
+  /-- Storage forcing: no fixed budget covers all states in this bounded-capacity scenario. -/
+  storage_consequence : ∀ G : GroundedStorageStrict, W.storage_ev = some G →
+      ¬(∀ s : G.base.State, G.base.count s ≤ G.base.budget)
 
 /-- A system is structurally forced: for every pressure dimension, handling
     the capability implies the forced architectural feature.
 
-    `forcing` is the core convergence interface: the seven unguarded
+    `forcing` is the core convergence interface: the eight unguarded
     capability→feature implications, derived from the `ForcingEmbedding`.
 
     `evidence` is the structural consequence bundle: impossibility proofs
-    read directly from the system’s stored `GroundedXStrict` fields.  The two
+    read directly from the system's stored `GroundedXStrict` fields.  The two
     are logically independent — `forcing` is about implication chains;
     `evidence` is about what the stored proof objects already carry. -/
 structure StructurallyForced (W : WorkingSystem) : Prop where
   /-- For every pressure dimension P, handling capability P forces feature P.
       Justified per-dimension by the structural models in EpArch.Minimality. -/
   forcing : ∀ P : Pressure, handles_pressure W P → forced_feature W P
-  /-- Structural consequence bundle: the seven impossibility results read from
+  /-- Structural consequence bundle: the eight impossibility results read from
       the stored `GroundedXStrict` evidence. -/
   evidence : EvidenceConsequences W
 
@@ -205,7 +208,14 @@ def BridgeAuthorization (_W : WorkingSystem) : Prop :=
     Proof: passes the flat predicate hypothesis directly to lat_authorization_impossible. -/
 theorem bridge_authorization_impossible (_W : WorkingSystem) : ¬BridgeAuthorization _W :=
   fun ⟨M, h_flat⟩ => flat_authorization_impossible M h_flat
+/-- A system is bridge-committed on storage: all active-deposit states stay within budget. -/
+def BridgeStorage (_W : WorkingSystem) : Prop :=
+  ∃ M : BoundedStorage, ∀ s : M.State, M.count s ≤ M.budget
 
+/-- The storage bridge scenario is universally impossible: no fixed budget covers
+    all states in any bounded-capacity scenario: the witness state exceeds the budget. -/
+theorem bridge_storage_impossible (_W : WorkingSystem) : ¬BridgeStorage _W :=
+  fun ⟨M, hM⟩ => monotone_active_accumulation_overflows M hM
 
 /-- Maps each `Pressure` dimension to its bridge-scenario predicate.
     Used as the right disjunct in `ForcingEmbedding.embed`. -/
@@ -217,10 +227,11 @@ def bridge_scenario (W : WorkingSystem) : Pressure → Prop
   | .bank          => BridgeBank W
   | .redeemability => BridgeRedeemability W
   | .authorization => BridgeAuthorization W
+  | .storage       => BridgeStorage W
 
 /-- Every bridge scenario is universally impossible: committing to the
     impossible scenario for any dimension yields `False`.
-    Proof by exhaustive pattern match — Lean verifies all seven cases. -/
+    Proof by exhaustive pattern match — Lean verifies all eight cases. -/
 theorem all_bridges_impossible (W : WorkingSystem) (P : Pressure) : ¬bridge_scenario W P := by
   cases P
   · exact bridge_bubbles_impossible W
@@ -230,6 +241,7 @@ theorem all_bridges_impossible (W : WorkingSystem) (P : Pressure) : ¬bridge_sce
   · exact bridge_bank_impossible W
   · exact bridge_redeemability_impossible W
   · exact bridge_authorization_impossible W
+  · exact bridge_storage_impossible W
 
 /-- Forcing embeddings: connects a `WorkingSystem` to the abstract
     structural models via an auditable disjunction, indexed by `Pressure`.
@@ -270,7 +282,8 @@ theorem embedding_to_structurally_forced (W : WorkingSystem) (E : ForcingEmbeddi
     revocation_consequence    := fun G _h_ev => G.has_invalid_revocable_witness
     bank_consequence          := fun G _h_ev => G.has_shared_entry
     redeemability_consequence := fun G _h_ev => G.has_constrained_redeemable_witness
-    authorization_consequence := fun G _h_ev => G.no_flat_tier }
+    authorization_consequence := fun G _h_ev => G.no_flat_tier
+    storage_consequence       := fun G _h_ev => G.no_unbounded_accumulation }
 
 
 /-! ## Convergence and Impossibility (Structural Versions) -/
@@ -315,8 +328,10 @@ theorem grounded_evidence_consequences (W : WorkingSystem)
         ∃ c : G.base.Claim, G.base.constrained c ∧ G.base.redeemable c) ∧
     (∃ G : GroundedAuthorizationStrict, W.authorization_ev = some G ∧
         ¬∃ (f : G.base.Agent → G.base.Claim → Prop),
-            (∀ a c, f a c ↔ G.base.can_propose a c) ∧ (∀ a c, f a c ↔ G.base.can_commit a c)) := by
-  refine ⟨convergence_structural W h_sf h_sat, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+            (∀ a c, f a c ↔ G.base.can_propose a c) ∧ (∀ a c, f a c ↔ G.base.can_commit a c)) ∧
+    (∃ G : GroundedStorageStrict, W.storage_ev = some G ∧
+        ¬(∀ s : G.base.State, G.base.count s ≤ G.base.budget)) := by
+  refine ⟨convergence_structural W h_sf h_sat, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   -- Each goal: none-branch contradicted via Bool.noConfusion h2;
   -- some G branch closed via h_sf.evidence.X_consequence G h_ev.
   · have h2 : W.bubbles_ev.isSome = true := by
@@ -361,6 +376,12 @@ theorem grounded_evidence_consequences (W : WorkingSystem)
     cases h_ev : W.authorization_ev with
     | none   => rw [h_ev] at h2; exact Bool.noConfusion h2
     | some G => exact ⟨G, rfl, h_sf.evidence.authorization_consequence G h_ev⟩
+  · have h2 : W.storage_ev.isSome = true := by
+      have h := h_sat .storage
+      simp only [handles_pressure, handles_storage] at h; exact h
+    cases h_ev : W.storage_ev with
+    | none   => rw [h_ev] at h2; exact Bool.noConfusion h2
+    | some G => exact ⟨G, rfl, h_sf.evidence.storage_consequence G h_ev⟩
 
 
 end EpArch

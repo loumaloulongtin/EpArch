@@ -44,12 +44,14 @@ inductive DisagreementClaim where
 
 /-- System spec with all features except bubbles. -/
 def noBubblesSpec : SystemSpec where
-  has_bubble_separation := false
-  has_trust_bridges := true
-  preserves_headers := true
-  has_revocation := true
-  has_shared_ledger := true
-  has_redeemability := true
+  has_bubble_separation  := false
+  has_trust_bridges      := true
+  preserves_headers      := true
+  has_revocation         := true
+  has_shared_ledger      := true
+  has_redeemability      := true
+  has_granular_acl       := true
+  has_storage_management := true
 
 /-- Working system whose spec lacks bubble separation (`has_bubble_separation = false`).
     All evidence fields are `none`, so no `handles_*` predicate holds.
@@ -140,12 +142,14 @@ inductive CoordinationDeposit where
 
 /-- System spec with all features except shared ledger. -/
 def noBankSpec : SystemSpec where
-  has_bubble_separation := true
-  has_trust_bridges := true
-  preserves_headers := true
-  has_revocation := true
-  has_shared_ledger := false
-  has_redeemability := true
+  has_bubble_separation  := true
+  has_trust_bridges      := true
+  preserves_headers      := true
+  has_revocation         := true
+  has_shared_ledger      := false
+  has_redeemability      := true
+  has_granular_acl       := true
+  has_storage_management := true
 
 /-- Working system whose spec lacks a shared ledger (`has_shared_ledger = false`).
     All evidence fields are `none`, so no `handles_*` predicate holds.
@@ -233,12 +237,14 @@ inductive LifecycleState where
 
 /-- System spec with all features except revocation. -/
 def noRevocationSpec : SystemSpec where
-  has_bubble_separation := true
-  has_trust_bridges := true
-  preserves_headers := true
-  has_revocation := false
-  has_shared_ledger := true
-  has_redeemability := true
+  has_bubble_separation  := true
+  has_trust_bridges      := true
+  preserves_headers      := true
+  has_revocation         := false
+  has_shared_ledger      := true
+  has_redeemability      := true
+  has_granular_acl       := true
+  has_storage_management := true
 
 /-- Working system whose spec lacks revocation (`has_revocation = false`).
     All evidence fields are `none`, so no `handles_*` predicate holds.
@@ -332,12 +338,14 @@ inductive ImportClaim where
 
 /-- System spec with all features except headers. -/
 def noHeadersSpec : SystemSpec where
-  has_bubble_separation := true
-  has_trust_bridges := true
-  preserves_headers := false
-  has_revocation := true
-  has_shared_ledger := true
-  has_redeemability := true
+  has_bubble_separation  := true
+  has_trust_bridges      := true
+  preserves_headers      := false
+  has_revocation         := true
+  has_shared_ledger      := true
+  has_redeemability      := true
+  has_granular_acl       := true
+  has_storage_management := true
 
 /-- Working system whose spec lacks header preservation (`preserves_headers = false`).
     All evidence fields are `none`, so no `handles_*` predicate holds.
@@ -422,12 +430,14 @@ whose verification cost exceeds the budget.  Without trust bridges,
 
 /-- System spec with all features except trust bridges. -/
 def noTrustSpec : SystemSpec where
-  has_bubble_separation := true
-  has_trust_bridges := false
-  preserves_headers := true
-  has_revocation := true
-  has_shared_ledger := true
-  has_redeemability := true
+  has_bubble_separation  := true
+  has_trust_bridges      := false
+  preserves_headers      := true
+  has_revocation         := true
+  has_shared_ledger      := true
+  has_redeemability      := true
+  has_granular_acl       := true
+  has_storage_management := true
 
 /-- Working system whose spec lacks trust bridges (`has_trust_bridges = false`).
     All evidence fields are `none`, so no `handles_*` predicate holds.
@@ -510,12 +520,14 @@ inductive TruthClaim where
 
 /-- System spec with all features except redeemability. -/
 def noRedeemabilitySpec : SystemSpec where
-  has_bubble_separation := true
-  has_trust_bridges := true
-  preserves_headers := true
-  has_revocation := true
-  has_shared_ledger := true
-  has_redeemability := false
+  has_bubble_separation  := true
+  has_trust_bridges      := true
+  preserves_headers      := true
+  has_revocation         := true
+  has_shared_ledger      := true
+  has_redeemability      := false
+  has_granular_acl       := true
+  has_storage_management := true
 
 /-- Working system whose spec lacks redeemability (`has_redeemability = false`).
     All evidence fields are `none`, so no `handles_*` predicate holds.
@@ -590,16 +602,197 @@ theorem noRedeemability_bridge_impossible
     ⟨noRedeemabilityClosed.toClosed no_redeemability_lacks_redeemability, c, h_end, h_fals⟩
 
 
+/-! ### Deficient System 7: No Granular ACL (Multi-Agent Access → Authorization)
+
+A system with all features except `has_granular_acl`.  It carries
+`RepresentsUniformAccess`: a two-tier access witness — a submitter that
+can propose but not commit, and a committer that can commit.  Without granular
+ACL, `flat_authorization_impossible` fires via direct contradiction on the
+submitter witness. -/
+
+/-- Agent type for the authorization scenario. -/
+inductive AccessAgent where
+  | submitter   -- can propose but not commit
+  | committer   -- can both propose and commit
+  deriving DecidableEq
+
+/-- Claim type for the authorization scenario. -/
+inductive AccessClaim where
+  | the_claim
+  deriving DecidableEq
+
+/-- Submission tier: both agents can propose. -/
+def access_can_propose : AccessAgent → AccessClaim → Prop
+  | _, _ => True
+
+/-- Commit tier: only the committer can commit. -/
+def access_can_commit : AccessAgent → AccessClaim → Prop
+  | .committer, _ => True
+  | .submitter, _ => False
+
+/-- System spec with all features except granular ACL. -/
+def noAuthorizationSpec : SystemSpec where
+  has_bubble_separation  := true
+  has_trust_bridges      := true
+  preserves_headers      := true
+  has_revocation         := true
+  has_shared_ledger      := true
+  has_redeemability      := true
+  has_granular_acl       := false
+  has_storage_management := true
+
+/-- Working system whose spec lacks granular ACL (`has_granular_acl = false`).
+    All evidence fields are `none`, so no `handles_*` predicate holds.
+    Used solely as a "no-authorization spec" witness for `no_authorization_lacks_acl`. -/
+def NoAuthorizationSystem : WorkingSystem where
+  spec             := noAuthorizationSpec
+  bubbles_ev       := none
+  bridges_ev       := none
+  headers_ev       := none
+  revocation_ev    := none
+  bank_ev          := none
+  redeemability_ev := none
+
+/-- The no-authorization system genuinely lacks granular ACL. -/
+theorem no_authorization_lacks_acl : ¬HasGranularACL NoAuthorizationSystem := by
+  unfold HasGranularACL NoAuthorizationSystem noAuthorizationSpec; decide
+
+/-- The two-tier access scenario for the no-authorization system.
+
+    The submitter can propose but not commit; the committer can commit.
+    Without granular ACL, no single flat predicate can faithfully represent
+    both tiers simultaneously — `flat_authorization_impossible` fires via
+    direct contradiction on the submitter witness. -/
+def noAuthorizationAccess : RepresentsUniformAccess NoAuthorizationSystem where
+  Agent         := AccessAgent
+  Claim         := AccessClaim
+  can_propose   := access_can_propose
+  can_commit    := access_can_commit
+  submitter     := .submitter
+  committer     := .committer
+  tier_claim    := .the_claim
+  may_propose   := True.intro
+  cannot_commit := fun h => h
+  may_commit    := True.intro
+
+/-- **Structural model fires: no flat predicate represents both access tiers.**
+
+    Any predicate `f` faithful to both `can_propose` and `can_commit` must satisfy:
+    - `f .submitter .the_claim ↔ True`  (from the proposal tier)
+    - `f .submitter .the_claim ↔ False` (from the commit tier)
+    These are simultaneously impossible.  `flat_authorization_impossible`
+    derives False directly from the submitter witness. -/
+theorem noAuthorization_no_flat_predicate
+    (f : AccessAgent → AccessClaim → Prop)
+    (hf₁ : ∀ a c, f a c ↔ access_can_propose a c)
+    (hf₂ : ∀ a c, f a c ↔ access_can_commit a c) :
+    False :=
+  flat_authorization_impossible noAuthorizationAccess.toScenario ⟨f, hf₁, hf₂⟩
+
+/-- **Bridge impossibility for the no-authorization system.**
+
+    If a flat predicate faithfully represents both the submission and commit tiers,
+    `bridge_authorization_impossible` derives the contradiction — and
+    `no_authorization_lacks_acl` supplies the refutation. -/
+theorem noAuthorization_bridge_impossible
+    (f : AccessAgent → AccessClaim → Prop)
+    (hf₁ : ∀ a c, f a c ↔ access_can_propose a c)
+    (hf₂ : ∀ a c, f a c ↔ access_can_commit a c) :
+    False :=
+  bridge_authorization_impossible NoAuthorizationSystem
+    ⟨noAuthorizationAccess.toScenario, f, hf₁, hf₂⟩
+
+
+/-! ### Deficient System 8: No Storage Management (Bounded Storage → StorageManagement)
+
+A system with all features except `has_storage_management`.  It carries
+`RepresentsBoundedCapacity`: a concrete overflow state whose active-deposit
+count exceeds the declared capacity budget.  Without storage management,
+`monotone_active_accumulation_overflows` fires via Nat arithmetic. -/
+
+/-- Capacity state: the ledger can be within budget or overflowed. -/
+inductive CapacityState where
+  | within_budget   -- normal operation: active deposits fit in budget
+  | overflowed      -- deposit volume exceeds capacity budget
+
+/-- Active-deposit count by state. -/
+def cap_count : CapacityState → Nat
+  | .within_budget => 0
+  | .overflowed    => 1001
+
+/-- System spec with all features except storage management. -/
+def noStorageSpec : SystemSpec where
+  has_bubble_separation  := true
+  has_trust_bridges      := true
+  preserves_headers      := true
+  has_revocation         := true
+  has_shared_ledger      := true
+  has_redeemability      := true
+  has_granular_acl       := true
+  has_storage_management := false
+
+/-- Working system whose spec lacks storage management (`has_storage_management = false`).
+    All evidence fields are `none`, so no `handles_*` predicate holds.
+    Used solely as a "no-storage spec" witness for `no_storage_lacks_storage`. -/
+def NoStorageSystem : WorkingSystem where
+  spec             := noStorageSpec
+  bubbles_ev       := none
+  bridges_ev       := none
+  headers_ev       := none
+  revocation_ev    := none
+  bank_ev          := none
+  redeemability_ev := none
+
+/-- The no-storage system genuinely lacks storage management. -/
+theorem no_storage_lacks_storage : ¬HasStorageManagement NoStorageSystem := by
+  unfold HasStorageManagement NoStorageSystem noStorageSpec; decide
+
+/-- The bounded capacity scenario for the no-storage system.
+
+    The capacity budget is 1000.  The `overflowed` state has 1001 active
+    deposits, genuinely exceeding the budget.  `monotone_active_accumulation_overflows`
+    fires via Nat arithmetic: `1001 > 1000` makes `cap_count .overflowed ≤ 1000`
+    absurd. -/
+def noStorageCapacity : RepresentsBoundedCapacity NoStorageSystem where
+  State    := CapacityState
+  budget   := 1000
+  count    := cap_count
+  overflow := .overflowed
+  exceeds  := by decide
+
+/-- **Structural model fires: not all states fit within the capacity budget.**
+
+    `monotone_active_accumulation_overflows` fires via Nat arithmetic:
+    the overflowed state has 1001 deposits, the budget is 1000, and
+    `1001 > 1000` makes `cap_count .overflowed ≤ 1000` absurd.
+
+    The structural model proves that any policy claiming all active-deposit
+    states remain within budget is directly contradicted by the `overflowed` state. -/
+theorem noStorage_all_within_budget_absurd :
+    ¬∀ s : CapacityState, cap_count s ≤ 1000 :=
+  monotone_active_accumulation_overflows noStorageCapacity.toStorage
+
+/-- **Bridge impossibility for the no-storage system.**
+
+    If all active-deposit states stay within the capacity budget,
+    `bridge_storage_impossible` derives the contradiction via Nat arithmetic —
+    and `no_storage_lacks_storage` supplies the refutation. -/
+theorem noStorage_bridge_impossible
+    (h : ∀ s : CapacityState, cap_count s ≤ 1000) :
+    False :=
+  bridge_storage_impossible NoStorageSystem ⟨noStorageCapacity.toStorage, h⟩
+
+
 /-! ## Concrete Instance Summary
 
 The concrete model demonstrates:
 1. SystemSpec is satisfiable (concreteSystemSpec exists)
 2. WorkingSystem can be instantiated (ConcreteWorkingSystem)
 3. All Has* predicates hold (trivially, by construction)
-4. SatisfiesAllProperties holds (all seven operational properties)
+4. SatisfiesAllProperties holds (all eight operational properties)
 5. Convergence theorem applies via ForcingEmbedding (all Or.inl)
 
-The deficient systems demonstrate six bridge-impossibility theorems:
+The deficient systems demonstrate eight bridge-impossibility theorems:
 6. Scope: `noBubbles_bridge_impossible` — flat scope bridge hypothesis
    → `bridge_bubbles_impossible` → contradiction.
    Structural model: `flat_scope_impossible`.
@@ -618,6 +811,12 @@ The deficient systems demonstrate six bridge-impossibility theorems:
 11. Redeemability: `noRedeemability_bridge_impossible` — endorsed+falsifiable predicate
     → `bridge_redeemability_impossible` → contradiction.
     Structural model: `closed_system_unfalsifiable`.
+12. Authorization: `noAuthorization_bridge_impossible` — flat predicate bridge hypothesis
+    → `bridge_authorization_impossible` → contradiction.
+    Structural model: `flat_authorization_impossible`.
+13. Storage: `noStorage_bridge_impossible` — within-budget bridge hypothesis
+    → `bridge_storage_impossible` (Nat arithmetic) → contradiction.
+    Structural model: `monotone_active_accumulation_overflows`.
 
 **Separation of concerns:**
 The concrete system uses ForcingEmbedding → StructurallyForced → convergence_structural.

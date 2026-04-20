@@ -11,10 +11,11 @@ constraints of imperfect agents under permanent challenge pressure force
 a specific set of structural features.
 
 The formalization proves these claims:
-1. Seven constraints (distributed agents, bounded audit, export across boundaries,
-   adversarial pressure, coordination need, truth pressure, multi-agent authorization)
+1. Eight constraints (distributed agents, bounded audit, export across boundaries,
+   adversarial pressure, coordination need, truth pressure, multi-agent authorization,
+   bounded storage management)
    each force a specific architectural feature (bubbles, trust bridges, headers,
-   revocation, shared ledger, redeemability, granular ACL).
+   revocation, shared ledger, redeemability, granular ACL, storage management).
 2. Removing any feature breaks a necessary property (impossibility theorems).
 3. All knowledge-managing systems satisfying the constraints converge on the
    same primitive cluster (convergence theorem).
@@ -185,7 +186,7 @@ import EpArch.Meta.TheoremTransport  -- Generic theorem transport schema (Tier 3
 import EpArch.Meta.Tier4Transport    -- Main theorem library transport (Tier 4 closure)
 import EpArch.Meta.LeanKernel.OdometerModel  -- Odometer sub-model: concrete minimal EpArch instance
 import EpArch.Meta.Modular     -- Modularity meta-theorem: ∀ S ⊆ constraints, projection_valid S
-import EpArch.Meta.Reconfiguration  -- Safe reconfiguration: addX × 7, quarantine gate, no-self-heal
+import EpArch.Meta.Reconfiguration  -- Safe reconfiguration: addX × 8, quarantine gate, no-self-heal
 import EpArch.Meta.Config      -- Configurable certification engine: EpArchConfig → ClusterTag → certified proof
 import EpArch.Meta.LeanKernel.World     -- Self-referential: Lean kernel world + architecture + OleanStaleness
 import EpArch.Meta.LeanKernel.SFailure     -- Lean kernel S-field failure taxonomy

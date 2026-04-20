@@ -9,8 +9,8 @@ is paired with:
   - a `GroundedXStrict` augmentation adding an impossibility/forcing consequence
   - a `GroundedX.toStrict` derivation constructing the Strict variant automatically
 
-`GroundedSystemSpec` bundles all seven witnesses and `toSystemSpec` chains the
-seven builders to produce a fully grounded spec.
+`GroundedSystemSpec` bundles all eight witnesses and `toSystemSpec` chains the
+eight builders to produce a fully grounded spec.
 -/
 
 import EpArch.SystemSpec
@@ -342,18 +342,65 @@ def GroundedAuthorization.toStrict (G : GroundedAuthorization) : GroundedAuthori
       ((hprop G.submitter G.tier_claim).mpr G.may_propose))
 
 
-/-! ## GroundedSystemSpec: All Seven Features from Evidence -/
+/-! ## GroundedStorage -/
 
-/-- A fully grounded system specification: all seven EpArch features backed by
+/-- Evidence that a system faces bounded storage pressure: there exists a
+    concrete state whose active-deposit count exceeds the capacity budget.
+
+    This is the abstract impossibility witness: the system would need a
+    management mechanism (eviction, archival, pruning) to remain within bounds. -/
+structure GroundedStorage where
+  /-- The system state type (models the global deposit ledger state). -/
+  State          : Type
+  /-- Active deposit count function. -/
+  count          : State → Nat
+  /-- Finite capacity bound: the system must stay within this many active deposits. -/
+  budget         : Nat
+  /-- A concrete state whose active count exceeds the budget. -/
+  overflow_state : State
+  /-- The overflow state demonstrably exceeds the budget. -/
+  exceeds        : budget < count overflow_state
+
+/-- Build a `SystemSpec` with `has_storage_management = true` from storage evidence. -/
+def SystemSpec.withGroundedStorage (G : GroundedStorage) (rest : SystemSpec) : SystemSpec :=
+  let _ev := G.exceeds
+  { rest with has_storage_management := true }
+
+theorem grounded_storage_justified (G : GroundedStorage) (rest : SystemSpec) :
+    spec_has_storage_management (SystemSpec.withGroundedStorage G rest) := by
+  unfold spec_has_storage_management SystemSpec.withGroundedStorage
+  rfl
+
+/-- `GroundedStorage` augmented with its impossibility consequence.
+
+    `no_unbounded_accumulation` states that the supplied overflow state refutes any
+    universal within-budget claim: no fixed budget can cover all states in this
+    bounded-capacity scenario.  This is the storage analog of `no_flat_resolver`
+    for scope. -/
+structure GroundedStorageStrict where
+  base                      : GroundedStorage
+  /-- No fixed budget covers all states: there is a state exceeding the budget. -/
+  no_unbounded_accumulation : ¬(∀ s : base.State, base.count s ≤ base.budget)
+
+/-- Derive `GroundedStorageStrict` from base evidence.
+
+    Proves `no_unbounded_accumulation` inline: the function sending `overflow_state`
+    to a value exceeding `budget` refutes any universal bound. -/
+def GroundedStorage.toStrict (G : GroundedStorage) : GroundedStorageStrict where
+  base := G
+  no_unbounded_accumulation := fun h =>
+    absurd (Nat.lt_of_lt_of_le G.exceeds (h G.overflow_state)) (Nat.lt_irrefl G.budget)
+
+/-- A fully grounded system specification: all eight EpArch features backed by
     domain evidence rather than declared Boolean flags.
 
     A `GroundedSystemSpec` contains one `GroundedX` witness per feature, plus a
     base spec (conventionally all-false: every `true` comes from evidence).
 
-    `toSystemSpec` chains the seven `withGroundedX` applications; each call sets
+    `toSystemSpec` chains the eight `withGroundedX` applications; each call sets
     exactly one `Bool` field to `true` because the corresponding evidence was
     supplied.  A system that can provide a `GroundedSystemSpec` has *proven*
-    — not merely declared — that it satisfies all seven Bank primitives. -/
+    — not merely declared — that it satisfies all eight Bank primitives. -/
 structure GroundedSystemSpec where
   bubbles       : GroundedBubbles
   trust_bridges : GroundedTrustBridges
@@ -362,21 +409,23 @@ structure GroundedSystemSpec where
   bank          : GroundedBank
   redeemability : GroundedRedeemability
   authorization : GroundedAuthorization
+  storage       : GroundedStorage
   base          : SystemSpec
 
 /-- Convert a `GroundedSystemSpec` to a concrete `SystemSpec`.
 
-    The seven `withGroundedX` calls are chained innermost-to-outermost.  After
-    all seven applications every field is `true`, but each `true` was set by
+    The eight `withGroundedX` calls are chained innermost-to-outermost.  After
+    all eight applications every field is `true`, but each `true` was set by
     construction from evidence — not by writing `true` in a record literal. -/
 def GroundedSystemSpec.toSystemSpec (G : GroundedSystemSpec) : SystemSpec :=
-  SystemSpec.withGroundedAuthorization G.authorization
-    (SystemSpec.withGroundedRedeemability G.redeemability
-      (SystemSpec.withGroundedBank G.bank
-        (SystemSpec.withGroundedRevocation G.revocation
-          (SystemSpec.withGroundedHeaders G.headers
-            (SystemSpec.withGroundedTrustBridges G.trust_bridges
-              (SystemSpec.withGroundedBubbles G.bubbles G.base))))))
+  SystemSpec.withGroundedStorage G.storage
+    (SystemSpec.withGroundedAuthorization G.authorization
+      (SystemSpec.withGroundedRedeemability G.redeemability
+        (SystemSpec.withGroundedBank G.bank
+          (SystemSpec.withGroundedRevocation G.revocation
+            (SystemSpec.withGroundedHeaders G.headers
+              (SystemSpec.withGroundedTrustBridges G.trust_bridges
+                (SystemSpec.withGroundedBubbles G.bubbles G.base)))))))
 
 /-- A fully grounded spec satisfies `containsAllFeatures` — and the proof
     does not depend on any manually set `Bool` flag.  Every `spec_has_X` holds
@@ -384,12 +433,13 @@ def GroundedSystemSpec.toSystemSpec (G : GroundedSystemSpec) : SystemSpec :=
 theorem grounded_spec_contains_all (G : GroundedSystemSpec) :
     containsAllFeatures (G.toSystemSpec) := by
   unfold containsAllFeatures GroundedSystemSpec.toSystemSpec
-         SystemSpec.withGroundedAuthorization SystemSpec.withGroundedRedeemability
-         SystemSpec.withGroundedBank SystemSpec.withGroundedRevocation
-         SystemSpec.withGroundedHeaders SystemSpec.withGroundedTrustBridges
-         SystemSpec.withGroundedBubbles
+         SystemSpec.withGroundedStorage SystemSpec.withGroundedAuthorization
+         SystemSpec.withGroundedRedeemability SystemSpec.withGroundedBank
+         SystemSpec.withGroundedRevocation SystemSpec.withGroundedHeaders
+         SystemSpec.withGroundedTrustBridges SystemSpec.withGroundedBubbles
          spec_has_bubbles spec_has_trust_bridges spec_has_headers
-         spec_has_revocation spec_has_bank spec_has_redeemability spec_has_granular_acl
+         spec_has_revocation spec_has_bank spec_has_redeemability
+         spec_has_granular_acl spec_has_storage_management
   simp
 
 end EpArch

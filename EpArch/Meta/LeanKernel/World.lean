@@ -486,28 +486,47 @@ def LeanGroundedAuthorization : GroundedAuthorization where
   may_commit    := rfl
 
 
+/-! ### Scenario 8: Storage Management
+
+The Lean kernel allocates `Environment` entries (declarations) at Nat indices.
+There is no global bound on Nat, so any fixed budget can be exceeded.
+`LeanGroundedStorage` uses `Nat` as the state type with `id` as the count:
+a state equal to `budget + 1` demonstrably overflows any given budget. -/
+
+/-- Lean kernel grounded-storage witness.
+    Uses `count := id` so state = count. `1000001 > 1000000` by `decide`. -/
+def LeanGroundedStorage : GroundedStorage where
+  State          := Nat
+  count          := id
+  budget         := 1000000
+  overflow_state := 1000001
+  exceeds        := by decide
+
+
 /-! ### Full Grounded Spec -/
 
 /-- All-false base: every `true` in `toSystemSpec` comes from evidence. -/
 private def leanZeroSpec : SystemSpec where
-  has_bubble_separation := false
-  has_trust_bridges     := false
-  preserves_headers     := false
-  has_revocation        := false
-  has_shared_ledger     := false
-  has_redeemability     := false
-  has_granular_acl      := false
+  has_bubble_separation  := false
+  has_trust_bridges      := false
+  preserves_headers      := false
+  has_revocation         := false
+  has_shared_ledger      := false
+  has_redeemability      := false
+  has_granular_acl       := false
+  has_storage_management := false
 
-/-- The Lean kernel's `GroundedSystemSpec`: all seven Bank features backed by evidence.
-    | Feature           | Evidence                                                         |
-    |-------------------|------------------------------------------------------------------|
-    | `bubbles`         | Nat vs Int namespaces disagree on `add` (LeanName data)          |
-    | `trust_bridges`   | Init declarations available downstream via `import`              |
-    | `headers`         | `Nat.succ` type sig preserved through identity export            |
-    | `revocation`      | sorry-tainted terms quarantined by the kernel TCB                |
-    | `bank`            | Shared `Environment`: Init produces, user consumes               |
-    | `redeemability`   | `#print axioms` provides the audit path for any claim            |
-    | `authorization`   | Kernel agent has privileged access; user code is restricted      | -/
+/-- The Lean kernel's `GroundedSystemSpec`: all eight Bank features backed by evidence.
+    | Feature              | Evidence                                                         |
+    |----------------------|------------------------------------------------------------------|
+    | `bubbles`            | Nat vs Int namespaces disagree on `add` (LeanName data)          |
+    | `trust_bridges`      | Init declarations available downstream via `import`              |
+    | `headers`            | `Nat.succ` type sig preserved through identity export            |
+    | `revocation`         | sorry-tainted terms quarantined by the kernel TCB                |
+    | `bank`               | Shared `Environment`: Init produces, user consumes               |
+    | `redeemability`      | `#print axioms` provides the audit path for any claim            |
+    | `authorization`      | Kernel agent has privileged access; user code is restricted      |
+    | `storage`            | Lean environment Nat counter overflows a notional budget         | -/
 def LeanGroundedSystemSpec : GroundedSystemSpec where
   bubbles       := LeanGroundedBubbles
   trust_bridges := LeanGroundedTrustBridges
@@ -516,10 +535,11 @@ def LeanGroundedSystemSpec : GroundedSystemSpec where
   bank          := LeanGroundedBank
   redeemability := LeanGroundedRedeemability
   authorization := LeanGroundedAuthorization
+  storage       := LeanGroundedStorage
   base          := leanZeroSpec
 
 
-/-- `LeanGroundedBehavior`: evidence for all seven behavioral capabilities,
+/-- `LeanGroundedBehavior`: evidence for all eight behavioral capabilities,
     one per architectural forcing dimension.
 
     | WorkingSystem field  | Evidence                     | Kernel basis                                |
@@ -530,7 +550,8 @@ def LeanGroundedSystemSpec : GroundedSystemSpec where
     | `revocation_ev`      | `LeanGroundedRevocation`     | sorry-tainted terms can be quarantined      |
     | `bank_ev`            | `LeanGroundedBank`           | InitDef accumulated in Env, consumed        |
     | `redeemability_ev`   | `LeanGroundedRedeemability`  | `#print axioms` provides the audit path     |
-    | `authorization_ev`   | `LeanGroundedAuthorization`  | Kernel agent privileged; user code restricted | -/
+    | `authorization_ev`   | `LeanGroundedAuthorization`  | Kernel agent privileged; user code restricted |
+    | `storage_ev`         | `LeanGroundedStorage`        | Nat environment counter overflows budget    | -/
 def LeanGroundedBehavior : GroundedBehavior where
   bubbles       := LeanGroundedBubbles
   trust_bridges := LeanGroundedTrustBridges
@@ -539,6 +560,7 @@ def LeanGroundedBehavior : GroundedBehavior where
   bank          := LeanGroundedBank
   redeemability := LeanGroundedRedeemability
   authorization := LeanGroundedAuthorization
+  storage       := LeanGroundedStorage
 
 /-- `LeanWorkingSystem`: the Lean kernel modeled as an EpArch `WorkingSystem`.
 
@@ -555,11 +577,12 @@ def LeanGroundedBehavior : GroundedBehavior where
     | `bank_ev`                      | `some (LeanGroundedBank.toStrict)`                      |
     | `redeemability_ev`             | `some (LeanGroundedRedeemability.toStrict)`             |
     | `authorization_ev`             | `some (LeanGroundedAuthorization.toStrict)`             |
+    | `storage_ev`                   | `some (LeanGroundedStorage.toStrict)`                   |
 
-    Because each `_ev` field is `some`, `Option.isSome = true` and all seven
+    Because each `_ev` field is `some`, `Option.isSome = true` and all eight
     `handles_*` predicates hold (`SatisfiesAllProperties`).
 
-    All seven `HasX` predicates are satisfied via `grounded_spec_contains_all
+    All eight `HasX` predicates are satisfied via `grounded_spec_contains_all
     LeanGroundedSystemSpec`. -/
 def LeanWorkingSystem : WorkingSystem :=
   WorkingSystem.withGroundedBehavior LeanGroundedBehavior
@@ -574,7 +597,7 @@ def LeanWorkingSystem : WorkingSystem :=
 
 /-! ## Has* Predicates for LeanWorkingSystem -/
 
--- `grounded_spec_contains_all LeanGroundedSystemSpec` proves all seven features
+-- `grounded_spec_contains_all LeanGroundedSystemSpec` proves all eight features
 -- simultaneously.  After `unfold HasX LeanWorkingSystem`, the goal becomes
 -- `spec_has_X LeanGroundedSystemSpec.toSystemSpec`, which is the corresponding
 -- component of the conjunction — no manually-set flag is consulted.
@@ -604,12 +627,16 @@ theorem lean_has_redeemability : HasRedeemability LeanWorkingSystem := by
 
 theorem lean_has_granular_acl : HasGranularACL LeanWorkingSystem := by
   unfold HasGranularACL LeanWorkingSystem
-  exact (grounded_spec_contains_all LeanGroundedSystemSpec).2.2.2.2.2.2
+  exact (grounded_spec_contains_all LeanGroundedSystemSpec).2.2.2.2.2.2.1
+
+theorem lean_has_storage_management : HasStorageManagement LeanWorkingSystem := by
+  unfold HasStorageManagement LeanWorkingSystem
+  exact (grounded_spec_contains_all LeanGroundedSystemSpec).2.2.2.2.2.2.2
 
 
 /-! ## Direct Implementation: Bank Primitives by Construction -/
 
-/-- `LeanWorkingSystem` directly implements all seven Bank primitives.
+/-- `LeanWorkingSystem` directly implements all eight Bank primitives.
 
     This is the *direct* route — independent of the convergence theorem.
     It does not say "any system handling X must have Y, and this system
@@ -629,7 +656,8 @@ theorem lean_has_granular_acl : HasGranularACL LeanWorkingSystem := by
     | `HasRevocation`     | `LeanGroundedRevocation` (sorry-tainted → quarantine)   |
     | `HasBank`           | `LeanGroundedBank` (InitDef produced and consumed)      |
     | `HasRedeemability`  | `LeanGroundedRedeemability` (`#print axioms` audit path)|
-    | `HasGranularACL`    | `LeanGroundedAuthorization` (kernel/user ACL boundary)  | -/
+    | `HasGranularACL`    | `LeanGroundedAuthorization` (kernel/user ACL boundary)  |
+    | `HasStorageManagement` | `LeanGroundedStorage` (Nat counter overflows budget) | -/
 theorem lean_implements_bank_primitives : containsBankPrimitives LeanWorkingSystem := by
   intro P
   cases P
@@ -640,6 +668,7 @@ theorem lean_implements_bank_primitives : containsBankPrimitives LeanWorkingSyst
   · exact lean_has_bank
   · exact lean_has_redeemability
   · exact lean_has_granular_acl
+  · exact lean_has_storage_management
 
 /-- `LeanWorkingSystem` is partially well-formed at all constraints: stored
     evidence fields ↔ architectural features.
@@ -649,10 +678,10 @@ theorem lean_implements_bank_primitives : containsBankPrimitives LeanWorkingSyst
 theorem lean_partial_wellformed : PartialWellFormed LeanWorkingSystem allConstraints :=
   grounded_partial_wellformed LeanGroundedBehavior LeanGroundedSystemSpec
 
-/-- The Lean kernel satisfies all seven operational properties.
+/-- The Lean kernel satisfies all eight operational properties.
 
     Follows directly from `grounded_behavior_satisfies_all`: any system
-    built via `WorkingSystem.withGroundedBehavior` satisfies all seven
+    built via `WorkingSystem.withGroundedBehavior` satisfies all eight
     `handles_*` predicates, because each `Option *_ev.isSome = true`
     witness is set from the evidence in `LeanGroundedBehavior`. -/
 theorem lean_satisfies_all_properties : SatisfiesAllProperties LeanWorkingSystem :=
@@ -749,7 +778,7 @@ theorem lean_has_bubbles_grounded :
 
 /-- Forcing embedding for `LeanWorkingSystem`.
 
-    All seven arms return `Or.inl` (the feature itself) because every
+    All eight arms return `Or.inl` (the feature itself) because every
     architectural feature is present in the Lean kernel.  The right
     disjunct (the impossible bridge scenario) is never reached. -/
 def lean_forcing_embedding : ForcingEmbedding LeanWorkingSystem where
@@ -761,6 +790,7 @@ def lean_forcing_embedding : ForcingEmbedding LeanWorkingSystem where
     | .bank          => Or.inl lean_has_bank
     | .redeemability => Or.inl lean_has_redeemability
     | .authorization => Or.inl lean_has_granular_acl
+    | .storage       => Or.inl lean_has_storage_management
 
 /-- `LeanWorkingSystem` is structurally forced — derived from the
     forcing embedding via the generic translation layer. -/
@@ -793,7 +823,7 @@ def lean_grounded_consequences :=
       flag is inspected directly.  Does not depend on the convergence theorem.
 
     - **Structural** (`lean_structural_convergence`): by necessity — any
-      system handling these seven operational pressures must have the features.
+      system handling these eight operational pressures must have the features.
       Routes through `ForcingEmbedding → StructurallyForced →
       convergence_structural`.
 
@@ -810,11 +840,11 @@ def lean_kernel_forces_bank_primitives := lean_implements_bank_primitives
       (`lean_kernel_no_tradeoff`)
 
     **Architecture layer** (`LeanWorkingSystem`):
-    - `PartialWellFormed W allConstraints` — all seven behavioral ↔ architectural biconditionals hold
-    - `containsBankPrimitives` — directly: all seven `HasX` fields hold by construction;
+    - `PartialWellFormed W allConstraints` — all eight behavioral ↔ architectural biconditionals hold
+    - `containsBankPrimitives` — directly: all eight `HasX` fields hold by construction;
                                   separately: forced by `lean_structural_convergence`
-    - `StructurallyForced`     — seven embedding arms all return `Or.inl`
-    - `SatisfiesAllProperties` — all seven `handles_*` predicates hold via `Option *_ev.isSome = true`
+    - `StructurallyForced`     — eight embedding arms all return `Or.inl`
+    - `SatisfiesAllProperties` — all eight `handles_*` predicates hold via `Option *_ev.isSome = true`
 
     The proof is discharged by the kernel it models. -/
 theorem lean_kernel_existence :
