@@ -436,7 +436,7 @@ theorem deposited_claim_arises_from_promote_or_register
   | promote ag B d_idx _ =>
     -- Step.promote sets .Deposited via updateDepositStatus; return promote witness
     exact Or.inl ⟨ag, B, d_idx, rfl⟩
-  | purge _ _ _ _ _ _ _ =>
+  | purge _ _ _ _ _ _ =>
     -- purge sets .Purged; .Purged ≠ .Deposited
     apply absurd h_after; intro ⟨d', hd', hP', hstatus'⟩
     simp only at hd'

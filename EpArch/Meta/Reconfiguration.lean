@@ -481,7 +481,7 @@ theorem quarantine_requires_challenge
       let ⟨d', h_get', h_stat'⟩ := h_after
       rw [get?_updateDepositStatus_ne s.ledger d_idx' d_idx .Deposited hne] at h_get'
       exact absurd ⟨d', h_get', h_stat'⟩ h_before
-  | purge _ _ d_pur _ h_ex_p _ _ =>
+  | purge _ _ d_pur _ h_ex_p _ =>
     -- purge sets .Purged at d_pur; .Purged ≠ .Quarantined
     cases Nat.decEq d_idx d_pur with
     | isTrue heq =>
@@ -572,7 +572,7 @@ theorem no_self_healing_bank
   | revoke _ _ _ _ => intro h; cases h
   | repair _ _ _ _ _ => intro h; cases h
   | promote _ _ _ _ => intro h; cases h
-  | purge _ _ _ _ _ _ _ => intro h; cases h
+  | purge _ _ _ _ _ _ => intro h; cases h
   | update _ _ _ _ _ _ _ _ _ => intro h; cases h
 
 end EpArch.Meta.Reconfiguration

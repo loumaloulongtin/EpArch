@@ -120,7 +120,7 @@ theorem frozen_canon_no_revocation
       injection h_get' with h_eq'
       rw [← h_eq']
       exact h_not_revoked
-  | purge _ _ d_pur _ h_ex_pur _ _ =>
+  | purge _ _ d_pur _ h_ex_pur _ =>
     -- purge sets .Purged at d_pur; .Purged ≠ .Revoked
     cases Nat.decEq d_idx d_pur with
     | isTrue heq =>
