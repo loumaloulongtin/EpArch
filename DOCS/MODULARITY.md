@@ -12,7 +12,7 @@ certify that?
 
 ## 1. What Modularity Means in This Repo
 
-EpArch's theorem corpus is sliced into **30 certified clusters** across six families.
+EpArch's theorem corpus is sliced into **31 certified clusters** across six families.
 Constraint, goal, and world clusters are config-driven — activated by the `EpArchConfig`
 a user provides. Meta-modularity, lattice-stability, and all Tier 4 clusters (commitments,
 structural, LTS-universal, and bank-goal transport) are always-on: they hold
@@ -20,7 +20,7 @@ unconditionally and require no configuration.
 
 | Family | Count | What it covers |
 |---|---|---|
-| **Forcing clusters** (Tier 2) | 7 | Each constraint forces a structural feature. Two paths: (1) `StructurallyForced W`/`handles_X W` operational path — `StructurallyForced.forcing : ∀ P : Pressure, handles_pressure W P → forced_feature W P`; (2) structural `Represents*`/`*_forces_*` path — no `handles_X W`, no biconditionals, strictly stronger. Per-dimension `*_forces_*` theorems are orthogonal: each fires independently (`disagreement_forces_bubbles`, `private_coordination_forces_bank`, `monotonic_lifecycle_forces_revocation`, `discriminating_import_forces_headers`, `bounded_verification_forces_trust_bridges`, `closed_endorsement_forces_redeemability`, `uniform_access_forces_granular_acl`). |
+| **Forcing clusters** (Tier 2) | 8 | Each constraint forces a structural feature. Two paths: (1) `StructurallyForced W`/`handles_X W` operational path — `StructurallyForced.forcing : ∀ P : Pressure, handles_pressure W P → forced_feature W P`; (2) structural `Represents*`/`*_forces_*` path — no `handles_X W`, no biconditionals, strictly stronger. Per-dimension `*_forces_*` theorems are orthogonal: each fires independently (`disagreement_forces_bubbles`, `private_coordination_forces_bank`, `monotonic_lifecycle_forces_revocation`, `discriminating_import_forces_headers`, `bounded_verification_forces_trust_bridges`, `closed_endorsement_forces_redeemability`, `uniform_access_forces_granular_acl`, `bounded_capacity_forces_storage_management`). |
 | **Goal transport** (Tier 3) | 6 | Each health goal is preserved under compatible model extension |
 | **Tier 4 library clusters** | 5 | Commitments pack, structural theorems, LTS-universal gates, bank-goal transport |
 | **World obligations** (Tier 1) | 8 | Each `W_*` bundle enables a slice of adversarial/world theorems |
@@ -31,7 +31,7 @@ The 31 `ClusterTag` values in `ClusterRegistry.lean` are the canonical names for
 
 **Why this matters architecturally:** Modularity is not only a proof-engineering convenience — it is a kernel design constraint. EpArch must remain applicable across agents that do not share the same internal epistemology or constraint bundle, including minimal agents (e.g., an odometer-like system tracking position) that face only a sub-bundle of the full set. The cluster architecture ensures the kernel scales down gracefully: a system that does not face `FallibilityConstraint` simply does not receive the clusters that depend on it, and the remaining claims stay sound. This is why the kernel boundary stops at coordination-relevant architectural requirements rather than agent-internal dynamics models.
 
-**Structural forcing path (stronger than biconditionals):** Beyond the `PartialWellFormed`/`handles_X W` biconditional path, each Tier 2 cluster has a direct `Represents*`/`*_forces_*` proof that requires no `WellFormed`, no `handles_X W`, and no biconditionals. Any system that concretely instantiates one EpArch operational pressure (by supplying a `Represents*` witness) is forced to have the matching primitive. These eight theorems are strictly orthogonal — each fires independently. Bundled together, `SystemOperationalBundle W` (scope + headers + bank + authorization) and `WorldBridgeBundle W` (revocation + trust + redeemability) feed the headline `bundled_structure_forces_bank_primitives` theorem in Feasibility.lean: four arguments, any world, no `WorldCtx`.
+**Structural forcing path (stronger than biconditionals):** Beyond the `PartialWellFormed`/`handles_X W` biconditional path, each Tier 2 cluster has a direct `Represents*`/`*_forces_*` proof that requires no `WellFormed`, no `handles_X W`, and no biconditionals. Any system that concretely instantiates one EpArch operational pressure (by supplying a `Represents*` witness) is forced to have the matching primitive. These eight theorems are strictly orthogonal — each fires independently. Bundled together, `SystemOperationalBundle W` (scope + headers + bank + authorization + storage) and `WorldBridgeBundle W` (revocation + trust + redeemability) feed the headline `bundled_structure_forces_bank_primitives` theorem in Feasibility.lean: four arguments, any world, no `WorldCtx`.
 
 ### What exhaustiveness means here
 
@@ -281,7 +281,7 @@ These rules prevent the registry, config, and docs from drifting apart.
 | **I3** | Named `cluster_*` proof witnesses (e.g. `commitments_pack`, `structural_theorems_unconditional`, `lts_theorems_step_universal`) remain the authoritative typed witnesses — either `def X := upstream_name` re-exports or explicit `theorem` declarations where the signature needs stating separately. Config.lean match arms must reference them by name, not re-prove inline. |
 | **I4** | Every `ClusterTag` constructor that exists must have a matching witness constructor in `Config.lean` and a description in `ClusterRegistry.lean`. Orphaned tags are a build-time bug. |
 | **I5** | Documentation describes the cluster semantics as they exist now. Stale historical scaffolding (old transport wrappers, superseded pack shapes) must be removed — not left as comments or empty shells. |
-| **I6** | The cluster count (currently 30) is a documented fact. If you add or remove a cluster, update the count in this doc and in `README.md`. |
+| **I6** | The cluster count (currently 31) is a documented fact. If you add or remove a cluster, update the count in this doc and in `README.md`. |
 
 ---
 
@@ -441,8 +441,6 @@ def MyConstraints : ConstraintSubset :=
     truth_pressure := false  -- no constraint-surface pressure
     multi_agent    := false  -- no multi-agent authorization needed
     bounded_storage := false -- unbounded storage acceptable }
-    truth_pressure := false  -- no constraint-surface pressure
-    multi_agent    := false  -- no multi-agent authorization needed }
 ```
 
 **Step 2 — Supply domain evidence for each active constraint**

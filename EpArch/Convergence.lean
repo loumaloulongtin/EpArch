@@ -67,7 +67,7 @@ structure EvidenceConsequences (W : WorkingSystem) : Prop where
   authorization_consequence : ∀ G : GroundedAuthorizationStrict, W.authorization_ev = some G →
       ¬∃ (f : G.base.Agent → G.base.Claim → Prop),
           (∀ a c, f a c ↔ G.base.can_propose a c) ∧ (∀ a c, f a c ↔ G.base.can_commit a c)
-  /-- Storage forcing: no fixed budget covers all reachable active-deposit states. -/
+  /-- Storage forcing: no fixed budget covers all states in this bounded-capacity scenario. -/
   storage_consequence : ∀ G : GroundedStorageStrict, W.storage_ev = some G →
       ¬(∀ s : G.base.State, G.base.count s ≤ G.base.budget)
 
@@ -213,7 +213,7 @@ def BridgeStorage (_W : WorkingSystem) : Prop :=
   ∃ M : BoundedStorage, ∀ s : M.State, M.count s ≤ M.budget
 
 /-- The storage bridge scenario is universally impossible: no fixed budget covers
-    all reachable active-deposit states. -/
+    all states in any bounded-capacity scenario: the witness state exceeds the budget. -/
 theorem bridge_storage_impossible (_W : WorkingSystem) : ¬BridgeStorage _W :=
   fun ⟨M, hM⟩ => monotone_active_accumulation_overflows M hM
 

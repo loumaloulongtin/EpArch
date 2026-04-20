@@ -717,9 +717,9 @@ bundles, but the `Represents*` instances and their bridge hypotheses are
 W-specific data that cannot be derived from W_* bundles alone.  A future
 bridge layer may close that gap; for now they are supplied explicitly. -/
 
-/-- Bundled witnesses for the four purely architectural dimensions:
+/-- Bundled witnesses for the five purely architectural dimensions:
     scope (disagreement), headers (discriminating import), bank (coordination),
-    authorization (uniform access).
+    authorization (uniform access), and storage (bounded capacity).
 
     Each field group is: a `Represents*` structural witness followed by the
     per-dimension bridge hypothesis that makes the impossible scenario

@@ -945,6 +945,11 @@ def cluster_forcing_multi_agent :
     ∀ W : WorkingSystem, StructurallyForced W → handles_multi_agent W → HasGranularACL W :=
   fun _W sf => sf.forcing .authorization
 
+/-- Cluster `.forcing_bounded_storage`: bounded storage pressure forces HasStorageManagement. -/
+def cluster_forcing_bounded_storage :
+    ∀ W : WorkingSystem, StructurallyForced W → handles_storage W → HasStorageManagement W :=
+  fun _W sf => sf.forcing .storage
+
 -- ── Tier 3 goal transport ────────────────────────────────────────────────
 
 /-- Cluster `.goal_safeWithdrawal`: SafeWithdrawalGoal is Compatible-transport-safe. -/

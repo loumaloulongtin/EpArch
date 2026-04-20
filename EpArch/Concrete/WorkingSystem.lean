@@ -251,7 +251,7 @@ instantiating all eight dimensions. A non-vacuity proof requires one instance,
 not a realistic one. The tiny private inductives (`ConcScopeLabel`, etc.) and
 trivial predicates are the smallest possible constructions that discharge each
 `GroundedXStrict` obligation. For a realistic instantiation, see
-`EpArch.ConcreteModel.ConcreteWorkingSystem` in `WorkingSystem.lean`. -/
+`EpArch.ConcreteInstance.ConcreteWorkingSystem` in `WorkingSystem.lean`. -/
 
 private inductive ConcScopeLabel where | s1 | s2 deriving DecidableEq
 private inductive ConcDeclKind  where | trusted | untrusted deriving DecidableEq

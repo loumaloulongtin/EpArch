@@ -1774,7 +1774,8 @@ structure BoundedStorage where
 
 /-- BOUNDED STORAGE IMPOSSIBILITY.
 
-    No fixed capacity budget can cover all reachable active-deposit states.
+    No fixed capacity budget can cover all states in this bounded-capacity scenario:
+    the witness state exceeds the budget.
 
     **Theorem shape:** `¬∀ s : M.State, M.count s ≤ M.budget`.
     **Proof strategy:** apply the universal bound to `M.deep_state`, which carries

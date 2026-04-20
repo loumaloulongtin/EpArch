@@ -307,7 +307,7 @@ Eight abstract scenario structures, each proving that a degenerate configuration
 | `private_storage_no_sharing` | `PrivateOnlyStorage` | Isolated agent storage makes shared deposit access impossible |
 | `closed_system_unfalsifiable` | `ClosedEndorsement` | A closed endorsement system has no externally falsifiable endorsed claim |
 | `flat_authorization_impossible` | `TwoTierAccess` | A flat authorization predicate cannot faithfully represent both submission and commit tiers |
-| `bounded_capacity_overflows` (via `GroundedStorageStrict`) | `BoundedCapacityScenario` | No fixed budget covers all reachable active-deposit states |
+| `bounded_capacity_overflows` (via `GroundedStorageStrict`) | `BoundedCapacityScenario` | No fixed budget covers all states in this bounded-capacity scenario: the witness state exceeds the budget |
 
 ### Pressure Dimension Index (Minimality.lean)
 

@@ -19,7 +19,7 @@ import EpArch.Minimality
 import EpArch.Semantics.StepSemantics
 
 /-! ========================================================================
-    PART B — Capability Addition: WorkingSystem.addX x 7
+    PART B — Capability Addition: WorkingSystem.addX × 8
     Defined in namespace EpArch so dot notation W.addX works.
     ======================================================================== -/
 

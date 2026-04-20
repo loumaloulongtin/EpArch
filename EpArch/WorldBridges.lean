@@ -138,7 +138,8 @@ def WorldAwareSystem (C : @EpArch.WorldCtx.{0}) (W : WorkingSystem) : Prop :=
 
     WorldAwareSystem holds the structural work: it contains the three
     world-conditional capability→feature implications (trust, revocation,
-    redeemability) plus the three unconditional ones.  The W_* bundles discharge
+    redeemability) plus the five unconditional ones (scope, headers, bank,
+    authorization, storage).  The W_* bundles discharge
     the world-bundle guards in WorldAwareSystem; convergence_structural then
     closes the proof from StructurallyForced + SatisfiesAllProperties.
 

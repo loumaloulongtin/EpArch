@@ -44,12 +44,14 @@ inductive DisagreementClaim where
 
 /-- System spec with all features except bubbles. -/
 def noBubblesSpec : SystemSpec where
-  has_bubble_separation := false
-  has_trust_bridges := true
-  preserves_headers := true
-  has_revocation := true
-  has_shared_ledger := true
-  has_redeemability := true
+  has_bubble_separation  := false
+  has_trust_bridges      := true
+  preserves_headers      := true
+  has_revocation         := true
+  has_shared_ledger      := true
+  has_redeemability      := true
+  has_granular_acl       := true
+  has_storage_management := true
 
 /-- Working system whose spec lacks bubble separation (`has_bubble_separation = false`).
     All evidence fields are `none`, so no `handles_*` predicate holds.
@@ -140,12 +142,14 @@ inductive CoordinationDeposit where
 
 /-- System spec with all features except shared ledger. -/
 def noBankSpec : SystemSpec where
-  has_bubble_separation := true
-  has_trust_bridges := true
-  preserves_headers := true
-  has_revocation := true
-  has_shared_ledger := false
-  has_redeemability := true
+  has_bubble_separation  := true
+  has_trust_bridges      := true
+  preserves_headers      := true
+  has_revocation         := true
+  has_shared_ledger      := false
+  has_redeemability      := true
+  has_granular_acl       := true
+  has_storage_management := true
 
 /-- Working system whose spec lacks a shared ledger (`has_shared_ledger = false`).
     All evidence fields are `none`, so no `handles_*` predicate holds.
@@ -233,12 +237,14 @@ inductive LifecycleState where
 
 /-- System spec with all features except revocation. -/
 def noRevocationSpec : SystemSpec where
-  has_bubble_separation := true
-  has_trust_bridges := true
-  preserves_headers := true
-  has_revocation := false
-  has_shared_ledger := true
-  has_redeemability := true
+  has_bubble_separation  := true
+  has_trust_bridges      := true
+  preserves_headers      := true
+  has_revocation         := false
+  has_shared_ledger      := true
+  has_redeemability      := true
+  has_granular_acl       := true
+  has_storage_management := true
 
 /-- Working system whose spec lacks revocation (`has_revocation = false`).
     All evidence fields are `none`, so no `handles_*` predicate holds.
@@ -332,12 +338,14 @@ inductive ImportClaim where
 
 /-- System spec with all features except headers. -/
 def noHeadersSpec : SystemSpec where
-  has_bubble_separation := true
-  has_trust_bridges := true
-  preserves_headers := false
-  has_revocation := true
-  has_shared_ledger := true
-  has_redeemability := true
+  has_bubble_separation  := true
+  has_trust_bridges      := true
+  preserves_headers      := false
+  has_revocation         := true
+  has_shared_ledger      := true
+  has_redeemability      := true
+  has_granular_acl       := true
+  has_storage_management := true
 
 /-- Working system whose spec lacks header preservation (`preserves_headers = false`).
     All evidence fields are `none`, so no `handles_*` predicate holds.
@@ -422,12 +430,14 @@ whose verification cost exceeds the budget.  Without trust bridges,
 
 /-- System spec with all features except trust bridges. -/
 def noTrustSpec : SystemSpec where
-  has_bubble_separation := true
-  has_trust_bridges := false
-  preserves_headers := true
-  has_revocation := true
-  has_shared_ledger := true
-  has_redeemability := true
+  has_bubble_separation  := true
+  has_trust_bridges      := false
+  preserves_headers      := true
+  has_revocation         := true
+  has_shared_ledger      := true
+  has_redeemability      := true
+  has_granular_acl       := true
+  has_storage_management := true
 
 /-- Working system whose spec lacks trust bridges (`has_trust_bridges = false`).
     All evidence fields are `none`, so no `handles_*` predicate holds.
@@ -510,12 +520,14 @@ inductive TruthClaim where
 
 /-- System spec with all features except redeemability. -/
 def noRedeemabilitySpec : SystemSpec where
-  has_bubble_separation := true
-  has_trust_bridges := true
-  preserves_headers := true
-  has_revocation := true
-  has_shared_ledger := true
-  has_redeemability := false
+  has_bubble_separation  := true
+  has_trust_bridges      := true
+  preserves_headers      := true
+  has_revocation         := true
+  has_shared_ledger      := true
+  has_redeemability      := false
+  has_granular_acl       := true
+  has_storage_management := true
 
 /-- Working system whose spec lacks redeemability (`has_redeemability = false`).
     All evidence fields are `none`, so no `handles_*` predicate holds.
@@ -620,13 +632,14 @@ def access_can_commit : AccessAgent → AccessClaim → Prop
 
 /-- System spec with all features except granular ACL. -/
 def noAuthorizationSpec : SystemSpec where
-  has_bubble_separation := true
-  has_trust_bridges     := true
-  preserves_headers     := true
-  has_revocation        := true
-  has_shared_ledger     := true
-  has_redeemability     := true
-  has_granular_acl      := false
+  has_bubble_separation  := true
+  has_trust_bridges      := true
+  preserves_headers      := true
+  has_revocation         := true
+  has_shared_ledger      := true
+  has_redeemability      := true
+  has_granular_acl       := false
+  has_storage_management := true
 
 /-- Working system whose spec lacks granular ACL (`has_granular_acl = false`).
     All evidence fields are `none`, so no `handles_*` predicate holds.
