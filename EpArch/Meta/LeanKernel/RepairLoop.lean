@@ -210,23 +210,32 @@ theorem s_upgrade_on_compilation : LeanKernelCtx.Truth true true :=
 /-! ## Ladder Settlement and Doorbell
 
 The `.olean` staleness machinery from `World.lean` wired to the ladder and
-LTS model. A cache hit is conditional settlement at `LadderStage.Certainty`:
-Lean does not re-enter the repair loop while the `.olean` is fresh.
-A source change is the revision doorbell: it forces the deposit to `.Stale`
-and the kernel re-enters the loop from the top. RevisionSafety guarantees
-the doorbell is never removed — a settled claim can always be rechallenged
-if its grounding changes. -/
+LTS model. In the `CTime` proxy model, `compiled_at` is the deposit τ (TTL):
+the cache is fresh while `current_epoch < compiled_at`, and stale once
+`compiled_at ≤ current_epoch`. A cache hit is therefore the condition
+`current_epoch < compiled_at` — the compiled timestamp is strictly ahead of
+the clock. Once the cache hits, Lean executes `Step.withdraw` against the
+`.olean` without re-elaborating; the ladder settles at `LadderStage.Certainty`.
+A source change advances `current_epoch` past `compiled_at`, the deposit
+becomes `.Stale`, and the kernel re-enters the repair loop from the top.
+RevisionSafety guarantees the doorbell is never removed — a settled claim
+can always be rechallenged if its grounding changes. -/
 
 /-- Cache hit predicate: compiled epoch matches last-refresh epoch and the
-    current epoch is strictly before the compilation timestamp.
+    current epoch is strictly below the compiled timestamp.
 
-    The strict inequality (`current_epoch < r.compiled_at`) is necessary for
-    `cache_hit_not_stale`: `compute_status` marks `τ ≤ current_time` as `.Stale`,
-    so the degenerate case `current_epoch = r.compiled_at` (τ = current_time)
-    would also be stale. The strict form excludes it. In the real build system,
-    this case doesn't arise — a build always produces a τ strictly in the past.
+    In the `CTime` proxy model, `compiled_at` is mapped to τ (the deposit TTL).
+    `compute_status` fires `.Stale` when `τ ≤ current_time`, so the cache is
+    not stale iff `current_epoch < compiled_at` — the compiled timestamp must
+    be strictly ahead of where the clock currently is.
 
-    When both conditions hold, Lean executes `Step.withdraw` against the cached
+    Why not `¬source_changed`? `source_changed` is defined as
+    `compiled_at < current_epoch` (strict less-than). Its negation allows
+    `current_epoch = compiled_at`, but `compute_status` marks that boundary
+    case `.Stale` too. The strict inequality used here is therefore the
+    tightest honest encoding of "not yet stale" in this proxy model.
+
+    When the condition holds, Lean executes `Step.withdraw` against the cached
     `.olean` without re-elaborating — the ladder sits at `LadderStage.Certainty`. -/
 def lean_cache_hit (r : OleanRecord) (current_epoch : CTime) : Prop :=
   r.compiled_at = r.last_refreshed ∧ current_epoch < r.compiled_at
@@ -238,10 +247,10 @@ def lean_cache_hit (r : OleanRecord) (current_epoch : CTime) : Prop :=
     staleness branch of `compute_status` does not fire.
 
     **Theorem shape:** lean_cache_hit r epoch → compute_status ≠ .Stale.
-    **Proof strategy:** extract `current_epoch < r.compiled_at` from the cache
-    hit; derive `r.compiled_at ≠ 0` and `¬(r.compiled_at ≤ current_epoch)` by
-    omega; rewrite past the .Stale branch; remaining constructors are distinct
-    from .Stale by DecidableEq. -/
+    **Proof strategy:** extract `current_epoch < r.compiled_at` (the strict condition);
+    derive `r.compiled_at ≠ 0` and `¬(r.compiled_at ≤ current_epoch)` by
+    Nat.not_lt_zero and Nat.lt_irrefl; rewrite past the .Revoked and .Stale
+    branches; remaining constructors are distinct from .Stale by `decide`. -/
 theorem cache_hit_not_stale (r : OleanRecord) (path : CProp)
     (current_epoch : CTime)
     (h : lean_cache_hit r current_epoch) :
