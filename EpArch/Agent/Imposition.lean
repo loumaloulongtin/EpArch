@@ -95,15 +95,15 @@ structure WithdrawalScenario where
   /-- Without reversibility, harm is permanent -/
   harmIsPermanent : Bool
   /-- Is reversibility available? -/
-  hasReversibility : Bool
+  hasReversibility : Prop
   /-- Invariant: without reversibility, mistakes cause permanent harm -/
-  no_rev_permanent : hasReversibility = false → mistakeOccurred = true → harmIsPermanent = true
+  no_rev_permanent : ¬hasReversibility → mistakeOccurred = true → harmIsPermanent = true
 
 /-- Counterexample: withdrawal scenario where no reversibility → goal fails. -/
 def withdrawal_counterexample : WithdrawalScenario where
   mistakeOccurred := true
   harmIsPermanent := true
-  hasReversibility := false
+  hasReversibility := False
   no_rev_permanent := fun _ _ => rfl
 
 /-- THEOREM (was axiom): Safe withdrawal needs reversibility.
@@ -116,7 +116,7 @@ def withdrawal_counterexample : WithdrawalScenario where
 theorem safe_withdrawal_needs_reversibility
     (scenario : WithdrawalScenario)
     (h_mistake : scenario.mistakeOccurred = true)
-    (h_no_rev : scenario.hasReversibility = false)
+    (h_no_rev : ¬scenario.hasReversibility)
     (h_goal : SafeWithdrawalGoal (scenario.mistakeOccurred = true) (scenario.harmIsPermanent = true)) :
     False := by
   -- By the scenario invariant: no reversibility + mistake → permanent harm
@@ -143,18 +143,18 @@ structure DepositScenario where
   /-- Validator cost (if exists) -/
   validatorCost : Nat
   /-- Is cheap validator available? -/
-  hasValidator : Bool
+  hasValidator : Prop
   /-- PRP guarantees: some claims exceed budget -/
   prp_pressure : claimCost > budget
   /-- Without validator, must pay full claim cost -/
-  no_validator_full_cost : hasValidator = false → validatorCost = claimCost
+  no_validator_full_cost : ¬hasValidator → validatorCost = claimCost
 
 /-- Counterexample: deposit scenario where no validator → goal fails. -/
 def deposit_counterexample (budget : Nat) : DepositScenario where
   claimCost := budget + 1
   budget := budget
   validatorCost := budget + 1
-  hasValidator := false
+  hasValidator := False
   prp_pressure := Nat.lt_succ_self budget
   no_validator_full_cost := fun _ => rfl
 
@@ -167,7 +167,7 @@ def deposit_counterexample (budget : Nat) : DepositScenario where
     but is not needed for the contradiction. -/
 theorem sound_deposits_need_cheap_validator
     (scenario : DepositScenario)
-    (_h_no_validator : scenario.hasValidator = false)
+    (_h_no_validator : ¬scenario.hasValidator)
     (h_goal : SoundDepositsGoal scenario.claimCost scenario.budget) :
     False := by
   -- Goal says claimCost ≤ budget
@@ -189,17 +189,17 @@ structure ExportScenario where
   /-- Is export blocked? -/
   exportBlocked : Bool
   /-- Is gate available? -/
-  hasGate : Bool
+  hasGate : Prop
   /-- Fallibility: some observations are incorrect -/
   fallible : observationCorrect = false
   /-- Without gate, incorrect observations are exported (not blocked) -/
-  no_gate_exports : hasGate = false → exportBlocked = false
+  no_gate_exports : ¬hasGate → exportBlocked = false
 
 /-- Counterexample: export scenario where no gate → goal fails. -/
 def export_counterexample : ExportScenario where
   observationCorrect := false
   exportBlocked := false
-  hasGate := false
+  hasGate := False
   fallible := rfl
   no_gate_exports := fun _ => rfl
 
@@ -212,7 +212,7 @@ def export_counterexample : ExportScenario where
     4. We have: ¬correct ∧ ¬blocked → contradiction -/
 theorem reliable_export_needs_gate
     (scenario : ExportScenario)
-    (h_no_gate : scenario.hasGate = false)
+    (h_no_gate : ¬scenario.hasGate)
     (h_goal : ReliableExportGoal (scenario.observationCorrect = true) (scenario.exportBlocked = true)) :
     False := by
   -- Fallibility: observation is incorrect

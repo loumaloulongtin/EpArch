@@ -822,11 +822,11 @@ File: `Agent/Imposition.lean`
 Pattern: `¬CoreHasX M → AgentGoal → False` — connects CoreModel capability predicates to the Imposition necessity results.
 File: `Mechanisms.lean`
 
-Each theorem calls the canonical Imposition counterexample directly. The `M : CoreModel` and
-`_h_no_X` parameters scope the claim to a specific CoreModel lacking capability X. They are
-unused in the proof body because the `Imposition` scenario flags are `Bool` while `CoreOps`
-predicates are `Prop` — this Bool↔Prop gap prevents deriving scenario flags from CoreModel
-operations.
+Each bridge theorem uses a `coreToX` projection (e.g., `coreToWithdrawalScenario M`) that
+sets `hasReversibility := CoreHasRevision M`. The `Imposition` scenario flags are `Prop`,
+matching `CoreOps` predicate types, so the `h_no_X` hypothesis is genuinely used in each
+proof: `h_no_rev : ¬CoreHasRevision M` is definitionally `¬(coreToWithdrawalScenario M).hasReversibility`
+and discharges the corresponding argument of the Imposition necessity theorem.
 
 | Theorem | Capability Predicate | Delegation Target |
 |---------|---------------------|------------------|
