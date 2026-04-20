@@ -95,7 +95,7 @@ structure WithdrawalScenario where
   /-- Without reversibility, harm is permanent -/
   harmIsPermanent : Bool
   /-- Is reversibility available? -/
-  hasReversibility : Prop
+   hasReversibility : Prop
   /-- Invariant: without reversibility, mistakes cause permanent harm -/
   no_rev_permanent : ¬hasReversibility → mistakeOccurred = true → harmIsPermanent = true
 
@@ -158,20 +158,27 @@ def deposit_counterexample (budget : Nat) : DepositScenario where
   prp_pressure := Nat.lt_succ_self budget
   no_validator_full_cost := fun _ => rfl
 
-/-- THEOREM (was axiom): Sound deposits need cheap validator.
+/-- THEOREM: Sound deposits need cheap validator.
 
-    Proof: Direct contradiction —
-    `prp_pressure` gives claimCost > budget while
-    `h_goal` (SoundDepositsGoal) requires claimCost ≤ budget.
-    Note: `h_no_validator` is present for interface uniformity
-    but is not needed for the contradiction. -/
+    **Theorem shape:** ¬hasValidator → SoundDepositsGoal validatorCost budget → False.
+    **Proof strategy:** `h_no_validator` feeds `no_validator_full_cost`, which gives
+    `validatorCost = claimCost`. Rewriting the goal yields `claimCost ≤ budget`,
+    which contradicts `prp_pressure : claimCost > budget`.
+
+    The goal is stated over `validatorCost` (the effective verification cost), not
+    `claimCost`. Without a validator the two are equal (by `no_validator_full_cost`),
+    so `h_no_validator` is load-bearing: it is the hypothesis that makes the
+    effective cost equal the raw claim cost, and therefore exceed budget. -/
 theorem sound_deposits_need_cheap_validator
     (scenario : DepositScenario)
-    (_h_no_validator : ¬scenario.hasValidator)
-    (h_goal : SoundDepositsGoal scenario.claimCost scenario.budget) :
+    (h_no_validator : ¬scenario.hasValidator)
+    (h_goal : SoundDepositsGoal scenario.validatorCost scenario.budget) :
     False := by
-  -- Goal says claimCost ≤ budget
-  -- But prp_pressure says claimCost > budget
+  -- Without a validator, the effective cost equals the raw claim cost
+  have h_eq := scenario.no_validator_full_cost h_no_validator
+  -- Rewrite the goal: SoundDepositsGoal validatorCost budget → claimCost ≤ budget
+  rw [h_eq] at h_goal
+  -- prp_pressure : claimCost > budget contradicts h_goal : claimCost ≤ budget
   exact Nat.lt_irrefl _ (Nat.lt_of_lt_of_le scenario.prp_pressure h_goal)
 
 

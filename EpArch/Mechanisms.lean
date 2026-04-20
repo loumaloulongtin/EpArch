@@ -144,17 +144,17 @@ theorem core_no_revision_violates_safe_withdrawal
 /-- BRIDGE THEOREM — Cheap Validator
 
     A CoreModel lacking a cheap validator cannot satisfy SoundDepositsGoal
-    under the projected deposit scenario.
+    (stated over `validatorCost`) under the projected deposit scenario.
 
     **Theorem shape:** ¬CoreHasCheapValidator M → h_goal → False.
     **Proof strategy:** project M via `coreToDepositScenario`; pass `h_no_val`
     directly as `¬(coreToDepositScenario M budget).hasValidator` (definitionally equal).
-    The contradiction in `sound_deposits_need_cheap_validator` is arithmetic
-    (`prp_pressure` vs `SoundDepositsGoal`); `h_no_val` is forwarded but unused there. -/
+    `sound_deposits_need_cheap_validator` then uses `h_no_val` via `no_validator_full_cost`
+    to equate `validatorCost` to `claimCost`, and closes by `prp_pressure`. -/
 theorem core_no_validator_violates_sound_deposits
     (M : CoreModel) (h_no_val : ¬CoreHasCheapValidator M) (budget : Nat)
     (h_goal : EpArch.Agent.SoundDepositsGoal
-                (coreToDepositScenario M budget).claimCost
+                (coreToDepositScenario M budget).validatorCost
                 (coreToDepositScenario M budget).budget) :
     False :=
   sound_deposits_need_cheap_validator (coreToDepositScenario M budget) h_no_val h_goal
