@@ -1225,10 +1225,12 @@ it passed all three stages and the `.olean` settles the ladder at `Certainty`.
 | Name | Statement | Role |
 |------|-----------|------|
 | `v_failure_blocks_redemption` | `v.missing_mod ∉ v.candidate.imports` | Broken import severs V chain; extracts structural invariant `not_imported` from `LeanVFailure` |
-| `e_failure_enables_localized_repair` | `canTargetRepair true Field.E` | Error record makes Field.E observable; delegates to `full_can_repair_any Field.E` |
+| `e_failure_has_genuine_mismatch` | `e.expected ≠ e.actual` | E record carries a real type mismatch; extracts structural invariant `type_mismatch` from `LeanEFailure` |
+| `e_field_is_repair_target` | `canTargetRepair true Field.E` | With header present, Field.E is observable; delegates to `full_can_repair_any Field.E`; parameterless |
 | `no_error_means_global_repair_scope` | `∀ f : Field, ¬canTargetRepair false f` | Stripped header = no field targetable; delegates to `stripped_no_field_repair` |
 | `repair_scope_contracts_with_headers` | `∃ f, canTargetRepair true f ∧ ¬canTargetRepair false f` | Headers strictly narrow scope; witness Field.E |
-| `s_upgrade_on_compilation` | `LeanKernelCtx.Truth (lean_compiled_deposit d) (lean_compiled_deposit d)` | S upgrades from programmer-asserted to kernel-verified on successful elaboration |
+| `s_upgrade_on_compilation` | `LeanKernelCtx.Truth true true` | S upgrades from programmer-asserted to kernel-verified; proxy model, `rfl`; parameterless |
+| `cache_hit_not_stale` | `lean_cache_hit r epoch → compute_status (olean_as_deposit r path) epoch ≠ .Stale` | Fresh cache (strict epoch condition) does not trigger staleness; eliminates .Revoked and .Stale branches |
 | `source_change_reopens_repair_loop` | `source_changed epoch r → compute_status (olean_as_deposit r path) epoch = .Stale` | Source change forces `.Stale`; ladder moves from Certainty back to re-verification; delegates to `olean_stale_when_source_changed` |
 
 ---

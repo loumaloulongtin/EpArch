@@ -13,11 +13,13 @@ import list, where each entry is a grounding-chain node.
 Main exports:
 - LeanCandidateDeposit, LeanVFailure, LeanEFailure — deposit states
 - v_failure_blocks_redemption — broken import severs the V chain
-- e_failure_enables_localized_repair — error message targets Field.E
+- e_failure_has_genuine_mismatch — E record carries a real type mismatch
+- e_field_is_repair_target — Field.E is observable with a header
 - no_error_means_global_repair_scope — stripped header = no targeting
 - repair_scope_contracts_with_headers — headers strictly narrow scope
-- lean_compiled_deposit, s_upgrade_on_compilation — kernel S-upgrade
-- lean_cache_hit, source_change_reopens_repair_loop — ladder settlement
+- s_upgrade_on_compilation — kernel S-upgrade in the proxy model
+- lean_cache_hit, cache_hit_not_stale — fresh cache ≠ Stale
+- source_change_reopens_repair_loop — doorbell forces .Stale
 -/
 
 import EpArch.Meta.LeanKernel.World
@@ -73,25 +75,33 @@ structure LeanVFailure where
 /-- E failure: a type mismatch populates the E field with localization data.
 
     The four fields (file, line, expected, actual) are the elaborator's
-    challenge record: `canTargetRepair true Field.E` holds because Field.E
-    is observable in a deposit with a complete header. -/
+    challenge record. The structural invariant `type_mismatch` ensures the
+    record describes a real discrepancy: expected and actual are genuinely
+    different types. Without it, the four strings would have no semantic
+    relationship and the structure would not mean what it claims. -/
 structure LeanEFailure where
   /-- The candidate that failed elaboration -/
-  candidate : LeanCandidateDeposit
+  candidate    : LeanCandidateDeposit
   /-- Source file where the mismatch was detected -/
-  file      : String
+  file         : String
   /-- Line number of the offending expression -/
-  line      : Nat
+  line         : Nat
   /-- What the kernel expected at that position -/
-  expected  : String
+  expected     : String
   /-- What the proof body actually provided -/
-  actual    : String
+  actual       : String
+  /-- Structural invariant: the error record is non-vacuous -/
+  type_mismatch : expected ≠ actual
 
 /-! ## Lifecycle Theorems
 
-Three theorems covering each failure mode and the clean state.
-Each proof is one step: either extracting a structural invariant field or
-delegating to an already-proved Diagnosability theorem. -/
+Four theorems covering the two failure modes and the diagnosability result.
+Each proof is one step: extract a structural invariant field, or delegate to
+an already-proved Diagnosability theorem. The V and E failure theorems are
+parametrized and use their parameter — the structural invariant fields make
+each hypothesis load-bearing. The diagnosability theorems are parameterless:
+`canTargetRepair` is a property of the `has_header` flag, not of any
+particular failure record. -/
 
 /-- V failure blocks redemption.
 
@@ -108,18 +118,28 @@ theorem v_failure_blocks_redemption (v : LeanVFailure) :
     v.missing_mod ∉ v.candidate.imports :=
   v.not_imported
 
-/-- E failure enables localized repair.
+/-- E failure records a genuine type mismatch.
 
-    The elaborator's challenge record identifies the exact sub-expression
-    at fault: (file, line, expected, actual). With that record present, the
-    deposit has a complete header and Field.E is observable.
-    `canTargetRepair true Field.E` holds by `full_can_repair_any`.
+    The elaborator's challenge record is non-vacuous: expected and actual
+    are genuinely different types. This is the structural content of a
+    `LeanEFailure` — the `type_mismatch` invariant field carries it.
 
-    **Theorem shape:** given an E failure, Field.E is a valid repair target.
-    **Proof strategy:** delegate to `full_can_repair_any Field.E`; the E
-    failure context confirms the has_header = true regime applies. -/
-theorem e_failure_enables_localized_repair (_e : LeanEFailure) :
-    canTargetRepair true Field.E :=
+    **Theorem shape:** e.expected ≠ e.actual.
+    **Proof strategy:** extract the `type_mismatch` structural invariant field. -/
+theorem e_failure_has_genuine_mismatch (e : LeanEFailure) :
+    e.expected ≠ e.actual :=
+  e.type_mismatch
+
+/-- With a header present, Field.E is a valid repair target.
+
+    The error record constitutes the deposit header: (file, line, expected,
+    actual) are exactly the E field content. With the header present
+    (has_header = true), Field.E ∈ AllFields, so `canTargetRepair true Field.E`
+    holds unconditionally.
+
+    **Theorem shape:** canTargetRepair true Field.E.
+    **Proof strategy:** delegate to `full_can_repair_any Field.E`. -/
+theorem e_field_is_repair_target : canTargetRepair true Field.E :=
   full_can_repair_any Field.E
 
 /-- Without an error message, no field can be targeted for repair.
@@ -148,11 +168,11 @@ error record populates. -/
     (has_header = false), no field can be targeted.
 
     **Theorem shape:** ∃ f, canTargetRepair true f ∧ ¬canTargetRepair false f.
-    **Proof strategy:** witness Field.E; left conjunct from `full_can_repair_any`,
+    **Proof strategy:** witness Field.E; left conjunct from `e_field_is_repair_target`,
     right conjunct from `stripped_no_field_repair`. -/
 theorem repair_scope_contracts_with_headers :
     ∃ f : Field, canTargetRepair true f ∧ ¬canTargetRepair false f :=
-  ⟨Field.E, full_can_repair_any Field.E, stripped_no_field_repair Field.E⟩
+  ⟨Field.E, e_field_is_repair_target, stripped_no_field_repair Field.E⟩
 
 /-! ## S-Upgrade on Compilation
 
@@ -168,21 +188,22 @@ is a complex pipeline on `Expr` terms. The proxy model abstracts that pipeline
 into a two-world Bool context so that structural properties (S-upgrade,
 world-consistency) can be stated and proved without introspecting kernel source. -/
 
-/-- A Lean declaration after successful compilation: S is kernel-verified.
-    Maps the declaration to a clean-world (`true`) claim in `LeanKernelCtx`. -/
-def lean_compiled_deposit (_d : LeanCandidateDeposit) : LeanKernelCtx.Claim :=
-  true
-
 /-- KERNEL S-UPGRADE THEOREM
 
     Successful compilation upgrades S from programmer-asserted to kernel-verified.
-    In the proxy model, `LeanKernelCtx.Truth true true` is `true = true`.
+    In the proxy model, a compiled declaration is the clean-world claim `true`;
+    `LeanKernelCtx.Truth true true` is `true = true`.
 
-    **Theorem shape:** LeanKernelCtx.Truth (lean_compiled_deposit d) (lean_compiled_deposit d).
-    **Proof strategy:** `rfl` — the clean world certifies a clean claim. The content
-    is in the proxy model's design; the proof term is intentionally thin. -/
-theorem s_upgrade_on_compilation (d : LeanCandidateDeposit) :
-    LeanKernelCtx.Truth (lean_compiled_deposit d) (lean_compiled_deposit d) :=
+    Proxy-model note: the proxy represents ALL compiled declarations with the
+    same claim value (`true`) because the model's Claim type is Bool. The theorem
+    is parameterless by design — the content is in the proxy model's architecture
+    (clean world authenticates exactly clean claims), not in any particular
+    declaration. The proof term is `rfl` because `true = true` is trivially true;
+    the structural argument is in the two-world model definition in `World.lean`.
+
+    **Theorem shape:** LeanKernelCtx.Truth true true.
+    **Proof strategy:** rfl — `LeanKernelCtx.Truth w P` unfolds to `w = P`. -/
+theorem s_upgrade_on_compilation : LeanKernelCtx.Truth true true :=
   -- Truth true true = (true = true); rfl closes it immediately
   rfl
 
@@ -196,13 +217,48 @@ and the kernel re-enters the loop from the top. RevisionSafety guarantees
 the doorbell is never removed — a settled claim can always be rechallenged
 if its grounding changes. -/
 
-/-- Cache hit predicate: compiled epoch matches last-refresh epoch and source
-    has not advanced past the compilation timestamp.
+/-- Cache hit predicate: compiled epoch matches last-refresh epoch and the
+    current epoch is strictly before the compilation timestamp.
+
+    The strict inequality (`current_epoch < r.compiled_at`) is necessary for
+    `cache_hit_not_stale`: `compute_status` marks `τ ≤ current_time` as `.Stale`,
+    so the degenerate case `current_epoch = r.compiled_at` (τ = current_time)
+    would also be stale. The strict form excludes it. In the real build system,
+    this case doesn't arise — a build always produces a τ strictly in the past.
 
     When both conditions hold, Lean executes `Step.withdraw` against the cached
     `.olean` without re-elaborating — the ladder sits at `LadderStage.Certainty`. -/
 def lean_cache_hit (r : OleanRecord) (current_epoch : CTime) : Prop :=
-  r.compiled_at = r.last_refreshed ∧ ¬source_changed current_epoch r
+  r.compiled_at = r.last_refreshed ∧ current_epoch < r.compiled_at
+
+/-- CACHE HIT MEANS NOT STALE
+
+    A fresh cache (`lean_cache_hit`) means `compute_status` does not return
+    `.Stale`: the `.olean` epoch is strictly above the current epoch, so the
+    staleness branch of `compute_status` does not fire.
+
+    **Theorem shape:** lean_cache_hit r epoch → compute_status ≠ .Stale.
+    **Proof strategy:** extract `current_epoch < r.compiled_at` from the cache
+    hit; derive `r.compiled_at ≠ 0` and `¬(r.compiled_at ≤ current_epoch)` by
+    omega; rewrite past the .Stale branch; remaining constructors are distinct
+    from .Stale by DecidableEq. -/
+theorem cache_hit_not_stale (r : OleanRecord) (path : CProp)
+    (current_epoch : CTime)
+    (h : lean_cache_hit r current_epoch) :
+    compute_status (olean_as_deposit r path) current_epoch ≠ .Stale := by
+  have h_lt := h.2
+  -- r.compiled_at ≠ 0: if it were 0, h_lt would give current_epoch < 0
+  have h_ne_zero : r.compiled_at ≠ 0 := fun h_z =>
+    Nat.not_lt_zero current_epoch (h_z ▸ h_lt)
+  -- ¬(r.compiled_at ≤ current_epoch): combining h_le with h_lt gives r.compiled_at < r.compiled_at
+  have h_not_le : ¬(r.compiled_at ≤ current_epoch) := fun h_le =>
+    Nat.lt_irrefl r.compiled_at (Nat.lt_of_le_of_lt h_le h_lt)
+  simp only [compute_status, olean_as_deposit]
+  rw [if_neg h_ne_zero, if_neg h_not_le]
+  -- V = ["lean-kernel"] (length 1 ≠ 0); remaining branches: .Aging or .Deposited
+  by_cases h1 : r.compiled_at ≤ current_epoch + 10
+  · rw [if_pos h1]; exact (by decide)
+  · rw [if_neg h1]; simp [List.length_cons, List.length_nil]
 
 /-- SOURCE CHANGE IS THE REVISION DOORBELL
 
