@@ -95,7 +95,7 @@ structure WithdrawalScenario where
   /-- Without reversibility, harm is permanent -/
   harmIsPermanent : Bool
   /-- Is reversibility available? -/
-   hasReversibility : Prop
+  hasReversibility : Prop
   /-- Invariant: without reversibility, mistakes cause permanent harm -/
   no_rev_permanent : ¬hasReversibility → mistakeOccurred = true → harmIsPermanent = true
 
@@ -187,6 +187,11 @@ theorem sound_deposits_need_cheap_validator
 Theorem: If agents are fallible (can misobserve),
          and there's no export gate,
          then reliable export goal is violated.
+
+Note: this is an agent-level abstract scenario theorem. It is not a CoreModel primitive.
+CoreModel reliable export is handled by `Health.ReliableExportGoal` using truth plus
+revision capability at the receiving bubble — see `Mechanisms.lean`,
+`core_false_positive_violates_reliable_export`.
 -/
 
 /-- An export scenario: models error propagation. -/
