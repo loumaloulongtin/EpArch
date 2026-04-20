@@ -381,18 +381,19 @@ theorem bundled_structure_forces_bank_primitives
 
 /-! ## WorldSystemCompat — Deriving WorldBridgeBundle from World Conditions
 
-When a system genuinely operates under the EpArch world conditions, the
-`WorldBridgeBundle` data should be derivable from the world bundle witnesses
-alone rather than supplied as independent explicit parameters.
+When a system genuinely operates under the EpArch world conditions,
+`WorldBridgeBundle` can be derived from a compatibility certificate plus
+the three `W_*` witnesses, rather than supplied as independent explicit
+parameters.
 
-`WorldSystemCompat C W` is the bridge structure that makes this derivation
-possible: it records, for each world-adjacent dimension, how the world
-pressure (a `W_*` bundle) supplies the corresponding `Represents*` structural
-witness and bridge hypothesis for the specific system `W`.
+`WorldSystemCompat C W` is the formal certificate of that compatibility:
+it records, for each world-adjacent dimension, how the world pressure (a
+`W_*` bundle) supplies the corresponding `Represents*` structural witness
+and bridge hypothesis for the specific system `W`.
 
-`world_deriving_bridge` then produces `WorldBridgeBundle W` from a
-`WorldSystemCompat C W` plus the three `W_*` witnesses, closing the gap
-noted in the `WorldBridgeBundle` design comment. -/
+`world_deriving_bridge` then produces `WorldBridgeBundle W` from
+`WorldSystemCompat C W` plus the three `W_*` witnesses — compatibility
+and world conditions together, not world conditions alone. -/
 
 /-- System-world compatibility for the three world-adjacent EpArch dimensions.
 
@@ -433,11 +434,13 @@ structure WorldSystemCompat (C : WorldCtx) (W : WorkingSystem) where
 
 /-- WORLD-DERIVING BRIDGE THEOREM
 
-    Derives `WorldBridgeBundle W` from world bundle witnesses alone, given a
-    `WorldSystemCompat C W` recording how C's world conditions bind to W.
+    Derives `WorldBridgeBundle W` from a `WorldSystemCompat C W` certificate
+    plus the three `W_*` world witnesses.
 
-    Any system genuinely operating under the three EpArch world conditions
-    (lies possible, verification bounded, observation partial) satisfies
+    `WorldSystemCompat C W` is the formal definition of what it means for a
+    system to genuinely operate under the EpArch world conditions: it records
+    how each world pressure supplies the corresponding structural witness for W.
+    Any system holding that certificate plus the three world witnesses satisfies
     `WorldBridgeBundle` without supplying the bridge witnesses as separate
     explicit parameters.
 
