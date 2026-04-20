@@ -171,35 +171,43 @@ repair quarantine requirement, submit Candidate lifecycle. -/
     Like `structural_theorems_unconditional`, no model parameter varies here:
     these hold by virtue of what the `Step` constructors require and produce.
 
-    (1) Withdrawal gates: `Step.Withdraw` fires only with ACL + current τ + Deposited.
-    (2) Repair revalidation: `Step.Repair` produces Candidate status in the ledger.
-    (3) Repair quarantine: `Step.Repair` requires Quarantined input status.
-    (4) Submit Candidate: `Step.Submit` ensures at least one Candidate deposit. -/
+    (1) Withdrawal gate: `Step.withdraw` fires only with Deposited status (bank consultation).
+        Authorization is agent-level; not a bank gate.
+    (2) Repair revalidation: `Step.repair` produces Candidate status in the ledger.
+    (3) Repair quarantine: `Step.repair` requires Quarantined input status.
+    (4) Submit Candidate: `Action.Submit` / `Step.submit` ensures a new Candidate deposit.
+    (5) Register Deposited: `Action.Register` / `Step.register` ensures a new Deposited deposit. -/
 theorem lts_theorems_step_universal {Reason Evidence : Type} :
     (∀ (s s' : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
        (B : Bubble) (a : Agent) (d_idx : Nat),
        StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
          s (StepSemantics.Action.Withdraw a B d_idx) s' →
-       ACL_OK_At s a B d_idx ∧ Current_At s d_idx ∧ ConsultedBank_At s d_idx) ∧
+       ConsultedBank_At s d_idx) ∧
     (∀ (s s' : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
-       (d_idx : Nat) (f : Field),
+       (a : Agent) (B : Bubble) (d_idx : Nat) (f : Field),
        StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
-         s (StepSemantics.Action.Repair d_idx f) s' →
+         s (StepSemantics.Action.Repair a B d_idx f) s' →
        s'.ledger = StepSemantics.updateDepositStatus s.ledger d_idx .Candidate) ∧
     (∀ (s s' : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
-       (d_idx : Nat) (f : Field),
+       (a : Agent) (B : Bubble) (d_idx : Nat) (f : Field),
        StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
-         s (StepSemantics.Action.Repair d_idx f) s' →
+         s (StepSemantics.Action.Repair a B d_idx f) s' →
        StepSemantics.isQuarantined s d_idx) ∧
     (∀ (s s' : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
        (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance),
        StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
          s (StepSemantics.Action.Submit a d) s' →
-       ∃ d', d' ∈ s'.ledger ∧ d'.status = DepositStatus.Candidate) :=
+       ∃ d', d' ∈ s'.ledger ∧ d'.status = DepositStatus.Candidate) ∧
+    (∀ (s s' : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
+       (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance),
+       StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
+         s (StepSemantics.Action.Register a d) s' →
+       ∃ d', d' ∈ s'.ledger ∧ d'.status = DepositStatus.Deposited) :=
   ⟨fun s s' B a d_idx h => withdrawal_gates s s' B a d_idx h,
-   fun s s' d_idx f h => repair_enforces_revalidation s s' d_idx f h,
-   fun s s' d_idx f h => repair_requires_prior_challenge s s' d_idx f h,
-   fun s s' a d h    => submit_enforces_revalidation s s' a d h⟩
+   fun s s' a B d_idx f h => repair_enforces_revalidation s s' a B d_idx f h,
+   fun s s' a B d_idx f h => repair_requires_prior_challenge s s' a B d_idx f h,
+   fun s s' a d h    => submit_enforces_revalidation s s' a d h,
+   fun s s' a d h    => register_enters_deposited s s' a d h⟩
 
 
 /-! ## §3c  All Five Health Goals Transport Through ConcreteBankModel
@@ -312,12 +320,12 @@ theorem tier4_full_pack
     (∀ (d : Deposit PropLike Standard ErrorModel Provenance),
         ∃ (s : Standard) (e : ErrorModel) (v : Provenance),
           d.h.S = s ∧ d.h.E = e ∧ d.h.V = v) ∧
-    -- (B2) LTS-universal: withdrawal requires all three gates for every Step
+    -- (B2) LTS-universal: withdrawal gate (bank consultation: Deposited status)
     (∀ (s s' : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
        (B : Bubble) (a : Agent) (d_idx : Nat),
        StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
          s (StepSemantics.Action.Withdraw a B d_idx) s' →
-       ACL_OK_At s a B d_idx ∧ Current_At s d_idx ∧ ConsultedBank_At s d_idx) ∧
+       ConsultedBank_At s d_idx) ∧
     -- (C1) SafeWithdrawalGoal transports through compatible bank extension
     SafeWithdrawalGoal (forget E_bank) ∧
     -- (C2) ReliableExportGoal transports
@@ -364,12 +372,12 @@ theorem tier4_full_pack_surj
     (∀ (d : Deposit PropLike Standard ErrorModel Provenance),
         ∃ (s : Standard) (e : ErrorModel) (v : Provenance),
           d.h.S = s ∧ d.h.E = e ∧ d.h.V = v) ∧
-    -- (B2) LTS-universal: withdrawal requires all three gates for every Step
+    -- (B2) LTS-universal: withdrawal gate (bank consultation: Deposited status)
     (∀ (s s' : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
        (B : Bubble) (a : Agent) (d_idx : Nat),
        StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
          s (StepSemantics.Action.Withdraw a B d_idx) s' →
-       ACL_OK_At s a B d_idx ∧ Current_At s d_idx ∧ ConsultedBank_At s d_idx) ∧
+       ConsultedBank_At s d_idx) ∧
     -- (C1) SafeWithdrawalGoal transports
     SafeWithdrawalGoal (forget E_bank) ∧
     -- (C2) ReliableExportGoal transports

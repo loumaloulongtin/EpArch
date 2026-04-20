@@ -5,8 +5,7 @@ Protocol requirements for robust system functioning — what must hold
 for the system to remain healthy. Violations predict degradation.
 
 Grounded operational invariants proved from the constructive step semantics:
-- grounded_no_withdrawal_without_acl (from Step.withdraw)
-- grounded_no_export_without_gate (from Step.export)
+- grounded_withdrawal_requires_deposited (from Step.withdraw)
 - challenge_requires_field_localization (Field enum exhaustion)
 - worldstate_requires_finite_τ (definitional from deposit_kind)
 
@@ -24,40 +23,24 @@ universe u
 
 variable {PropLike Standard ErrorModel Provenance : Type u}
 
-/-! ## Invariant 1: Withdrawal ACL Enforcement (Grounded) -/
+/-! ## Invariant 1: Withdrawal Requires Deposited Status (Grounded) -/
 
-/-- Every Step.withdraw transition requires ACL permission.
+/-- Every Step.withdraw transition requires Deposited status.
 
-    Proved: Step.withdraw constructor requires hasACLPermission as a precondition;
-    the result follows directly from withdrawal_requires_three_gates. -/
-theorem grounded_no_withdrawal_without_acl
+    Proved: Step.withdraw constructor requires isDeposited as a precondition;
+    the result follows directly from withdrawal_requires_deposited.
+    Authorization is an agent-level concern; not a bank precondition. -/
+theorem grounded_withdrawal_requires_deposited
     {Reason Evidence : Type u}
     (s s' : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
     (a : Agent) (B : Bubble) (d_idx : Nat)
     (h_step : StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
         s (.Withdraw a B d_idx) s') :
-    StepSemantics.hasACLPermission s a B d_idx :=
-  (StepSemantics.withdrawal_requires_three_gates s s' a B d_idx h_step).1
+    StepSemantics.isDeposited s d_idx :=
+  StepSemantics.withdrawal_requires_deposited s s' a B d_idx h_step
 
 
-/-! ## Invariant 2: Export Gating (Grounded) -/
-
-/-- Every Step.export transition requires depositHasHeader (header not stripped).
-
-    Proved: Step.export constructors require depositHasHeader as a precondition;
-    exports that lose headers cannot carry S/E/V evidence for downstream revalidation.
-    Proved from StepSemantics.export_requires_header. -/
-theorem grounded_no_export_without_gate
-    {Reason Evidence : Type u}
-    (s s' : StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
-    (B1 B2 : Bubble) (d_idx : Nat)
-    (h_step : StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
-        s (.Export B1 B2 d_idx) s') :
-    StepSemantics.depositHasHeader s d_idx :=
-  StepSemantics.export_requires_header s s' B1 B2 d_idx h_step
-
-
-/-! ## Invariant 3: Challenge must specify suspected field -/
+/-! ## Invariant 2: Challenge must specify suspected field -/
 
 /-- Challenges must localize to a specific field.
 
@@ -126,9 +109,12 @@ theorem worldstate_requires_finite_τ
 These invariants are protocol requirements, not behavioral universals.
 
 Real systems violate them — and that's exactly why:
-- Export without trust-bridge → contamination propagates
 - Headerless challenges → repair fails, disputes persist
 - Infinite τ on world-state → stale claims cause failures
+
+ACL enforcement and export gating are concrete-model or agent-policy concerns;
+they are not abstract LTS invariants. The abstract `StepSemantics.Step.withdraw`
+gates only on `Deposited` status; ACL checking is a concrete-model addition.
 
 The invariants specify what must hold for health; violations
 predict degradation, not impossibility. -/
@@ -143,8 +129,10 @@ structure InvariantViolation where
 
 def invariant_violation_table : List InvariantViolation := [
   ⟨"No deposit without RedeemabilityRef", "Relativism leak"⟩,
-  ⟨"No withdrawal without ACL", "Access control breach"⟩,
-  ⟨"No export without gate", "Contamination propagates"⟩,
+  -- Note: ACL enforcement is a concrete-model addition; abstract LTS gates withdrawal on Deposited status only.
+  ⟨"No withdrawal without ACL", "Access control breach (concrete model)"⟩,
+  -- Note: export gating is an agent-policy concern; abstract LTS has no export gate.
+  ⟨"No export without gate", "Contamination propagates (concrete/policy level)"⟩,
   ⟨"Challenge must specify field", "Repair loop fails"⟩,
   ⟨"τ finite for world-state", "Staleness invisible"⟩
 ]
@@ -163,7 +151,8 @@ structure AttackSurface where
 def architecture_attack_surfaces : List AttackSurface := [
   ⟨"Bubbles are optional", "Global ledger permits innovation + coordination"⟩,
   ⟨"Binary validation suffices", "Stable repair without field localization"⟩,
-  ⟨"Export needs no gating", "Reliable transfer without revalidation or trust"⟩,
+  -- Note: abstract LTS has no export gate; this attack surface applies at the concrete/policy level.
+  ⟨"Export needs no gating", "Reliable transfer without revalidation or trust (concrete/policy level)"⟩,
   ⟨"Consensus = redeemability", "Distinguish knowledge from shared belief by agreement alone"⟩,
   ⟨"Certainty substitutes for authorization", "Private traction reliably coordinates"⟩,
   ⟨"Headers don't matter for disputes", "Headerless disputes resolve equally"⟩,

@@ -59,7 +59,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | 9d | Kernel Verification Depth — `DepthClaim` constructive witness; `bounded_verify` budget decision procedure; `DepthWorldCtx` closes `W_bounded_verification` by construction (`Concrete/VerificationDepth.lean`) |
 | 10 | Adversarial Model — Attack structures, DDoS vectors, obligation theorems |
 | 11 | Repair Loop Semantics — Challenge-repair-revalidation cycle |
-| 12 | Withdrawal Gates — Three-gate model (Status ∧ ACL ∧ τ) |
+| 12 | Withdrawal Gates — Two-gate model (ACL ∧ Deposited). τ-currency is agent-level policy. |
 | 13 | Obligation Theorems — World ⇒ Mechanism (W_* bundles) |
 | 14 | Health → Necessity — Health goals force capability requirements |
 | 15 | Scope/Irrelevance — Substrate independence, extra-state erasure |
@@ -85,7 +85,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | `Basic.lean` | Core types (Claim, Agent, Bubble, Field, etc.) | 0 |
 | `Header.lean` | S/E/V header structure + Deposit records | 0 |
 | `Semantics/StepSemantics.lean` | Labeled transition system (Step, Trace, Action, invariant preservation) | 0 |
-| `Semantics/LinkingAxioms.lean` | Grounded linking theorems: Step preconditions force architectural features | 0 |
+| `Semantics/LinkingAxioms.lean` | Retired — operational groundings moved to `Minimality.lean` and `Convergence.lean` | 0 |
 | `Theorems/` | Primary theorem library split into 10 focused sub-modules (Withdrawal, Cases, Headers, Modal, Strip, Corners, Dissolutions, Pathologies, Diagnosability, BehavioralEquivalence) | 0 |
 | `Adversarial/Obligations.lean` | Adversarial axioms → obligation theorems | 0 |
 | `Semantics/RevisionSafety.lean` | Premise strengthening + compatible extensions | 0 |

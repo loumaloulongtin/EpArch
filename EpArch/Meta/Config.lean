@@ -282,22 +282,29 @@ inductive Tier4Witness : EnabledTier4Cluster → Type 1 where
            (B : Bubble) (a : Agent) (d_idx : Nat),
            StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
              s (StepSemantics.Action.Withdraw a B d_idx) s' →
-           ACL_OK_At s a B d_idx ∧ Current_At s d_idx ∧ ConsultedBank_At s d_idx) ∧
+           ConsultedBank_At s d_idx) ∧
         (∀ (s s' : StepSemantics.SystemState PL SL EL PrL)
-           (d_idx : Nat) (f : Field),
+           (a : Agent) (B : Bubble) (d_idx : Nat) (f : Field),
            StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
-             s (StepSemantics.Action.Repair d_idx f) s' →
+             s (StepSemantics.Action.Repair a B d_idx f) s' →
            s'.ledger = StepSemantics.updateDepositStatus s.ledger d_idx .Candidate) ∧
         (∀ (s s' : StepSemantics.SystemState PL SL EL PrL)
-           (d_idx : Nat) (f : Field),
+           (a : Agent) (B : Bubble) (d_idx : Nat) (f : Field),
            StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
-             s (StepSemantics.Action.Repair d_idx f) s' →
+             s (StepSemantics.Action.Repair a B d_idx f) s' ->
            StepSemantics.isQuarantined s d_idx) ∧
         (∀ (s s' : StepSemantics.SystemState PL SL EL PrL)
            (a : Agent) (d : Deposit PL SL EL PrL),
            StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
              s (StepSemantics.Action.Submit a d) s' →
-           ∃ d', d' ∈ s'.ledger ∧ d'.status = DepositStatus.Candidate)) →
+           ∃ d', d' ∈ s'.ledger ∧
+             d'.status = DepositStatus.Candidate) ∧
+        (∀ (s s' : StepSemantics.SystemState PL SL EL PrL)
+           (a : Agent) (d : Deposit PL SL EL PrL),
+           StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
+             s (StepSemantics.Action.Register a d) s' →
+           ∃ d', d' ∈ s'.ledger ∧
+             d'.status = DepositStatus.Deposited)) →
       Tier4Witness .tier4_lts_universal
   | bankGoalsCompat :
       (∀ (E : ExtModel) (C : CoreModel) (_ : Compatible E C)
@@ -521,22 +528,27 @@ def clusterValid (c : ClusterTag) : Prop :=
            (B : Bubble) (a : Agent) (d_idx : Nat),
            StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
              s (StepSemantics.Action.Withdraw a B d_idx) s' →
-           ACL_OK_At s a B d_idx ∧ Current_At s d_idx ∧ ConsultedBank_At s d_idx) ∧
+           ConsultedBank_At s d_idx) ∧
         (∀ (s s' : StepSemantics.SystemState PL SL EL PrL)
-           (d_idx : Nat) (f : Field),
+           (a : Agent) (B : Bubble) (d_idx : Nat) (f : Field),
            StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
-             s (StepSemantics.Action.Repair d_idx f) s' →
+             s (StepSemantics.Action.Repair a B d_idx f) s' →
            s'.ledger = StepSemantics.updateDepositStatus s.ledger d_idx .Candidate) ∧
         (∀ (s s' : StepSemantics.SystemState PL SL EL PrL)
-           (d_idx : Nat) (f : Field),
+           (a : Agent) (B : Bubble) (d_idx : Nat) (f : Field),
            StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
-             s (StepSemantics.Action.Repair d_idx f) s' →
+             s (StepSemantics.Action.Repair a B d_idx f) s' →
            StepSemantics.isQuarantined s d_idx) ∧
         (∀ (s s' : StepSemantics.SystemState PL SL EL PrL)
            (a : Agent) (d : Deposit PL SL EL PrL),
            StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
              s (StepSemantics.Action.Submit a d) s' →
-           ∃ d', d' ∈ s'.ledger ∧ d'.status = DepositStatus.Candidate)
+           ∃ d', d' ∈ s'.ledger ∧ d'.status = DepositStatus.Candidate) ∧
+        (∀ (s s' : StepSemantics.SystemState PL SL EL PrL)
+           (a : Agent) (d : Deposit PL SL EL PrL),
+           StepSemantics.Step (Reason := Reason) (Evidence := Evidence)
+             s (StepSemantics.Action.Register a d) s' →
+           ∃ d', d' ∈ s'.ledger ∧ d'.status = DepositStatus.Deposited)
   -- Tier 4 bank_goals (2): theorems at universe 0
   | .tier4_bank_goals_compat => prop_tier4_bank_goals_compat
   | .tier4_bank_goals_surj   => prop_tier4_bank_goals_surj

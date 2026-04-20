@@ -99,8 +99,6 @@ def initialConcreteState7 : SystemState String CStandard String String := {
   ledger := [witness_deposit]
   bubbles := [concreteBubble]
   clock := 50
-  acl_table := [{ agent := concreteAgent, bubble := concreteBubble, deposit_id := 0 }]
-  trust_bridges := []
 }
 
 /-- A concrete challenge targeting the first deposit. -/
@@ -121,8 +119,6 @@ def stateAfterChallenge7 : SystemState String CStandard String String := {
   ledger := [{ witness_deposit with status := .Quarantined }]
   bubbles := [concreteBubble]
   clock := 50
-  acl_table := [{ agent := concreteAgent, bubble := concreteBubble, deposit_id := 0 }]
-  trust_bridges := []
 }
 
 /-- The quarantined state has quarantine at index 0. -/
@@ -135,21 +131,19 @@ def stateAfterRevoke7 : SystemState String CStandard String String := {
   ledger := [{ witness_deposit with status := .Revoked }]
   bubbles := [concreteBubble]
   clock := 50
-  acl_table := [{ agent := concreteAgent, bubble := concreteBubble, deposit_id := 0 }]
-  trust_bridges := []
 }
 
 /-- A Challenge action is a revision action. -/
 theorem challenge_is_revision7 :
     (Action.Challenge (PropLike := String) (Standard := CStandard)
       (ErrorModel := String) (Provenance := String)
-      (Reason := String) (Evidence := String) concreteChallenge7).isRevision = true := rfl
+      (Reason := String) (Evidence := String) concreteAgent concreteBubble concreteChallenge7).isRevision = true := rfl
 
 /-- A Revoke action is a revision action. -/
 theorem revoke_is_revision7 :
     (Action.Revoke (PropLike := String) (Standard := CStandard)
       (ErrorModel := String) (Provenance := String)
-      (Reason := String) (Evidence := String) 0).isRevision = true := rfl
+      (Reason := String) (Evidence := String) concreteAgent concreteBubble 0).isRevision = true := rfl
 
 /-! ### Explicit Trace Construction
 
@@ -175,26 +169,26 @@ theorem revoke_step_state_eq :
 /-- The challenge step from initial to quarantined state. -/
 def challenge_step7 : Step (Reason := String) (Evidence := String)
     initialConcreteState7
-    (.Challenge concreteChallenge7)
+    (.Challenge concreteAgent concreteBubble concreteChallenge7)
     { initialConcreteState7 with ledger := updateDepositStatus initialConcreteState7.ledger 0 .Quarantined } :=
-  Step.challenge initialConcreteState7 concreteChallenge7 0 initial_has_deposited7
+  Step.challenge initialConcreteState7 concreteAgent concreteBubble concreteChallenge7 0 initial_has_deposited7
 
 /-- The revoke step from quarantined to revoked state. -/
 def revoke_step7 : Step (Reason := String) (Evidence := String)
     stateAfterChallenge7
-    (.Revoke 0)
+    (.Revoke concreteAgent concreteBubble 0)
     { stateAfterChallenge7 with ledger := updateDepositStatus stateAfterChallenge7.ledger 0 .Revoked } :=
-  Step.revoke stateAfterChallenge7 0 challenge_produces_quarantine7
+  Step.revoke stateAfterChallenge7 concreteAgent concreteBubble 0 challenge_produces_quarantine7
 
 /-- Explicit trace from initial to revoked state (Challenge then Revoke).
     This replaces the axiom concrete_resolution_trace9. -/
 def concrete_trace : Trace (Reason := String) (Evidence := String)
     initialConcreteState7 stateAfterRevoke7 :=
   -- Challenge step: initial → quarantined
-  Trace.cons (.Challenge concreteChallenge7)
+  Trace.cons (.Challenge concreteAgent concreteBubble concreteChallenge7)
     (challenge_step_state_eq ▸ challenge_step7)
     -- Revoke step: quarantined → revoked
-    (Trace.cons (.Revoke 0)
+    (Trace.cons (.Revoke concreteAgent concreteBubble 0)
       (revoke_step_state_eq ▸ revoke_step7)
       -- End of trace
       (Trace.nil stateAfterRevoke7))
@@ -341,20 +335,6 @@ theorem initial_satisfies_valid_status10 :
   | head => simp only [witness_deposit]; exact List.Mem.head _
   | tail _ h => cases h
 
-/-- The initial concrete state satisfies inv_acl_indices_valid. -/
-theorem initial_satisfies_acl_indices10 :
-    inv_acl_indices_valid initialConcreteState7 := by
-  unfold inv_acl_indices_valid initialConcreteState7
-  intro entry hentry
-  -- entry is the single ACL entry with deposit_id = 0
-  -- ledger has length 1, so 0 < 1
-  cases hentry with
-  | head =>
-    -- The entry has deposit_id = 0, and ledger.length = 1
-    simp only [List.length]
-    decide
-  | tail _ h => cases h
-
 /-- The initial concrete state satisfies inv_bubbles_exist. -/
 theorem initial_satisfies_bubbles_exist10 :
     inv_bubbles_exist initialConcreteState7 := by
@@ -369,13 +349,30 @@ theorem initial_satisfies_bubbles_exist10 :
     exact List.Mem.head _
   | tail _ h => cases h
 
+/-- The initial concrete state satisfies inv_revoked_terminal.
+    Proof: the only deposit in the ledger has status .Deposited, not .Revoked,
+    so the antecedent `d.status = .Revoked` is never satisfied. -/
+theorem initial_satisfies_revoked_terminal10 :
+    inv_revoked_terminal initialConcreteState7 := by
+  intro R E d_idx d h_get h_revoked _ _ _
+  simp only [initialConcreteState7] at h_get
+  cases d_idx with
+  | zero =>
+    simp only [List.get?] at h_get
+    simp only [Option.some.injEq] at h_get
+    -- h_get : witness_deposit = d; witness_deposit.status = .Deposited ≠ .Revoked
+    have h_status : d.status = .Deposited := by rw [← h_get]; exact rfl
+    exact absurd (h_revoked.symm.trans h_status) (by decide)
+  | succ n =>
+    simp [List.get?] at h_get
+
 /-- The initial concrete state is well-formed. -/
 theorem initial_is_well_formed10 :
     WellFormedState initialConcreteState7 := by
   unfold WellFormedState
   exact ⟨initial_satisfies_valid_status10,
-         initial_satisfies_acl_indices10,
-         initial_satisfies_bubbles_exist10⟩
+         initial_satisfies_bubbles_exist10,
+         initial_satisfies_revoked_terminal10⟩
 
 /-- Non-vacuity: WellFormedState has concrete instances. -/
 noncomputable example : ∃ s : SystemState String CStandard String String, WellFormedState s :=
