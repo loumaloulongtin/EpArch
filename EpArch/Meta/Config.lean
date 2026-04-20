@@ -223,13 +223,23 @@ inductive WorldWitness : EnabledWorldCluster → Type 1 where
       (∀ (W : W_lies_scale), W.export_cost < W.defense_cost) →
       WorldWitness .world_lies_scale
   | rolexDdos :
-      (∀ (W : W_rolex_ddos), same_structure W.rolex_structure W.ddos_structure) →
+      (∀ {PL SL EL PrL : Type}
+        (W : W_ddos)
+        (a : Agent)
+        (dr dd : Deposit PL SL EL PrL)
+        (h_exhausts : ∀ (a' : Agent) (ch : List EpArch.AuditChannel),
+          EpArch.verification_collapsed a' ch → dd.h.τ = 0)
+        (hr_tau  : dr.h.τ = 0) (hr_path : PathExists dr)
+        (h_vec   : EpArch.ladder_overloaded a ∨ EpArch.V_channel_exhausted a ∨
+                   EpArch.E_field_poisoned a ∨ EpArch.denial_triggered a)
+        (hd_path : PathExists dd),
+        False ∧ False) →
       WorldWitness .world_rolex_ddos
   | ddos :
       (∀ (_W : W_ddos) (a : Agent),
         (EpArch.ladder_overloaded a ∨ EpArch.V_channel_exhausted a ∨
          EpArch.E_field_poisoned a ∨ EpArch.denial_triggered a) →
-        EpArch.verification_collapsed a) →
+        ∃ channels : List EpArch.AuditChannel, EpArch.verification_collapsed a channels) →
       WorldWitness .world_ddos
 
 /-- For every world-bundle cluster, deliver its `WorldWitness`. -/
@@ -240,7 +250,7 @@ def worldWitness : (c : EnabledWorldCluster) → WorldWitness c
   | .world_partial_observability => .partialObservability WorldCtx.partial_obs_no_omniscience
   | .world_spoofed_v             => .spoofedV            spoofed_V_blocks_path_of_W
   | .world_lies_scale            => .liesScale           lies_scale_of_W
-  | .world_rolex_ddos            => .rolexDdos           rolex_ddos_structural_equivalence_of_W
+  | .world_rolex_ddos            => .rolexDdos           @rolex_ddos_share_path_failure_structure
   | .world_ddos                  => .ddos                ddos_causes_verification_collapse_of_W
 
 
@@ -564,12 +574,22 @@ def clusterValid (c : ClusterTag) : Prop :=
         (d : Deposit PL SL EL PrL) (a : Agent) (_p : PathExists d),
         (EpArch.V_spoof d ∨ EpArch.consultation_suppressed a) → False
   | .world_lies_scale  => ∀ (W : W_lies_scale), W.export_cost < W.defense_cost
-  | .world_rolex_ddos  => ∀ (W : W_rolex_ddos),
-        same_structure W.rolex_structure W.ddos_structure
+  | .world_rolex_ddos  =>
+      ∀ {PL SL EL PrL : Type}
+        (W : W_ddos)
+        (a : Agent)
+        (dr dd : Deposit PL SL EL PrL)
+        (h_exhausts : ∀ (a' : Agent) (ch : List EpArch.AuditChannel),
+          EpArch.verification_collapsed a' ch → dd.h.τ = 0)
+        (hr_tau  : dr.h.τ = 0) (hr_path : PathExists dr)
+        (h_vec   : EpArch.ladder_overloaded a ∨ EpArch.V_channel_exhausted a ∨
+                   EpArch.E_field_poisoned a ∨ EpArch.denial_triggered a)
+        (hd_path : PathExists dd),
+        False ∧ False
   | .world_ddos        => ∀ (_W : W_ddos) (a : Agent),
         (EpArch.ladder_overloaded a ∨ EpArch.V_channel_exhausted a ∨
          EpArch.E_field_poisoned a ∨ EpArch.denial_triggered a) →
-        EpArch.verification_collapsed a
+        ∃ channels : List EpArch.AuditChannel, EpArch.verification_collapsed a channels
   -- Meta (1): safe (WorkingSystem, ConstraintSubset are Type 0)
   | .meta_modular      => ∀ (S : ConstraintSubset) (W : WorkingSystem),
         PartialWellFormed W S → projection_valid S W
@@ -695,7 +715,7 @@ theorem clusterEnabled_sound (cfg : EpArchConfig) (c : ClusterTag)
   | .world_partial_observability => exact WorldCtx.partial_obs_no_omniscience
   | .world_spoofed_v            => exact @spoofed_V_blocks_path_of_W
   | .world_lies_scale           => exact lies_scale_of_W
-  | .world_rolex_ddos           => exact rolex_ddos_structural_equivalence_of_W
+  | .world_rolex_ddos           => exact @rolex_ddos_share_path_failure_structure
   | .world_ddos                 => exact ddos_causes_verification_collapse_of_W
   | .meta_modular               => exact modular
   | .lattice_graceful           => exact graceful_degradation
@@ -1007,8 +1027,20 @@ theorem cluster_world_spoofed_v
 /-- Cluster `.world_lies_scale`: lies scale — export cost < defense cost under W_lies_scale. -/
 def cluster_world_lies_scale := lies_scale_of_W
 
-/-- Cluster `.world_rolex_ddos`: individual and population attacks are structurally equivalent. -/
-def cluster_world_rolex_ddos := rolex_ddos_structural_equivalence_of_W
+/-- Cluster `.world_rolex_ddos`: individual and population attacks share path-failure structure. -/
+theorem cluster_world_rolex_ddos
+    {PL SL EL PrL : Type u}
+    (W : W_ddos)
+    (a : Agent)
+    (dr dd : Deposit PL SL EL PrL)
+    (h_exhausts : ∀ (a' : Agent) (ch : List EpArch.AuditChannel),
+      EpArch.verification_collapsed a' ch → dd.h.τ = 0)
+    (hr_tau  : dr.h.τ = 0) (hr_path : PathExists dr)
+    (h_vec   : EpArch.ladder_overloaded a ∨ EpArch.V_channel_exhausted a ∨
+               EpArch.E_field_poisoned a ∨ EpArch.denial_triggered a)
+    (hd_path : PathExists dd) :
+    False ∧ False :=
+  rolex_ddos_share_path_failure_structure W a dr dd h_exhausts hr_tau hr_path h_vec hd_path
 
 /-- Cluster `.world_ddos`: any DDoS vector causes verification collapse under W_ddos. -/
 def cluster_world_ddos := ddos_causes_verification_collapse_of_W

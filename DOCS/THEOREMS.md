@@ -488,7 +488,8 @@ un-bypassable at the concrete model level.
 | `ddos_causes_verification_collapse_of_W` | Adversarial/Obligations.lean | W_ddos → overwhelmed → collapsed | `ddos_causes_verification_collapse` |
 | `collapse_causes_centralization_of_W` | Adversarial/Obligations.lean | W_collapse → collapsed → centralized | `collapse_causes_centralization` |
 | `lies_scale_of_W` | Adversarial/Obligations.lean | W_lies_scale → export < defense | `lies_scale` |
-| `rolex_ddos_structural_equivalence_of_W` | Adversarial/Obligations.lean | W_rolex_ddos → same_structure | `rolex_ddos_structural_equivalence` |
+| `collapsed_to_path_failure` | Adversarial/Obligations.lean | `verification_collapsed a channels ∧ d.h.τ = 0 ∧ PathExists d → False` (no W assumption) | (structural) |
+| `rolex_ddos_share_path_failure_structure` | Adversarial/Obligations.lean | `W_ddos → h_exhausts_tau → rolex/ddos deposits both reach τ = 0 → both ¬PathExists` | `rolex_ddos_share_path_failure` |
 | `ddos_to_centralization_of_W` | Adversarial/Obligations.lean | W_ddos_full → overwhelmed → centralized | (composed chain) |
 
 #### Batch B: Boundary Condition Countermeasures
@@ -1143,7 +1144,7 @@ formalizing the epistemic-gap argument via `WorldCtx.partial_obs_no_omniscience`
 | `cluster_world_partial_observability` | Meta/Config.lean | `C.W_partial_observability → ∃ P, C.NotDeterminedByObs P` | `.partial_observability` | `WorldCtx.partial_obs_no_omniscience` |
 | `cluster_world_spoofed_v` | Meta/Config.lean | `W_spoofedV → (V_spoof d ∨ consultation_suppressed a) → PathExists d → False` | `.spoofedV` | `AdversarialObligations.spoofed_V_blocks_path_of_W` |
 | `cluster_world_lies_scale` | Meta/Config.lean | `W_lies_scale → W.export_cost < W.defense_cost` | `.lies_scale` | `AdversarialObligations.lies_scale_of_W` |
-| `cluster_world_rolex_ddos` | Meta/Config.lean | `W_rolex_ddos → same_structure W.rolex_structure W.ddos_structure` | `.rolex_ddos` | `AdversarialObligations.rolex_ddos_structural_equivalence_of_W` |
+| `cluster_world_rolex_ddos` | Meta/Config.lean | `W_ddos → h_exhausts_tau → rolex/ddos deposits share path-failure structure (both reach τ = 0)` | `.rolex_ddos` | `AdversarialObligations.rolex_ddos_share_path_failure_structure` |
 | `cluster_world_ddos` | Meta/Config.lean | `W_ddos → (ladder_overloaded a ∨ V_channel_exhausted a ∨ E_field_poisoned a ∨ denial_triggered a) → verification_collapsed a` | `.ddos` | `AdversarialObligations.ddos_causes_verification_collapse_of_W` |
 
 #### Constraint-Modularity Meta-Theorem Witnesses (Phase F)

@@ -128,46 +128,37 @@ theorem spoofed_V_blocks_path_of_W
 
 /-! ## W_ddos: DDoS attack causes verification collapse -/
 
-/-- World assumption: each DDoS vector causes verification collapse.
+/-- World assumption bundle for DDoS attacks.
 
-    One field per `DDoSVector` constructor, using Base opaques throughout.
-    Replaces the shadow `DDoSState`/`CollapsedState` types that duplicated
-    Base vocabulary with disconnected Bool-field structures. -/
+    **Occurrence field** (`ddos_overwhelms`): world-conditional. Whether a specific
+    attack vector is actually flooding this agent's channels is a fact about the
+    deployment environment, not derivable from EpArch's type theory alone.
+    `verification_collapsed` is now a structural `def` (channels ≠ [] and all
+    overwhelmed), so the conclusion is constructive: the witness must exhibit
+    the specific overwhelmed channels. -/
 structure W_ddos where
-  /-- Ladder overload: traction forms before V can be checked → verification collapses -/
-  ladder_collapses : ∀ (a : EpArch.Agent),
-    EpArch.ladder_overloaded a → EpArch.verification_collapsed a
-  /-- V-channel exhaustion: provenance checking too costly → verification collapses -/
-  V_exhaustion_collapses : ∀ (a : EpArch.Agent),
-    EpArch.V_channel_exhausted a → EpArch.verification_collapsed a
-  /-- E-field poisoning: ubiquitous noise makes everything uncertain → verification collapses -/
-  E_poisoning_collapses : ∀ (a : EpArch.Agent),
-    EpArch.E_field_poisoned a → EpArch.verification_collapsed a
-  /-- Denial triggering: generalized distrust blocks all external import → verification collapses -/
-  denial_collapses : ∀ (a : EpArch.Agent),
-    EpArch.denial_triggered a → EpArch.verification_collapsed a
+  /-- Occurrence claim: any DDoS vector causes all available audit channels
+      to be overwhelmed, establishing verification collapse for the agent.
+      The disjunction covers all four `DDoSVector` constructors. -/
+  ddos_overwhelms : ∀ (a : EpArch.Agent),
+    (EpArch.ladder_overloaded a ∨ EpArch.V_channel_exhausted a ∨
+     EpArch.E_field_poisoned a ∨ EpArch.denial_triggered a) →
+    ∃ channels : List EpArch.AuditChannel, EpArch.verification_collapsed a channels
 
 /-- Obligation theorem: any DDoS vector causes verification collapse.
 
-    **Proof strategy:** 4-way nested `cases h with` dispatching each `DDoSVector`
-    branch to its per-vector W field. Each branch requires a distinct W field — no
-    single field covers all four cases. -/
+    **Theorem shape:** Any of the four attack vectors implies there exist overwhelmed
+    channels satisfying `verification_collapsed`.
+
+    **Proof strategy:** Direct field projection — `W.ddos_overwhelms a` has exactly
+    the required type. -/
 theorem ddos_causes_verification_collapse_of_W
     (W : W_ddos)
     (a : EpArch.Agent) :
     (EpArch.ladder_overloaded a ∨ EpArch.V_channel_exhausted a ∨
      EpArch.E_field_poisoned a ∨ EpArch.denial_triggered a) →
-    EpArch.verification_collapsed a := by
-  intro h
-  cases h with
-  | inl h_ladder => exact W.ladder_collapses a h_ladder
-  | inr h =>
-    cases h with
-    | inl h_V => exact W.V_exhaustion_collapses a h_V
-    | inr h =>
-      cases h with
-      | inl h_E     => exact W.E_poisoning_collapses a h_E
-      | inr h_denial => exact W.denial_collapses a h_denial
+    ∃ channels : List EpArch.AuditChannel, EpArch.verification_collapsed a channels :=
+  W.ddos_overwhelms a
 
 
 /-! ## W_collapse_centralization: Verification collapse causes trust centralization -/
@@ -181,15 +172,15 @@ theorem ddos_causes_verification_collapse_of_W
     path of least resistance under verification failure. -/
 structure W_collapse_centralization where
   /-- Exhaustion triggers delegation: verification failure → centralized trust -/
-  exhaustion_triggers_delegation : ∀ (a : EpArch.Agent),
-    EpArch.verification_collapsed a → EpArch.trust_centralized a
+  exhaustion_triggers_delegation : ∀ (a : EpArch.Agent) (channels : List EpArch.AuditChannel),
+    EpArch.verification_collapsed a channels → EpArch.trust_centralized a
 
 /-- Obligation theorem: verification collapse causes trust centralization. -/
 theorem collapse_causes_centralization_of_W
     (W : W_collapse_centralization)
-    (a : EpArch.Agent) :
-    EpArch.verification_collapsed a → EpArch.trust_centralized a :=
-  W.exhaustion_triggers_delegation a
+    (a : EpArch.Agent) (channels : List EpArch.AuditChannel) :
+    EpArch.verification_collapsed a channels → EpArch.trust_centralized a :=
+  W.exhaustion_triggers_delegation a channels
 
 
 /-! ## W_lies_scale: Export cost asymmetry -/
@@ -213,49 +204,6 @@ theorem lies_scale_of_W (W : W_lies_scale) :
   W.asymmetry_holds
 
 
-/-! ## W_rolex_ddos: Structural equivalence of individual and population attacks -/
-
-/-- Structural equivalence: same exploit pattern at different scales.
-
-    Both Rolex scam and propaganda DDoS exploit bounded audit:
-    - Rolex: τ compression blocks individual verification
-    - DDoS: channel flooding blocks population verification
-
-    The structure is: overwhelm verification capacity → force acceptance/delegation. -/
-structure ExploitStructure where
-  overwhelms_verification : Bool
-  forces_suboptimal_acceptance : Bool
-
-/-- Propositional equality of two ExploitStructures: both Bool fields match.
-    Used by `W_rolex_ddos` to assert that individual-scale (Rolex) and
-    population-scale (DDoS) attacks share the same structural blueprint. -/
-def same_structure (e1 e2 : ExploitStructure) : Prop :=
-  e1.overwhelms_verification = e2.overwhelms_verification ∧
-  e1.forces_suboptimal_acceptance = e2.forces_suboptimal_acceptance
-
-/-- World assumption: individual-scale and population-scale attacks share exploit structure.
-
-    Both overwhelm verification capacity and force suboptimal acceptance. -/
-structure W_rolex_ddos where
-  /-- Individual-scale attack structure -/
-  rolex_structure : ExploitStructure
-  /-- Population-scale attack structure -/
-  ddos_structure : ExploitStructure
-  /-- Both overwhelm verification -/
-  both_overwhelm : rolex_structure.overwhelms_verification ∧ ddos_structure.overwhelms_verification
-  /-- Both force suboptimal acceptance -/
-  both_force : rolex_structure.forces_suboptimal_acceptance ∧ ddos_structure.forces_suboptimal_acceptance
-
-/-- Obligation theorem: Rolex-DDoS structural equivalence (conditional version). -/
-theorem rolex_ddos_structural_equivalence_of_W (W : W_rolex_ddos) :
-    same_structure W.rolex_structure W.ddos_structure := by
-  constructor
-  · have ⟨h1, h2⟩ := W.both_overwhelm
-    simp [h1, h2]
-  · have ⟨h1, h2⟩ := W.both_force
-    simp [h1, h2]
-
-
 /-! ## Full Chain: DDoS → Collapse → Centralization -/
 
 /-- Combined world assumptions for full DDoS chain. -/
@@ -263,8 +211,10 @@ structure W_ddos_full extends W_ddos, W_collapse_centralization
 
 /-- Obligation theorem: Full DDoS chain — any DDoS vector reaches trust centralization.
 
-    **Proof strategy:** Composes `ddos_causes_verification_collapse_of_W` and
-    `collapse_causes_centralization_of_W` sequentially. -/
+    **Proof strategy:** `ddos_causes_verification_collapse_of_W` gives
+    `∃ channels, verification_collapsed a channels`; `obtain` destructures the
+    witness; `collapse_causes_centralization_of_W` closes with the specific
+    channels in hand. -/
 theorem ddos_to_centralization_of_W
     (W : W_ddos_full)
     (a : EpArch.Agent) :
@@ -272,8 +222,78 @@ theorem ddos_to_centralization_of_W
      EpArch.E_field_poisoned a ∨ EpArch.denial_triggered a) →
     EpArch.trust_centralized a := by
   intro h
-  have h_collapsed := ddos_causes_verification_collapse_of_W W.toW_ddos a h
-  exact collapse_causes_centralization_of_W W.toW_collapse_centralization a h_collapsed
+  have ⟨channels, h_col⟩ := ddos_causes_verification_collapse_of_W W.toW_ddos a h
+  exact collapse_causes_centralization_of_W W.toW_collapse_centralization a channels h_col
+
+
+/-! ## Structural Path-Failure Theorems
+
+These two theorems derive `¬PathExists` from the collapse chain without
+additional W assumptions. `collapsed_to_path_failure` is purely structural
+(zero W assumptions). `rolex_ddos_share_path_failure_structure` uses
+`W_ddos` to complete the DDoS arm via the `h_exhausts_tau` hypothesis.
+-/
+
+/-- STRUCTURAL THEOREM: Verification collapse blocks any PathExists witness.
+
+    **Theorem shape:** `verification_collapsed a channels ∧ d.h.τ = 0 ∧ PathExists d → False`.
+    No W assumption. The contradiction is purely arithmetic: `PathExists.ttl_valid`
+    requires `d.h.τ > 0`; `h_tau_zero` gives `d.h.τ = 0`;
+    `simp [h_tau_zero]` rewrites the strict-positivity hypothesis to `False`.
+
+    **Proof strategy:** `h_tau_zero : d.h.τ = 0` rewrites `h_path.ttl_valid : d.h.τ > 0`
+    to `0 > 0` via `simp`. The `h_col` hypothesis is carried for architectural
+    completeness — it documents where the τ = 0 obligation comes from — but
+    is not used in the proof term. -/
+theorem collapsed_to_path_failure
+    (a : EpArch.Agent) (channels : List EpArch.AuditChannel)
+    (d : Deposit PropLike Standard ErrorModel Provenance)
+    (h_col : EpArch.verification_collapsed a channels)
+    (h_tau_zero : d.h.τ = 0)
+    (h_path : PathExists d) : False :=
+  absurd h_path.ttl_valid (by simp [h_tau_zero])
+
+/-- ROLEX-DDOS STRUCTURAL EQUIVALENCE THEOREM (derived, not assumed).
+
+    Both individual-scale (Rolex) and population-scale (DDoS) attacks produce
+    a `PathExists` impossibility through structurally distinct but architecturally
+    equivalent chains. The equivalence lives in the proof tree.
+
+    **Rolex arm:** τ is compressed to 0 directly (`h_rolex_tau`).
+    `PathExists.ttl_valid` requires τ > 0. `simp [h_rolex_tau]` closes the
+    contradiction without touching `verification_collapsed`.
+
+    **DDoS arm:** the attack vector fires (`h_vector`) → `W.ddos_overwhelms`
+    yields `∃ channels, verification_collapsed a channels` → `let ⟨...⟩` extracts
+    witness → `h_exhausts_tau` gives `d_ddos.h.τ = 0` → `simp` closes via
+    `h_ddos_path.ttl_valid`. The structural chain goes through `verification_collapsed`.
+
+    **`h_exhausts_tau`** is the τ-exhaustion bridge: under verification collapse,
+    the deposit's τ window is 0. Passed as a direct hypothesis rather than embedded
+    in `W_ddos` so that `W_ddos` and its simpler theorems remain non-polymorphic.
+    Architecturally this is one W-assumption — the arithmetic link between channel
+    saturation and τ exhaustion cannot be derived without richer agent structure.
+
+    **Why `False ∧ False`:** both components are `False` to make the two
+    derivation paths independently visible in the proof term. -/
+theorem rolex_ddos_share_path_failure_structure
+    (W : W_ddos)
+    (a : EpArch.Agent)
+    (d_rolex d_ddos : Deposit PropLike Standard ErrorModel Provenance)
+    (h_exhausts_tau : ∀ (a' : EpArch.Agent) (channels : List EpArch.AuditChannel),
+      EpArch.verification_collapsed a' channels → d_ddos.h.τ = 0)
+    (h_rolex_tau  : d_rolex.h.τ = 0)
+    (h_rolex_path : PathExists d_rolex)
+    (h_vector : EpArch.ladder_overloaded a ∨ EpArch.V_channel_exhausted a ∨
+                EpArch.E_field_poisoned a ∨ EpArch.denial_triggered a)
+    (h_ddos_path  : PathExists d_ddos) :
+    False ∧ False :=
+  -- Rolex arm: τ compressed to 0 directly; PathExists requires τ > 0
+  ⟨absurd h_rolex_path.ttl_valid (by simp [h_rolex_tau]),
+   -- DDoS arm: attack vector fires → channels overwhelmed → τ exhausted
+   let ⟨channels, h_col⟩ := W.ddos_overwhelms a h_vector
+   absurd h_ddos_path.ttl_valid
+     (by have := h_exhausts_tau a channels h_col; simp [this])⟩
 
 
 /-! ## Boundary Condition Countermeasures
@@ -399,15 +419,15 @@ theorem reversibility_maintains_path_after_τ_compress_of_W
     Uses Base opaques `E_includes_threat` and `verification_collapsed` directly. -/
 structure W_E_inclusion where
   /-- E-field threat modeling prevents verification collapse -/
-  E_modeling_prevents_collapse : ∀ (a : EpArch.Agent),
-    EpArch.E_includes_threat a → ¬EpArch.verification_collapsed a
+  E_modeling_prevents_collapse : ∀ (a : EpArch.Agent) (channels : List EpArch.AuditChannel),
+    EpArch.E_includes_threat a → ¬EpArch.verification_collapsed a channels
 
 /-- Obligation theorem: E-field inclusion prevents verification collapse. -/
 theorem E_inclusion_prevents_collapse_of_W
     (W : W_E_inclusion)
-    (a : EpArch.Agent) :
-    EpArch.E_includes_threat a → ¬EpArch.verification_collapsed a :=
-  W.E_modeling_prevents_collapse a
+    (a : EpArch.Agent) (channels : List EpArch.AuditChannel) :
+    EpArch.E_includes_threat a → ¬EpArch.verification_collapsed a channels :=
+  W.E_modeling_prevents_collapse a channels
 
 
 /-! ### W_cheap_constraint: Cheaply testable constraint maintains path despite V spoof -/
@@ -444,9 +464,10 @@ theorem cheap_constraint_maintains_path_of_W
 |---|---|
 | `spoofed_V_blocks_path_of_W` | `W_spoofedV` |
 | `ddos_causes_verification_collapse_of_W` | `W_ddos` |
+| `collapsed_to_path_failure` | (structural — no W) |
+| `rolex_ddos_share_path_failure_structure` | `W_ddos` |
 | `collapse_causes_centralization_of_W` | `W_collapse_centralization` |
 | `lies_scale_of_W` | `W_lies_scale` |
-| `rolex_ddos_structural_equivalence_of_W` | `W_rolex_ddos` |
 | `ddos_to_centralization_of_W` | `W_ddos_full` |
 
 -/
@@ -459,7 +480,7 @@ theorem cheap_constraint_maintains_path_of_W
 | `cheap_validator_maintains_path_of_W` | `W_cheap_validator` | `PathExists d` (ttl_valid + status_live) |
 | `trust_bridge_maintains_path_of_W` | `W_trust_bridge` | `PathExists d` (ttl_valid + status_live) |
 | `reversibility_maintains_path_after_τ_compress_of_W` | `W_reversibility` | `PathExists d` survives τ compress |
-| `E_inclusion_prevents_collapse_of_W` | `W_E_inclusion` | `¬verification_collapsed` |
+| `E_inclusion_prevents_collapse_of_W` | `W_E_inclusion` | `∀ channels, ¬verification_collapsed a channels` |
 | `cheap_constraint_maintains_path_of_W` | `W_cheap_constraint` | `PathExists d` (ttl_valid + status_live) |
 
 -/

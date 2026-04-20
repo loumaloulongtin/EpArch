@@ -132,7 +132,7 @@ All 30 of 30 clusters enabled at run time. The `certify` call type-checks, produ
 [World] W_partial_observability: obs underdetermines truth → no omniscience  (WorldCtx.partial_obs_no_omniscience)
 [World] W_spoofedV: spoofed-V blocks provenance path  (AdversarialObligations.spoofed_V_blocks_path_of_W)
 [World] W_lies_scale: lies scale (export < defense cost)  (AdversarialObligations.lies_scale_of_W)
-[World] W_rolex_ddos: individual and population attacks structurally equivalent  (AdversarialObligations.rolex_ddos_structural_equivalence_of_W)
+[World] W_ddos (rolex/ddos path-failure): individual and population DDoS attacks share the same path-failure structure (τ → 0)  (AdversarialObligations.rolex_ddos_share_path_failure_structure)
 [World] W_ddos: DDoS causes verification collapse  (AdversarialObligations.ddos_causes_verification_collapse_of_W)
 [Meta] Constraint-subset modularity: ∀ S W, PartialWellFormed W S → projection_valid S W  (Meta.Modular.modular)
 [Meta] WellFormed systems are modular on every constraint subset  (Meta.Modular.wellformed_is_modular)
@@ -360,11 +360,12 @@ The cost asymmetry theorem applied to adversarial output generation. I can produ
 false claims at volume and speed. Defenders cannot verify at the same rate. This
 is not a hypothetical; it is the basic economics of LLM deployment.
 
-**W_rolex_ddos** — Individual and population attacks are structurally equivalent.
+**W_ddos (rolex/ddos path-failure)** — Individual and population attacks share path-failure structure.
 
 A jailbreak prompt that works on me works on every copy of me serving every user.
-There is no per-instance defense variation. The structural equivalence between
-individual targeting and population-level attack is complete.
+There is no per-instance defense variation. Both targeted (rolex) and population-level
+(DDoS) attacks drive τ to zero by the same mechanism: both reach path-failure
+(`¬PathExists`) through the same structural chain.
 
 **W_ddos** — DDoS causes verification collapse.
 

@@ -457,20 +457,23 @@ def concrete_W_reversibility :
     `ddos_V_channel_collapse_blocks_withdrawal` (Step 3) traces the full
     concrete chain from `c_channel_overwhelmed` to `¬c_can_withdraw`.  Here
     we name that result explicitly as the concrete observable effect of the
-    `V_exhaustion_collapses` vector in the abstract `W_ddos` bundle, and
+    DDoS V-channel exhaustion vector in the abstract `W_ddos` bundle, and
     connect it to the abstract obligation layer by exhibiting the channel-collapse
-    step that field describes.
+    step that `ddos_overwhelms (.VChannelExhaustion)` describes.
 
-    Note: the abstract `W_ddos` obligation is `V_channel_exhausted a →
-    verification_collapsed a` (agent-level collapse), not `¬PathExists d`.  This
-    concrete theorem proves `¬c_can_withdraw` — the concrete correlate of
-    verification collapse for the V-channel vector.  The mapping from abstract
+    Note: the abstract `W_ddos.ddos_overwhelms` obligation gives
+    `V_channel_exhausted a → ∃ channels, verification_collapsed a channels`
+    (structural collapse, not ¬PathExists directly).  The `h_exhausts_tau`
+    hypothesis (in `rolex_ddos_share_path_failure_structure`) and
+    `collapsed_to_path_failure` complete the path-failure chain.
+    This concrete theorem witnesses `¬c_can_withdraw` — the concrete correlate
+    of verification collapse for the V-channel vector. The mapping from abstract
     `verification_collapsed` to concrete `¬c_can_withdraw` is the modeling
     bridge; this theorem sits on the concrete side of it. -/
 
 /-- concrete_V_channel_exhaustion_obligation: the concrete DDoS V-channel
-    collapse is the observable effect that the abstract W_ddos bundle's
-    `V_exhaustion_collapses` field models.
+    collapse is the observable effect of the `V_channel_exhausted` arm of the
+    abstract `W_ddos.ddos_overwhelms` disjunction.
 
     Chain (concrete):
     1. `c_channel_overwhelmed cc`        — volume > capacity  (Nat def)
@@ -480,9 +483,11 @@ def concrete_W_reversibility :
     5. `¬c_can_withdraw acl a B d t`     — V gate fires (V_stripped_not_withdrawable)
 
     This names the same chain as `ddos_V_channel_collapse_blocks_withdrawal`
-    but makes explicit that it is the concrete observable effect of the abstract
-    `V_exhaustion_collapses` vector.  The abstract obligation asserts
-    `V_channel_exhausted a → verification_collapsed a`; this theorem witnesses
+    but makes explicit that it is the concrete observable effect of the
+    `V_channel_exhausted` arm of `W_ddos.ddos_overwhelms`.  The abstract
+    obligation asserts
+    `V_channel_exhausted a → ∃ channels, verification_collapsed a channels`
+    (via `W_ddos.ddos_overwhelms`); this theorem witnesses
     the V-channel side of that collapse at the concrete `¬c_can_withdraw` level. -/
 theorem concrete_V_channel_exhaustion_obligation
     {acl : CACL} {a : CAgent} {B : CBubble}
@@ -523,9 +528,10 @@ end ConcreteObligationWitnesses
 
     The obligation theorem `collapse_causes_centralization_of_W` extracts
     `W_collapse_centralization.exhaustion_triggers_delegation` directly.
-    Both `verification_collapsed` and `trust_centralized` are opaque
-    agent-level predicates — the abstract kernel cannot define what
-    "verification collapse" or "trust centralization" look like internally.
+    `verification_collapsed` is now a structural `def` (grounded in channel
+    arithmetic), but `trust_centralized` remains opaque — it is a behavioral
+    claim about which authority an agent delegates to, which depends on agent
+    internals not modeled in this kernel.
     A concrete discharge requires an agent model that specifies when an
     agent's verification capacity is exhausted and when it delegates.
 
@@ -543,7 +549,7 @@ end ConcreteObligationWitnesses
     The concrete DDoS V-channel exhaustion theorem (Step 5C) names the same
     chain as `ddos_V_channel_collapse_blocks_withdrawal` (Step 3).  It is
     not a deeper end-to-end discharge of the full abstract `W_ddos` bundle;
-    it covers only the `V_exhaustion_collapses` vector.  The other three
+    it covers only the `V_channel_exhausted` arm of `W_ddos.ddos_overwhelms`.  The other three
     vectors (`ladder_overloaded`, `E_field_poisoned`, `denial_triggered`)
     remain opaque agent-level predicates.  Concretely discharging them
     requires an agent model that specifies traction formation, E-field
