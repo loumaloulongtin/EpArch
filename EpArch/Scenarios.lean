@@ -717,9 +717,11 @@ They have no world-semantic counterpart in `WorldCtx`.
 **`WorldBridgeBundle W`** — the three *world-adjacent* dimensions:
 monotonic lifecycle (revocation), bounded verification (trust), closed
 endorsement (redeemability).  These correspond semantically to the W_* world
-bundles, but the `Represents*` instances and their bridge hypotheses are
-W-specific data that cannot be derived from W_* bundles alone.  A future
-bridge layer may close that gap; for now they are supplied explicitly. -/
+bundles, but they do not by themselves determine a specific system's lifecycle,
+verification surface, or endorsement structure.  `WorldSystemCompat` in
+`WorldBridges.lean` is the bridge layer: given system-world compatibility plus
+the relevant W_* witnesses, `world_deriving_bridge` constructs a
+`WorldBridgeBundle W`. -/
 
 /-- Bundled witnesses for the five purely architectural dimensions:
     scope (disagreement), headers (discriminating import), bank (coordination),

@@ -353,6 +353,8 @@ Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_w
 |---------|-----------|------|
 | `grounded_world_and_structure_force_bank_primitives` | `(W : WorkingSystem) → (Rd Rb Ri Rm Rp Re Ra Rs : Represents* W) → bridge hypotheses → SatisfiesAllProperties W → containsBankPrimitives W` | All-eight forcing with fully explicit `Represents*` witnesses; no `WorldCtx`, no W_* bundles; holds for any world |
 | `bundled_structure_forces_bank_primitives` | `(W : WorkingSystem) → SystemOperationalBundle W → WorldBridgeBundle W → SatisfiesAllProperties W → containsBankPrimitives W` | Headline 4-argument form; unpacks both bundles into `grounded_world_and_structure_force_bank_primitives` |
+| `WorldSystemCompat` | `WorldCtx → WorkingSystem → Type` | Compatibility record connecting W_* world pressures to the three world-adjacent `Represents*` witnesses for a specific W |
+| `world_deriving_bridge` | `WorldSystemCompat C W → C.W_lies_possible → C.W_bounded_verification → C.W_partial_observability → WorldBridgeBundle W` | Constructs the `WorldBridgeBundle` from world witnesses plus explicit system-world compatibility |
 
 **Key architectural boundary:** `W_*` bundles (`WorldCtx.lean`) are `Prop`-valued; `Represents*` structures carry `Type`-valued fields (`State : Type`, `Claim : Type`). No `Type` can be extracted from a `Prop` — the universe boundary is genuine. The `W_*` bundles are natural *motivation* for the witnesses but are not formal preconditions; callers supply `Represents*` witnesses directly.
 
