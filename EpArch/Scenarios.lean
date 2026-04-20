@@ -16,7 +16,7 @@ Eight scenarios:
   8. RepresentsBoundedCapacity      (storage management dimension)
 
 Bundled packages:
-  SystemOperationalBundle -- scope + headers + bank + authorization dimensions
+  SystemOperationalBundle -- scope + headers + bank + authorization + storage dimensions
   WorldBridgeBundle       -- revocation + trust + redeemability dimensions
 
 Consumers: EpArch.Feasibility, EpArch.Concrete.DeficientSystems.

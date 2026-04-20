@@ -148,7 +148,7 @@ Inactive constraints (S.X = false) require only `fun h => absurd h (by decide)`.
       { distributed := true, adversarial := true,
         bounded_audit := false, export_across := false,
         coordination := false, truth_pressure := false,
-        multi_agent := false }
+        multi_agent := false, bounded_storage := false }
 
     def MySpec : PartialGroundedSpec MyConstraints where
       bubbles       := fun _ => MyGroundedBubbles    -- real domain evidence
@@ -158,6 +158,7 @@ Inactive constraints (S.X = false) require only `fun h => absurd h (by decide)`.
       bank          := fun h => absurd h (by decide)
       redeemability := fun h => absurd h (by decide)
       authorization := fun h => absurd h (by decide)
+      storage       := fun h => absurd h (by decide)
 
     -- If this compiles, your design is EpArch-compliant for MyConstraints:
     #check (partial_modular MyConstraints MySpec)

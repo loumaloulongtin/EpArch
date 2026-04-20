@@ -323,7 +323,7 @@ The type system then mechanically excludes all and only the theorems that depend
 
 **Mechanism:** Each forcing dimension has two proof paths. The **preferred path** uses `StructurallyForced.forcing P`  — a single `∀ P : Pressure, handles_pressure W P → forced_feature W P` field that packages all eight `handles_X W → HasFeature_X W` implications. Each implication is independently justified by a structural impossibility model (`flat_scope_impossible`, `monotonic_no_exit`, etc.). The **strongest path** is the direct `Represents*`/`*_forces_*` route: eight per-dimension theorems in `Convergence.lean`, each taking a concrete `Represents*` witness with no `handles_*` predicate required.
 
-The **preferred forcing path** is `StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W` (`convergence_structural`). New forcing contributions should be added as implications inside `StructurallyForced.forcing`; adding an eighth `Pressure` constructor forces the proof to supply the eighth forcing chain.
+The **preferred forcing path** is `StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W` (`convergence_structural`). New forcing contributions should be added as implications inside `StructurallyForced.forcing`; adding a new `Pressure` constructor forces the proof to supply the corresponding forcing chain.
 
 **Files:** `Convergence.lean` (eight per-dimension `*_forces_*` theorems, `StructurallyForced`, `convergence_structural`, impossibility models); `Minimality.lean` (abstract scenario structures, §1b–§8b alternative dismissals); `Meta/Modular.lean` (modularity closure)
 

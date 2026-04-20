@@ -106,7 +106,6 @@ The framework has three layers:
 | Header stripping has no left inverse | `no_strip_left_inverse` | Theorems/Strip.lean |
 | Stripping reduces diagnosability | `strip_reduces_diagnosability` | Theorems/Diagnosability.lean |
 | Lottery paradox is a type error | `lottery_paradox_dissolved_architecturally` | Theorems/Corners.lean |
-| Staleness blocks withdrawal | `stale_blocks_withdrawal` | Theorems/Corners.lean |
 | All world constraint bundles are satisfiable (non-vacuity) | `holds_W_lies_possible`, `holds_W_bounded_verification`, `holds_W_partial_observability` | WorldWitness.lean |
 | Each W_* bundle independently forces its architectural primitive | `w_lies_forces_revocation_need`, `w_bounded_forces_incompleteness`, `w_partial_obs_forces_redeemability` | WorldBridges.lean |
 | In any world satisfying all three bundles, Bank primitives are necessary | `world_assumptions_force_bank_primitives` | WorldBridges.lean |
