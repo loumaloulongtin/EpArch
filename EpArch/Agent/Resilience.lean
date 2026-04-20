@@ -320,7 +320,7 @@ theorem submit_preserves_deposited_claims
   · intro ⟨d, hd_mem, hP, hstatus⟩
     exact ⟨d, (EpArch.StepSemantics.mem_append_iff d s.ledger _).mpr (Or.inl hd_mem), hP, hstatus⟩
 
-/-- BANK AUTHORITY THEOREM: Deposited status requires bank authority or direct registration (Step.register).
+/-- DEPOSITED-ENTRY THEOREM: Deposited status requires bank promotion or agent direct registration.
 
     **Theorem shape:** If `¬ deposited_claim s c` before a Step and `deposited_claim s' c`
     after, then either:
@@ -478,7 +478,7 @@ structure AgentLTSAbstraction (Agent Claim : Type u) where
     ∀ (initialGate : Bool) {s s' : AgentSystemState Agent Claim},
       EpArch.LTS.Trace (AgentLTS Agent Claim) s s' →
       gateInvariant initialGate s → gateInvariant initialGate s'
-  /-- Bank authority theorem at StepSemantics level: the only path to `.Deposited`
+  /-- Deposited-entry theorem at StepSemantics level: the only path to `.Deposited`
       is `Step.promote` (bank promotes existing deposit) or `Step.register`
       (agent direct registration; no bank-side precondition).
       Formally: if `¬ deposited_claim s c` and `deposited_claim s' c` after a Step,

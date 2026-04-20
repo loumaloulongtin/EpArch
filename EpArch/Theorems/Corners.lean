@@ -224,14 +224,14 @@ theorem withdrawal_requires_deposited
 
     `Step.submit` fires on `Action.Submit` and appends a `.Candidate` entry.
     For direct registration (`.Deposited`), see `register_enters_deposited`. -/
-theorem submit_enters_candidate_or_deposited
+theorem submit_enters_candidate
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance)
     (h_step : Step (Reason := Reason) (Evidence := Evidence) s (.Submit a d) s') :
-    ∃ d', d' ∈ s'.ledger ∧ (d'.status = .Candidate ∨ d'.status = .Deposited) := by
+    ∃ d', d' ∈ s'.ledger ∧ d'.status = .Candidate := by
   cases h_step with
   | submit =>
-    refine ⟨{ d with status := .Candidate }, ?_, Or.inl rfl⟩
+    refine ⟨{ d with status := .Candidate }, ?_, rfl⟩
     have h := mem_append_iff { d with status := DepositStatus.Candidate } s.ledger [{ d with status := DepositStatus.Candidate }]
     rw [h]
     exact Or.inr (List.Mem.head _)

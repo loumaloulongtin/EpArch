@@ -31,6 +31,7 @@ Trust relationships and ACL tables are **not** SystemState fields. Trust is per-
 ```lean
 inductive Action (PropLike Standard ErrorModel Provenance Reason Evidence : Type u) where
   | Submit   (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance)
+  | Register (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance)
   | Withdraw (a : Agent) (B : Bubble) (d_idx : Nat)
   | Challenge (a : Agent) (B : Bubble) (c : EpArch.Challenge PropLike Reason Evidence)
   | Tick
@@ -49,7 +50,7 @@ inductive Step : SystemState → Action → SystemState → Prop where
       Step s (.Submit a d) { s with ledger := s.ledger ++ [{ d with status := .Candidate }] }
 
   | register : (s : SystemState) → (a : Agent) → (d : Deposit) →
-      Step s (.Submit a d) { s with ledger := s.ledger ++ [{ d with status := .Deposited }] }
+      Step s (.Register a d) { s with ledger := s.ledger ++ [{ d with status := .Deposited }] }
 
   | withdraw : (s : SystemState) → (a : Agent) → (B : Bubble) → (d_idx : Nat) →
       isDeposited s d_idx →
@@ -76,7 +77,7 @@ inductive Step : SystemState → Action → SystemState → Prop where
       Step s (.Promote a B d_idx) { s with ledger := updateDepositStatus s.ledger d_idx .Deposited }
 ```
 
-Eight constructors total. Two fire on `Action.Submit` (`submit` → Candidate, `register` → Deposited); the rest are one-to-one with their Action variant. All agent-initiated constructors carry a named agent and bubble for attribution; `tick` carries only the monotonicity witness. Preconditions are purely structural ledger reads — no ACL tables, bank-authority lists, or trust-bridge registries in the bank's LTS.
+Eight constructors total. `Step.submit` fires on `Action.Submit` (→ Candidate); `Step.register` fires on `Action.Register` (→ Deposited). The remaining six constructors are one-to-one with their Action variant. All agent-initiated constructors carry a named agent and bubble for attribution; `tick` carries only the monotonicity witness. Preconditions are purely structural ledger reads — no ACL tables, bank-authority lists, or trust-bridge registries in the bank's LTS.
 
 ### Trace Type (Multi-Step Reachability)
 
@@ -115,8 +116,8 @@ Key insight: Most safety properties are **encoded as preconditions** on Step con
 
 | Action | Step constructor(s) | Key Preconditions |
 |--------|---------------------|-------------------|
-| `Submit` | `submit` | *(none — open submission; enters as Candidate)* |
-| `Submit` | `register` | *(none — agent registers directly; enters as Deposited)* |
+| `Submit`    | `submit`   | *(none — open submission; enters as Candidate)* |
+| `Register`  | `register` | *(none — agent registers directly; enters as Deposited)* |
 | `Withdraw` | `withdraw` | `isDeposited` |
 | `Challenge` | `challenge` | `isDeposited` |
 | `Repair` | `repair` | `isQuarantined` |

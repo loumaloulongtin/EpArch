@@ -2,7 +2,7 @@
 EpArch.Semantics.StepSemantics — Step Semantics (Labeled Transition System)
 
 Constructive operational semantics of the epistemic architecture.
-Defines a concrete LTS over SystemState with nine bank-primitive actions
+Defines a concrete LTS over SystemState with eight bank-primitive actions
 (Submit, Register, Withdraw, Challenge, Tick, Repair, Revoke, Promote)
 and proves conditional linking results from operational preconditions
 rather than asserting them as axioms.
@@ -786,7 +786,7 @@ theorem trace_no_revision_preserves_non_revoked
     Challenge and Revoke are revision actions (isRevision = true); they are
     ruled out by h_not_rev.  Repair targets Quarantined deposits; if the deposit
     is already Deposited, Repair cannot fire at the same index.
-    Submit/Export only append; existing indices are unchanged. -/
+    Submit/Register only append; existing indices are unchanged. -/
 theorem step_no_revision_preserves_deposited
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (a : Action PropLike Standard ErrorModel Provenance Reason Evidence)

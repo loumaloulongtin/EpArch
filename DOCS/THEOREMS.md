@@ -34,7 +34,8 @@ This document catalogs the proved theorems in the formalization, organized by ar
 |---------|------|-----------|-------------|
 | `candidate_blocks_withdrawal` | Theorems/Corners.lean | Candidate status blocks withdrawal | Lottery dissolution |
 | `withdrawal_requires_deposited` | Theorems/Corners.lean | Must be Deposited to withdraw | Bank gates |
-| `submit_enters_candidate_or_deposited` | Theorems/Corners.lean | Submit enters Candidate (plain) or Deposited (register) | Lifecycle |
+| `submit_enters_candidate` | Theorems/Corners.lean | `Action.Submit` enters as Candidate | Lifecycle |
+| `register_enters_deposited` | Theorems/Withdrawal.lean | `Action.Register` enters as Deposited | Lifecycle |
 | `authorization_implies_traction` | Theorems/Corners.lean | Authorization → Traction (one direction) | Core split |
 | `innovation_allows_traction_without_authorization` | Commitments.lean | Traction without authorization (other direction) | Core split |
 
@@ -456,9 +457,6 @@ un-bypassable at the concrete model level.
 | Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `withdrawal_gates` | Theorems/Withdrawal.lean | Withdrawal preconditions | Gate theorem |
-| `canWithdrawAt_iff_gates` | Theorems/Withdrawal.lean | CanWithdraw ↔ gates | Equivalence |
-| `withdrawal_requires_canWithdrawAt` | Theorems/Withdrawal.lean | Step requires predicate | Enforcement |
-| `canWithdrawAt_enables_step` | Theorems/Withdrawal.lean | Predicate enables step | Sufficiency |
 
 ---
 
@@ -832,7 +830,7 @@ File: `Agent/Imposition.lean`
 | Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `lie_containment_principle` | Agent/Resilience.lean | Lies create untrusted deposits, don't flip truth | Epistemic sandbox |
-| `deposit_promotion_requires_bank_authority` | Agent/Resilience.lean | Deposited entries are produced only by `Step.promote` (structural status gate) or `Step.register` (direct agent registration; no bank-side precondition) | Bank gate |
+| `deposited_claim_arises_from_promote_or_register` | Agent/Resilience.lean | Deposited entries are produced only by `Step.promote` (structural status gate) or `Step.register` (direct agent registration; no bank-side precondition) | Bank gate |
 
 ---
 

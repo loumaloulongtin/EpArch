@@ -112,17 +112,18 @@ theorem concrete_export_requires_auth (req : CExportRequest) :
       simp only [h_tb, Option.any] at h
     | some _ => exact Or.inr rfl
 
-/-- Theorem: Withdrawal requires three concrete-model checks (grounded version).
+/-- Theorem: Withdrawal requires deposit-found and status-liveness (concrete model).
 
     In the concrete model, successful withdrawal (via `process_withdraw`) requires:
     1. Deposit found in bubble (list membership)
     2. Deposit has `compute_status d t = .Deposited` (liveness at time t)
-    3. ACL permission check passes
 
-    Note: this is a concrete-model theorem about `process_withdraw`, not about
+    Note: `process_withdraw` also checks ACL permission, but this theorem only extracts
+    the found deposit and status/liveness facts. The ACL branch is not witnessed in the
+    conclusion. This is a concrete-model theorem about `process_withdraw`, not about
     the abstract `StepSemantics.Step.withdraw`. The abstract model enforces only `Deposited`
-    status; the concrete model's `compute_status` incorporates ACL checking and
-    time-based liveness as domain-level policy decisions separate from the abstract gate.
+    status; the concrete model's `compute_status` incorporates time-based liveness as a
+    domain-level policy decision separate from the abstract gate.
     The deposit returned is the one found in the bubble. -/
 -- Helper lemma for find? properties (not available in all Mathlib versions)
 theorem list_find?_implies {α : Type _} {p : α → Bool} {l : List α} {x : α}
