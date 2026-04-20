@@ -37,7 +37,7 @@ theorem bundled_structure_forces_bank_primitives
     containsBankPrimitives W
 ```
 
-Any working system carrying `SystemOperationalBundle` (scope, headers, bank witnesses)
+Any working system carrying `SystemOperationalBundle` (scope, headers, bank, authorization, and storage witnesses)
 and `WorldBridgeBundle` (revocation, trust, redeemability witnesses), satisfying all
 operational properties, necessarily contains Bank primitives. **No `WorldCtx` required.**
 The W_* bundles are the natural *source* for the bundle witnesses but are not formal
@@ -149,7 +149,7 @@ theorem world_assumptions_force_bank_primitives (C : WorldCtx)
 ```
 
 A working system that satisfies `WorldAwareSystem` (eight feature implications — three behind W_* guards,
-four unconditional)
+five unconditional: scope, headers, bank, authorization, storage)
 and `SatisfiesAllProperties` necessarily contains Bank primitives when all three W_* bundles
 hold. All three bundles are consumed: removing any one leaves the corresponding feature
 forcing argument without a world-level justification.

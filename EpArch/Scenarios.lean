@@ -621,9 +621,9 @@ theorem uniform_access_acl_embed
 
 /-! ### Scenario 8: Bounded Capacity (Bounded Storage → Storage Management)
 
-When active-deposit volume grows without eviction or archival, the count
-eventually exceeds any fixed capacity budget.  Without storage management,
-the system cannot remain within its budget indefinitely.
+When active-deposit volume grows without eviction or archival, a concrete
+overflow state witnesses that no fixed capacity budget covers all states.
+Without storage management, the system cannot remain within its budget.
 
 `RepresentsBoundedCapacity` enriches a `WorkingSystem` with a concrete overflow
 state whose active-deposit count exceeds the capacity budget.  The bridge

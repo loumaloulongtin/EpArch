@@ -307,7 +307,7 @@ Eight abstract scenario structures, each proving that a degenerate configuration
 | `private_storage_no_sharing` | `PrivateOnlyStorage` | Isolated agent storage makes shared deposit access impossible |
 | `closed_system_unfalsifiable` | `ClosedEndorsement` | A closed endorsement system has no externally falsifiable endorsed claim |
 | `flat_authorization_impossible` | `TwoTierAccess` | A flat authorization predicate cannot faithfully represent both submission and commit tiers |
-| `bounded_capacity_overflows` (via `GroundedStorageStrict`) | `BoundedCapacityScenario` | No fixed budget covers all states in this bounded-capacity scenario: the witness state exceeds the budget |
+| `monotone_active_accumulation_overflows` / `bounded_storage_forces_storage_management` (via `GroundedStorageStrict`) | `BoundedStorage` / `RepresentsBoundedCapacity` | The supplied overflow state refutes any universal within-budget claim; no fixed budget covers all states in this bounded-capacity scenario |
 
 ### Pressure Dimension Index (Minimality.lean)
 
@@ -1046,7 +1046,7 @@ universally-quantified theorem over all subsets of the eight constraints, and a
 | `ConstraintSubset.le` | Meta/Modular.lean | `S ≤ S'` iff every flag active in S is active in S' | Defines the relaxation/strengthening order |
 | `pwf_subset_mono` | Meta/Modular.lean | `S ≤ S' → PartialWellFormed W S' → PartialWellFormed W S` | Downward monotonicity: weaker profile inherits well-formedness |
 | `safe_relaxation` | Meta/Modular.lean | `PartialWellFormed W allConstraints → ∀ t, projection_valid (s t) W` | Relaxing active constraints does not break forcing claims for W |
-| `pwf_add_bubbles` … `pwf_add_authorization` | Meta/Reconfiguration.lean | `PartialWellFormed W S → PartialWellFormed (W.addX ev) { S with X := true }` | Adding a capability preserves prior well-formedness and activates the matching constraint biconditional |
+| `pwf_add_bubbles` … `pwf_add_storage_management` | Meta/Reconfiguration.lean | `PartialWellFormed W S → PartialWellFormed (W.addX ev) { S with X := true }` | Adding a capability preserves prior well-formedness and activates the matching constraint biconditional |
 | `quarantine_requires_challenge` | Meta/Reconfiguration.lean | ¬isQuarantined before + isQuarantined after Step → action was `Challenge` | No spontaneous quarantine; challenge is the unique quarantine gate |
 | `no_self_healing_bank` | Meta/Reconfiguration.lean | StatusImproves d.status d'.status across Step → action ≠ `Tick` | No anonymous/agentless Bank improvement |
 
@@ -1131,6 +1131,7 @@ for each cluster.
 | `cluster_forcing_coordination` | Meta/Config.lean | `StructurallyForced W → handles_coordination W → HasBank W` | Witness for `.forcing_coordination` |
 | `cluster_forcing_truth` | Meta/Config.lean | `StructurallyForced W → handles_truth_pressure W → HasRedeemability W` | Witness for `.forcing_truth` |
 | `cluster_forcing_multi_agent` | Meta/Config.lean | `StructurallyForced W → handles_multi_agent W → HasGranularACL W` | Witness for `.forcing_multi_agent` |
+| `cluster_forcing_bounded_storage` | Meta/Config.lean | `StructurallyForced W → handles_storage W → HasStorageManagement W` | Witness for `.forcing_bounded_storage` |
 
 #### World-Bundle Named Proof Witnesses (Obligation Theorems)
 

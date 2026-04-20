@@ -373,9 +373,10 @@ theorem grounded_storage_justified (G : GroundedStorage) (rest : SystemSpec) :
 
 /-- `GroundedStorage` augmented with its impossibility consequence.
 
-    `no_unbounded_accumulation` states that no fixed budget can cover all
-    reachable states: there is always a state exceeding the budget.  This is the
-    storage analog of `no_flat_resolver` for scope. -/
+    `no_unbounded_accumulation` states that the supplied overflow state refutes any
+    universal within-budget claim: no fixed budget can cover all states in this
+    bounded-capacity scenario.  This is the storage analog of `no_flat_resolver`
+    for scope. -/
 structure GroundedStorageStrict where
   base                      : GroundedStorage
   /-- No fixed budget covers all states: there is a state exceeding the budget. -/
