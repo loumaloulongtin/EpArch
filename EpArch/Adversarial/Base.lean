@@ -103,7 +103,7 @@ def is_pseudo_deposit (pd : PseudoDeposit (PropLike := PropLike)
 /-! ## DDoS / Bandwidth Exhaustion -/
 
 /-- Audit channel: the pathway through which verification happens. -/
-opaque AuditChannel : Type u
+opaque AuditChannel : Type
 
 /-- Channel capacity: how much verification can be processed. -/
 opaque channel_capacity : AuditChannel → Nat
@@ -161,8 +161,25 @@ opaque E_field_poisoned : Agent → Prop
     blocking all external import. -/
 opaque denial_triggered : Agent → Prop
 
-/-- Verification collapse: agent can no longer perform adequate V-checks. -/
-opaque verification_collapsed : Agent → Prop
+/-- Verification collapse: every audit channel available to agent a is overwhelmed.
+
+    STRUCTURAL definition — not a world assumption. When this holds, no audit
+    capacity remains for per-deposit verification steps; the agent cannot
+    schedule a verification step before its mandatory decision deadline.
+
+    Two sub-conditions are jointly required:
+    - `channels ≠ []`: there must be channels that are overwhelmed, not merely
+      an absence of channels (an agent with no channels is not in a collapsed
+      state — it never had verification capacity to lose).
+    - `∀ c, c ∈ channels → channel_overwhelmed c`: every channel satisfies
+      `attack_volume c > channel_capacity c` — no capacity remains for
+      any individual verification step.
+
+    The consequence chain (τ exhaustion → `¬PathExists`) is closed by
+    `W_ddos.collapse_exhausts_tau` (one W-field) and
+    `collapsed_to_path_failure` (purely structural theorem). -/
+def verification_collapsed (a : Agent) (channels : List AuditChannel) : Prop :=
+  channels ≠ [] ∧ ∀ c, c ∈ channels → channel_overwhelmed c
 
 /-- Trust centralization: agent delegates to single "trusted" authority. -/
 opaque trust_centralized : Agent → Prop

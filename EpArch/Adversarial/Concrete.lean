@@ -457,14 +457,16 @@ def concrete_W_reversibility :
     `ddos_V_channel_collapse_blocks_withdrawal` (Step 3) traces the full
     concrete chain from `c_channel_overwhelmed` to `¬c_can_withdraw`.  Here
     we name that result explicitly as the concrete observable effect of the
-    `V_exhaustion_collapses` vector in the abstract `W_ddos` bundle, and
+    DDoS V-channel exhaustion vector in the abstract `W_ddos` bundle, and
     connect it to the abstract obligation layer by exhibiting the channel-collapse
-    step that field describes.
+    step that `ddos_overwhelms (.VChannelExhaustion)` describes.
 
-    Note: the abstract `W_ddos` obligation is `V_channel_exhausted a →
-    verification_collapsed a` (agent-level collapse), not `¬PathExists d`.  This
-    concrete theorem proves `¬c_can_withdraw` — the concrete correlate of
-    verification collapse for the V-channel vector.  The mapping from abstract
+    Note: the abstract `W_ddos.ddos_overwhelms` obligation gives
+    `V_channel_exhausted a → ∃ channels, verification_collapsed a channels`
+    (structural collapse, not ¬PathExists directly).  The `collapse_exhausts_tau`
+    bridge and `collapsed_to_path_failure` complete the path-failure chain.
+    This concrete theorem witnesses `¬c_can_withdraw` — the concrete correlate
+    of verification collapse for the V-channel vector. The mapping from abstract
     `verification_collapsed` to concrete `¬c_can_withdraw` is the modeling
     bridge; this theorem sits on the concrete side of it. -/
 
@@ -482,7 +484,8 @@ def concrete_W_reversibility :
     This names the same chain as `ddos_V_channel_collapse_blocks_withdrawal`
     but makes explicit that it is the concrete observable effect of the abstract
     `V_exhaustion_collapses` vector.  The abstract obligation asserts
-    `V_channel_exhausted a → verification_collapsed a`; this theorem witnesses
+    `V_channel_exhausted a → ∃ channels, verification_collapsed a channels`
+    (via `W_ddos.ddos_overwhelms`); this theorem witnesses
     the V-channel side of that collapse at the concrete `¬c_can_withdraw` level. -/
 theorem concrete_V_channel_exhaustion_obligation
     {acl : CACL} {a : CAgent} {B : CBubble}
@@ -523,9 +526,10 @@ end ConcreteObligationWitnesses
 
     The obligation theorem `collapse_causes_centralization_of_W` extracts
     `W_collapse_centralization.exhaustion_triggers_delegation` directly.
-    Both `verification_collapsed` and `trust_centralized` are opaque
-    agent-level predicates — the abstract kernel cannot define what
-    "verification collapse" or "trust centralization" look like internally.
+    `verification_collapsed` is now a structural `def` (grounded in channel
+    arithmetic), but `trust_centralized` remains opaque — it is a behavioral
+    claim about which authority an agent delegates to, which depends on agent
+    internals not modeled in this kernel.
     A concrete discharge requires an agent model that specifies when an
     agent's verification capacity is exhausted and when it delegates.
 

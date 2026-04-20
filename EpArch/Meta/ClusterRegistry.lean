@@ -91,7 +91,7 @@ inductive ClusterTag where
   | world_partial_observability -- W_partial_observability: obs underdetermines truth → no omniscience
   | world_spoofed_v             -- W_spoofedV: spoofed provenance blocks path
   | world_lies_scale            -- W_lies_scale: lies scale (cost asymmetry)
-  | world_rolex_ddos            -- W_rolex_ddos: individual & population attacks structurally same
+  | world_rolex_ddos            -- rolex_ddos_share_path_failure_structure: both attacks force ¬PathExists
   | world_ddos                  -- W_ddos: DDoS causes verification collapse
   -- Meta-modularity clusters (from EpArch.Meta.Modular — constraint-subset independence)
   | meta_modular              -- modular: ∀ S W, PartialWellFormed W S → projection_valid S W
