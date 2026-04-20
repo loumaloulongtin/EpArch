@@ -432,6 +432,34 @@ theorem deposited_claim_arises_from_promote_or_register
   | promote ag B d_idx _ =>
     -- Step.promote sets .Deposited via updateDepositStatus; return promote witness
     exact Or.inl ⟨ag, B, d_idx, rfl⟩
+  | purge _ _ _ _ _ _ _ =>
+    -- purge sets .Purged at d_idx; .Purged ≠ .Deposited → h_after is absurd
+    apply absurd h_after; intro ⟨d', hd', hP', hstatus'⟩
+    simp only at hd'
+    unfold EpArch.StepSemantics.updateDepositStatus at hd'
+    cases EpArch.StepSemantics.mem_modifyAt s.ledger _ _ d' hd' with
+    | inl h =>
+      cases h with
+      | intro x hx => exact h_not ⟨d', hx.2 ▸ hx.1, hP', hstatus'⟩
+    | inr h =>
+      cases h with
+      | intro x hx =>
+        rw [← hx.2] at hstatus'
+        exact DepositStatus.noConfusion hstatus'
+  | update _ _ _ d_new d_old h_ex h_status h_not_dep _ _ =>
+    -- update replaces d_idx with d_new; h_not_dep ensures d_new.status ≠ .Deposited
+    apply absurd h_after; intro ⟨d', hd', hP', hstatus'⟩
+    simp only at hd'
+    cases EpArch.StepSemantics.mem_modifyAt s.ledger _ _ d' hd' with
+    | inl h =>
+      cases h with
+      | intro x hx => exact h_not ⟨d', hx.2 ▸ hx.1, hP', hstatus'⟩
+    | inr h =>
+      cases h with
+      | intro x hx =>
+        -- hx.2 : d_new = d'; after rw, hstatus' : d_new.status = .Deposited
+        rw [← hx.2] at hstatus'
+        exact h_not_dep (h_status.symm.trans hstatus')
 
 
 /-! ## Simulation Relation to Operational Semantics

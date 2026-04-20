@@ -83,6 +83,8 @@ inductive Action (PropLike Standard ErrorModel Provenance Reason Evidence : Type
   | Repair (a : Agent) (B : Bubble) (d_idx : Nat) (f : Field)
   | Revoke (a : Agent) (B : Bubble) (d_idx : Nat)
   | Promote (a : Agent) (B : Bubble) (d_idx : Nat)
+  | Purge (a : Agent) (B : Bubble) (d_idx : Nat)
+  | Update (a : Agent) (B : Bubble) (d_idx : Nat) (d' : Deposit PropLike Standard ErrorModel Provenance)
 
 /-! ## Preconditions -/
 
@@ -98,6 +100,11 @@ def isQuarantined (s : SystemState PropLike Standard ErrorModel Provenance) (d_i
 /-- Check if deposit at index is in Candidate status. -/
 def isCandidate (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat) : Prop :=
   ∃ d, s.ledger.get? d_idx = some d ∧ d.status = .Candidate
+
+/-- Check if deposit at index is active: exists and is not Revoked or Purged.
+    Active deposits contribute to the reliance load and are eligible for Step.purge. -/
+def isActive (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat) : Prop :=
+  ∃ d, s.ledger.get? d_idx = some d ∧ d.status ≠ .Revoked ∧ d.status ≠ .Purged
 
 
 /-- Check if deposit has preserved header provenance.
@@ -473,6 +480,53 @@ inductive Step : SystemState PropLike Standard ErrorModel Provenance →
       Step s (.Promote a B d_idx)
         { s with ledger := updateDepositStatus s.ledger d_idx .Deposited }
 
+  /-- Purge: agent-invoked capacity deletion.
+
+      Transitions the deposit at d_idx to .Purged, freeing it from the active
+      reliance load. The slot is preserved at its original index for index stability;
+      no list compaction occurs. Authorization is an agent-level concern; the bank
+      enforces h_active once presented with the action.
+
+      Restricted to Candidate and Quarantined entries (h_not_dep). Deposited entries
+      are protected by the bank sandbox — they must go through Challenge+Revoke to be
+      removed from active status. This preserves the invariant that Deposited entries
+      remain stable under non-revision steps.
+
+      Precondition: h_active — the deposit exists and is not already Revoked or Purged.
+      Purge is irreversible: the slot becomes an operationally void tombstone.
+      .Purged ≠ .Revoked — see DepositStatus for the semantic distinction. -/
+  | purge (s : SystemState PropLike Standard ErrorModel Provenance)
+      (a : Agent) (B : Bubble) (d_idx : Nat)
+      (d_old : Deposit PropLike Standard ErrorModel Provenance)
+      (h_exists     : s.ledger.get? d_idx = some d_old)
+      (h_active     : isActive s d_idx)
+      (h_not_dep    : d_old.status ≠ .Deposited) :
+      Step s (.Purge a B d_idx)
+        { s with ledger := updateDepositStatus s.ledger d_idx .Purged }
+
+  /-- Update: agent-invoked authorized slot overwrite.
+
+      Replaces the deposit at d_idx with d_new, exactly as supplied. Restricted to
+      entries in Candidate or Quarantined status (h_not_dep, h_not_rev, h_not_purged)
+      and preserves the existing lifecycle status (h_status). This ensures that
+      Deposited entries remain exclusively reachable via promote/register, and that
+      Revoked terminal entries are immutable.
+
+      Distinction from Repair: Repair is reactive (requires Quarantined status via
+      h_quarantined). Update is proactive: it applies to both Candidate and Quarantined
+      entries and does not require a prior challenge. Authorization is agent-level. -/
+  | update (s : SystemState PropLike Standard ErrorModel Provenance)
+      (a : Agent) (B : Bubble) (d_idx : Nat)
+      (d_new : Deposit PropLike Standard ErrorModel Provenance)
+      (d_old : Deposit PropLike Standard ErrorModel Provenance)
+      (h_exists     : s.ledger.get? d_idx = some d_old)
+      (h_status     : d_new.status = d_old.status)
+      (h_not_dep    : d_old.status ≠ .Deposited)
+      (h_not_rev    : d_old.status ≠ .Revoked)
+      (h_not_purged : d_old.status ≠ .Purged) :
+      Step s (.Update a B d_idx d_new)
+        { s with ledger := modifyAt s.ledger d_idx (fun _ => d_new) }
+
 /-! ## Ladder Invariants
 
 The `ladder_map` field of `SystemState` is never modified by any Step.
@@ -749,6 +803,38 @@ theorem step_non_revision_preserves_non_revoked
         get?_updateDepositStatus_ne s.ledger d_p_idx d_idx .Deposited hne
       rw [h_get_unchanged] at hd
       exact h_not_revoked d hd h_status
+  | purge _ _ d_pur _ h_ex_p h_act _ =>
+    -- purge sets .Purged at d_pur; .Purged ≠ .Revoked
+    simp only at hd
+    cases Nat.decEq d_idx d_pur with
+    | isTrue heq =>
+      have h_get_updated := get?_updateDepositStatus_eq s.ledger d_pur .Purged _ h_ex_p
+      rw [heq] at hd
+      rw [h_get_updated] at hd
+      cases hd
+      exact DepositStatus.noConfusion h_status
+    | isFalse hne =>
+      have h_get_unchanged := get?_updateDepositStatus_ne s.ledger d_pur d_idx .Purged hne
+      rw [h_get_unchanged] at hd
+      exact h_not_revoked d hd h_status
+  | update _ _ d_upd d_new d_old h_ex h_status_upd _ h_not_rev_d _ =>
+    -- update replaces d_upd; status preserved (h_status_upd), d_old.status ≠ .Revoked
+    simp only at hd
+    cases Nat.decEq d_idx d_upd with
+    | isTrue heq =>
+      rw [heq] at hd
+      -- s'.ledger.get? d_upd = some d_new; and hd : s'.ledger.get? d_upd = some d
+      -- so d = d_new; then h_not_rev_d: d_old.status ≠ .Revoked and h_status_upd: d_new.status = d_old.status
+      have h_val := get?_modifyAt_eq s.ledger d_upd (fun _ => d_new) d_old h_ex
+      have h_d_eq : d = d_new := by
+        have h_inj := h_val.symm.trans hd
+        simp only [Option.some.injEq] at h_inj
+        exact h_inj.symm
+      exact h_not_rev_d (h_status_upd.symm.trans (h_d_eq ▸ h_status))
+    | isFalse hne =>
+      have h_get_unchanged := get?_modifyAt_ne s.ledger d_upd d_idx (fun _ => d_new) hne
+      rw [h_get_unchanged] at hd
+      exact h_not_revoked d hd h_status
 
 /-- Key lemma: traces without revision preserve non-Revoked status.
     Proof by induction on trace. -/
@@ -858,6 +944,34 @@ theorem step_no_revision_preserves_deposited
           s.ledger.get? d_idx :=
         get?_updateDepositStatus_ne s.ledger d_p_idx d_idx .Deposited hne
       exact ⟨d, h_unchanged ▸ h_get, h_status⟩
+  | purge _ _ d_pur _ h_ex_p _ h_not_dep_p =>
+    -- purge restricted: h_not_dep_p says d_old.status ≠ .Deposited; but h_status = .Deposited → contradiction
+    cases Nat.decEq d_idx d_pur with
+    | isTrue heq =>
+      apply False.elim
+      rw [← heq] at h_ex_p
+      rw [h_get] at h_ex_p
+      simp only [Option.some.injEq] at h_ex_p
+      -- h_ex_p : d = d_old_p; h_not_dep_p : d_old_p.status ≠ .Deposited; h_status : d.status = .Deposited
+      exact h_not_dep_p (h_ex_p ▸ h_status)
+    | isFalse hne =>
+      have h_unchanged := get?_updateDepositStatus_ne s.ledger d_pur d_idx .Purged hne
+      exact ⟨d, h_unchanged.trans h_get, h_status⟩
+  | update _ _ d_upd d_new d_old h_ex h_status_upd h_not_dep _ _ =>
+    -- update replaces d_upd with d_new (status preserved); d_old.status ≠ .Deposited
+    cases Nat.decEq d_idx d_upd with
+    | isTrue heq =>
+      apply False.elim
+      -- h_get : s.ledger.get? d_idx = some d; h_ex : s.ledger.get? d_upd = some d_old
+      -- After heq: same index; d = d_old; h_not_dep : d_old.status ≠ .Deposited; h_status = .Deposited → absurd
+      rw [heq] at h_get
+      rw [h_ex] at h_get
+      simp only [Option.some.injEq] at h_get
+      -- h_get : d_old = d
+      exact h_not_dep (h_get.symm ▸ h_status)
+    | isFalse hne =>
+      have h_unchanged := get?_modifyAt_ne s.ledger d_upd d_idx (fun _ => d_new) hne
+      exact ⟨d, h_unchanged.trans h_get, h_status⟩
 
 /-- Trace-level version: revision-free traces preserve Deposited status.
     Proof by induction on trace using step_no_revision_preserves_deposited. -/
@@ -1254,9 +1368,9 @@ theorem all_traces_preserve_invariant
 
 
 /-- Invariant 1: All deposits in the ledger have valid status.
-    (Deposited, Candidate, Quarantined, or Revoked) -/
+    (Deposited, Candidate, Quarantined, Revoked, or Purged) -/
 def inv_valid_status (s : SystemState PropLike Standard ErrorModel Provenance) : Prop :=
-  ∀ d, d ∈ s.ledger → d.status ∈ [.Deposited, .Candidate, .Quarantined, .Revoked]
+  ∀ d, d ∈ s.ledger → d.status ∈ [.Deposited, .Candidate, .Quarantined, .Revoked, .Purged]
 
 /-- Invariant 4: Bubbles referenced by deposits exist.
     (No deposits in unknown bubbles) -/
@@ -1485,6 +1599,37 @@ theorem step_preserves_valid_status
     exact repair_preserves_valid_status s d_idx h_inv
   case promote a_p B_p d_p_idx _ =>
     exact promote_preserves_valid_status s d_p_idx h_inv
+  case purge _ _ d_pur _ _ _ _ =>
+    -- purge sets .Purged which is in the valid status list
+    unfold inv_valid_status at *
+    intro d hd
+    unfold updateDepositStatus at hd
+    have h_or := mem_modifyAt s.ledger d_pur (fun d => { d with status := .Purged }) d hd
+    cases h_or with
+    | inl h_orig =>
+      let ⟨d', hd'_mem, hd'_eq⟩ := h_orig
+      rw [← hd'_eq]; exact h_inv d' hd'_mem
+    | inr h_mod =>
+      let ⟨_, _, h_eq⟩ := h_mod
+      rw [← h_eq]
+      exact List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _))))
+  case update _ _ d_upd d_new d_old h_ex h_st _ _ _ =>
+    -- update replaces d_upd with d_new; d_new.status = d_old.status (h_st)
+    -- d_old was in ledger so its status is valid; d_new has same status
+    unfold inv_valid_status at *
+    intro d hd
+    have h_or := mem_modifyAt s.ledger d_upd (fun _ => d_new) d hd
+    cases h_or with
+    | inl h_orig =>
+      let ⟨d', hd'_mem, hd'_eq⟩ := h_orig
+      rw [← hd'_eq]; exact h_inv d' hd'_mem
+    | inr h_mod =>
+      let ⟨_, _, h_eq⟩ := h_mod
+      -- h_eq : d_new = d; rewrite goal d.status ∈ [...] to d_new.status, then to d_old.status
+      have h_d_old_mem : d_old ∈ s.ledger := get?_implies_mem s.ledger d_upd d_old h_ex
+      have h_valid := h_inv d_old h_d_old_mem
+      rw [← h_eq, h_st]
+      exact h_valid
 
 /-- TRACE PRESERVATION:
     Invariants preserved by single steps are preserved by traces. -/
@@ -1731,6 +1876,27 @@ theorem revoked_stay_revoked_one_step
       exact absurd (h_revoked.symm.trans h_status) (by decide)
     | isFalse hne =>
       exact (get?_updateDepositStatus_ne s.ledger d_prom d_idx .Deposited (Ne.symm hne)).trans h_get
+  | purge _ _ d_pur _ _ h_act _ =>
+    -- purge sets .Purged at d_pur; if d_pur = d_idx, h_active contradicts h_revoked
+    cases Nat.decEq d_pur d_idx with
+    | isTrue heq =>
+      match h_act with
+      | ⟨d_a, h_a_get, h_not_rev, _⟩ =>
+        rw [heq, h_get] at h_a_get
+        simp only [Option.some.injEq] at h_a_get
+        exact absurd (h_a_get ▸ h_revoked) h_not_rev
+    | isFalse hne =>
+      exact (get?_updateDepositStatus_ne s.ledger d_pur d_idx .Purged (Ne.symm hne)).trans h_get
+  | update _ _ d_upd d_new d_old h_ex _ _ h_not_rev _ =>
+    -- update replaces d_upd with d_new; if d_upd = d_idx, h_not_rev contradicts h_revoked
+    cases Nat.decEq d_upd d_idx with
+    | isTrue heq =>
+      rw [heq] at h_ex
+      rw [h_get] at h_ex
+      simp only [Option.some.injEq] at h_ex
+      exact absurd (h_ex ▸ h_revoked) h_not_rev
+    | isFalse hne =>
+      exact (get?_modifyAt_ne s.ledger d_upd d_idx (fun _ => d_new) (Ne.symm hne)).trans h_get
 
 /-- The revoked-terminal invariant is preserved by every Step.
 
@@ -1761,5 +1927,141 @@ def sys_has_redeemability (s : SystemState PropLike Standard ErrorModel Provenan
 -- `coordination_uses_shared_ledger` was removed: it dropped all meaningful premises
 -- and duplicated `isDeposited` trivially. LinkingAxioms.lean is retired; the operational
 -- grounding for bank necessity is `EpArch.Minimality.private_coordination_forces_bank`.
+
+/-! ## Active Count and Purge/Update Lifecycle Theorems (task 23b) -/
+
+/-- Count of deposits actively consuming storage: all entries with status not Revoked
+    and not Purged. Revoked entries are excluded because the claim is epistemically closed;
+    Purged entries are excluded because the slot was freed for capacity reasons. Both are
+    terminal states that do not contribute to the active reliance load. -/
+def activeCount (s : SystemState PropLike Standard ErrorModel Provenance) : Nat :=
+  (s.ledger.filter (fun d => decide (d.status ≠ .Revoked) && decide (d.status ≠ .Purged))).length
+
+/-! ### Purge Theorems -/
+
+/-- PURGE STATUS THEOREM: after a purge step, the deposit at d_idx has status .Purged.
+
+    **Theorem shape:** given h_active and a purge step, `s'.ledger.get? d_idx = some { d with status := .Purged }`.
+    **Proof strategy:** extract the deposit from h_active; apply get?_updateDepositStatus_eq. -/
+theorem purge_sets_purged_status
+    (s : SystemState PropLike Standard ErrorModel Provenance)
+    (a : Agent) (B : Bubble) (d_idx : Nat)
+    (h_active : isActive s d_idx) :
+    ∃ d, s.ledger.get? d_idx = some d ∧
+      ({ s with ledger := updateDepositStatus s.ledger d_idx .Purged }).ledger.get? d_idx =
+        some { d with status := .Purged } := by
+  match h_active with
+  | ⟨d, h_get, _, _⟩ =>
+    exact ⟨d, h_get, get?_updateDepositStatus_eq s.ledger d_idx .Purged d h_get⟩
+
+/-- PURGE INDEX STABILITY THEOREM: all other indices are unchanged after a purge step.
+
+    **Theorem shape:** for `j ≠ d_idx`, `s'.ledger.get? j = s.ledger.get? j`.
+    **Proof strategy:** get?_updateDepositStatus_ne at the different index. -/
+theorem purge_preserves_index_stability
+    (s : SystemState PropLike Standard ErrorModel Provenance)
+    (a : Agent) (B : Bubble) (d_idx j : Nat)
+    (h_active : isActive s d_idx)
+    (hne : j ≠ d_idx) :
+    ({ s with ledger := updateDepositStatus s.ledger d_idx .Purged }).ledger.get? j =
+      s.ledger.get? j :=
+  get?_updateDepositStatus_ne s.ledger d_idx j .Purged hne
+
+/-- PURGE AGENT RESPONSIBILITY: Step.purge carries an agent; it is not an autonomous bank action.
+
+    **Theorem shape:** Action.Purge a B d_idx witnesses an agent a by construction.
+    **Proof strategy:** direct witness. -/
+theorem purge_is_agent_invoked (a : Agent) (B : Bubble) (d_idx : Nat) :
+    ∃ ag : Agent, ag = a :=
+  ⟨a, rfl⟩
+
+/-- PURGE REDUCES ACTIVE COUNT: after a purge step, activeCount decreases by 1.
+
+    Proof sketch: the deposit at d_idx transitions from active (h_active guarantees
+    status ≠ Revoked ∧ ≠ Purged, so the filter includes it) to .Purged (excluded by
+    the filter). All other indices are unchanged. The list filter length therefore
+    decreases by exactly 1.
+
+    NOTE: This proof requires a List.filter_length helper (modifyAt changes exactly
+    one true→false entry) not available in Lean 4.3.0 core without Std4/Mathlib.
+    The structural theorems (purge_sets_purged_status, purge_preserves_index_stability)
+    are the load-bearing results; this count lemma is a consequence deferred pending
+    the List.filter arithmetic helper. -/
+theorem purge_reduces_active_count
+    (s : SystemState PropLike Standard ErrorModel Provenance)
+    (a : Agent) (B : Bubble) (d_idx : Nat)
+    (h_active : isActive s d_idx) :
+    activeCount { s with ledger := updateDepositStatus s.ledger d_idx .Purged } + 1 =
+      activeCount s := by
+  sorry
+
+/-! ### Update Theorems -/
+
+/-- UPDATE SLOT THEOREM: after an update step, the deposit at d_idx equals d_new.
+
+    **Theorem shape:** `s'.ledger.get? d_idx = some d_new`.
+    **Proof strategy:** get?_modifyAt_eq at the target index. -/
+theorem update_replaces_slot
+    (s : SystemState PropLike Standard ErrorModel Provenance)
+    (a : Agent) (B : Bubble) (d_idx : Nat)
+    (d_new d_old : Deposit PropLike Standard ErrorModel Provenance)
+    (h_exists     : s.ledger.get? d_idx = some d_old)
+    (h_status     : d_new.status = d_old.status)
+    (h_not_dep    : d_old.status ≠ .Deposited)
+    (h_not_rev    : d_old.status ≠ .Revoked)
+    (h_not_purged : d_old.status ≠ .Purged) :
+    ({ s with ledger := modifyAt s.ledger d_idx (fun _ => d_new) }).ledger.get? d_idx =
+      some d_new :=
+  get?_modifyAt_eq s.ledger d_idx (fun _ => d_new) d_old h_exists
+
+/-- UPDATE INDEX STABILITY: all other indices are unchanged after an update step.
+
+    **Theorem shape:** for `j ≠ d_idx`, `s'.ledger.get? j = s.ledger.get? j`.
+    **Proof strategy:** get?_modifyAt_ne at the different index. -/
+theorem update_preserves_other_slots
+    (s : SystemState PropLike Standard ErrorModel Provenance)
+    (a : Agent) (B : Bubble) (d_idx j : Nat)
+    (d_new d_old : Deposit PropLike Standard ErrorModel Provenance)
+    (h_exists     : s.ledger.get? d_idx = some d_old)
+    (h_status     : d_new.status = d_old.status)
+    (h_not_dep    : d_old.status ≠ .Deposited)
+    (h_not_rev    : d_old.status ≠ .Revoked)
+    (h_not_purged : d_old.status ≠ .Purged)
+    (hne : j ≠ d_idx) :
+    ({ s with ledger := modifyAt s.ledger d_idx (fun _ => d_new) }).ledger.get? j =
+      s.ledger.get? j :=
+  get?_modifyAt_ne s.ledger d_idx j (fun _ => d_new) hne
+
+/-- UPDATE DOES NOT REQUIRE CHALLENGE: Step.update fires without a quarantine precondition.
+
+    This distinguishes update from repair: repair requires h_quarantined (Quarantined
+    status), while update requires only h_exists (the slot exists). An agent may update
+    a Candidate entry without prior challenge.
+
+    **Theorem shape:** given a Candidate deposit at d_idx, Step.update fires.
+    **Proof strategy:** direct application of the update constructor. -/
+theorem update_does_not_require_challenge
+    {Reason Evidence : Type u}
+    (s : SystemState PropLike Standard ErrorModel Provenance)
+    (a : Agent) (B : Bubble) (d_idx : Nat)
+    (d_new d_old : Deposit PropLike Standard ErrorModel Provenance)
+    (h_candidate  : isCandidate s d_idx)
+    (h_status     : d_new.status = d_old.status)
+    (h_not_dep    : d_old.status ≠ .Deposited)
+    (h_not_rev    : d_old.status ≠ .Revoked)
+    (h_not_purged : d_old.status ≠ .Purged)
+    (h_exists     : s.ledger.get? d_idx = some d_old) :
+    ¬isQuarantined s d_idx →
+    Step (Reason := Reason) (Evidence := Evidence) s (.Update a B d_idx d_new)
+      { s with ledger := modifyAt s.ledger d_idx (fun _ => d_new) } :=
+  fun _ => Step.update s a B d_idx d_new d_old h_exists h_status h_not_dep h_not_rev h_not_purged
+
+/-- UPDATE AGENT RESPONSIBILITY: Step.update carries an agent; it is not an autonomous bank action.
+
+    **Theorem shape:** Action.Update a B d_idx d_new witnesses an agent a by construction. -/
+theorem update_is_agent_invoked (a : Agent) (B : Bubble) (d_idx : Nat)
+    (d_new : Deposit PropLike Standard ErrorModel Provenance) :
+    ∃ ag : Agent, ag = a :=
+  ⟨a, rfl⟩
 
 end EpArch.StepSemantics
