@@ -450,7 +450,7 @@ theorem bridge_stripped_ungrounded
 |-------------------------------|----------------------|-------------------------------------------|
 | `withdrawal_gates`            | `Withdrawal`         | `withdrawal_requires_two_gates`           |
 | `repair_enforces_revalidation`| `Withdrawal`         | `repair_produces_candidate`               |
-| `header_localization_link`    | `Headers`            | `grounded_export_requires_headers`        |
+| `header_localization_link`    | `Headers`            | `all_challenges_field_specific`, `field_checkable_iff_header` |
 
 ## Proved Theorems by Category
 

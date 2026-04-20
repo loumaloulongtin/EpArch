@@ -62,7 +62,6 @@ import EpArch.WorldCtx
 import EpArch.Header
 import EpArch.Bank
 import EpArch.Semantics.StepSemantics
-import EpArch.Semantics.LinkingAxioms
 import EpArch.Theorems.Diagnosability
 
 namespace EpArch
