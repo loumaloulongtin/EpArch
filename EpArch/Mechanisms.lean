@@ -17,10 +17,11 @@ Mechanism predicates answer: "What capability does the system have?"
 - Just: does the mechanism exist?
 
 Bridge theorems state: "A CoreModel lacking capability X cannot satisfy the
-corresponding Imposition necessity scenario." Each bridge theorem uses a
-`coreToX` projection that sets `hasReversibility := CoreHasRevision M` (etc.),
-so the `h_no_X` hypothesis is genuinely used. The `Imposition` scenario flags
-are `Prop`, matching `CoreOps` predicate types.
+corresponding architectural goal." Two theorems use a `coreToX` projection into
+an `Imposition` scenario type (reversibility, cheap validator). The third — reliable
+export — bridges directly from `Health.ReliableExportGoal M`: since export is not a
+bank primitive (step 15), the gate is truth-verification plus revision capability at
+the receiving bubble, both already in `CoreOps`.
 
 -/
 
@@ -65,23 +66,14 @@ def CoreHasCheapValidator (M : CoreModel) : Prop :=
   ∃ (B : M.sig.Bubble) (d : M.sig.Deposit),
     M.ops.verifyWithin B d (M.ops.effectiveTime B)
 
-/-- CoreModel has export gate: at least one deposit is verifiable as truth at some bubble.
-
-    `CoreOps` carries no dedicated export-gate primitive. This predicate captures
-    the reachability of truth-verification (`ops.truth B d`) that an export gate
-    would require — a system lacking any truth-verifiable deposit at any bubble
-    cannot intercept incorrect observations at export boundaries. -/
-def CoreHasExportGate (M : CoreModel) : Prop :=
-  ∃ (B : M.sig.Bubble) (d : M.sig.Deposit), M.ops.truth B d
-
-
 
 /-! ## CoreModel Scenario Projections
 
-Each `coreToX` function embeds a `CoreModel` into the corresponding `Imposition`
-scenario type by setting the capability flag to the CoreModel predicate. With
-`Imposition` scenario flags now `Prop` (matching `CoreOps` predicate types),
-the assignment is direct.
+Two `coreToX` functions embed a `CoreModel` into the corresponding `Imposition`
+scenario type. The third mechanism (reliable export) uses `Health.ReliableExportGoal M`
+directly: since export is not a bank primitive (step 15), the relevant gate is
+truth-verification (`ops.truth`) plus revision capability (`ops.hasRevision`) at the
+receiving bubble — both already in `CoreOps`, no separate gate predicate needed.
 -/
 
 section
@@ -107,22 +99,12 @@ def coreToDepositScenario (M : CoreModel) (budget : Nat) : DepositScenario where
   prp_pressure          := Nat.lt_succ_self budget
   no_validator_full_cost := fun _ => rfl
 
-/-- Project a CoreModel into an ExportScenario.
-    `hasGate` is `CoreHasExportGate M`, so `¬CoreHasExportGate M` is
-    definitionally `¬(coreToExportScenario M).hasGate`. -/
-def coreToExportScenario (M : CoreModel) : ExportScenario where
-  observationCorrect := false
-  exportBlocked      := false
-  hasGate            := CoreHasExportGate M
-  fallible           := rfl
-  no_gate_exports    := fun _ => rfl
-
 /-! ## CoreModel Bridge Theorems
 
-Each bridge theorem projects `M : CoreModel` via `coreToX`, then delegates to
-the Imposition necessity theorem. The `h_no_X` hypothesis is genuinely used:
-`h_no_rev : ¬CoreHasRevision M` is definitionally `¬(coreToWithdrawalScenario M).hasReversibility`,
-so it discharges the corresponding argument of `safe_withdrawal_needs_reversibility`.
+The first two bridge theorems project `M : CoreModel` via `coreToX`, then delegate
+to the Imposition necessity theorem. The third — reliable export — applies
+`Health.ReliableExportGoal M` directly via a case split, with all three witnesses
+(`h_false`, `h_true`, `h_no_rev`) load-bearing.
 -/
 
 /-- BRIDGE THEOREM — Reversibility
@@ -159,21 +141,32 @@ theorem core_no_validator_violates_sound_deposits
     False :=
   sound_deposits_need_cheap_validator (coreToDepositScenario M budget) h_no_val h_goal
 
-/-- BRIDGE THEOREM — Export Gate
+/-- BRIDGE THEOREM — Reliable Export
 
-    A CoreModel lacking truth-verifiable deposits cannot satisfy ReliableExportGoal
-    under the projected export scenario.
+    A CoreModel with a false-positive deposit — true in B' but false in B, with B'
+    lacking revision capability — cannot satisfy `Health.ReliableExportGoal`.
 
-    **Theorem shape:** ¬CoreHasExportGate M → h_goal → False.
-    **Proof strategy:** project M via `coreToExportScenario`; pass `h_no_gate`
-    directly as `¬(coreToExportScenario M).hasGate` (definitionally equal). -/
-theorem core_no_gate_violates_reliable_export
-    (M : CoreModel) (h_no_gate : ¬CoreHasExportGate M)
-    (h_goal : EpArch.Agent.ReliableExportGoal
-                ((coreToExportScenario M).observationCorrect = true)
-                ((coreToExportScenario M).exportBlocked = true)) :
-    False :=
-  reliable_export_needs_gate (coreToExportScenario M) h_no_gate h_goal
+    Uses `EpArch.ReliableExportGoal M` directly (Health.lean). Since export is not
+    a bank primitive (step 15), the gate is truth-verification plus revision capability
+    at the receiving bubble. Both are already in `CoreOps`; no separate gate predicate
+    in `CoreOps` is needed or appropriate.
+
+    **Theorem shape:** ¬truth B d ∧ truth B' d ∧ ¬hasRevision B' → ReliableExportGoal M → False.
+    **Proof strategy:** apply h_goal to the witnesses; case-split on the disjunction;
+    each branch contradicts one of the explicit witness hypotheses. -/
+theorem core_false_positive_violates_reliable_export
+    (M : CoreModel)
+    (B B' : M.sig.Bubble) (d : M.sig.Deposit)
+    (h_false  : ¬M.ops.truth B d)
+    (h_true   : M.ops.truth B' d)
+    (h_no_rev : ¬M.ops.hasRevision B')
+    (h_goal   : EpArch.ReliableExportGoal M) : False := by
+  -- ReliableExportGoal says: ¬truth B d → ¬truth B' d ∨ hasRevision B'
+  have h_disj := h_goal B B' d h_false
+  -- Case split on the disjunction
+  cases h_disj with
+  | inl h_false' => exact h_false' h_true
+  | inr h_rev    => exact h_no_rev h_rev
 
 end
 
