@@ -817,6 +817,21 @@ File: `Agent/Imposition.lean`
 | `sound_deposits_need_cheap_validator` | PRP + bounded audit need cheap validators | CheapValidator |
 | `reliable_export_needs_gate` | Fallible observation needs export gates | ExportGate |
 
+### CoreModel Bridge Theorems
+
+File: `Mechanisms.lean`
+
+The first two bridge theorems use a `coreToX` projection that sets the capability flag to the
+CoreModel predicate. The third uses `Health.ReliableExportGoal M` directly — since export is
+not a bank primitive (step 15), the gate is truth-verification plus revision capability at the
+receiving bubble; both are already in `CoreOps`, no separate gate predicate needed.
+
+| Theorem | Hypotheses | Pattern |
+|---------|-----------|---------|
+| `core_no_revision_violates_safe_withdrawal` | `¬CoreHasRevision M` | via `coreToWithdrawalScenario`, delegates to `safe_withdrawal_needs_reversibility` |
+| `core_no_validator_violates_sound_deposits` | `¬CoreHasCheapValidator M` | via `coreToDepositScenario`, delegates to `sound_deposits_need_cheap_validator` |
+| `core_false_positive_violates_reliable_export` | `¬truth B d`, `truth B' d`, `¬hasRevision B'` | direct case split on `Health.ReliableExportGoal M` |
+
 ### Budget Forcing (Corner 8)
 
 | Theorem | File | Statement | Claim |
