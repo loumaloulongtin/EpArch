@@ -10,6 +10,8 @@ Key exports:
 - WorkingSystem.addBubbles / addTrustBridges / addHeaders / addRevocation /
   addBank / addRedeemability / addAuthorization / addStorageManagement — additive capability defs
 - pwf_add_bubbles .. pwf_add_storage_management — PartialWellFormed extension theorems
+- isDirectMaintenanceAction — policy predicate: Update bypasses structured revision
+- quarantine_requires_challenge_structured — Quarantined requires Step.challenge (no Update)
 - StatusImproves — deposit status improvement order
 - no_self_healing_bank — every status improvement is driven by an explicit action
 -/
@@ -362,7 +364,173 @@ theorem pwf_add_storage_management (W : WorkingSystem) (S : ConstraintSubset)
 
 
 /-! ========================================================================
-    PART C — No Self-Healing Bank Without Magic
+    PART C — Policy Predicates: Direct Maintenance vs Structured Revision
+
+    Two revision regimes coexist in EpArch:
+    1. Direct maintenance (single-agent / private bank): Update rewrites a
+       deposit in one move. No community audit path is required.
+    2. Structured public revision (multi-agent / community ledger): Challenge
+       quarantines, Repair re-validates, Promote reinstates. Transparent.
+
+    `isDirectMaintenanceAction` marks regime (1). Theorems that assume the
+    structured-revision invariants carry a hypothesis
+      `h_no_direct : isDirectMaintenanceAction a = false`
+    to rule out the direct-maintenance bypass.
+    ======================================================================== -/
+
+/-- Policy predicate: is this action a direct-maintenance action?
+
+    Direct maintenance (Update) bypasses the structured public revision
+    lifecycle. A step that carries a direct-maintenance action opts out of
+    structured-revision guarantees for that slot.
+
+    Used to scope `quarantine_requires_challenge_structured` to the
+    regime where Update is not permitted. -/
+def isDirectMaintenanceAction
+    (a : Action PropLike Standard ErrorModel Provenance Reason Evidence) : Bool :=
+  match a with
+  | .Update _ _ _ _ => true
+  | _ => false
+
+/-- QUARANTINE REQUIRES CHALLENGE (structured-revision mode).
+
+    In any step where the action is not a direct-maintenance action
+    (`h_no_direct : isDirectMaintenanceAction a = false`), Quarantined status
+    at slot `d_idx` can only be produced by `Step.challenge`.
+
+    **Theorem shape:** if `¬isQuarantined s d_idx` before the step and
+    `isQuarantined s' d_idx` after it, then `a = .Challenge ag B c`.
+
+    **Proof strategy:** case split on all Step constructors.
+    - `challenge at d_idx' = d_idx`: return the witness `rfl`.
+    - `challenge at d_idx' ≠ d_idx`: `get?_updateDepositStatus_ne` preserves d_idx.
+    - `revoke/repair at d_idx' = d_idx`: constructor requires `isQuarantined s d_idx'`;
+      after the `heq` rewrite this contradicts `h_before`.
+    - `submit/register`: the new deposit has `.Candidate`/`.Deposited`; existing unchanged.
+    - `withdraw/tick`: ledger unchanged; `h_after = h_before`, contradiction.
+    - `promote at d_idx' = d_idx`: updates to `.Deposited ≠ .Quarantined`.
+    - `forget at d_idx' = d_idx`: updates to `.Forgotten ≠ .Quarantined`.
+    - `update`: `isDirectMaintenanceAction (Update ..) = true` contradicts `h_no_direct`. -/
+theorem quarantine_requires_challenge_structured
+    (s s' : SystemState PropLike Standard ErrorModel Provenance)
+    (d_idx : Nat)
+    (a : Action PropLike Standard ErrorModel Provenance Reason Evidence)
+    (h_step : Step (Reason := Reason) (Evidence := Evidence) s a s')
+    (h_no_direct : isDirectMaintenanceAction a = false)
+    (h_before : ¬isQuarantined s d_idx)
+    (h_after : isQuarantined s' d_idx) :
+    ∃ (ag : Agent) (B : Bubble) (c : Challenge PropLike Reason Evidence),
+      a = .Challenge ag B c := by
+  cases h_step with
+  | submit _ d_new =>
+    let ⟨d', h_get', h_stat'⟩ := h_after
+    by_cases h_in_orig : d_idx < s.ledger.length
+    · rw [List.get?_append_left' s.ledger _ d_idx h_in_orig] at h_get'
+      exact absurd ⟨d', h_get', h_stat'⟩ h_before
+    · have h_len : d_idx ≥ s.ledger.length := Nat.ge_of_not_lt h_in_orig
+      have h_bound : d_idx < s.ledger.length + 1 := by
+        have := List.get?_some_lt' _ d_idx d' h_get'
+        simp only [List.length_append, List.length] at this; exact this
+      have h_idx_eq : d_idx = s.ledger.length :=
+        Nat.le_antisymm (Nat.le_of_lt_succ h_bound) h_len
+      have h_get_new : (s.ledger ++ [{ d_new with status := .Candidate }]).get? s.ledger.length =
+          some { d_new with status := .Candidate } := by
+        induction s.ledger with
+        | nil => rfl
+        | cons _ tail ih => simp [List.get?, ih]
+      rw [h_idx_eq, h_get_new] at h_get'
+      simp only [Option.some.injEq] at h_get'
+      rw [← h_get'] at h_stat'
+      exact DepositStatus.noConfusion h_stat'
+  | register _ d_new =>
+    let ⟨d', h_get', h_stat'⟩ := h_after
+    by_cases h_in_orig : d_idx < s.ledger.length
+    · rw [List.get?_append_left' s.ledger _ d_idx h_in_orig] at h_get'
+      exact absurd ⟨d', h_get', h_stat'⟩ h_before
+    · have h_len : d_idx ≥ s.ledger.length := Nat.ge_of_not_lt h_in_orig
+      have h_bound : d_idx < s.ledger.length + 1 := by
+        have := List.get?_some_lt' _ d_idx d' h_get'
+        simp only [List.length_append, List.length] at this; exact this
+      have h_idx_eq : d_idx = s.ledger.length :=
+        Nat.le_antisymm (Nat.le_of_lt_succ h_bound) h_len
+      have h_get_new : (s.ledger ++ [{ d_new with status := .Deposited }]).get? s.ledger.length =
+          some { d_new with status := .Deposited } := by
+        induction s.ledger with
+        | nil => rfl
+        | cons _ tail ih => simp [List.get?, ih]
+      rw [h_idx_eq, h_get_new] at h_get'
+      simp only [Option.some.injEq] at h_get'
+      rw [← h_get'] at h_stat'
+      exact DepositStatus.noConfusion h_stat'
+  | withdraw _ _ _ _ =>
+    -- Ledger unchanged: s' = s
+    exact absurd h_after h_before
+  | challenge ag B c d_idx' _ =>
+    cases Nat.decEq d_idx d_idx' with
+    | isTrue heq =>
+      exact ⟨ag, B, c, rfl⟩
+    | isFalse hne =>
+      let ⟨d', h_get', h_stat'⟩ := h_after
+      rw [get?_updateDepositStatus_ne s.ledger d_idx' d_idx .Quarantined hne] at h_get'
+      exact absurd ⟨d', h_get', h_stat'⟩ h_before
+  | tick _ _ =>
+    -- Only clock advances; ledger unchanged
+    exact absurd h_after h_before
+  | revoke _ _ d_idx' h_quarantined =>
+    cases Nat.decEq d_idx d_idx' with
+    | isTrue heq =>
+      -- Constructor requires isQuarantined s d_idx'; after heq: contradicts h_before
+      rw [heq] at h_before
+      exact absurd h_quarantined h_before
+    | isFalse hne =>
+      let ⟨d', h_get', h_stat'⟩ := h_after
+      rw [get?_updateDepositStatus_ne s.ledger d_idx' d_idx .Revoked hne] at h_get'
+      exact absurd ⟨d', h_get', h_stat'⟩ h_before
+  | repair _ _ d_idx' _ h_quarantined =>
+    cases Nat.decEq d_idx d_idx' with
+    | isTrue heq =>
+      -- Constructor requires isQuarantined s d_idx'; after heq: contradicts h_before
+      rw [heq] at h_before
+      exact absurd h_quarantined h_before
+    | isFalse hne =>
+      let ⟨d', h_get', h_stat'⟩ := h_after
+      rw [get?_updateDepositStatus_ne s.ledger d_idx' d_idx .Candidate hne] at h_get'
+      exact absurd ⟨d', h_get', h_stat'⟩ h_before
+  | promote _ _ d_idx' h_candidate =>
+    cases Nat.decEq d_idx d_idx' with
+    | isTrue heq =>
+      -- promote updates d_prom to .Deposited; .Deposited ≠ .Quarantined
+      let ⟨d_c, h_get_c, _⟩ := h_candidate
+      let ⟨d', h_get', h_stat'⟩ := h_after
+      have h_upd := get?_updateDepositStatus_eq s.ledger d_idx' .Deposited d_c h_get_c
+      rw [heq, h_upd] at h_get'
+      simp only [Option.some.injEq] at h_get'
+      rw [← h_get'] at h_stat'
+      exact DepositStatus.noConfusion h_stat'
+    | isFalse hne =>
+      let ⟨d', h_get', h_stat'⟩ := h_after
+      rw [get?_updateDepositStatus_ne s.ledger d_idx' d_idx .Deposited hne] at h_get'
+      exact absurd ⟨d', h_get', h_stat'⟩ h_before
+  | forget _ _ d_for _ h_ex_f _ =>
+    -- forget sets .Forgotten at d_for; .Forgotten ≠ .Quarantined
+    cases Nat.decEq d_idx d_for with
+    | isTrue heq =>
+      let ⟨d', h_get', h_stat'⟩ := h_after
+      have h_upd := get?_updateDepositStatus_eq s.ledger d_for .Forgotten _ h_ex_f
+      rw [heq, h_upd] at h_get'
+      simp only [Option.some.injEq] at h_get'
+      rw [← h_get'] at h_stat'
+      exact DepositStatus.noConfusion h_stat'
+    | isFalse hne =>
+      let ⟨d', h_get', h_stat'⟩ := h_after
+      rw [get?_updateDepositStatus_ne s.ledger d_for d_idx .Forgotten hne] at h_get'
+      exact absurd ⟨d', h_get', h_stat'⟩ h_before
+  | update _ _ _ _ _ _ _ =>
+    -- isDirectMaintenanceAction (Action.Update ..) = true contradicts h_no_direct
+    simp [isDirectMaintenanceAction] at h_no_direct
+
+/-! ========================================================================
+    PART D — No Self-Healing Bank Without Magic
     ======================================================================== -/
 
 /-- Deposit status improvement order.
