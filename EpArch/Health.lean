@@ -136,13 +136,27 @@ structure AutonomyModel where
   ops : AutonomyOps sig
   hasBubble : Nonempty sig.Bubble
 
+/-- Forgetful projection from an autonomy extension back to the frozen core model.
+
+    This makes the extension relationship explicit: `AutonomyModel` adds
+    health-specific operations, but its underlying `CoreModel` is obtained by
+    forgetting those extra predicates and keeping the inherited `CoreOps` fields. -/
+def AutonomyModel.toCoreModel (M : AutonomyModel) : CoreModel where
+  sig := M.sig
+  ops := M.ops.toCoreOps
+  hasBubble := M.hasBubble
+
 /-- AutonomyUnderPRPGoal: every required claim has a sound response.
 
     For every deposit the system is obligated to handle, one of three branches
     must hold: scratch verification fits the budget; a budgeted analogical
     bridge is available from prior material; or a principled escalation path is
-    available.  The goal is obligation-scoped (`mustHandle`), not universal over
-    the whole deposit type. -/
+  available.  The goal is obligation-scoped (`mustHandle`), not universal over
+  the whole deposit type.
+
+  This is an operational predicate, not a metaphysical one: the bridge branch
+  requires an available witness from the system's prior material, not a proof
+  that no analogous item exists anywhere outside the system. -/
 def AutonomyUnderPRPGoal (M : AutonomyModel) : Prop :=
   ∀ (B : M.sig.Bubble) (d : M.sig.Deposit),
     M.ops.mustHandle B d →
@@ -232,7 +246,7 @@ theorem authorized_withdrawal_needs_differentiation (M : CoreModel)
   · exact absurd (h_eq ▸ h_sub) h_no_sub
   · exact ⟨a₁, a₂, h_eq, B, d, h_sub, h_no_sub⟩
 
-/-- Autonomy under PRP forces bridge-or-escalation for novel required claims.
+/-- Autonomy under PRP forces bridge-or-escalation for required over-budget claims.
 
     If a required claim cannot be scratch-verified within the effective-time
     budget, then the health goal leaves exactly two sound branches: a budgeted
@@ -262,8 +276,8 @@ theorem autonomy_forces_bridge_or_escalation (M : AutonomyModel)
 /-- If escalation is unavailable, a budgeted bridge is forced.
 
     This is the no-refusal branch of the autonomy goal: once scratch
-    verification is ruled out by the novel over-budget witness and escalation is
-    disallowed, the bridge branch must supply the sound response. -/
+  verification is ruled out by the over-budget witness and escalation is
+  disallowed, the bridge branch must supply the sound response. -/
 theorem no_escalation_forces_bridge (M : AutonomyModel)
     (h_auto : AutonomyUnderPRPGoal M)
     (B : M.sig.Bubble) (d : M.sig.Deposit)
@@ -319,10 +333,11 @@ The health predicates connect to the architectural invariants:
 | SoundDepositsGoal | Verification | `verifyWithin`, `effectiveTime` | All systems |
 | SelfCorrectionGoal | Revision | `hasRevision` (= RevisionGate) | All systems |
 | AuthorizedWithdrawalGoal | Agent-differentiated certification | `submit` | Multi-agent only |
-| AutonomyUnderPRPGoal | Budgeted bridge or escalation for required claims | `mustHandle`, `bridgeAvailable`, `analogSim`, `verifyVia`, `canEscalate` | Novel-input PRP handling |
+| AutonomyUnderPRPGoal | Budgeted bridge or escalation for required claims | `mustHandle`, `bridgeAvailable`, `analogSim`, `verifyVia`, `canEscalate` | PRP handling of required over-budget claims |
 
-Health goals ARE definitional predicates over CoreOps.
-Necessity theorems follow from what health MEANS.
+Core health goals are definitional predicates over CoreOps.
+AutonomyUnderPRPGoal is a health-specific extension predicate over AutonomyModel.
+Necessity theorems follow from what the corresponding health predicate means.
 
 AuthorizedWithdrawalGoal is not part of FullSystemHealth because it is
 only meaningful in the multi-agent collaboration case.  A single agent

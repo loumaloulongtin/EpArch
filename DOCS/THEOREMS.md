@@ -555,8 +555,8 @@ Each architectural constraint creates both a capability and an exploitable surfa
 | `corrigible_needs_revision` | `CorrigibleLedgerGoal` (single premise) | `HasRevisionCapability` |
 | `self_correction_needs_revision` | `SelfCorrectingSystem` (single premise) | `HasRevisionCapability` |
 | `sound_deposits_needs_verification` | `SoundDepositsGoal` + `∃truth` | `HasVerificationCapability` |
-| `autonomy_forces_bridge_or_escalation` | `AutonomyUnderPRPGoal` + `mustHandle B d` + novel over-budget witness | budgeted analogical bridge exists for `d` or principled escalation is available |
-| `no_escalation_forces_bridge` | `AutonomyUnderPRPGoal` + `mustHandle B d` + novel over-budget witness + `¬canEscalate B d` | budgeted analogical bridge is forced |
+| `autonomy_forces_bridge_or_escalation` | `AutonomyUnderPRPGoal` + `mustHandle B d` + over-budget scratch-failure witness | budgeted analogical bridge exists for `d` or principled escalation is available |
+| `no_escalation_forces_bridge` | `AutonomyUnderPRPGoal` + `mustHandle B d` + over-budget scratch-failure witness + `¬canEscalate B d` | budgeted analogical bridge is forced |
 
 ### Math Form
 
@@ -565,8 +565,13 @@ $$\text{CorrigibleLedgerGoal}(M) \Rightarrow \text{HasRevisionCapability}(M)$$
 $$\text{SelfCorrectingSystem}(M) \Rightarrow \text{HasRevisionCapability}(M)$$
 
 `AutonomyUnderPRPGoal` lives over `AutonomyModel`, not `CoreModel`: it is a
-health-specific extension goal for novel-claim coverage under PRP, not yet part
-of the config/certification surface.
+health-specific extension goal for required over-budget claim handling under
+PRP, not yet part of the config/certification surface.
+
+The T25 theorems are operational, not metaphysical: they reason about whether
+an available bridge witness exists in the system's prior material, not whether
+no analogous item exists anywhere in principle. The stronger exact-recall /
+bridge-absence story is deferred to T25b in `Minimality.lean`.
 
 ---
 
