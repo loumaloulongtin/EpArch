@@ -1964,9 +1964,13 @@ def GroundedStorageStrict.mk' (G : GroundedStorage) : GroundedStorageStrict :=
 
 
 /-! ========================================================================
-    §9. BOUNDED RECALL — τ-Expiry as a Forced Consequence of Bounded
-        Verification Budget
+    §9. BOUNDED RECALL — Recall-Admissibility Filtering as a Forced
+        Consequence of Bounded Verification Budget
     ========================================================================
+
+    τ-expiry is the canonical clock-based sufficient implementation, not
+    the uniquely forced mechanism.  Priority eviction and provenance
+    compression via `Step.update` are equally valid responses.
 
     **Argument.** When an agent recalls a banked deposit, it must re-verify
     that the deposit's provenance chain (V) is still intact and that the
@@ -2045,11 +2049,14 @@ theorem depth_recall_incomplete (d : Nat) :
 
 /-! ## §9.4  Abstract Impossibility Under Recency Window
 
-This is the abstract counterpart to `bounded_capacity_without_storage_embeds`:
-given a `RecallBudget` and the hypothesis that all provenance chains fit within
-`tau_window`, the impossibility fires.  This is the right-branch core that the
-Scenarios-layer forcing theorem (`bounded_recall_forces_recency_management`)
-wraps with a `WorkingSystem` and a `HasRecencyFilter` conclusion. -/
+This theorem is the Minimality-layer recall-budget result: given a
+`RecallBudget` and a hypothesis that all provenance chains fit within a
+recency/admissibility window equal to the budget, the universal bound
+contradicts `recall_only_withdrawal_incomplete`.
+
+It is not a Scenarios-layer forcing theorem and does not produce a new
+`Has*` primitive.  It shows why bounded-budget agents need some recall-
+admissibility filter; τ-expiry is one sufficient clock-based implementation. -/
 
 /-- ABSTRACT IMPOSSIBILITY: V-chain universality contradicts the recall budget.
 
@@ -2057,9 +2064,10 @@ wraps with a `WorkingSystem` and a `HasRecencyFilter` conclusion. -/
     then the universal `∀ v, M.recall_cost v ≤ M.budget` contradicts
     `recall_only_withdrawal_incomplete`.
 
-    This is the abstract right-branch embedding step.  The per-dimension
-    forcing conclusion — `HasRecencyFilter W` — is produced by
-    `bounded_recall_forces_recency_management` in `EpArch.Scenarios`.
+    This is a Minimality-layer impossibility result only.  It does not
+    produce a `Has*` SystemSpec primitive; the forcing consequence is that
+    some recall-admissibility filter is needed.  τ-expiry is one sufficient
+    clock-based implementation.
 
     **Scope notes.**
     - Does not prove: τ is the *only* valid recency filter.  Priority-based
