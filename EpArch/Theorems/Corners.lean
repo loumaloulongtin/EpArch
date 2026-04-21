@@ -22,11 +22,15 @@ variable {PropLike Standard ErrorModel Provenance Reason Evidence : Type u}
 
 /-! ## Corner 6 — Contestation blocked ⇒ frozen canon dynamics
 
-    **Theorem shape:** If Challenge/Revoke/Repair steps are removed from
-    the transition system, then bad deposits persist forever.
+    **Theorem shape:** If Challenge/Revoke/Repair/Update steps are removed from
+    the transition system, deposits cannot be epistemically closed as Revoked.
 
     **Implication:** Systems that structurally block contestation cannot
-    eliminate errors — they have "frozen canon" dynamics. -/
+    epistemically correct errors — they have "frozen canon" dynamics. Note:
+    non-contestation traces may still include Forget (capacity deletion), which
+    marks a slot as Forgotten, but forgetting is not correction: the error is
+    not epistemically closed, and the Forgotten status is operationally distinct
+    from Revoked. -/
 
 /-- A "bad deposit" predicate: the deposit has some broken field. -/
 def IsBadDeposit (BrokenField : Deposit PropLike Standard ErrorModel Provenance → Field → Prop)
@@ -178,8 +182,10 @@ theorem allRestricted_implies_no_revision
     This extends `frozen_canon_no_revocation` (single restricted step) to
     full traces of arbitrary length. If every action in the trace is
     non-contestation, then ¬Revoked at the start implies ¬Revoked
-    after any number of steps. The claim “contestation-blocking causes
-    deposits to persist" holds for traces of arbitrary length. -/
+    after any number of steps. The claim "contestation-blocking prevents
+    epistemic revocation/correction" holds for traces of arbitrary length.
+    (Non-contestation traces may still include Forget, which marks a slot as
+    Forgotten — but Forgotten is not Revoked, and forgetting is not correction.) -/
 theorem frozen_canon_no_revocation_trace
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (t : Trace (Reason := Reason) (Evidence := Evidence) s s')
@@ -400,13 +406,13 @@ theorem finite_budget_forces_triage
 
     **Implication:** Entrenchment is not mere stubbornness — it is an
     architectural defect. The agent's Ladder says "settled premise" while
-    the Bank says "authorization suspended/revoked." Normal Certainty would
+    the Bank says "authorization suspended/revoked/forgotten." Normal Certainty would
     re-check and demote; Entrenchment bypasses review entirely.
 
     This is the agent-level analog of Corner 6 (frozen_canon_no_revocation),
     which is bubble-level: if contestation actions are blocked system-wide,
-    bad deposits persist. Entrenchment localizes the same pathology to a
-    single agent's Ladder state. -/
+    bad deposits cannot be epistemically revoked. Entrenchment localizes the
+    same pathology to a single agent's Ladder state. -/
 
 /-- An entrenched agent: has certainty on P and structurally refuses
     to revise when the Bank signals quarantine or revocation. -/
@@ -418,12 +424,13 @@ structure EntrenchedAgent where
   /-- Agent's revision channel is disconnected (opaque, non-trivial) -/
   refuses_demotion : ignores_bank_signal agent claim
 
-/-- The Bank has suspended or revoked the deposit backing P. -/
+/-- The Bank has suspended, revoked, or forgotten the deposit backing P.
+    Any of these statuses blocks withdrawal (isDeposited requires .Deposited). -/
 def deposit_no_longer_active
     (s : SystemState PropLike Standard ErrorModel Provenance)
     (d_idx : Nat) : Prop :=
   ∃ d, s.ledger.get? d_idx = some d ∧
-    (d.status = .Quarantined ∨ d.status = .Revoked)
+    (d.status = .Quarantined ∨ d.status = .Revoked ∨ d.status = .Forgotten)
 
 /-- ENTRENCHMENT THEOREM: An entrenched agent who relies on a
     quarantined/revoked deposit cannot satisfy safe withdrawal.
@@ -460,7 +467,10 @@ theorem entrenchment_breaks_safe_withdrawal
   rw [← h_eq] at h_deposited
   cases h_status with
   | inl h_q => rw [h_q] at h_deposited; cases h_deposited
-  | inr h_r => rw [h_r] at h_deposited; cases h_deposited
+  | inr h_rf =>
+    cases h_rf with
+    | inl h_r => rw [h_r] at h_deposited; cases h_deposited
+    | inr h_fo => rw [h_fo] at h_deposited; cases h_deposited
 
 /-- ENTRENCHMENT COROLLARY: An entrenched agent cannot withdraw from
     the Bank when the deposit has been quarantined or revoked.

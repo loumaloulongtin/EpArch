@@ -13,8 +13,9 @@ via trace induction over the Agent LTS.
 - projectState: maps StepSemantics.SystemState → AgentSystemState
 - deposited_claim: Prop-sorted epistemic truth predicate
 - submit_preserves_deposited_claims: Submit cannot advance claims to Deposited
-- deposited_claim_arises_from_promote_or_register: Step.promote (with bank authority)
-  or Step.register (agent direct registration; no bank-side precondition) can advance a claim to Deposited
+- deposited_claim_arises_from_promote_register_or_update: Step.promote (bank authority),
+  Step.register (agent direct registration), or Step.update (direct-maintenance overwrite
+  installing a Deposited d_new) can advance a claim to Deposited
   (covers all Step constructors)
 - AgentLTSAbstraction: simulation witness (all three fields machine-checked)
 - Containment invariants proved by trace induction:
@@ -245,21 +246,24 @@ Two connected definitions bridge the state spaces:
 - `deposited_claim`: Prop-sorted counterpart — `∃ d ∈ s.ledger, d.P = c ∧ d.status = .Deposited`.
   Used in theorem statements to avoid a `DecidableEq` dependency.
 
-The key theorem is `deposited_claim_arises_from_promote_or_register`: the only `Step`
+The key theorem is `deposited_claim_arises_from_promote_register_or_update`: the `Step`
 constructor that can move a claim from non-Deposited into the Deposited set is
-`Step.promote` (bank authority required) or `Step.register` (agent direct
-registration; no bank-side precondition).
+`Step.promote` (bank authority required), `Step.register` (agent direct
+registration; no bank-side precondition), or `Step.update` (direct-maintenance
+overwrite where the agent installs a d_new whose status is Deposited).
 The proof covers all Step constructors:
 - `submit`: new entry enters at `.Candidate` — noConfusion with `.Deposited`
 - `register`: new `.Deposited` entry via agent direct registration — second pathway
 - `withdraw` / `tick`: ledger unchanged — trivial
 - `challenge` / `revoke` / `repair`: `updateDepositStatus` sets a non-Deposited status — noConfusion
 - `promote`: `updateDepositStatus` sets `.Deposited` — bank authority extracted
+- `update`: `modifyAt` installs d_new; if d_new.P = c and d_new.status = .Deposited, return the update witness
 
-This is the formal statement that Deposited status is exclusively reachable via:
-1. Bank authority (`Step.promote`) — for existing deposits
+This is the formal statement that Deposited status is reachable via:
+1. Bank authority (`Step.promote`) — structured promotion of an existing Candidate
 2. Agent direct registration (`Step.register`) — for new submissions
-No agent-initiated step bypasses both paths.
+3. Direct-maintenance overwrite (`Step.update`) — d_new with `.Deposited` status
+Update does not require the old entry to be Deposited; it is a wholesale replacement.
 -/
 
 /-- State projection: maps a `StepSemantics.SystemState` to an `AgentSystemState`.
@@ -321,14 +325,15 @@ theorem submit_preserves_deposited_claims
     exact ⟨d, (EpArch.StepSemantics.mem_append_iff d s.ledger _).mpr (Or.inl hd_mem), hP, hstatus⟩
 
 /-- DEPOSITED-ENTRY THEOREM: Deposited status requires bank promotion, direct registration,
-    or status-preserving update of an existing Deposited entry.
+    or direct-maintenance overwrite installing a Deposited record.
 
     **Theorem shape:** If `¬ deposited_claim s c` before a Step and `deposited_claim s' c`
     after, then one of:
     (a) the step was `Step.promote` with `(ag, B, d_idx)` recorded, OR
     (b) the step was `Step.register` with `d_sub.P = c` (agent direct registration), OR
-    (c) the step was `Step.update` with `d_new.P = c` applied to a Deposited entry,
-        preserving Deposited status while replacing the slot contents.
+    (c) the step was `Step.update` with `d_new.P = c`; the agent performs a wholesale
+        direct-maintenance overwrite installing a new deposit whose status is Deposited.
+        Update does not require the old entry to be Deposited — it replaces the slot.
 
     **Proof strategy:** Case analysis on all Step constructors.
     - `submit`: appends `.Candidate` — noConfusion; old entries by h_not.
@@ -340,9 +345,9 @@ theorem submit_preserves_deposited_claims
     - `repair`: sets `.Candidate` — noConfusion.
     - `promote`: sets `.Deposited` — return left disjunct (a).
     - `forget`: sets `.Forgotten` — noConfusion.
-    - `update`: status-preserving; if the slot was Deposited and d_new.P = c, return (c);
-      all other entries traced back to s via mem_modifyAt — h_not. -/
-theorem deposited_claim_arises_from_promote_or_register
+    - `update`: if d_new.P = c, return (c) via mem_modifyAt;
+      all other entries traced back to s — h_not. -/
+theorem deposited_claim_arises_from_promote_register_or_update
     {PropLike Standard ErrorModel Provenance Reason Evidence : Type u}
     (s s' : EpArch.StepSemantics.SystemState PropLike Standard ErrorModel Provenance)
     (a : EpArch.StepSemantics.Action PropLike Standard ErrorModel Provenance Reason Evidence)
@@ -485,9 +490,9 @@ AgentLTS preserves: truth (external, not agent-controlled), gate (architectural)
 The three `AgentLTSAbstraction` fields are ALL proved:
 - `truth_external`: truth invariant preserved along all AgentLTS traces
 - `gate_architectural`: gate invariant preserved along all AgentLTS traces
-- `over_approximation`: `deposited_claim_arises_from_promote_or_register` — Deposited status
-  is exclusively reachable via bank authority (`Step.promote`) or agent direct registration
-  (`Step.register`). All other constructors leave the Deposited set unchanged.
+- `over_approximation`: `deposited_claim_arises_from_promote_register_or_update` — Deposited status
+  is reachable via bank authority (`Step.promote`), agent direct registration
+  (`Step.register`), or direct-maintenance overwrite (`Step.update`).
 
 The connection between the two state spaces via `projectState` (above) and the
 bank authority theorem closes the simulation argument at the StepSemantics level.
@@ -498,9 +503,9 @@ bank authority theorem closes the simulation argument at the StepSemantics level
     All three fields carry machine-checked proof content:
     - `truth_external`: truth invariant preserved along all AgentLTS traces
     - `gate_architectural`: gate invariant preserved along all AgentLTS traces
-    - `over_approximation`: `deposited_claim_arises_from_promote_or_register` — Deposited
-      status is exclusively reachable via bank authority (`Step.promote`) or agent direct
-      registration (`Step.register`).
+    - `over_approximation`: `deposited_claim_arises_from_promote_register_or_update` — Deposited
+      status is reachable via bank authority (`Step.promote`), agent direct registration
+      (`Step.register`), or direct-maintenance overwrite (`Step.update`).
 
     `invariants_transfer_via_simulation` calls all three fields of the abstraction
     witness, so any `AgentLTSAbstraction` satisfying the proved fields transfers the
@@ -516,14 +521,14 @@ structure AgentLTSAbstraction (Agent Claim : Type u) where
     ∀ (initialGate : Bool) {s s' : AgentSystemState Agent Claim},
       EpArch.LTS.Trace (AgentLTS Agent Claim) s s' →
       gateInvariant initialGate s → gateInvariant initialGate s'
-  /-- Deposited-entry theorem at StepSemantics level: the only paths to `.Deposited`
+  /-- Deposited-entry theorem at StepSemantics level: the paths to `.Deposited`
       are `Step.promote` (bank promotes existing deposit), `Step.register`
-      (agent direct registration), or `Step.update` on an already-Deposited entry
-      (status-preserving update of live content).
+      (agent direct registration), or `Step.update` (direct-maintenance overwrite
+      installing a Deposited d_new; does not require the old entry to be Deposited).
       Formally: if `¬ deposited_claim s c` and `deposited_claim s' c` after a Step,
       then the step was `Promote`, `Register ag d_sub` with `d_sub.P = c`, or
       `Update ag B d_idx d_new` with `d_new.P = c`.
-      Witnessed by `deposited_claim_arises_from_promote_or_register`. -/
+      Witnessed by `deposited_claim_arises_from_promote_register_or_update`. -/
   over_approximation :
     ∀ {Standard ErrorModel Provenance Reason Evidence : Type u}
       (s s' : EpArch.StepSemantics.SystemState Claim Standard ErrorModel Provenance)
@@ -541,14 +546,14 @@ structure AgentLTSAbstraction (Agent Claim : Type u) where
 /-- Canonical abstraction witness, proved from the containment corollaries.
     All three fields are backed by machine-checked proofs:
     - `truth_external` / `gate_architectural`: invariant corollaries via trace induction
-    - `over_approximation`: `deposited_claim_arises_from_promote_or_register` — Deposited
-      status is exclusively reachable via bank authority (`Step.promote`) or agent
-      direct registration (`Step.register`) -/
+    - `over_approximation`: `deposited_claim_arises_from_promote_register_or_update` — Deposited
+      status is reachable via bank authority (`Step.promote`), agent direct
+      registration (`Step.register`), or direct-maintenance overwrite (`Step.update`). -/
 def agentLTSIsAbstraction (Agent Claim : Type u) : AgentLTSAbstraction Agent Claim where
   truth_external     := truth_preserved_along_trace
   gate_architectural := gate_preserved_along_trace
   over_approximation := fun s s' a step c h_not h_after =>
-    deposited_claim_arises_from_promote_or_register s s' a step c h_not h_after
+    deposited_claim_arises_from_promote_register_or_update s s' a step c h_not h_after
 
 /-- Containment invariants hold given an abstraction witness.
 

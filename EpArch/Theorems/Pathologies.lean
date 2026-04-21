@@ -65,8 +65,8 @@ theorem testimony_is_export (t : testimony_case (PropLike := PropLike)) :
     Structural invariant: `deposit_survives_access_loss` encodes
     the key claim — access loss does not invalidate the deposit.  The theorem uses
     the `agent_lost_access` premise, routing it through this invariant.
-    LTS grounding: `StepSemantics.trace_no_revision_preserves_deposited` proves
-    that any revision-free trace preserves `isDeposited`; access loss corresponds
+    LTS grounding: `StepSemantics.trace_no_revision_preserves_non_revoked_slot` proves
+    that any revision-free trace preserves non-Revoked status; access loss corresponds
     to no revision action being issued against the deposit. -/
 structure forgotten_evidence_case where
   agent : Agent
@@ -78,7 +78,7 @@ structure forgotten_evidence_case where
   deposit_in_bubble : Bool
   /-- Structural invariant: access loss does not invalidate the deposit.
       Even when the agent loses access to their original evidence, the bubble's
-      deposit persists — grounded by `StepSemantics.trace_no_revision_preserves_deposited`:
+      deposit persists — grounded by `StepSemantics.trace_no_revision_preserves_non_revoked_slot`:
       without an explicit revision action, deposits are immutable in the bubble. -/
   deposit_survives_access_loss : agent_has_access = false → deposit_in_bubble = true
 

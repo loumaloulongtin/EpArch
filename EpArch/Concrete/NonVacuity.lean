@@ -392,7 +392,7 @@ theorem competition_gate_non_vacuity_self_correction :
       (d_idx : Nat),
       isDeposited s d_idx ∧
       (∃ d, s'.ledger.get? d_idx = some d ∧ d.status = .Revoked) := by
-  -- Use the concrete states and axiomatized trace
+  -- Use the concrete states and explicitly constructed trace
   refine ⟨initialConcreteState7, stateAfterRevoke7, concrete_resolution_trace9, 0, ?_⟩
   constructor
   · -- Initial state has deposit at index 0

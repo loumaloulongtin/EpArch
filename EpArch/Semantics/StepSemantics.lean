@@ -2,9 +2,13 @@
 EpArch.Semantics.StepSemantics — Step Semantics (Labeled Transition System)
 
 Constructive operational semantics of the epistemic architecture.
-Defines a concrete LTS over SystemState with eight bank-primitive actions
-(Submit, Register, Withdraw, Challenge, Tick, Repair, Revoke, Promote)
-and proves conditional linking results from operational preconditions
+Defines a concrete LTS over SystemState with ten bank-primitive actions:
+Submit, Register, Withdraw, Challenge, Tick, Repair, Revoke, Promote,
+Forget, and Update.
+Forget is agent-invoked capacity deletion to a Forgotten tombstone.
+Update is agent-invoked direct maintenance: a wholesale slot overwrite that
+counts as revision and opts the trace out of revision-free guarantees.
+Proves conditional linking results from operational preconditions
 rather than asserting them as axioms.
 
 Export is not a bank primitive. Inter-bubble transfer is an agent-level workflow:
@@ -17,7 +21,7 @@ This module defines HOW they work: the Step relation's preconditions
 FORCE certain architectural features.
 
 Key exports:
-- SystemState, Step (inductive LTS relation, 8 constructors)
+- SystemState, Step (inductive LTS relation, 10 constructors)
 - no_revision_no_correction (competition gate impossibility)
 - generic_invariant_preservation (step-preserved invariants)
 - Former companion EpArch.Semantics.LinkingAxioms is retired; operational groundings
@@ -69,6 +73,9 @@ variable {PropLike Standard ErrorModel Provenance Reason Evidence : Type u}
     - Tick:      time advances (for TTL expiry)
     - Repair:    address challenged field
     - Revoke:    remove deposit from circulation
+    - Forget:    agent-invoked capacity deletion; marks slot as Forgotten tombstone
+    - Update:    agent-invoked direct maintenance; wholesale slot overwrite;
+                 counts as revision (Action.isRevision = true)
 
     Export is NOT a primitive bank action. Inter-bubble transfer is an agent-level
     workflow: Withdraw from source bubble, agent carries the deposit, Register to
@@ -467,9 +474,11 @@ inductive Step : SystemState PropLike Standard ErrorModel Provenance →
 
   /-- Promote: bank operator advances a Candidate deposit to Deposited (live).
 
-      Along with `register`, one of two Step constructors that can produce
-      a `.Deposited` entry. The deposit must be in Candidate status; after this
-      step it is Deposited and live in the bank.
+      Along with Register, Promote is one of the structured/public entry paths
+      to Deposited. Update can also install a Deposited record, but only through
+      the direct-maintenance revision path (which opts the trace out of
+      revision-free guarantees). The deposit must be in Candidate status; after
+      this step it is Deposited and live in the bank.
 
       Implementations may use multi-stage internal validation pipelines between
       Candidate and Deposited; this step represents the minimal architectural
@@ -523,8 +532,9 @@ inductive Step : SystemState PropLike Standard ErrorModel Provenance →
 
       Distinction from Repair: Repair is reactive (requires Quarantined status).
       Update is proactive and wholesale: it replaces the entire deposit record.
-      The bank enforces only h_exists; all status semantics are the agent's
-      responsibility. -/
+      The bank enforces only slot existence (h_exists) and the non-Forgotten
+      tombstone boundary (h_not_forgotten); all other status semantics are the
+      agent's responsibility. -/
   | update (s : SystemState PropLike Standard ErrorModel Provenance)
       (a : Agent) (B : Bubble) (d_idx : Nat)
       (d_new : Deposit PropLike Standard ErrorModel Provenance)
@@ -596,8 +606,12 @@ def Trace.hasRevision : Trace (Reason := Reason) (Evidence := Evidence) s s' →
 
 /-- A trace demonstrates "self-correction" if a deposit starts Deposited
     and ends Revoked (error was caught and removed via revision actions).
-    This checks only the endpoints; the intermediate path (typically
-    Deposited → Quarantined → Revoked) is enforced by Step preconditions. -/
+    This checks only the endpoints. In structured-revision traces the intermediate
+    path is typically Deposited → Quarantined → Revoked, enforced by
+    Challenge/Revoke preconditions. Direct-maintenance traces may reach the same
+    endpoint via Update; Update is classified as revision, so revision-free
+    theorems still exclude it. -/
+
 def Trace.demonstratesSelfCorrection
     (_t : Trace (Reason := Reason) (Evidence := Evidence) s s') (d_idx : Nat) : Prop :=
   isDeposited s d_idx ∧
@@ -657,7 +671,7 @@ theorem bank_trace_cannot_discharge_closure
   fun h => (no_bank_trace_generates_ladder_content s s' t f P).trans h
 
 /-- A system state "prohibits revision" if no reachable trace contains
-    Challenge or Revoke actions. Captures domains where revision is
+    Challenge, Revoke, or Update actions. Captures domains where revision is
     structurally blocked: all traces have hasRevision = false. -/
 def prohibits_revision (s : SystemState PropLike Standard ErrorModel Provenance) : Prop :=
   ∀ (s' : SystemState PropLike Standard ErrorModel Provenance)
@@ -868,7 +882,7 @@ theorem trace_no_revision_preserves_non_revoked
     and non-Revoked. Challenge, Revoke, and Update are revision actions (ruled out
     by h_not_rev). All remaining actions either leave d_idx unchanged or carry
     gates that exclude Revoked as a precondition. -/
-theorem step_no_revision_preserves_deposited
+theorem step_no_revision_preserves_non_revoked_slot
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (a : Action PropLike Standard ErrorModel Provenance Reason Evidence)
     (h_step : Step (Reason := Reason) (Evidence := Evidence) s a s')
@@ -1052,7 +1066,7 @@ private theorem trace_non_revoked_slot_preserved
       · rfl
       · simp [hr, h_a_not_rev] at h_no_rev
     let ⟨d_mid, hd_mid, hne_mid⟩ :=
-      step_no_revision_preserves_deposited _ _ a h_step h_a_not_rev d_idx d h_get h_ne_rev
+      step_no_revision_preserves_non_revoked_slot _ _ a h_step h_a_not_rev d_idx d h_get h_ne_rev
     exact ih h_rest_no_rev d_mid hd_mid hne_mid
 
 /-- Trace-level version: revision-free traces preserve a non-Revoked slot.
@@ -1062,7 +1076,7 @@ private theorem trace_non_revoked_slot_preserved
 
     Proof: delegates to trace_non_revoked_slot_preserved, converting isDeposited to
     d.status ≠ .Revoked at the call site. -/
-theorem trace_no_revision_preserves_deposited
+theorem trace_no_revision_preserves_non_revoked_slot
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (t : Trace (Reason := Reason) (Evidence := Evidence) s s')
     (h_no_rev : t.hasRevision = false)
