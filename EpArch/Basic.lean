@@ -203,7 +203,8 @@ def Entrenched (a : Agent) (P : Claim) : Prop :=
 /-! ## Deposit Status
 
 A deposit goes through a lifecycle in the Bank:
-Candidate → Deposited → (Quarantined → Revoked or Repaired).
+Candidate → Deposited → Quarantined → (Revoked or Repair→Candidate),
+with Forgotten as an operational tombstone reachable by agent-invoked Forget.
 Repaired deposits loop back to Candidate for revalidation, not to Deposited.
 These statuses control what operations are available. For example, only
 Deposited claims can be withdrawn (relied upon), and only Quarantined

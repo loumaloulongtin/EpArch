@@ -345,7 +345,7 @@ theorem submit_preserves_deposited_claims
     - `repair`: sets `.Candidate` — noConfusion.
     - `promote`: sets `.Deposited` — return left disjunct (a).
     - `forget`: sets `.Forgotten` — noConfusion.
-    - `update`: if d_new.P = c, return (c) via mem_modifyAt;
+    - `update`: if d_new.P = c and d_new.status = .Deposited, return (c) via mem_modifyAt;
       all other entries traced back to s — h_not. -/
 theorem deposited_claim_arises_from_promote_register_or_update
     {PropLike Standard ErrorModel Provenance Reason Evidence : Type u}
@@ -362,7 +362,7 @@ theorem deposited_claim_arises_from_promote_register_or_update
       a = .Register ag d_sub ∧ d_sub.P = c)
     ∨ (∃ (ag : EpArch.Agent) (B : EpArch.Bubble) (d_idx : Nat)
          (d_new : EpArch.Deposit PropLike Standard ErrorModel Provenance),
-      a = .Update ag B d_idx d_new ∧ d_new.P = c) := by
+      a = .Update ag B d_idx d_new ∧ d_new.P = c ∧ d_new.status = .Deposited) := by
   cases step with
   | submit _ _ =>
     -- s' = { s with ledger := s.ledger ++ [{ d with status := .Candidate }] }
@@ -456,8 +456,9 @@ theorem deposited_claim_arises_from_promote_register_or_update
         rw [← hx.2] at hstatus'
         exact DepositStatus.noConfusion hstatus'
   | update ag B d_upd d_new _ _ _ =>
-    -- status-preserving update: entries outside d_upd trace back via mem_modifyAt;
-    -- the new slot content is d_new, so if d_new.P = c return the third disjunct
+    -- wholesale update: entries outside d_upd trace back via mem_modifyAt;
+    -- the new slot content is d_new, so if d_new.P = c and d_new.status = .Deposited
+    -- return the third disjunct
     cases h_after with
     | intro d' hd' =>
       have hd'_mem : d' ∈ (EpArch.StepSemantics.modifyAt s.ledger d_upd (fun _ => d_new)) :=
@@ -474,8 +475,8 @@ theorem deposited_claim_arises_from_promote_register_or_update
         -- d' is the new deposit d_new placed at d_upd; return the update witness
         cases h with
         | intro x hx =>
-          -- hx.2 : d_new = d'; so d_new.P = c
-          exact Or.inr (Or.inr ⟨ag, B, d_upd, d_new, rfl, hx.2.symm ▸ hP'⟩)
+          -- hx.2 : d_new = d'; so d_new.P = c and d_new.status = .Deposited
+          exact Or.inr (Or.inr ⟨ag, B, d_upd, d_new, rfl, hx.2.symm ▸ hP', hx.2.symm ▸ hstatus'⟩)
 
 /-! ## Simulation Relation to Operational Semantics
 
@@ -527,7 +528,7 @@ structure AgentLTSAbstraction (Agent Claim : Type u) where
       installing a Deposited d_new; does not require the old entry to be Deposited).
       Formally: if `¬ deposited_claim s c` and `deposited_claim s' c` after a Step,
       then the step was `Promote`, `Register ag d_sub` with `d_sub.P = c`, or
-      `Update ag B d_idx d_new` with `d_new.P = c`.
+      `Update ag B d_idx d_new` with `d_new.P = c` and `d_new.status = .Deposited`.
       Witnessed by `deposited_claim_arises_from_promote_register_or_update`. -/
   over_approximation :
     ∀ {Standard ErrorModel Provenance Reason Evidence : Type u}
@@ -542,7 +543,7 @@ structure AgentLTSAbstraction (Agent Claim : Type u) where
         a = .Register ag d_sub ∧ d_sub.P = c)
       ∨ (∃ (ag : EpArch.Agent) (B : EpArch.Bubble) (d_idx : Nat)
            (d_new : EpArch.Deposit Claim Standard ErrorModel Provenance),
-        a = .Update ag B d_idx d_new ∧ d_new.P = c)
+        a = .Update ag B d_idx d_new ∧ d_new.P = c ∧ d_new.status = .Deposited)
 /-- Canonical abstraction witness, proved from the containment corollaries.
     All three fields are backed by machine-checked proofs:
     - `truth_external` / `gate_architectural`: invariant corollaries via trace induction

@@ -1,12 +1,12 @@
 # EpArch Lean Formalization — Documentation Index
 
-This folder documents the Lean formalization of the Epistemic Architecture (EpArch) framework — 0 axiom declarations, zero sorries.
+This folder documents the Lean formalization of the Epistemic Architecture (EpArch) framework — zero sorries, zero core axiom declarations (see [AXIOMS.md](AXIOMS.md) for the one named axiom outside the core import surface).
 
 **The core claim:** lifecycle gates, header-preserving export, a revision loop, and temporal validity are not design choices. They are *forced* by the combination of agent constraints (imperfect agents face permanent challenge pressure) and system health goals (safe withdrawal, reliable export, self-correction). The files below are the machine-checked record of that forcing argument.
 
 ## Build Surface
 
-`lake build` (via `Main.lean`) is the single build target. **0 axiom declarations.**
+`lake build` (via `Main.lean`) is the single build target. **Zero sorries. Zero core axiom declarations.** See [AXIOMS.md](AXIOMS.md) for the one named axiom outside the core import surface.
 
 ## Documents
 
@@ -119,7 +119,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 lake build
 ```
 
-**Current Status:** Zero errors, zero sorries, zero axiom declarations.
+**Current Status:** Zero errors, zero sorries, zero core axiom declarations. See [AXIOMS.md](AXIOMS.md).
 
 ## See Also
 

@@ -523,8 +523,11 @@ inductive Step : SystemState PropLike Standard ErrorModel Provenance →
 
       Trade-off: Action.Update counts as a revision action
       (Action.isRevision = true). Any bubble that uses Update opts in to the
-      revision predicate and forfeits revision-free guarantees. Multi-agent bubbles
-      that need those guarantees must use the structured lifecycle.
+      revision predicate and forfeits revision-free guarantees. Traces that
+      include Update are revision traces and therefore do not satisfy
+      revision-free hypotheses. The structured lifecycle remains the transparent
+      Challenge/Repair/Promote route when a proof needs those structured-revision
+      invariants.
 
       Restriction on the OLD deposit (d_old at d_idx):
       - h_not_forgotten: cannot update a Forgotten entry (operationally void tombstone)
@@ -1094,8 +1097,10 @@ theorem trace_no_revision_preserves_non_revoked_slot
     "NoSelfCorrectionWithoutRevision" in EpArch.Commitments.
 
     The proof is structural: self-correction requires a deposit to
-    go from Deposited to Revoked, which requires Challenge and Revoke
-    actions. If those are prohibited, the transition cannot occur. -/
+    go from Deposited to Revoked. In structured-revision traces this occurs
+    via Challenge/Revoke; in direct-maintenance traces it may occur via
+    Update. Since Challenge, Revoke, and Update are all revision actions,
+    revision-free traces cannot produce the endpoint. -/
 theorem no_revision_no_correction
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (t : Trace (Reason := Reason) (Evidence := Evidence) s s')
@@ -1132,7 +1137,8 @@ domains cannot both self-correct AND prohibit revision. -/
     then that trace must contain a revision action.
 
     **COMPETITION GATE**: Any domain claiming self-correction
-    must permit Challenge/Revoke actions. -/
+    must permit revision actions (Challenge/Revoke in structured mode,
+    or Update in direct-maintenance mode). -/
 theorem self_correction_requires_revision
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (t : Trace (Reason := Reason) (Evidence := Evidence) s s')

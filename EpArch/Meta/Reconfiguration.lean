@@ -10,7 +10,7 @@ Key exports:
 - WorkingSystem.addBubbles / addTrustBridges / addHeaders / addRevocation /
   addBank / addRedeemability / addAuthorization / addStorageManagement — additive capability defs
 - pwf_add_bubbles .. pwf_add_storage_management — PartialWellFormed extension theorems
-- isDirectMaintenanceAction — policy predicate: Update bypasses structured revision
+- isDirectMaintenanceAction — classification predicate: Update bypasses structured revision
 - quarantine_requires_challenge_structured — Quarantined requires Step.challenge (no Update)
 - StatusImproves — deposit status improvement order
 - no_self_healing_bank — every status improvement is driven by an explicit action
@@ -364,7 +364,7 @@ theorem pwf_add_storage_management (W : WorkingSystem) (S : ConstraintSubset)
 
 
 /-! ========================================================================
-    PART C — Policy Predicates: Direct Maintenance vs Structured Revision
+    PART C — Action Classification: Direct Maintenance vs Structured Revision
 
     Two revision regimes coexist in EpArch:
     1. Direct maintenance (single-agent / private bank): Update rewrites a
@@ -378,7 +378,7 @@ theorem pwf_add_storage_management (W : WorkingSystem) (S : ConstraintSubset)
     to rule out the direct-maintenance bypass.
     ======================================================================== -/
 
-/-- Policy predicate: is this action a direct-maintenance action?
+/-- Classification predicate: is this action a direct-maintenance action?
 
     Direct maintenance (Update) bypasses the structured public revision
     lifecycle. A step that carries a direct-maintenance action opts out of
