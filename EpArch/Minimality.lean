@@ -1983,9 +1983,9 @@ def GroundedStorageStrict.mk' (G : GroundedStorage) : GroundedStorageStrict :=
 
     **Consequence.** Without a recency filter, a bounded-budget agent
     accumulates irrecallable deposits — entries that remain formally Deposited
-    but cannot be re-verified at recall time.  τ-expiry is a forced response:
-    it ensures the deposits an agent must re-verify at withdrawal time have
-    bounded provenance depth, because they are recent.
+    but cannot be re-verified at recall time.  τ-expiry is one sufficient
+    response: it ensures the deposits an agent must re-verify at withdrawal
+    time have bounded provenance depth, because they are recent.
 
     **Proof technique.** Parallel to BoundedVerification (§2).  A
     `RecallBudget` witness carries a provenance chain exceeding the budget.
