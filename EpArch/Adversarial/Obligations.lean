@@ -248,7 +248,7 @@ additional W assumptions. `collapsed_to_path_failure` is purely structural
 theorem collapsed_to_path_failure
     (a : EpArch.Agent) (channels : List EpArch.AuditChannel)
     (d : Deposit PropLike Standard ErrorModel Provenance)
-    (h_col : EpArch.verification_collapsed a channels)
+    (_ : EpArch.verification_collapsed a channels)
     (h_tau_zero : d.h.τ = 0)
     (h_path : PathExists d) : False :=
   absurd h_path.ttl_valid (by simp [h_tau_zero])

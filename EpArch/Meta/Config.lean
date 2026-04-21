@@ -227,15 +227,15 @@ inductive WorldWitness : EnabledWorldCluster → Type 1 where
       WorldWitness .world_lies_scale
   | rolexDdos :
       (∀ {PL SL EL PrL : Type}
-        (W : W_ddos)
+        (_W : W_ddos)
         (a : Agent)
         (dr dd : Deposit PL SL EL PrL)
-        (h_exhausts : ∀ (a' : Agent) (ch : List EpArch.AuditChannel),
+        (_h_exhausts : ∀ (a' : Agent) (ch : List EpArch.AuditChannel),
           EpArch.verification_collapsed a' ch → dd.h.τ = 0)
-        (hr_tau  : dr.h.τ = 0) (hr_path : PathExists dr)
-        (h_vec   : EpArch.ladder_overloaded a ∨ EpArch.V_channel_exhausted a ∨
+        (_hr_tau  : dr.h.τ = 0) (_hr_path : PathExists dr)
+        (_h_vec   : EpArch.ladder_overloaded a ∨ EpArch.V_channel_exhausted a ∨
                    EpArch.E_field_poisoned a ∨ EpArch.denial_triggered a)
-        (hd_path : PathExists dd),
+        (_hd_path : PathExists dd),
         False ∧ False) →
       WorldWitness .world_rolex_ddos
   | ddos :
@@ -580,15 +580,15 @@ def clusterValid (c : ClusterTag) : Prop :=
   | .world_lies_scale  => ∀ (W : W_lies_scale), W.export_cost < W.defense_cost
   | .world_rolex_ddos  =>
       ∀ {PL SL EL PrL : Type}
-        (W : W_ddos)
+        (_W : W_ddos)
         (a : Agent)
         (dr dd : Deposit PL SL EL PrL)
-        (h_exhausts : ∀ (a' : Agent) (ch : List EpArch.AuditChannel),
+        (_h_exhausts : ∀ (a' : Agent) (ch : List EpArch.AuditChannel),
           EpArch.verification_collapsed a' ch → dd.h.τ = 0)
-        (hr_tau  : dr.h.τ = 0) (hr_path : PathExists dr)
-        (h_vec   : EpArch.ladder_overloaded a ∨ EpArch.V_channel_exhausted a ∨
+        (_hr_tau  : dr.h.τ = 0) (_hr_path : PathExists dr)
+        (_h_vec   : EpArch.ladder_overloaded a ∨ EpArch.V_channel_exhausted a ∨
                    EpArch.E_field_poisoned a ∨ EpArch.denial_triggered a)
-        (hd_path : PathExists dd),
+        (_hd_path : PathExists dd),
         False ∧ False
   | .world_ddos        => ∀ (_W : W_ddos) (a : Agent),
         (EpArch.ladder_overloaded a ∨ EpArch.V_channel_exhausted a ∨

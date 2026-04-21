@@ -14,7 +14,7 @@ This document catalogs the proved theorems in the formalization, organized by ar
 
 | Lean | Math | Description |
 |------|------|-------------|
-| `Trace.hasRevision t` | $\exists a \in t.\, a \in \{\text{Challenge}, \text{Revoke}\}$ | Trace contains revision action |
+| `Trace.hasRevision t` | $\exists a \in t.\, a \in \{\text{Challenge}, \text{Revoke}, \text{Update}\}$ | Trace contains revision action |
 | `demonstratesSelfCorrection t i` | $\text{status}_s(i) = \text{Deposited} \land \text{status}_{s'}(i) = \text{Revoked}$ | Deposit transitions to revoked |
 | `prohibits_revision s` | $\forall t : \text{Trace}(s, -).\ t.\text{hasRevision} = \text{false}$ | All traces from s contain no revision action |
 | `diagnosability(h)` | $|\text{ObservableFields}(h)|$ | Cardinality of observable fields |
@@ -238,8 +238,8 @@ certify that S is vacuous regardless of consumer). Both repair by targeting Fiel
 | `trace_preserves_valid_status` | Semantics/StepSemantics.lean | Traces preserve valid statuses |
 | `step_preserves_separation` | Semantics/StepSemantics.lean | Steps preserve type separation |
 | `step_preserves_auditability` | Semantics/StepSemantics.lean | Steps preserve auditability |
-| `step_no_revision_preserves_deposited` | Semantics/StepSemantics.lean | Revision-free step preserves `isDeposited` for all deposits |
-| `trace_no_revision_preserves_deposited` | Semantics/StepSemantics.lean | Revision-free trace preserves `isDeposited` (induction over steps) |
+| `step_no_revision_preserves_non_revoked_slot` | Semantics/StepSemantics.lean | Revision-free step preserves a non-Revoked slot (deposit exists and status ≠ .Revoked) |
+| `trace_no_revision_preserves_non_revoked_slot` | Semantics/StepSemantics.lean | Revision-free trace preserves a non-Revoked slot (induction over steps) |
 | `deposits_survive_revision_free_trace` | Theorems/Pathologies.lean | LTS corollary: deposits survive any revision-free trace |
 | `step_preserves_ladder_map` | Semantics/StepSemantics.lean | `ladder_map` is invariant under every Step (all constructors use `{ s with … }`) |
 | `closure_ladder_invariant` | Semantics/StepSemantics.lean | Contextual alias of `step_preserves_ladder_map` for the closure puzzle |
@@ -449,7 +449,7 @@ un-bypassable at the concrete model level.
 | `repair_action_carries_field` | Semantics/StepSemantics.lean | Repair carries field; connects to quarantine precondition | Surgical |
 | `repair_produces_candidate` | Semantics/StepSemantics.lean | Repair → Candidate | Back to start |
 | `repair_resets_to_candidate` | Semantics/StepSemantics.lean | Full cycle reset | Lifecycle |
-| `quarantine_requires_challenge` | Meta/Reconfiguration.lean | ¬isQuarantined before + isQuarantined after Step → action was `Challenge` | No spontaneous quarantine |
+| `quarantine_requires_challenge_structured` | Meta/Reconfiguration.lean | ¬isQuarantined before + isQuarantined after Step + `isDirectMaintenanceAction a = false` → action was `Challenge` | No spontaneous quarantine in structured-revision mode |
 | `no_self_healing_bank` | Meta/Reconfiguration.lean | StatusImproves d.status d'.status across Step → action ≠ `Tick` | No anonymous Bank improvement |
 
 ---
@@ -850,7 +850,7 @@ receiving bubble; both are already in `CoreOps`, no separate gate predicate need
 | Theorem | File | Statement | Claim |
 |---------|------|-----------|-------------|
 | `lie_containment_principle` | Agent/Resilience.lean | Lies create untrusted deposits, don't flip truth | Epistemic sandbox |
-| `deposited_claim_arises_from_promote_or_register` | Agent/Resilience.lean | Deposited entries are produced only by `Step.promote` (structural status gate) or `Step.register` (direct agent registration; no bank-side precondition) | Bank gate |
+| `deposited_claim_arises_from_promote_register_or_update` | Agent/Resilience.lean | Deposited entries are produced only by `Step.promote` (structural status gate), `Step.register` (direct agent registration), or `Step.update` (direct-maintenance overwrite installing a Deposited d_new) | Bank gate |
 
 ---
 
@@ -1047,7 +1047,7 @@ universally-quantified theorem over all subsets of the eight constraints, and a
 | `pwf_subset_mono` | Meta/Modular.lean | `S ≤ S' → PartialWellFormed W S' → PartialWellFormed W S` | Downward monotonicity: weaker profile inherits well-formedness |
 | `safe_relaxation` | Meta/Modular.lean | `PartialWellFormed W allConstraints → ∀ t, projection_valid (s t) W` | Relaxing active constraints does not break forcing claims for W |
 | `pwf_add_bubbles` … `pwf_add_storage_management` | Meta/Reconfiguration.lean | `PartialWellFormed W S → PartialWellFormed (W.addX ev) { S with X := true }` | Adding a capability preserves prior well-formedness and activates the matching constraint biconditional |
-| `quarantine_requires_challenge` | Meta/Reconfiguration.lean | ¬isQuarantined before + isQuarantined after Step → action was `Challenge` | No spontaneous quarantine; challenge is the unique quarantine gate |
+| `quarantine_requires_challenge_structured` | Meta/Reconfiguration.lean | ¬isQuarantined before + isQuarantined after Step + `isDirectMaintenanceAction a = false` → action was `Challenge` | No spontaneous quarantine in structured-revision mode; challenge is the unique quarantine gate when direct maintenance is excluded |
 | `no_self_healing_bank` | Meta/Reconfiguration.lean | StatusImproves d.status d'.status across Step → action ≠ `Tick` | No anonymous/agentless Bank improvement |
 
 ### Math Form

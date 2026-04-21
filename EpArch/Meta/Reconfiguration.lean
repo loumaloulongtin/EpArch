@@ -10,7 +10,8 @@ Key exports:
 - WorkingSystem.addBubbles / addTrustBridges / addHeaders / addRevocation /
   addBank / addRedeemability / addAuthorization / addStorageManagement — additive capability defs
 - pwf_add_bubbles .. pwf_add_storage_management — PartialWellFormed extension theorems
-- quarantine_requires_challenge — Quarantined status requires Step.challenge
+- isDirectMaintenanceAction — classification predicate: Update bypasses structured revision
+- quarantine_requires_challenge_structured — Quarantined requires Step.challenge (no Update)
 - StatusImproves — deposit status improvement order
 - no_self_healing_bank — every status improvement is driven by an explicit action
 -/
@@ -361,33 +362,61 @@ theorem pwf_add_storage_management (W : WorkingSystem) (S : ConstraintSubset)
         simp [handles_storage, HasStorageManagement, WorkingSystem.addStorageManagement, Option.isSome] }
 
 
+
 /-! ========================================================================
-    PART C — Challenge is the Only Path to Quarantined
+    PART C — Action Classification: Direct Maintenance vs Structured Revision
+
+    Two revision regimes coexist in EpArch:
+    1. Direct maintenance (single-agent / private bank): Update rewrites a
+       deposit in one move. No community audit path is required.
+    2. Structured public revision (multi-agent / community ledger): Challenge
+       quarantines, Repair re-validates, Promote reinstates. Transparent.
+
+    `isDirectMaintenanceAction` marks regime (1). Theorems that assume the
+    structured-revision invariants carry a hypothesis
+      `h_no_direct : isDirectMaintenanceAction a = false`
+    to rule out the direct-maintenance bypass.
     ======================================================================== -/
 
-/-- QUARANTINE REQUIRES CHALLENGE.
+/-- Classification predicate: is this action a direct-maintenance action?
 
-    Deposits reach Quarantined status only via an explicit Step.challenge action.
-    There is no spontaneous quarantine: not from ticks, not from submission,
-    not from repair, not from any configuration change.
+    Direct maintenance (Update) bypasses the structured public revision
+    lifecycle. A step that carries a direct-maintenance action opts out of
+    structured-revision guarantees for that slot.
 
-    Precondition h_before: the deposit at d_idx was NOT quarantined before the
-    step. This rules out the trivial case where a step merely preserves an
-    existing Quarantined entry unchanged.
+    Used to scope `quarantine_requires_challenge_structured` to the
+    regime where Update is not permitted. -/
+def isDirectMaintenanceAction
+    (a : Action PropLike Standard ErrorModel Provenance Reason Evidence) : Bool :=
+  match a with
+  | .Update _ _ _ _ => true
+  | _ => false
 
-    Proof: case split on all Step constructors.
-    - challenge at d_idx’ = d_idx: return the witness rfl.
-    - challenge at d_idx’ ≠ d_idx: get?_updateDepositStatus_ne preserves d_idx.
-    - revoke/repair at d_idx’ = d_idx: constructor precondition requires
-      isQuarantined s d_idx’; after heq rewrite contradicts h_before.
-    - submit/register: appended deposit has .Candidate/.Deposited; existing unchanged.
-    - withdraw/tick: ledger unchanged; h_after = h_before, contradiction.
-    - promote at d_idx’ = d_idx: updates to .Deposited ≠ .Quarantined. -/
-theorem quarantine_requires_challenge
+/-- QUARANTINE REQUIRES CHALLENGE (structured-revision mode).
+
+    In any step where the action is not a direct-maintenance action
+    (`h_no_direct : isDirectMaintenanceAction a = false`), Quarantined status
+    at slot `d_idx` can only be produced by `Step.challenge`.
+
+    **Theorem shape:** if `¬isQuarantined s d_idx` before the step and
+    `isQuarantined s' d_idx` after it, then `a = .Challenge ag B c`.
+
+    **Proof strategy:** case split on all Step constructors.
+    - `challenge at d_idx' = d_idx`: return the witness `rfl`.
+    - `challenge at d_idx' ≠ d_idx`: `get?_updateDepositStatus_ne` preserves d_idx.
+    - `revoke/repair at d_idx' = d_idx`: constructor requires `isQuarantined s d_idx'`;
+      after the `heq` rewrite this contradicts `h_before`.
+    - `submit/register`: the new deposit has `.Candidate`/`.Deposited`; existing unchanged.
+    - `withdraw/tick`: ledger unchanged; `h_after = h_before`, contradiction.
+    - `promote at d_idx' = d_idx`: updates to `.Deposited ≠ .Quarantined`.
+    - `forget at d_idx' = d_idx`: updates to `.Forgotten ≠ .Quarantined`.
+    - `update`: `isDirectMaintenanceAction (Update ..) = true` contradicts `h_no_direct`. -/
+theorem quarantine_requires_challenge_structured
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (d_idx : Nat)
     (a : Action PropLike Standard ErrorModel Provenance Reason Evidence)
     (h_step : Step (Reason := Reason) (Evidence := Evidence) s a s')
+    (h_no_direct : isDirectMaintenanceAction a = false)
     (h_before : ¬isQuarantined s d_idx)
     (h_after : isQuarantined s' d_idx) :
     ∃ (ag : Agent) (B : Bubble) (c : Challenge PropLike Reason Evidence),
@@ -450,7 +479,7 @@ theorem quarantine_requires_challenge
   | revoke _ _ d_idx' h_quarantined =>
     cases Nat.decEq d_idx d_idx' with
     | isTrue heq =>
-      -- Constructor requires isQuarantined s d_idx’; after heq: contradicts h_before
+      -- Constructor requires isQuarantined s d_idx'; after heq: contradicts h_before
       rw [heq] at h_before
       exact absurd h_quarantined h_before
     | isFalse hne =>
@@ -460,6 +489,7 @@ theorem quarantine_requires_challenge
   | repair _ _ d_idx' _ h_quarantined =>
     cases Nat.decEq d_idx d_idx' with
     | isTrue heq =>
+      -- Constructor requires isQuarantined s d_idx'; after heq: contradicts h_before
       rw [heq] at h_before
       exact absurd h_quarantined h_before
     | isFalse hne =>
@@ -469,7 +499,7 @@ theorem quarantine_requires_challenge
   | promote _ _ d_idx' h_candidate =>
     cases Nat.decEq d_idx d_idx' with
     | isTrue heq =>
-      -- promote updates d_idx’ to .Deposited; .Deposited ≠ .Quarantined
+      -- promote updates d_prom to .Deposited; .Deposited ≠ .Quarantined
       let ⟨d_c, h_get_c, _⟩ := h_candidate
       let ⟨d', h_get', h_stat'⟩ := h_after
       have h_upd := get?_updateDepositStatus_eq s.ledger d_idx' .Deposited d_c h_get_c
@@ -481,7 +511,23 @@ theorem quarantine_requires_challenge
       let ⟨d', h_get', h_stat'⟩ := h_after
       rw [get?_updateDepositStatus_ne s.ledger d_idx' d_idx .Deposited hne] at h_get'
       exact absurd ⟨d', h_get', h_stat'⟩ h_before
-
+  | forget _ _ d_for _ h_ex_f _ =>
+    -- forget sets .Forgotten at d_for; .Forgotten ≠ .Quarantined
+    cases Nat.decEq d_idx d_for with
+    | isTrue heq =>
+      let ⟨d', h_get', h_stat'⟩ := h_after
+      have h_upd := get?_updateDepositStatus_eq s.ledger d_for .Forgotten _ h_ex_f
+      rw [heq, h_upd] at h_get'
+      simp only [Option.some.injEq] at h_get'
+      rw [← h_get'] at h_stat'
+      exact DepositStatus.noConfusion h_stat'
+    | isFalse hne =>
+      let ⟨d', h_get', h_stat'⟩ := h_after
+      rw [get?_updateDepositStatus_ne s.ledger d_for d_idx .Forgotten hne] at h_get'
+      exact absurd ⟨d', h_get', h_stat'⟩ h_before
+  | update _ _ _ _ _ _ _ =>
+    -- isDirectMaintenanceAction (Action.Update ..) = true contradicts h_no_direct
+    simp [isDirectMaintenanceAction] at h_no_direct
 
 /-! ========================================================================
     PART D — No Self-Healing Bank Without Magic
@@ -538,5 +584,7 @@ theorem no_self_healing_bank
   | revoke _ _ _ _ => intro h; cases h
   | repair _ _ _ _ _ => intro h; cases h
   | promote _ _ _ _ => intro h; cases h
+  | forget _ _ _ _ _ _ => intro h; cases h
+  | update _ _ _ _ _ _ _ => intro h; cases h
 
 end EpArch.Meta.Reconfiguration

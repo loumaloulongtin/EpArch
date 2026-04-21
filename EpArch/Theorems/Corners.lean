@@ -22,23 +22,30 @@ variable {PropLike Standard ErrorModel Provenance Reason Evidence : Type u}
 
 /-! ## Corner 6 — Contestation blocked ⇒ frozen canon dynamics
 
-    **Theorem shape:** If Challenge/Revoke/Repair steps are removed from
-    the transition system, then bad deposits persist forever.
+    **Theorem shape:** If Challenge/Revoke/Repair/Update steps are removed from
+    the transition system, deposits cannot be epistemically closed as Revoked.
 
     **Implication:** Systems that structurally block contestation cannot
-    eliminate errors — they have "frozen canon" dynamics. -/
+    epistemically correct errors — they have "frozen canon" dynamics. Note:
+    non-contestation traces may still include Forget (capacity deletion), which
+    marks a slot as Forgotten, but forgetting is not correction: the error is
+    not epistemically closed, and the Forgotten status is operationally distinct
+    from Revoked. -/
 
 /-- A "bad deposit" predicate: the deposit has some broken field. -/
 def IsBadDeposit (BrokenField : Deposit PropLike Standard ErrorModel Provenance → Field → Prop)
     (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
   ∃ f, BrokenField d f
 
-/-- Is an action a "contestation action" (Challenge, Revoke, or Repair)?
-    These are the actions that enable error correction. -/
+/-- Is an action a "contestation action" (Challenge, Revoke, Repair, or Update)?
+    These are the actions that enable error correction. Update opts in by
+    choice: a single-agent bubble may revise deposits directly via its own
+    cognitive model, forfeiting revision-free guarantees for that trace. -/
 def isContestationAction : Action PropLike Standard ErrorModel Provenance Reason Evidence → Bool
   | .Challenge _ _ _ => true
   | .Revoke _ _ _    => true
   | .Repair _ _ _ _  => true
+  | .Update _ _ _ _  => true  -- agent-driven revision; forfeits contestation-free guarantees
   | _                => false
 
 /-- A restricted step relation: only non-contestation actions allowed. -/
@@ -120,9 +127,30 @@ theorem frozen_canon_no_revocation
       injection h_get' with h_eq'
       rw [← h_eq']
       exact h_not_revoked
+  | forget _ _ d_for _ h_ex_pur _ =>
+    -- forget sets .Forgotten at d_for; .Forgotten ≠ .Revoked
+    cases Nat.decEq d_idx d_for with
+    | isTrue heq =>
+      have h_upd := get?_updateDepositStatus_eq s.ledger d_for .Forgotten _ h_ex_pur
+      rw [heq] at h_get'
+      rw [h_upd] at h_get'
+      injection h_get' with h_eq'
+      intro h_rev
+      rw [← h_eq'] at h_rev
+      exact DepositStatus.noConfusion h_rev
+    | isFalse hne =>
+      have h_unch := get?_updateDepositStatus_ne s.ledger d_for d_idx .Forgotten hne
+      rw [h_unch] at h_get'
+      rw [h_get] at h_get'
+      injection h_get' with h_eq'
+      rw [← h_eq']
+      exact h_not_revoked
+  | update _ _ _ _ _ _ _ =>
+    -- update is a contestation action; h_not_contest contradicts
+    simp [isContestationAction] at h_not_contest
 
 /-- A trace where every action is non-contestation
-    (no Challenge, no Revoke, no Repair). -/
+    (no Challenge, no Revoke, no Repair, no Update). -/
 def allRestrictedTrace {s s' : SystemState PropLike Standard ErrorModel Provenance} :
     Trace (Reason := Reason) (Evidence := Evidence) s s' → Prop
   | .nil _ => True
@@ -141,9 +169,10 @@ theorem allRestricted_implies_no_revision
     simp only [Trace.hasRevision]
     have h_not_rev : a.isRevision = false := by
       cases a with
-      | Submit _ _ | Register _ _ | Withdraw _ _ _ | Tick | Promote _ _ _ =>
+      | Submit _ _ | Register _ _ | Withdraw _ _ _ | Tick | Promote _ _ _
+      | Forget _ _ _ =>
         simp [Action.isRevision]
-      | Challenge _ _ _ | Revoke _ _ _ | Repair _ _ _ _ =>
+      | Challenge _ _ _ | Revoke _ _ _ | Repair _ _ _ _ | Update _ _ _ _ =>
         simp [isContestationAction] at h_not_contest
     simp [h_not_rev, ih h_rest]
 
@@ -153,8 +182,10 @@ theorem allRestricted_implies_no_revision
     This extends `frozen_canon_no_revocation` (single restricted step) to
     full traces of arbitrary length. If every action in the trace is
     non-contestation, then ¬Revoked at the start implies ¬Revoked
-    after any number of steps. The claim “contestation-blocking causes
-    deposits to persist" holds for traces of arbitrary length. -/
+    after any number of steps. The claim "contestation-blocking prevents
+    epistemic revocation/correction" holds for traces of arbitrary length.
+    (Non-contestation traces may still include Forget, which marks a slot as
+    Forgotten — but Forgotten is not Revoked, and forgetting is not correction.) -/
 theorem frozen_canon_no_revocation_trace
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (t : Trace (Reason := Reason) (Evidence := Evidence) s s')
@@ -375,16 +406,16 @@ theorem finite_budget_forces_triage
 
     **Implication:** Entrenchment is not mere stubbornness — it is an
     architectural defect. The agent's Ladder says "settled premise" while
-    the Bank says "authorization suspended/revoked." Normal Certainty would
+    the Bank says "authorization suspended/revoked/forgotten." Normal Certainty would
     re-check and demote; Entrenchment bypasses review entirely.
 
     This is the agent-level analog of Corner 6 (frozen_canon_no_revocation),
     which is bubble-level: if contestation actions are blocked system-wide,
-    bad deposits persist. Entrenchment localizes the same pathology to a
-    single agent's Ladder state. -/
+    bad deposits cannot be epistemically revoked. Entrenchment localizes the
+    same pathology to a single agent's Ladder state. -/
 
 /-- An entrenched agent: has certainty on P and structurally refuses
-    to revise when the Bank signals quarantine or revocation. -/
+    to revise when the Bank signals quarantine, revocation, or forgetting. -/
 structure EntrenchedAgent where
   agent : Agent
   claim : Claim
@@ -393,23 +424,24 @@ structure EntrenchedAgent where
   /-- Agent's revision channel is disconnected (opaque, non-trivial) -/
   refuses_demotion : ignores_bank_signal agent claim
 
-/-- The Bank has suspended or revoked the deposit backing P. -/
+/-- The Bank has suspended, revoked, or forgotten the deposit backing P.
+    Any of these statuses blocks withdrawal (isDeposited requires .Deposited). -/
 def deposit_no_longer_active
     (s : SystemState PropLike Standard ErrorModel Provenance)
     (d_idx : Nat) : Prop :=
   ∃ d, s.ledger.get? d_idx = some d ∧
-    (d.status = .Quarantined ∨ d.status = .Revoked)
+    (d.status = .Quarantined ∨ d.status = .Revoked ∨ d.status = .Forgotten)
 
 /-- ENTRENCHMENT THEOREM: An entrenched agent who relies on a
-    quarantined/revoked deposit cannot satisfy safe withdrawal.
+    quarantined/revoked/forgotten deposit cannot satisfy safe withdrawal.
 
     Forcing argument:
     1. Agent is at Certainty on P → treats P as closed premise
-    2. Bank has quarantined or revoked the deposit backing P
+    2. Bank has quarantined, revoked, or forgotten the deposit backing P
     3. Normal revision would demote P to Belief or Ignorance
     4. Entrenchment blocks step 3 → agent still acts on P
     5. But withdrawal requires isDeposited (status = .Deposited)
-    6. Quarantined/Revoked ≠ Deposited → withdrawal gate fails
+    6. Quarantined/Revoked/Forgotten ≠ Deposited → withdrawal gate fails
 
     Therefore: Entrenchment + Bank status change → ¬safe withdrawal.
     Entrenchment blocks the demotion that Bank status change would require.
@@ -435,7 +467,10 @@ theorem entrenchment_breaks_safe_withdrawal
   rw [← h_eq] at h_deposited
   cases h_status with
   | inl h_q => rw [h_q] at h_deposited; cases h_deposited
-  | inr h_r => rw [h_r] at h_deposited; cases h_deposited
+  | inr h_rf =>
+    cases h_rf with
+    | inl h_r => rw [h_r] at h_deposited; cases h_deposited
+    | inr h_fo => rw [h_fo] at h_deposited; cases h_deposited
 
 /-- ENTRENCHMENT COROLLARY: An entrenched agent cannot withdraw from
     the Bank when the deposit has been quarantined or revoked.

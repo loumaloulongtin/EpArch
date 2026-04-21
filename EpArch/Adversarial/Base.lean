@@ -178,7 +178,7 @@ opaque denial_triggered : Agent → Prop
     The consequence chain (τ exhaustion → `¬PathExists`) is closed by
     the `h_exhausts_tau` hypothesis supplied to `rolex_ddos_share_path_failure_structure`
     and `collapsed_to_path_failure` (purely structural theorem). -/
-def verification_collapsed (a : Agent) (channels : List AuditChannel) : Prop :=
+def verification_collapsed (_ : Agent) (channels : List AuditChannel) : Prop :=
   channels ≠ [] ∧ ∀ c, c ∈ channels → channel_overwhelmed c
 
 /-- Trust centralization: agent delegates to single "trusted" authority. -/

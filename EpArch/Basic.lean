@@ -203,23 +203,30 @@ def Entrenched (a : Agent) (P : Claim) : Prop :=
 /-! ## Deposit Status
 
 A deposit goes through a lifecycle in the Bank:
-Candidate → Deposited → (Quarantined → Revoked or Repaired).
+Candidate → Deposited → Quarantined → (Revoked or Repair→Candidate),
+with Forgotten as an operational tombstone reachable by agent-invoked Forget.
 Repaired deposits loop back to Candidate for revalidation, not to Deposited.
 These statuses control what operations are available. For example, only
 Deposited claims can be withdrawn (relied upon), and only Quarantined
 claims can be repaired or revoked. See EpArch.Semantics.StepSemantics for the
 operational transition system that enforces these rules.
 
-The four minimal states are the architectural boundary: implementations
+The five minimal states are the architectural boundary: implementations
 may use internal multi-stage pipelines between Candidate and Deposited,
-but the architecture does not prescribe or observe those intermediate stages. -/
+but the architecture does not prescribe or observe those intermediate stages.
+
+`.Forgotten` is the capacity-deletion terminal state (added in task 23b). It is
+categorically distinct from `.Revoked`: Revoked is an epistemic signal ("this
+path was tested and closed"); Forgotten is an operational tombstone ("this slot
+was freed for storage reasons"). See EpArch.Semantics.StepSemantics.Step.forget. -/
 
 /-- Status of a deposit in the Bank lifecycle. -/
 inductive DepositStatus where
   | Candidate    -- submitted, pending bank operator promotion
   | Deposited    -- live in the bank, withdrawable
   | Quarantined  -- suspended pending challenge resolution
-  | Revoked      -- permanently withdrawn from circulation
+  | Revoked      -- permanently withdrawn from circulation; epistemic boundary marker
+  | Forgotten       -- deleted by agent for capacity reasons; operationally void tombstone, index preserved
   deriving DecidableEq, Repr
 
 

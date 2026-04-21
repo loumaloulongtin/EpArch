@@ -1,12 +1,12 @@
 # EpArch Lean Formalization — Documentation Index
 
-This folder documents the Lean formalization of the Epistemic Architecture (EpArch) framework — 0 axiom declarations, zero sorries.
+This folder documents the Lean formalization of the Epistemic Architecture (EpArch) framework — zero sorries, zero core axiom declarations (see [AXIOMS.md](AXIOMS.md) for the one named axiom outside the core import surface).
 
 **The core claim:** lifecycle gates, header-preserving export, a revision loop, and temporal validity are not design choices. They are *forced* by the combination of agent constraints (imperfect agents face permanent challenge pressure) and system health goals (safe withdrawal, reliable export, self-correction). The files below are the machine-checked record of that forcing argument.
 
 ## Build Surface
 
-`lake build` (via `Main.lean`) is the single build target. **0 axiom declarations.**
+`lake build` (via `Main.lean`) is the single build target. **Zero sorries. Zero core axiom declarations.** See [AXIOMS.md](AXIOMS.md) for the one named axiom outside the core import surface.
 
 ## Documents
 
@@ -27,7 +27,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 
 | Term | Meaning |
 |------|---------|
-| **Deposit** | An epistemic claim with a governance lifecycle (Candidate → Deposited → Quarantined → Revoked). The unit of knowledge in the architecture. |
+| **Deposit** | An epistemic claim with a governance lifecycle (Candidate → Deposited → Quarantined → Revoked, with Forgotten as an operational tombstone reachable by agent-invoked Forget). The unit of knowledge in the architecture. |
 | **Bubble** | A bounded authorization domain. Authority is scoped to a bubble; cross-bubble transfer requires explicit export. |
 | **S / E / V** | The three header fields: **S**tandard (the validation threshold applied), **E**rror model (known failure modes the validation accounts for), **V**-provenance (the chain of evidence and checks). Stripping these loses diagnosability. |
 | **Traction** | A claim has *traction* if it influences epistemic behavior (belief, action) — strictly broader than formal authorization. |
@@ -45,7 +45,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 
 | Bucket | Topic |
 |--------|-------|
-| 1 | Lifecycle & Type-Separation — Candidate/Deposited/Quarantined/Revoked gates |
+| 1 | Lifecycle & Type-Separation — Candidate/Deposited/Quarantined/Revoked/Forgotten gates |
 | 2 | Competition Gate Cluster — Revision ⇔ Self-correction equivalence |
 | 3 | Export/Strip Asymmetry — No left inverse, reconstruction impossible |
 | 4 | Diagnosability — Observability monotonicity, repair granularity |
@@ -59,7 +59,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | 9d | Kernel Verification Depth — `DepthClaim` constructive witness; `bounded_verify` budget decision procedure; `DepthWorldCtx` closes `W_bounded_verification` by construction (`Concrete/VerificationDepth.lean`) |
 | 10 | Adversarial Model — Attack structures, DDoS vectors, obligation theorems |
 | 11 | Repair Loop Semantics — Challenge-repair-revalidation cycle |
-| 12 | Withdrawal Gates — Two-gate model (ACL ∧ Deposited). τ-currency is agent-level policy. |
+| 12 | Withdrawal Gates — Abstract LTS single-gate model (Deposited); ACL and τ-currency are agent/concrete-layer concerns. |
 | 13 | Obligation Theorems — World ⇒ Mechanism (W_* bundles) |
 | 14 | Health → Necessity — Health goals force capability requirements |
 | 15 | Scope/Irrelevance — Substrate independence, extra-state erasure |
@@ -119,7 +119,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 lake build
 ```
 
-**Current Status:** Zero errors, zero sorries, zero axiom declarations.
+**Current Status:** Zero errors, zero sorries, zero core axiom declarations. See [AXIOMS.md](AXIOMS.md).
 
 ## See Also
 

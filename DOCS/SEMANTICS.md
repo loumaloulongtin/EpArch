@@ -1,6 +1,6 @@
 # Operational Semantics Documentation
 
-This document describes the canonical operational semantics for the EpArch formalization. Every deposit lifecycle step — submission, withdrawal, challenge, repair, revocation, promotion — is modeled as a typed transition with explicit preconditions. Safety properties follow by induction over `Trace` sequences using the `generic_invariant_preservation` template; invariants are maintained by construction, not checked ex-post.
+This document describes the canonical operational semantics for the EpArch formalization. Every deposit lifecycle step — submission, withdrawal, challenge, repair, revocation, promotion, forgetting, and direct update — is modeled as a typed transition with explicit preconditions. Safety properties follow by induction over `Trace` sequences using the `generic_invariant_preservation` template; invariants are maintained by construction, not checked ex-post.
 
 **Design choice:** Preconditions are encoded directly into the `Step` constructors rather than checked at runtime. This means the type system enforces structural status gates (`isDeposited`, `isQuarantined`, `isCandidate`) and clock monotonicity statically — a violation is a type error, not a runtime failure. Authorization is an agent-level concern: the bank records deposit events; agents carry credentials to the interaction.
 
@@ -38,6 +38,8 @@ inductive Action (PropLike Standard ErrorModel Provenance Reason Evidence : Type
   | Repair   (a : Agent) (B : Bubble) (d_idx : Nat) (f : Field)
   | Revoke   (a : Agent) (B : Bubble) (d_idx : Nat)
   | Promote  (a : Agent) (B : Bubble) (d_idx : Nat)
+  | Forget   (a : Agent) (B : Bubble) (d_idx : Nat)
+  | Update   (a : Agent) (B : Bubble) (d_idx : Nat) (d_new : Deposit)
 ```
 
 Every agent-initiated action carries `(a : Agent) (B : Bubble)` so that traces are fully attributed. `Tick` is the sole environment action (clock advance); it carries a monotonicity witness `h_mono : s.clock ≤ t'` but no agent identity.
@@ -75,9 +77,17 @@ inductive Step : SystemState → Action → SystemState → Prop where
   | promote : (s : SystemState) → (a : Agent) → (B : Bubble) → (d_idx : Nat) →
       isCandidate s d_idx →
       Step s (.Promote a B d_idx) { s with ledger := updateDepositStatus s.ledger d_idx .Deposited }
+
+  | forget : (s : SystemState) → (a : Agent) → (B : Bubble) → (d_idx : Nat) →
+      (d_old : Deposit) → s.ledger.get? d_idx = some d_old → d_old.status ≠ .Forgotten →
+      Step s (.Forget a B d_idx) { s with ledger := updateDepositStatus s.ledger d_idx .Forgotten }
+
+  | update : (s : SystemState) → (a : Agent) → (B : Bubble) → (d_idx : Nat) →
+      (d_new d_old : Deposit) → s.ledger.get? d_idx = some d_old → d_old.status ≠ .Forgotten →
+      Step s (.Update a B d_idx d_new) { s with ledger := modifyAt s.ledger d_idx (fun _ => d_new) }
 ```
 
-Eight constructors total. `Step.submit` fires on `Action.Submit` (→ Candidate); `Step.register` fires on `Action.Register` (→ Deposited). The remaining six constructors are one-to-one with their Action variant. All agent-initiated constructors carry a named agent and bubble for attribution; `tick` carries only the monotonicity witness. Preconditions are purely structural ledger reads — no ACL tables, bank-authority lists, or trust-bridge registries in the bank's LTS.
+Ten constructors total. `Step.submit` fires on `Action.Submit` (→ Candidate); `Step.register` fires on `Action.Register` (→ Deposited). The remaining eight constructors are one-to-one with their Action variant. All agent-initiated constructors carry a named agent and bubble for attribution; `tick` carries only the monotonicity witness. Preconditions are purely structural ledger reads — no ACL tables, bank-authority lists, or trust-bridge registries in the bank's LTS.
 
 ### Trace Type (Multi-Step Reachability)
 
@@ -123,6 +133,8 @@ Key insight: Most safety properties are **encoded as preconditions** on Step con
 | `Repair` | `repair` | `isQuarantined` |
 | `Revoke` | `revoke` | `isQuarantined` |
 | `Promote` | `promote` | `isCandidate` |
+| `Forget` | `forget` | existing slot, `d_old.status ≠ .Forgotten` |
+| `Update` | `update` | existing slot, `d_old.status ≠ .Forgotten` |
 | `Tick` | `tick` | `s.clock ≤ t'` (monotonicity) |
 
 All preconditions are pure structural ledger reads. There are no ACL tables, bank-authority registries, or trust-bridge lists in the bank's LTS layer. Authorization is an agent-level concern; the bank records what status a deposit is in and whether a transition is structurally legal.
@@ -143,6 +155,8 @@ Because preconditions are structural rather than checked post-hoc, the encoding 
 | `Promote` | Cannot exist unless the deposit is in `Candidate` status |
 | `Challenge` | Cannot fire unless the deposit is in `Deposited` status |
 | `Repair` / `Revoke` | Cannot fire unless the deposit is already in `Quarantined` status |
+| `Forget` | Cannot fire if the slot is already `Forgotten`; marks it as `Forgotten` tombstone |
+| `Update` | Cannot fire if the slot is already `Forgotten`; wholesale replaces the slot with `d_new`; counts as revision (`isRevision = true`) |
 | `Tick` | Clock cannot go backwards; `s.clock ≤ t'` is structurally enforced |
 
 **Safety is induction-friendly by construction:** once step-level preservation is proved for a given invariant, trace-level preservation follows generically via `generic_invariant_preservation`. There is no need to re-examine multi-step cases individually.
