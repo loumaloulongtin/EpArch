@@ -401,6 +401,23 @@ Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_w
 
 ---
 
+## Bucket 9e: Bounded Recall — τ-Expiry as Forced Consequence (Minimality.lean §9)
+
+**Role:** Extends the bounded-budget impossibility argument from the *import* direction (§2, `BoundedVerification`) to the *recall* (withdrawal) direction. When an agent recalls a banked deposit it must re-verify that the deposit's provenance chain is still intact. For any fixed recall budget, deposits with V-chain depth exceeding the budget cannot be re-verified. `RecallBudget` is the parallel structure to `BoundedVerification`; `recall_only_withdrawal_incomplete` is the parallel impossibility theorem; `bounded_recall_forces_recency_filter` shows τ-expiry is a sufficient forcing response.
+
+**Scope:** Does not prove τ is the *only* valid recency filter (priority eviction also works). Does not fix V-chain growth rate (bounded-by-age is a caller hypothesis). Does not connect to the LTS: `Step.withdraw` requires only `isDeposited`; the recency filter is agent policy, not a bank gate.
+
+### Theorems
+
+| Theorem | Structure | Role |
+|---------|-----------|------|
+| `recall_only_withdrawal_incomplete` | `RecallBudget` | No fixed recall budget covers all provenance chains; parallel to `verification_only_import_incomplete` |
+| `depth_recall_incomplete` | `depth_recall_budget d` | Kernel witness: budget-d agent cannot re-verify depth-(d+1) chain |
+| `bounded_recall_forces_recency_filter` | `RecallBudget` + `tau_window = budget` hypothesis | If V-chain depth is bounded by `tau_window`, `recall_only_withdrawal_incomplete` fires — τ-expiry is forced |
+| `recall_is_bounded_verification_instance` | `recallBudget_to_bounded` embedding | Recall impossibility is an instance of the general bounded-budget impossibility via `BoundedVerification` |
+
+---
+
 ## Bucket 10: Adversarial Model (Adversarial/Base.lean)
 
 **Role:** Formalize attack patterns and boundary conditions.

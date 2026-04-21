@@ -99,6 +99,17 @@ Any world satisfying `W_bounded_verification` constructs a `BoundedVerification`
 instance that triggers `verification_only_import_incomplete`, grounding the trust-bridge
 forcing argument in the world's own hard claim.
 
+**Recall direction (Minimality.lean §9).** The same bounded-budget impossibility applies
+at *withdrawal* time: an agent recalling a banked deposit must re-verify that its
+provenance chain (V) is still intact. For any fixed recall budget, deposits with V-chain
+depth exceeding the budget cannot be re-verified. `RecallBudget` is the parallel
+structure to `BoundedVerification`; `recall_only_withdrawal_incomplete` closes via the
+same `Nat.not_le_of_gt` path. `bounded_recall_forces_recency_filter` shows τ-expiry is a
+sufficient forcing response: setting `tau_window = budget` keeps all withdrawable
+deposits within the recall budget. The recall impossibility embeds into
+`BoundedVerification` via `recallBudget_to_bounded`, confirming both directions share the
+same formal structure.
+
 ### `w_lies_forces_revocation_need`
 
 **File:** `EpArch/WorldBridges.lean`
