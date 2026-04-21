@@ -5,7 +5,7 @@ Eight Represents* structures that enrich a WorkingSystem with concrete scenario 
 enabling the abstract structural impossibility models from EpArch.Minimality to fire
 on specific systems.  Also defines the bundled witness packages used by Feasibility.
 
-Eight scenarios:
+The eight canonical forcing dimensions:
   1. RepresentsDisagreement         (scope / bubbles dimension)
   2. RepresentsPrivateCoordination  (bank dimension)
   3. RepresentsMonotonicLifecycle   (revocation dimension)
@@ -14,6 +14,10 @@ Eight scenarios:
   6. RepresentsClosedEndorsement    (redeemability dimension)
   7. RepresentsUniformAccess        (authorization / granular ACL dimension)
   8. RepresentsBoundedCapacity      (storage management dimension)
+
+Bounded recall (§9 of Minimality.lean) is not a ninth dimension: `RecallBudget`
+embeds into `BoundedVerification` (§9.6), so recall pressure is trust-pressure
+applied at withdrawal time.  The §9 theorem family lives in Minimality.lean only.
 
 Bundled packages:
   SystemOperationalBundle -- scope + headers + bank + authorization + storage dimensions
@@ -750,7 +754,7 @@ structure SystemOperationalBundle (W : WorkingSystem) where
   /-- Authorization dimension: a two-tier access scenario witness. -/
   Ra : RepresentsUniformAccess W
   /-- Without granular ACL, a flat predicate represents both the submission and commit tiers.
-      Architecturally parallel to `flat_accept for scope, `f_import for headers,
+      Architecturally parallel to `flat_accept` for scope, `f_import` for headers,
       shared_deposit for bank: the bridge condition lives in the bundle, not in
       the structural witness record. -/
   h_no_acl_flat : ¬HasGranularACL W → ∃ f : Ra.Agent → Ra.Claim → Prop,

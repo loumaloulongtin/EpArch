@@ -1962,4 +1962,315 @@ def GroundedStorageStrict.mk' (G : GroundedStorage) : GroundedStorageStrict :=
   G.toStrict
 
 
+
+/-! ========================================================================
+    §9. BOUNDED RECALL — Recall-Admissibility Filtering as a Forced
+        Consequence of Bounded Verification Budget
+    ========================================================================
+
+    τ-expiry is the canonical clock-based sufficient implementation, not
+    the uniquely forced mechanism.  Priority eviction and provenance
+    compression via `Step.update` are equally valid responses.
+
+    **Argument.** When an agent recalls a banked deposit, it must re-verify
+    that the deposit's provenance chain (V) is still intact and that the
+    claim still meets the current standard (S).  If V-chain depth has grown
+    unboundedly since the deposit was first accepted, the re-verification cost
+    at recall time grows with that depth.  For any fixed budget there exist
+    deposits whose accumulated V-chain depth exceeds the budget.  An agent
+    with a fixed recall budget therefore cannot re-verify all banked deposits
+    on demand.
+
+    **Consequence.** Without a recency filter, a bounded-budget agent
+    accumulates irrecallable deposits — entries that remain formally Deposited
+    but cannot be re-verified at recall time.  τ-expiry is one sufficient
+    response: it ensures the deposits an agent must re-verify at withdrawal
+    time have bounded provenance depth, because they are recent.
+
+    **Proof technique.** Parallel to BoundedVerification (§2).  A
+    `RecallBudget` witness carries a provenance chain exceeding the budget.
+    `recall_only_withdrawal_incomplete` closes via `Nat.not_le_of_gt`.  The
+    forcing theorem connects this impossibility to τ-expiry as a sufficient
+    recency filter. -/
+
+/-! ## §9.1  RecallBudget Structure -/
+
+/-- A claim universe where re-verification cost at withdrawal time grows with
+    provenance depth.  The agent has a fixed recall budget; any deposit whose
+    V-chain is deeper than the budget cannot be re-verified at recall time.
+
+    Parallel to `BoundedVerification` for the recall direction. -/
+structure RecallBudget where
+  /-- The type of provenance chains (the V-field). -/
+  Provenance  : Type
+  /-- Cost to re-verify a provenance chain: grows with depth. -/
+  recall_cost : Provenance → Nat
+  /-- Maximum recall budget (fixed per agent). -/
+  budget      : Nat
+  /-- A provenance chain that exceeds the budget. -/
+  deep_chain  : Provenance
+  /-- The deep chain demonstrably exceeds the budget. -/
+  exceeds_budget : recall_cost deep_chain > budget
+
+/-! ## §9.2  Recall Impossibility -/
+
+/-- RECALL IMPOSSIBILITY: a fixed recall budget cannot re-verify all provenance chains.
+
+    **Theorem shape:** `¬∀ v : M.Provenance, M.recall_cost v ≤ M.budget`.
+    **Proof strategy:** apply the universal bound to `M.deep_chain`, which carries
+    `M.exceeds_budget : M.recall_cost M.deep_chain > M.budget`; contradiction via
+    `Nat.not_le_of_gt`.
+
+    Parallel to `verification_only_import_incomplete` for the recall direction. -/
+theorem recall_only_withdrawal_incomplete (M : RecallBudget) :
+    ¬∀ v : M.Provenance, M.recall_cost v ≤ M.budget :=
+  fun h => absurd (h M.deep_chain) (Nat.not_le_of_gt M.exceeds_budget)
+
+/-! ## §9.3  Kernel Witness -/
+
+/-- `RecallBudget` has a canonical kernel inhabitant for every budget d.
+    Provenance chains are `Nat`-indexed depths; recall cost equals depth;
+    depth d+1 exceeds budget d.  Same concrete intuition as
+    `depth_bounded_verification`: the V-chain is a natural number and the
+    cost is its depth. -/
+def depth_recall_budget (d : Nat) : RecallBudget where
+  Provenance     := Nat
+  recall_cost    := id
+  budget         := d
+  deep_chain     := d + 1
+  exceeds_budget := Nat.lt_succ_self d
+
+/-- `recall_only_withdrawal_incomplete` fires on the kernel witness:
+    no budget-d agent can re-verify the full depth-(d+1) chain. -/
+theorem depth_recall_incomplete (d : Nat) :
+    ¬∀ v : (depth_recall_budget d).Provenance,
+      (depth_recall_budget d).recall_cost v ≤ (depth_recall_budget d).budget :=
+  recall_only_withdrawal_incomplete (depth_recall_budget d)
+
+/-! ## §9.4  Abstract Impossibility Under Recency Window
+
+This theorem is the Minimality-layer recall-budget result: given a
+`RecallBudget` and a hypothesis that all provenance chains fit within a
+recency/admissibility window equal to the budget, the universal bound
+contradicts `recall_only_withdrawal_incomplete`.
+
+It is not a Scenarios-layer forcing theorem and does not produce a new
+`Has*` primitive.  It shows why bounded-budget agents need some recall-
+admissibility filter; τ-expiry is one sufficient clock-based implementation. -/
+
+/-- ABSTRACT IMPOSSIBILITY: V-chain universality contradicts the recall budget.
+
+    If all provenance chains fit within `tau_window` and `tau_window = M.budget`,
+    then the universal `∀ v, M.recall_cost v ≤ M.budget` contradicts
+    `recall_only_withdrawal_incomplete`.
+
+    This is a Minimality-layer impossibility result only.  It does not
+    produce a `Has*` SystemSpec primitive; the forcing consequence is that
+    some recall-admissibility filter is needed.  τ-expiry is one sufficient
+    clock-based implementation.
+
+    **Scope notes.**
+    - Does not prove: τ is the *only* valid recency filter.  Priority-based
+      eviction or capacity-triggered compaction also satisfy the obligation
+      (see §9b).
+    - Does not prove: the recall budget equals the τ window.  The forcing
+      argument shows `tau_window = budget` is sufficient; an implementation
+      may use a more conservative window.
+    - Does not prove: V-chain growth is exactly one hop per time unit.  The
+      formal bound is a hypothesis supplied by the caller. -/
+theorem bounded_recall_forces_recency_filter
+    (M : RecallBudget)
+    (tau_window : Nat)
+    (h_window : tau_window = M.budget)
+    (V_depth_bound : ∀ v : M.Provenance, M.recall_cost v ≤ tau_window) :
+    False :=
+  -- recall_only_withdrawal_incomplete supplies the impossibility;
+  -- V_depth_bound (re-stated at budget via h_window) supplies the universal that
+  -- the impossibility refutes.
+  recall_only_withdrawal_incomplete M (h_window ▸ V_depth_bound)
+
+/-! ## §9b. Alternative Recency Mechanisms Reduce to RecallBudget
+
+A reviewer may ask: do priority-based eviction, versioned-provenance
+caching, or shard-partitioned recall pools escape
+`recall_only_withdrawal_incomplete`?
+
+All three are instantiated below.  In each case the alternative carries a
+concrete deep provenance chain and an exceed-budget proof — a direct
+`RecallBudget` instance — and the impossibility fires via the standard
+embedding.
+
+**Accumulating provenance.**  Each endorsement step appends a new link;
+recall cost grows with the number of endorsements.  A chain that has
+accumulated more than `budget` endorsement hops is the overflow witness.
+Without a recency filter, the chain depth can grow without bound — a
+direct `RecallBudget` instance.
+
+**Versioned provenance.**  Claim updates accumulate a new provenance
+version for each update; recall cost is proportional to the version count.
+Without eviction of stale versions, the per-entry recall cost grows with
+update frequency — a direct `RecallBudget` instance.
+
+**Sharded recall.**  Provenance chains are partitioned into named recall
+shards (by topic, epoch, or tenant).  Each shard accumulates depth
+independently.  Without cross-shard depth enforcement, a single shard can
+accumulate chains exceeding the global recall budget — a direct
+`RecallBudget` instance on the overflowing shard. -/
+
+/-- Accumulating provenance: each endorsement step appends a new link;
+    recall cost grows with the number of endorsement hops.
+
+    `endorse_grows` formalises the append-like property: each endorsement
+    increments recall cost by exactly 1.  `deep_chain` witnesses the overflow.
+    Parallel to `AppendOnlyLog` for the recall dimension. -/
+structure AccumulatingProvenance where
+  /-- The type of provenance chains. -/
+  Provenance     : Type
+  /-- Cost to re-verify a provenance chain: equals its endorsement depth. -/
+  recall_cost    : Provenance → Nat
+  /-- Maximum recall budget. -/
+  budget         : Nat
+  /-- Endorsement operation: appends one link to the chain. -/
+  endorse        : Provenance → Provenance
+  /-- Each endorsement increments recall cost by exactly 1. -/
+  endorse_grows  : ∀ v, recall_cost (endorse v) = recall_cost v + 1
+  /-- A chain that has grown beyond the budget. -/
+  deep_chain     : Provenance
+  /-- The deep chain exceeds the budget. -/
+  exceeds_budget : recall_cost deep_chain > budget
+
+/-- An accumulating provenance chain directly instantiates `RecallBudget`:
+    the deep chain is the overflow witness. -/
+def accumulating_to_recall (M : AccumulatingProvenance) : RecallBudget where
+  Provenance     := M.Provenance
+  recall_cost    := M.recall_cost
+  budget         := M.budget
+  deep_chain     := M.deep_chain
+  exceeds_budget := M.exceeds_budget
+
+/-- Without a recency filter, an accumulating provenance chain cannot stay
+    within budget: `recall_only_withdrawal_incomplete` fires via the embedding. -/
+theorem accumulating_provenance_incomplete (M : AccumulatingProvenance) :
+    ¬∀ v : M.Provenance, M.recall_cost v ≤ M.budget :=
+  recall_only_withdrawal_incomplete (accumulating_to_recall M)
+
+/-- Versioned provenance: each claim update retains all previous provenance;
+    recall cost grows with the version count.
+
+    `version_count` tracks the number of accumulated provenance versions.
+    `cost_tracks_versions` formalises the growth relationship: version count
+    is a lower bound on recall cost.  `deep_chain` witnesses the overflow.
+    Parallel to `VersionedStore` for the recall dimension. -/
+structure VersionedProvenance where
+  /-- The type of provenance chains (may carry version metadata). -/
+  Provenance         : Type
+  /-- Cost to re-verify a provenance chain. -/
+  recall_cost        : Provenance → Nat
+  /-- Maximum recall budget. -/
+  budget             : Nat
+  /-- Number of accumulated provenance versions for a chain. -/
+  version_count      : Provenance → Nat
+  /-- Version count is a lower bound on recall cost: more versions → higher cost. -/
+  cost_tracks_versions : ∀ v, version_count v ≤ recall_cost v
+  /-- A chain whose accumulated version count (and hence recall cost) exceeds the budget. -/
+  deep_chain         : Provenance
+  /-- The deep chain exceeds the budget. -/
+  exceeds_budget     : recall_cost deep_chain > budget
+
+/-- A versioned provenance chain directly instantiates `RecallBudget`. -/
+def versioned_provenance_to_recall (M : VersionedProvenance) : RecallBudget where
+  Provenance     := M.Provenance
+  recall_cost    := M.recall_cost
+  budget         := M.budget
+  deep_chain     := M.deep_chain
+  exceeds_budget := M.exceeds_budget
+
+/-- Without a recency filter, a versioned provenance store cannot stay
+    within budget: `recall_only_withdrawal_incomplete` fires via the embedding. -/
+theorem versioned_provenance_incomplete (M : VersionedProvenance) :
+    ¬∀ v : M.Provenance, M.recall_cost v ≤ M.budget :=
+  recall_only_withdrawal_incomplete (versioned_provenance_to_recall M)
+
+/-- Sharded recall: provenance chains are partitioned into named shards;
+    each shard accumulates endorsement depth independently.
+
+    Per-shard recall cost is unaffected by global depth limits.  Without
+    cross-shard depth enforcement, a single shard can accumulate a chain
+    exceeding the global recall budget.
+    Parallel to `PartitionedStore` for the recall dimension. -/
+structure ShardedRecall where
+  /-- The type of shard identifiers. -/
+  Shard          : Type
+  /-- Per-shard provenance type. -/
+  Provenance     : Shard → Type
+  /-- Per-shard recall cost. -/
+  recall_cost    : ∀ sh, Provenance sh → Nat
+  /-- Global recall budget applied uniformly across shards. -/
+  budget         : Nat
+  /-- A shard that has accumulated a deep chain. -/
+  deep_shard     : Shard
+  /-- The deep chain within the overflowing shard. -/
+  deep_chain     : Provenance deep_shard
+  /-- The deep chain in the overflowing shard exceeds the global budget. -/
+  exceeds_budget : recall_cost deep_shard deep_chain > budget
+
+/-- The overflowing shard directly instantiates `RecallBudget`. -/
+def sharded_to_recall (M : ShardedRecall) : RecallBudget where
+  Provenance     := M.Provenance M.deep_shard
+  recall_cost    := M.recall_cost M.deep_shard
+  budget         := M.budget
+  deep_chain     := M.deep_chain
+  exceeds_budget := M.exceeds_budget
+
+/-- Without a recency filter, an overflowing recall shard cannot stay
+    within budget: `recall_only_withdrawal_incomplete` fires via the embedding. -/
+theorem sharded_recall_incomplete (M : ShardedRecall) :
+    ¬∀ v : M.Provenance M.deep_shard, M.recall_cost M.deep_shard v ≤ M.budget :=
+  recall_only_withdrawal_incomplete (sharded_to_recall M)
+
+/-! ## §9.5  GroundedRecall Bridge -/
+
+/-- Grounded recall scenario: a `RecallBudget` together with the proof that
+    the impossibility has been witnessed by the kernel.
+
+    Parallel to `GroundedStorage` for the recall dimension. -/
+structure GroundedRecall where
+  /-- The underlying recall budget scenario. -/
+  scenario        : RecallBudget
+  /-- Proof that the impossibility fires on this scenario. -/
+  fires           : ¬∀ v : scenario.Provenance, scenario.recall_cost v ≤ scenario.budget
+
+/-- Every `RecallBudget` grounds a `GroundedRecall`: the impossibility is
+    unconditional, so the grounding proof is just `recall_only_withdrawal_incomplete`. -/
+def RecallBudget.toGrounded (M : RecallBudget) : GroundedRecall where
+  scenario := M
+  fires    := recall_only_withdrawal_incomplete M
+
+/-! ### §9.6  Recall ↔ BoundedRecall Bridge
+
+`RecallBudget` embeds into `BoundedVerification` in the recall direction:
+provenance depth plays the role that claim depth plays in the import direction.
+The impossibility fires via the same arithmetic path. -/
+
+/-- `RecallBudget` embeds into `BoundedVerification`: provenance depth is the
+    verification cost; budget and hard-claim map directly.
+
+    This makes explicit that the recall impossibility is an instance of the
+    general bounded-budget impossibility — the same Nat arithmetic closes both. -/
+def recallBudget_to_bounded (M : RecallBudget) : BoundedVerification where
+  Claim          := M.Provenance
+  verify_cost    := M.recall_cost
+  budget         := M.budget
+  hard_claim     := M.deep_chain
+  exceeds_budget := M.exceeds_budget
+
+/-- `recall_only_withdrawal_incomplete` is an instance of
+    `verification_only_import_incomplete` via the embedding.
+
+    Confirms that the recall and import impossibilities share the same
+    formal structure: both close via `Nat.not_le_of_gt`. -/
+theorem recall_is_bounded_verification_instance (M : RecallBudget) :
+    ¬∀ v : M.Provenance, M.recall_cost v ≤ M.budget :=
+  verification_only_import_incomplete (recallBudget_to_bounded M)
+
 end EpArch
