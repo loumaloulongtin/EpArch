@@ -10,7 +10,6 @@ Key exports:
 - WorkingSystem.addBubbles / addTrustBridges / addHeaders / addRevocation /
   addBank / addRedeemability / addAuthorization / addStorageManagement — additive capability defs
 - pwf_add_bubbles .. pwf_add_storage_management — PartialWellFormed extension theorems
-- quarantine_requires_challenge — Quarantined status requires Step.challenge
 - StatusImproves — deposit status improvement order
 - no_self_healing_bank — every status improvement is driven by an explicit action
 -/
@@ -361,161 +360,9 @@ theorem pwf_add_storage_management (W : WorkingSystem) (S : ConstraintSubset)
         simp [handles_storage, HasStorageManagement, WorkingSystem.addStorageManagement, Option.isSome] }
 
 
-/-! ========================================================================
-    PART C — Challenge is the Only Path to Quarantined
-    ======================================================================== -/
-
-/-- QUARANTINE REQUIRES CHALLENGE.
-
-    Deposits reach Quarantined status only via an explicit Step.challenge action.
-    There is no spontaneous quarantine: not from ticks, not from submission,
-    not from repair, not from any configuration change.
-
-    Precondition h_before: the deposit at d_idx was NOT quarantined before the
-    step. This rules out the trivial case where a step merely preserves an
-    existing Quarantined entry unchanged.
-
-    Proof: case split on all Step constructors.
-    - challenge at d_idx’ = d_idx: return the witness rfl.
-    - challenge at d_idx’ ≠ d_idx: get?_updateDepositStatus_ne preserves d_idx.
-    - revoke/repair at d_idx’ = d_idx: constructor precondition requires
-      isQuarantined s d_idx’; after heq rewrite contradicts h_before.
-    - submit/register: appended deposit has .Candidate/.Deposited; existing unchanged.
-    - withdraw/tick: ledger unchanged; h_after = h_before, contradiction.
-    - promote at d_idx' = d_idx: updates to .Deposited ≠ .Quarantined.
-    - forget at d_idx' = d_idx: updates to .Forgotten ≠ .Quarantined.
-    - update at d_idx' = d_idx: h_not_quarantined_new directly contradicts h_stat'.
-    - forget/update at d_idx' ≠ d_idx: index unchanged; h_before applies. -/
-theorem quarantine_requires_challenge
-    (s s' : SystemState PropLike Standard ErrorModel Provenance)
-    (d_idx : Nat)
-    (a : Action PropLike Standard ErrorModel Provenance Reason Evidence)
-    (h_step : Step (Reason := Reason) (Evidence := Evidence) s a s')
-    (h_before : ¬isQuarantined s d_idx)
-    (h_after : isQuarantined s' d_idx) :
-    ∃ (ag : Agent) (B : Bubble) (c : Challenge PropLike Reason Evidence),
-      a = .Challenge ag B c := by
-  cases h_step with
-  | submit _ d_new =>
-    let ⟨d', h_get', h_stat'⟩ := h_after
-    by_cases h_in_orig : d_idx < s.ledger.length
-    · rw [List.get?_append_left' s.ledger _ d_idx h_in_orig] at h_get'
-      exact absurd ⟨d', h_get', h_stat'⟩ h_before
-    · have h_len : d_idx ≥ s.ledger.length := Nat.ge_of_not_lt h_in_orig
-      have h_bound : d_idx < s.ledger.length + 1 := by
-        have := List.get?_some_lt' _ d_idx d' h_get'
-        simp only [List.length_append, List.length] at this; exact this
-      have h_idx_eq : d_idx = s.ledger.length :=
-        Nat.le_antisymm (Nat.le_of_lt_succ h_bound) h_len
-      have h_get_new : (s.ledger ++ [{ d_new with status := .Candidate }]).get? s.ledger.length =
-          some { d_new with status := .Candidate } := by
-        induction s.ledger with
-        | nil => rfl
-        | cons _ tail ih => simp [List.get?, ih]
-      rw [h_idx_eq, h_get_new] at h_get'
-      simp only [Option.some.injEq] at h_get'
-      rw [← h_get'] at h_stat'
-      exact DepositStatus.noConfusion h_stat'
-  | register _ d_new =>
-    let ⟨d', h_get', h_stat'⟩ := h_after
-    by_cases h_in_orig : d_idx < s.ledger.length
-    · rw [List.get?_append_left' s.ledger _ d_idx h_in_orig] at h_get'
-      exact absurd ⟨d', h_get', h_stat'⟩ h_before
-    · have h_len : d_idx ≥ s.ledger.length := Nat.ge_of_not_lt h_in_orig
-      have h_bound : d_idx < s.ledger.length + 1 := by
-        have := List.get?_some_lt' _ d_idx d' h_get'
-        simp only [List.length_append, List.length] at this; exact this
-      have h_idx_eq : d_idx = s.ledger.length :=
-        Nat.le_antisymm (Nat.le_of_lt_succ h_bound) h_len
-      have h_get_new : (s.ledger ++ [{ d_new with status := .Deposited }]).get? s.ledger.length =
-          some { d_new with status := .Deposited } := by
-        induction s.ledger with
-        | nil => rfl
-        | cons _ tail ih => simp [List.get?, ih]
-      rw [h_idx_eq, h_get_new] at h_get'
-      simp only [Option.some.injEq] at h_get'
-      rw [← h_get'] at h_stat'
-      exact DepositStatus.noConfusion h_stat'
-  | withdraw _ _ _ _ =>
-    -- Ledger unchanged: s' = s
-    exact absurd h_after h_before
-  | challenge ag B c d_idx' _ =>
-    cases Nat.decEq d_idx d_idx' with
-    | isTrue heq =>
-      exact ⟨ag, B, c, rfl⟩
-    | isFalse hne =>
-      let ⟨d', h_get', h_stat'⟩ := h_after
-      rw [get?_updateDepositStatus_ne s.ledger d_idx' d_idx .Quarantined hne] at h_get'
-      exact absurd ⟨d', h_get', h_stat'⟩ h_before
-  | tick _ _ =>
-    -- Only clock advances; ledger unchanged
-    exact absurd h_after h_before
-  | revoke _ _ d_idx' h_quarantined =>
-    cases Nat.decEq d_idx d_idx' with
-    | isTrue heq =>
-      -- Constructor requires isQuarantined s d_idx’; after heq: contradicts h_before
-      rw [heq] at h_before
-      exact absurd h_quarantined h_before
-    | isFalse hne =>
-      let ⟨d', h_get', h_stat'⟩ := h_after
-      rw [get?_updateDepositStatus_ne s.ledger d_idx' d_idx .Revoked hne] at h_get'
-      exact absurd ⟨d', h_get', h_stat'⟩ h_before
-  | repair _ _ d_idx' _ h_quarantined =>
-    cases Nat.decEq d_idx d_idx' with
-    | isTrue heq =>
-      rw [heq] at h_before
-      exact absurd h_quarantined h_before
-    | isFalse hne =>
-      let ⟨d', h_get', h_stat'⟩ := h_after
-      rw [get?_updateDepositStatus_ne s.ledger d_idx' d_idx .Candidate hne] at h_get'
-      exact absurd ⟨d', h_get', h_stat'⟩ h_before
-  | promote _ _ d_idx' h_candidate =>
-    cases Nat.decEq d_idx d_idx' with
-    | isTrue heq =>
-      -- promote updates d_prom to .Deposited; .Deposited ≠ .Quarantined
-      let ⟨d_c, h_get_c, _⟩ := h_candidate
-      let ⟨d', h_get', h_stat'⟩ := h_after
-      have h_upd := get?_updateDepositStatus_eq s.ledger d_idx' .Deposited d_c h_get_c
-      rw [heq, h_upd] at h_get'
-      simp only [Option.some.injEq] at h_get'
-      rw [← h_get'] at h_stat'
-      exact DepositStatus.noConfusion h_stat'
-    | isFalse hne =>
-      let ⟨d', h_get', h_stat'⟩ := h_after
-      rw [get?_updateDepositStatus_ne s.ledger d_idx' d_idx .Deposited hne] at h_get'
-      exact absurd ⟨d', h_get', h_stat'⟩ h_before
-  | forget _ _ d_for _ h_ex_f _ =>
-    -- forget sets .Forgotten at d_for; .Forgotten ≠ .Quarantined
-    cases Nat.decEq d_idx d_for with
-    | isTrue heq =>
-      let ⟨d', h_get', h_stat'⟩ := h_after
-      have h_upd := get?_updateDepositStatus_eq s.ledger d_for .Forgotten _ h_ex_f
-      rw [heq, h_upd] at h_get'
-      simp only [Option.some.injEq] at h_get'
-      rw [← h_get'] at h_stat'
-      exact DepositStatus.noConfusion h_stat'
-    | isFalse hne =>
-      let ⟨d', h_get', h_stat'⟩ := h_after
-      rw [get?_updateDepositStatus_ne s.ledger d_for d_idx .Forgotten hne] at h_get'
-      exact absurd ⟨d', h_get', h_stat'⟩ h_before
-  | update _ _ d_upd d_new d_old h_ex _ _ _ h_not_quarantined_new =>
-    -- update cannot produce .Quarantined (h_not_quarantined_new)
-    cases Nat.decEq d_idx d_upd with
-    | isTrue heq =>
-      let ⟨d', h_get', h_stat'⟩ := h_after
-      have h_upd := get?_modifyAt_eq s.ledger d_upd (fun _ => d_new) d_old h_ex
-      rw [heq, h_upd] at h_get'
-      simp only [Option.some.injEq] at h_get'
-      rw [← h_get'] at h_stat'
-      exact absurd h_stat' h_not_quarantined_new
-    | isFalse hne =>
-      let ⟨d', h_get', h_stat'⟩ := h_after
-      rw [get?_modifyAt_ne s.ledger d_upd d_idx (fun _ => d_new) hne] at h_get'
-      exact absurd ⟨d', h_get', h_stat'⟩ h_before
-
 
 /-! ========================================================================
-    PART D — No Self-Healing Bank Without Magic
+    PART C — No Self-Healing Bank Without Magic
     ======================================================================== -/
 
 /-- Deposit status improvement order.
@@ -570,6 +417,6 @@ theorem no_self_healing_bank
   | repair _ _ _ _ _ => intro h; cases h
   | promote _ _ _ _ => intro h; cases h
   | forget _ _ _ _ _ _ => intro h; cases h
-  | update _ _ _ _ _ _ _ _ _ _ => intro h; cases h
+  | update _ _ _ _ _ _ _ => intro h; cases h
 
 end EpArch.Meta.Reconfiguration

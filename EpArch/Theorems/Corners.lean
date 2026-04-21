@@ -39,6 +39,7 @@ def isContestationAction : Action PropLike Standard ErrorModel Provenance Reason
   | .Challenge _ _ _ => true
   | .Revoke _ _ _    => true
   | .Repair _ _ _ _  => true
+  | .Update _ _ _ _  => true  -- agent revision; opts in to contestation predicate
   | _                => false
 
 /-- A restricted step relation: only non-contestation actions allowed. -/
@@ -138,24 +139,9 @@ theorem frozen_canon_no_revocation
       injection h_get' with h_eq'
       rw [← h_eq']
       exact h_not_revoked
-  | update _ _ d_upd d_new d_old h_ex_upd _ h_not_rev_new _ _ =>
-    -- update cannot produce .Revoked (h_not_rev_new)
-    cases Nat.decEq d_idx d_upd with
-    | isTrue heq =>
-      have h_val := get?_modifyAt_eq s.ledger d_upd (fun _ => d_new) d_old h_ex_upd
-      rw [heq] at h_get'
-      rw [h_val] at h_get'
-      injection h_get' with h_eq'
-      intro h_rev
-      rw [← h_eq'] at h_rev
-      exact h_not_rev_new h_rev
-    | isFalse hne =>
-      have h_unch := get?_modifyAt_ne s.ledger d_upd d_idx (fun _ => d_new) hne
-      rw [h_unch] at h_get'
-      rw [h_get] at h_get'
-      injection h_get' with h_eq'
-      rw [← h_eq']
-      exact h_not_revoked
+  | update _ _ _ _ _ _ _ =>
+    -- update is a contestation action; h_not_contest contradicts
+    simp [isContestationAction] at h_not_contest
 
 /-- A trace where every action is non-contestation
     (no Challenge, no Revoke, no Repair). -/
@@ -178,9 +164,9 @@ theorem allRestricted_implies_no_revision
     have h_not_rev : a.isRevision = false := by
       cases a with
       | Submit _ _ | Register _ _ | Withdraw _ _ _ | Tick | Promote _ _ _
-      | Forget _ _ _ | Update _ _ _ _ =>
+      | Forget _ _ _ =>
         simp [Action.isRevision]
-      | Challenge _ _ _ | Revoke _ _ _ | Repair _ _ _ _ =>
+      | Challenge _ _ _ | Revoke _ _ _ | Repair _ _ _ _ | Update _ _ _ _ =>
         simp [isContestationAction] at h_not_contest
     simp [h_not_rev, ih h_rest]
 

@@ -450,7 +450,7 @@ theorem deposited_claim_arises_from_promote_or_register
       | intro x hx =>
         rw [← hx.2] at hstatus'
         exact DepositStatus.noConfusion hstatus'
-  | update ag B d_upd d_new _ _ _ _ =>
+  | update ag B d_upd d_new _ _ _ =>
     -- status-preserving update: entries outside d_upd trace back via mem_modifyAt;
     -- the new slot content is d_new, so if d_new.P = c return the third disjunct
     cases h_after with
