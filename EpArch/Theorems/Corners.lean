@@ -33,13 +33,15 @@ def IsBadDeposit (BrokenField : Deposit PropLike Standard ErrorModel Provenance 
     (d : Deposit PropLike Standard ErrorModel Provenance) : Prop :=
   ∃ f, BrokenField d f
 
-/-- Is an action a "contestation action" (Challenge, Revoke, or Repair)?
-    These are the actions that enable error correction. -/
+/-- Is an action a "contestation action" (Challenge, Revoke, Repair, or Update)?
+    These are the actions that enable error correction. Update opts in by
+    choice: a single-agent bubble may revise deposits directly via its own
+    cognitive model, forfeiting revision-free guarantees for that trace. -/
 def isContestationAction : Action PropLike Standard ErrorModel Provenance Reason Evidence → Bool
   | .Challenge _ _ _ => true
   | .Revoke _ _ _    => true
   | .Repair _ _ _ _  => true
-  | .Update _ _ _ _  => true  -- agent revision; opts in to contestation predicate
+  | .Update _ _ _ _  => true  -- agent-driven revision; forfeits contestation-free guarantees
   | _                => false
 
 /-- A restricted step relation: only non-contestation actions allowed. -/
@@ -144,7 +146,7 @@ theorem frozen_canon_no_revocation
     simp [isContestationAction] at h_not_contest
 
 /-- A trace where every action is non-contestation
-    (no Challenge, no Revoke, no Repair). -/
+    (no Challenge, no Revoke, no Repair, no Update). -/
 def allRestrictedTrace {s s' : SystemState PropLike Standard ErrorModel Provenance} :
     Trace (Reason := Reason) (Evidence := Evidence) s s' → Prop
   | .nil _ => True

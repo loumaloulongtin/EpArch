@@ -579,8 +579,10 @@ inductive Trace : SystemState PropLike Standard ErrorModel Provenance →
       Trace s' s'' →
       Trace s s''
 
-/-- Is an action a "revision action" (Challenge or Revoke)?
-    These are the actions that enable self-correction. -/
+/-- Is an action a "revision action" (Challenge, Revoke, or Update)?
+    Challenge and Revoke are the structured lifecycle path. Update is an
+    agent-choice path: a bubble that uses it opts in to the revision predicate
+    and forfeits revision-free guarantees for that trace. -/
 def Action.isRevision : Action PropLike Standard ErrorModel Provenance Reason Evidence → Bool
   | .Challenge _ _ _ => true
   | .Revoke _ _ _    => true
@@ -685,13 +687,13 @@ theorem List.get?_some_lt' {α : Type u} (l : List α) (i : Nat) (x : α)
     | succ j => exact Nat.succ_lt_succ (ih j h)
 
 /-- Helper: non-revision steps cannot produce Revoked status.
-    Only Step.revoke sets status to Revoked.
+    Only Step.revoke (and Step.update, also a revision action) can write Revoked.
 
     The key insight is:
     - Submit appends elements (Candidate or Deposited), so existing indices unchanged
     - New elements have status ≠ Revoked
     - Withdraw/Tick don't modify ledger
-    - Challenge/Revoke are revision actions (ruled out by h_not_rev) -/
+    - Challenge/Revoke/Update are revision actions (ruled out by h_not_rev) -/
 theorem step_non_revision_preserves_non_revoked
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (a : Action PropLike Standard ErrorModel Provenance Reason Evidence)
@@ -863,11 +865,9 @@ theorem trace_no_revision_preserves_non_revoked
     exact step_non_revision_preserves_non_revoked _ _ a h_step h_a_not_rev d_idx h_not_revoked
 
 /-- Key lemma: non-revision steps leave a live (non-Revoked) deposit still present
-    and non-Revoked. Challenge and Revoke are revision actions (ruled out by h_not_rev).
-    All other actions either leave d_idx unchanged or carry gates that exclude
-    Revoked at d_idx as a precondition. Update may freely change status within
-    live states, but cannot produce Revoked. Update is itself a revision action
-    (Action.isRevision = true), so it is excluded by h_not_rev. -/
+    and non-Revoked. Challenge, Revoke, and Update are revision actions (ruled out
+    by h_not_rev). All remaining actions either leave d_idx unchanged or carry
+    gates that exclude Revoked as a precondition. -/
 theorem step_no_revision_preserves_deposited
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (a : Action PropLike Standard ErrorModel Provenance Reason Evidence)
