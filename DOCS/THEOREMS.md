@@ -420,6 +420,30 @@ Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_w
 
 ---
 
+## Bucket 9f: Analogical Bridge — Exact-Recall Insufficiency for Novel Inputs (Minimality.lean §10)
+
+**Role:** Extends the bounded-budget impossibility argument to the *analogical import* direction. When an agent encounters a novel input whose scratch-verification cost exceeds its budget, exact recall cannot supply coverage. An analogical bridge — a prior entry similar to the novel input from which bridge-based verification stays within budget — is the only in-scope alternative to escalation. `AnalogicalBridge` is the parallel structure to `BoundedVerification` (§2) and `RecallBudget` (§9); `exact_recall_insufficient_for_novel_inputs` is the parallel impossibility theorem.
+
+**Connection to T25 (Health.lean):** `AutonomyUnderPRPGoal` defines the health goal (scratch, bridge, or escalation for every required deposit). This §10 block is the independent Minimality-layer direction: scratch verification alone is provably insufficient for novel over-budget inputs. The two proofs are independent; neither cites the other.
+
+**Note:** `AnalogicalBridge` is not a ninth `Pressure` constructor. It embeds into `BoundedVerification` via `analogicalBridge_to_bounded` (§10.6): analogical-bridge pressure is trust-pressure applied at the novel-input boundary. The §10 theorem family is a Minimality-layer consequence, not a new convergence dimension.
+
+**Scope:** Does not fix the similarity metric (`analogSim` is fully abstract). Does not prove escalation is always available (`canEscalate B d` is system-dependent). Does not prove the bridge is safe or correct — existence is forced; calibration is implementation-defined.
+
+### Theorems
+
+| Theorem | Structure | Role |
+|---------|-----------|------|
+| `exact_recall_insufficient_for_novel_inputs` | `AnalogicalBridge` | No fixed scratch budget covers all claims; parallel to `verification_only_import_incomplete` |
+| `depth_analogical_incomplete` | `depth_analogical_bridge d` | Kernel witness: budget-d agent cannot scratch-verify depth-(d+1) novel claim |
+| `analogical_recall_forced` | `AnalogicalBridge` + `h_coverage` (budget-or-bridge) | If every claim is within budget or has a bridge, the novel over-budget claim must have a bridge |
+| `semanticDistance_recall_insufficient` | `SemanticDistanceBridge` → `AnalogicalBridge` embedding | Semantic-distance retrieval does not escape the impossibility |
+| `prototype_recall_insufficient` | `PrototypeBridge` → `AnalogicalBridge` embedding | Prototype-based retrieval does not escape the impossibility |
+| `hierarchical_recall_insufficient` | `HierarchicalBridge` → `AnalogicalBridge` embedding | Hierarchical generalization does not escape the impossibility |
+| `analogical_is_bounded_verification_instance` | `analogicalBridge_to_bounded` embedding | Exact-recall insufficiency is an instance of the general bounded-budget impossibility via `BoundedVerification` |
+
+---
+
 ## Bucket 10: Adversarial Model (Adversarial/Base.lean)
 
 **Role:** Formalize attack patterns and boundary conditions.

@@ -2273,4 +2273,311 @@ theorem recall_is_bounded_verification_instance (M : RecallBudget) :
     ¬∀ v : M.Provenance, M.recall_cost v ≤ M.budget :=
   verification_only_import_incomplete (recallBudget_to_bounded M)
 
+
+/-! ========================================================================
+    §10. ANALOGICAL BRIDGE — Analogical Recall as a Forced Consequence
+         of Exact-Recall Insufficiency for Novel Inputs
+    ========================================================================
+
+    **Argument.** An agent with a fixed verification budget encounters
+    inputs that exceed its scratch-verification capacity.  If exact recall
+    cannot supply a prior entry matching the novel input verbatim, the
+    agent must either use an analogical bridge (a prior entry similar to
+    the novel input, from which bridge-based verification stays within
+    budget) or escalate.  For inputs that exceed the scratch budget and
+    for which no exact match exists, analogical recall is the only
+    in-scope option.
+
+    **Connection to T25 (Health.lean).**  `AutonomyUnderPRPGoal` defines
+    the health goal: every required deposit is handled by scratch, bridge,
+    or escalation.  This section proves the independent Minimality-layer
+    direction: scratch verification alone is insufficient for novel
+    over-budget inputs.  The two proofs are independent; neither cites
+    the other.
+
+    **Proof technique.**  Parallel to BoundedVerification (§2) and
+    RecallBudget (§9).  An `AnalogicalBridge` witness carries a novel
+    claim whose scratch cost exceeds the budget.
+    `exact_recall_insufficient_for_novel_inputs` closes via
+    `Nat.not_le_of_gt`.  The forcing theorem uses `cases` on the `Or`
+    returned by `h_coverage`. -/
+
+/-! ## §10.1  AnalogicalBridge Structure -/
+
+/-- A claim universe with a novel input exceeding the scratch-verification
+    budget, and a similarity relation to prior entries.
+
+    Parallel to `BoundedVerification` (§2) for the import direction and
+    `RecallBudget` (§9) for the recall direction. -/
+structure AnalogicalBridge where
+  /-- The type of claims (novel inputs). -/
+  Claim              : Type
+  /-- The type of prior entries (bridge candidates). -/
+  Bridge             : Type
+  /-- Cost to scratch-verify a claim. -/
+  verify_cost        : Claim → Nat
+  /-- Cost to bridge-verify a claim via a prior entry. -/
+  bridge_cost        : Bridge → Claim → Nat
+  /-- Similarity relation: bridge b is analogous to claim c. -/
+  sim                : Bridge → Claim → Prop
+  /-- Fixed verification budget. -/
+  budget             : Nat
+  /-- A novel claim that exceeds the scratch budget. -/
+  novel_claim        : Claim
+  /-- The novel claim's scratch cost exceeds the budget. -/
+  exceeds_full       : verify_cost novel_claim > budget
+  /-- Any similar bridge entry can verify the novel claim within budget. -/
+  bridge_sufficiency : ∀ b : Bridge, sim b novel_claim → bridge_cost b novel_claim ≤ budget
+
+/-! ## §10.2  Exact-Recall Insufficiency -/
+
+/-- EXACT-RECALL INSUFFICIENCY: scratch verification alone cannot cover all
+    claims under a fixed budget.
+
+    **Theorem shape:** `¬∀ c : A.Claim, A.verify_cost c ≤ A.budget`.
+    **Proof strategy:** apply the universal bound to `A.novel_claim`, which
+    carries `A.exceeds_full : A.verify_cost A.novel_claim > A.budget`;
+    contradiction via `Nat.not_le_of_gt`.
+
+    Parallel to `verification_only_import_incomplete` (§2) for the import
+    direction and `recall_only_withdrawal_incomplete` (§9) for the recall
+    direction. -/
+theorem exact_recall_insufficient_for_novel_inputs (A : AnalogicalBridge) :
+    ¬∀ c : A.Claim, A.verify_cost c ≤ A.budget :=
+  fun h => absurd (h A.novel_claim) (Nat.not_le_of_gt A.exceeds_full)
+
+/-! ## §10.3  Kernel Witness -/
+
+/-- `AnalogicalBridge` has a canonical kernel inhabitant for every budget d.
+    Claims and bridges are both `Nat`-indexed; verify cost is the claim
+    index; bridge cost is 0 (the bridge perfectly supplies verification);
+    similarity holds whenever bridge equals claim index; depth d+1 exceeds
+    budget d.
+
+    Parallel to `depth_recall_budget` (§9.3). -/
+def depth_analogical_bridge (d : Nat) : AnalogicalBridge where
+  Claim              := Nat
+  Bridge             := Nat
+  verify_cost        := id
+  bridge_cost        := fun _ _ => 0
+  sim                := fun b c => b = c
+  budget             := d
+  novel_claim        := d + 1
+  exceeds_full       := Nat.lt_succ_self d
+  bridge_sufficiency := fun _ _ => Nat.zero_le d
+
+/-- `exact_recall_insufficient_for_novel_inputs` fires on the kernel witness:
+    no budget-d agent can scratch-verify the depth-(d+1) novel claim. -/
+theorem depth_analogical_incomplete (d : Nat) :
+    ¬∀ c : (depth_analogical_bridge d).Claim,
+      (depth_analogical_bridge d).verify_cost c ≤ (depth_analogical_bridge d).budget :=
+  exact_recall_insufficient_for_novel_inputs (depth_analogical_bridge d)
+
+/-! ## §10.4  Analogical Recall Forcing -/
+
+/-- ANALOGICAL RECALL FORCED: if coverage is universal (every claim is either
+    within scratch budget or has a similar bridge entry), then the novel
+    over-budget claim must have a bridge.
+
+    **Theorem shape:** given
+    `h_coverage : ∀ c, verify_cost c ≤ budget ∨ ∃ b, sim b c`,
+    the novel claim's over-budget proof rules out the left disjunct,
+    forcing the right.
+    **Proof strategy:** `cases` on `h_coverage A.novel_claim`; left case
+    contradicts `A.exceeds_full` via `Nat.not_le_of_gt`; right case is the
+    conclusion directly.
+
+    This is the forcing direction: given a coverage assumption
+    (budget-or-bridge), the impossibility theorem forces the bridge to
+    exist for the novel claim.
+
+    Independent of `AutonomyUnderPRPGoal` (Health.lean): that theorem is
+    the goal-layer forcing story; this is the Minimality-layer
+    impossibility direction.  Neither cites the other. -/
+theorem analogical_recall_forced (A : AnalogicalBridge)
+    (h_coverage : ∀ c : A.Claim,
+        A.verify_cost c ≤ A.budget ∨ ∃ b : A.Bridge, A.sim b c) :
+    ∃ b : A.Bridge, A.sim b A.novel_claim := by
+  cases h_coverage A.novel_claim with
+  | inl h => exact absurd h (Nat.not_le_of_gt A.exceeds_full)
+  | inr h => exact h
+
+/-! ## §10b. Alternative Analogical Mechanisms Reduce to AnalogicalBridge
+
+A reviewer may ask: do semantic-distance metrics, prototype-based
+retrieval, or hierarchical generalization escape
+`exact_recall_insufficient_for_novel_inputs`?
+
+All three are instantiated below.  In each case the alternative carries
+a novel claim exceeding the scratch budget — a direct `AnalogicalBridge`
+instance — and the impossibility fires via the standard embedding.
+
+**Semantic-distance retrieval.**  Retrieval is by embedding distance; the
+closest prior entry whose distance is below a threshold is the bridge.
+If the novel claim still exceeds the scratch budget, the embedding bridge
+is a direct `AnalogicalBridge` instance with `sim` instantiated to the
+distance-threshold predicate.
+
+**Prototype-based retrieval.**  A prototype summarizes a cluster of prior
+entries; the novel claim is matched to the nearest prototype.  If
+prototype matching keeps bridge cost within budget while scratch exceeds
+it, the prototype IS a bridge entry — direct `AnalogicalBridge` instance.
+
+**Hierarchical generalization.**  A taxonomy of claim types generalizes
+novel inputs to higher-level categories; verification proceeds at the
+category level.  If category-level verification is within budget while
+claim-level scratch is not, the category entry is a bridge — direct
+`AnalogicalBridge` instance. -/
+
+/-- Semantic-distance retrieval: similarity is embedding distance below a threshold.
+    A bridge entry is similar iff its distance to the novel claim is below threshold. -/
+structure SemanticDistanceBridge where
+  Claim              : Type
+  Bridge             : Type
+  verify_cost        : Claim → Nat
+  bridge_cost        : Bridge → Claim → Nat
+  /-- Embedding distance from a bridge to a claim. -/
+  distance           : Bridge → Claim → Nat
+  /-- Threshold: a bridge is similar iff its distance is below this value. -/
+  threshold          : Nat
+  budget             : Nat
+  novel_claim        : Claim
+  exceeds_full       : verify_cost novel_claim > budget
+  bridge_sufficiency : ∀ b : Bridge, distance b novel_claim < threshold →
+                         bridge_cost b novel_claim ≤ budget
+
+/-- Semantic distance retrieval directly instantiates `AnalogicalBridge`. -/
+def semanticDistance_to_analogical (M : SemanticDistanceBridge) : AnalogicalBridge where
+  Claim              := M.Claim
+  Bridge             := M.Bridge
+  verify_cost        := M.verify_cost
+  bridge_cost        := M.bridge_cost
+  sim                := fun b c => M.distance b c < M.threshold
+  budget             := M.budget
+  novel_claim        := M.novel_claim
+  exceeds_full       := M.exceeds_full
+  bridge_sufficiency := M.bridge_sufficiency
+
+/-- Exact recall cannot cover the novel claim in a semantic-distance retrieval system:
+    `exact_recall_insufficient_for_novel_inputs` fires via the embedding. -/
+theorem semanticDistance_recall_insufficient (M : SemanticDistanceBridge) :
+    ¬∀ c : M.Claim, M.verify_cost c ≤ M.budget :=
+  exact_recall_insufficient_for_novel_inputs (semanticDistance_to_analogical M)
+
+/-- Prototype-based retrieval: a prototype summarizes a cluster of prior entries;
+    similarity is cluster membership. -/
+structure PrototypeBridge where
+  Claim              : Type
+  Bridge             : Type
+  verify_cost        : Claim → Nat
+  bridge_cost        : Bridge → Claim → Nat
+  /-- Cluster membership: claim c belongs to bridge b's cluster. -/
+  in_cluster         : Bridge → Claim → Prop
+  budget             : Nat
+  novel_claim        : Claim
+  exceeds_full       : verify_cost novel_claim > budget
+  bridge_sufficiency : ∀ b : Bridge, in_cluster b novel_claim →
+                         bridge_cost b novel_claim ≤ budget
+
+/-- Prototype retrieval directly instantiates `AnalogicalBridge`. -/
+def prototype_to_analogical (M : PrototypeBridge) : AnalogicalBridge where
+  Claim              := M.Claim
+  Bridge             := M.Bridge
+  verify_cost        := M.verify_cost
+  bridge_cost        := M.bridge_cost
+  sim                := M.in_cluster
+  budget             := M.budget
+  novel_claim        := M.novel_claim
+  exceeds_full       := M.exceeds_full
+  bridge_sufficiency := M.bridge_sufficiency
+
+/-- Exact recall cannot cover the novel claim in a prototype retrieval system:
+    `exact_recall_insufficient_for_novel_inputs` fires via the embedding. -/
+theorem prototype_recall_insufficient (M : PrototypeBridge) :
+    ¬∀ c : M.Claim, M.verify_cost c ≤ M.budget :=
+  exact_recall_insufficient_for_novel_inputs (prototype_to_analogical M)
+
+/-- Hierarchical generalization: a taxonomy assigns each claim to a category;
+    category-level verification stays within budget when claim-level scratch does not. -/
+structure HierarchicalBridge where
+  Claim              : Type
+  Bridge             : Type
+  verify_cost        : Claim → Nat
+  bridge_cost        : Bridge → Claim → Nat
+  /-- Category membership: category b subsumes claim c. -/
+  subsumes           : Bridge → Claim → Prop
+  budget             : Nat
+  novel_claim        : Claim
+  exceeds_full       : verify_cost novel_claim > budget
+  bridge_sufficiency : ∀ b : Bridge, subsumes b novel_claim →
+                         bridge_cost b novel_claim ≤ budget
+
+/-- Hierarchical generalization directly instantiates `AnalogicalBridge`. -/
+def hierarchical_to_analogical (M : HierarchicalBridge) : AnalogicalBridge where
+  Claim              := M.Claim
+  Bridge             := M.Bridge
+  verify_cost        := M.verify_cost
+  bridge_cost        := M.bridge_cost
+  sim                := M.subsumes
+  budget             := M.budget
+  novel_claim        := M.novel_claim
+  exceeds_full       := M.exceeds_full
+  bridge_sufficiency := M.bridge_sufficiency
+
+/-- Exact recall cannot cover the novel claim in a hierarchical generalization system:
+    `exact_recall_insufficient_for_novel_inputs` fires via the embedding. -/
+theorem hierarchical_recall_insufficient (M : HierarchicalBridge) :
+    ¬∀ c : M.Claim, M.verify_cost c ≤ M.budget :=
+  exact_recall_insufficient_for_novel_inputs (hierarchical_to_analogical M)
+
+/-! ## §10.5  GroundedAnalogicalBridge -/
+
+/-- Grounded analogical bridge scenario: an `AnalogicalBridge` together with
+    the proof that the impossibility has been witnessed by the kernel.
+
+    Parallel to `GroundedRecall` (§9.5) for the recall direction. -/
+structure GroundedAnalogicalBridge where
+  /-- The underlying analogical bridge scenario. -/
+  scenario : AnalogicalBridge
+  /-- Proof that the impossibility fires on this scenario. -/
+  fires    : ¬∀ c : scenario.Claim, scenario.verify_cost c ≤ scenario.budget
+
+/-- Every `AnalogicalBridge` grounds a `GroundedAnalogicalBridge`:
+    the impossibility is unconditional. -/
+def AnalogicalBridge.toGrounded (A : AnalogicalBridge) : GroundedAnalogicalBridge where
+  scenario := A
+  fires    := exact_recall_insufficient_for_novel_inputs A
+
+/-! ## §10.6  AnalogicalBridge ↔ BoundedVerification Bridge
+
+`AnalogicalBridge` embeds into `BoundedVerification` in the import
+direction: scratch-verification cost plays the role of the general
+verification cost; the novel claim plays the role of the hard claim.
+
+This makes explicit that exact-recall insufficiency is an instance of
+the general bounded-budget impossibility — the same Nat arithmetic closes
+all three: import (§2), recall (§9), and analogical bridge (§10). -/
+
+/-- `AnalogicalBridge` embeds into `BoundedVerification`: scratch cost is
+    the verification cost; novel claim is the hard claim; budget maps
+    directly.
+
+    Parallel to `recallBudget_to_bounded` (§9.6). -/
+def analogicalBridge_to_bounded (A : AnalogicalBridge) : BoundedVerification where
+  Claim          := A.Claim
+  verify_cost    := A.verify_cost
+  budget         := A.budget
+  hard_claim     := A.novel_claim
+  exceeds_budget := A.exceeds_full
+
+/-- `exact_recall_insufficient_for_novel_inputs` is an instance of
+    `verification_only_import_incomplete` via the embedding.
+
+    Confirms that exact-recall insufficiency, recall impossibility, and
+    import incompleteness all share the same formal structure: bounded
+    Nat arithmetic closes each via `Nat.not_le_of_gt`. -/
+theorem analogical_is_bounded_verification_instance (A : AnalogicalBridge) :
+    ¬∀ c : A.Claim, A.verify_cost c ≤ A.budget :=
+  verification_only_import_incomplete (analogicalBridge_to_bounded A)
+
 end EpArch
