@@ -594,8 +594,11 @@ PRP, not yet part of the config/certification surface.
 
 The T25 theorems are operational, not metaphysical: they reason about whether
 an available bridge witness exists in the system's prior material, not whether
-no analogous item exists anywhere in principle. The stronger exact-recall /
-bridge-absence story is deferred to T25b in `Minimality.lean`.
+no analogous item exists anywhere in principle. The Minimality-layer companion
+is Bucket 9f: `AnalogicalBridge` proves scratch-verification insufficiency for
+novel over-budget inputs and, under a coverage assumption, forces a budgeted
+bridge. The Health-layer theorems and Minimality-layer theorems are independent;
+they meet in the architectural reading.
 
 ---
 

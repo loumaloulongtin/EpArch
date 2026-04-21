@@ -257,7 +257,7 @@ theorem autonomy_forces_bridge_or_escalation (M : AutonomyModel)
     (h_auto : AutonomyUnderPRPGoal M)
     (B : M.sig.Bubble) (d : M.sig.Deposit)
     (h_required : M.ops.mustHandle B d)
-    (h_novel : ¬M.ops.verifyWithin B d (M.ops.effectiveTime B)) :
+    (h_scratch_fail : ¬M.ops.verifyWithin B d (M.ops.effectiveTime B)) :
     (∃ b : M.sig.Deposit,
         M.ops.bridgeAvailable B b ∧
         M.ops.analogSim b d ∧
@@ -266,7 +266,7 @@ theorem autonomy_forces_bridge_or_escalation (M : AutonomyModel)
   have h_response := h_auto B d h_required
   cases h_response with
   | inl h_scratch =>
-      exact absurd h_scratch h_novel
+      exact absurd h_scratch h_scratch_fail
   | inr h_rest =>
       cases h_rest with
       | inl h_bridge =>
@@ -283,13 +283,13 @@ theorem no_escalation_forces_bridge (M : AutonomyModel)
     (h_auto : AutonomyUnderPRPGoal M)
     (B : M.sig.Bubble) (d : M.sig.Deposit)
     (h_required : M.ops.mustHandle B d)
-    (h_novel : ¬M.ops.verifyWithin B d (M.ops.effectiveTime B))
+    (h_scratch_fail : ¬M.ops.verifyWithin B d (M.ops.effectiveTime B))
     (h_no_esc : ¬M.ops.canEscalate B d) :
     ∃ b : M.sig.Deposit,
       M.ops.bridgeAvailable B b ∧
       M.ops.analogSim b d ∧
     M.ops.verifyVia B b d (M.ops.effectiveTime B) := by
-  have h_response := autonomy_forces_bridge_or_escalation M h_auto B d h_required h_novel
+  have h_response := autonomy_forces_bridge_or_escalation M h_auto B d h_required h_scratch_fail
   cases h_response with
   | inl h_bridge =>
     exact h_bridge

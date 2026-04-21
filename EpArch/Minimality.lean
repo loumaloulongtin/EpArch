@@ -2285,8 +2285,9 @@ theorem recall_is_bounded_verification_instance (M : RecallBudget) :
     analogical bridge (a prior entry similar to the novel input, from
     which bridge-based verification stays within budget) or escalate.
     Scratch verification alone cannot cover all inputs under a fixed
-    budget; the bridge is architecturally forced for over-budget novel
-    claims.
+    budget; under a coverage policy, the over-budget novel claim must be
+    handled by a budgeted bridge, unless the Health-layer system routes
+    it to escalation.
 
     **Connection to T25 (Health.lean).**  `AutonomyUnderPRPGoal` defines
     the health goal: every required deposit is handled by scratch, bridge,
