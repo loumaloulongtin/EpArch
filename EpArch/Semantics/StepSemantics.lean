@@ -71,7 +71,7 @@ variable {PropLike Standard ErrorModel Provenance Reason Evidence : Type u}
     - Withdraw:  agent relies on deposit
     - Challenge: deposit is contested
     - Tick:      time advances (for TTL expiry)
-    - Repair:    address challenged field
+    - Repair:    records repair action; returns deposit to Candidate for revalidation
     - Revoke:    remove deposit from circulation
     - Forget:    agent-invoked capacity deletion; marks slot as Forgotten tombstone
     - Update:    agent-invoked direct maintenance; wholesale slot overwrite;
@@ -459,20 +459,20 @@ inductive Step : SystemState PropLike Standard ErrorModel Provenance →
       Step s (.Revoke a B d_idx)
         { s with ledger := updateDepositStatus s.ledger d_idx .Revoked }
 
-  /-- Repair: quarantined deposit re-enters as Candidate.
+  /-- Repair: records a repair action and returns the deposit to Candidate status.
 
-      When a deposit is repaired, it must go through revalidation:
-      patching a claim does not bypass re-acceptance. The repair
-      operator addresses a specific field but the deposit still
-      must pass through Candidate status.
-      Precondition: deposit must be Quarantined. Agent and bubble recorded for attribution. -/
+      The bank does not evaluate or fix the deposit content; it records that a
+      repair action was taken and sets the slot back to Candidate, requiring
+      the deposit to pass through revalidation (re-promotion) before it can be
+      relied upon again. Agent and bubble recorded for attribution.
+      Precondition: deposit must be Quarantined. -/
   | repair (s : SystemState PropLike Standard ErrorModel Provenance)
       (a : Agent) (B : Bubble) (d_idx : Nat) (f : Field)
       (h_quarantined : isQuarantined s d_idx) :
       Step s (.Repair a B d_idx f)
         { s with ledger := updateDepositStatus s.ledger d_idx .Candidate }
 
-  /-- Promote: bank operator advances a Candidate deposit to Deposited (live).
+  /-- Promote: records the Candidate → Deposited boundary transition.
 
       Along with Register, Promote is one of the structured/public entry paths
       to Deposited. Update can also install a Deposited record, but only through
@@ -481,8 +481,9 @@ inductive Step : SystemState PropLike Standard ErrorModel Provenance →
       this step it is Deposited and live in the bank.
 
       Implementations may use multi-stage internal validation pipelines between
-      Candidate and Deposited; this step represents the minimal architectural
-      boundary at which a deposit becomes live. Agent and bubble recorded for attribution. -/
+      Candidate and Deposited; this step records the minimal architectural
+      boundary at which a deposit becomes live — not the validation mechanism
+      that preceded it. Agent and bubble recorded for attribution. -/
   | promote (s : SystemState PropLike Standard ErrorModel Provenance)
       (a : Agent) (B : Bubble) (d_idx : Nat)
       (h_candidate : isCandidate s d_idx) :
