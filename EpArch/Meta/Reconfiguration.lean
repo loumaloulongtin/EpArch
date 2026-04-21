@@ -495,22 +495,16 @@ theorem quarantine_requires_challenge
       let ⟨d', h_get', h_stat'⟩ := h_after
       rw [get?_updateDepositStatus_ne s.ledger d_pur d_idx .Purged hne] at h_get'
       exact absurd ⟨d', h_get', h_stat'⟩ h_before
-  | update _ _ d_upd d_new d_old h_ex h_status h_not_rev _ =>
-    -- update replaces d_upd; status is preserved (h_status), so not Quarantined if d_old wasn't
+  | update _ _ d_upd d_new d_old h_ex _ _ _ _ h_not_quarantined_new =>
+    -- update cannot produce .Quarantined (h_not_quarantined_new)
     cases Nat.decEq d_idx d_upd with
     | isTrue heq =>
       let ⟨d', h_get', h_stat'⟩ := h_after
       have h_upd := get?_modifyAt_eq s.ledger d_upd (fun _ => d_new) d_old h_ex
       rw [heq, h_upd] at h_get'
       simp only [Option.some.injEq] at h_get'
-      -- h_before : ¬isQuarantined s d_idx; so d_old.status ≠ .Quarantined
-      -- h_status : d_new.status = d_old.status; d_old.status ≠ .Quarantined
-      -- h_get' : d_new = d'; h_stat' : d'.status = .Quarantined
-      have h_d_old_not_q : d_old.status ≠ .Quarantined := by
-        intro h_q
-        exact absurd ⟨d_old, heq ▸ h_ex, h_q⟩ h_before
       rw [← h_get'] at h_stat'
-      exact absurd (h_status.symm.trans h_stat') h_d_old_not_q
+      exact absurd h_stat' h_not_quarantined_new
     | isFalse hne =>
       let ⟨d', h_get', h_stat'⟩ := h_after
       rw [get?_modifyAt_ne s.ledger d_upd d_idx (fun _ => d_new) hne] at h_get'
@@ -573,6 +567,6 @@ theorem no_self_healing_bank
   | repair _ _ _ _ _ => intro h; cases h
   | promote _ _ _ _ => intro h; cases h
   | purge _ _ _ _ _ _ => intro h; cases h
-  | update _ _ _ _ _ _ _ _ _ => intro h; cases h
+  | update _ _ _ _ _ _ _ _ _ _ _ => intro h; cases h
 
 end EpArch.Meta.Reconfiguration

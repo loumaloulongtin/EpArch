@@ -138,23 +138,17 @@ theorem frozen_canon_no_revocation
       injection h_get' with h_eq'
       rw [← h_eq']
       exact h_not_revoked
-  | update _ _ d_upd d_new d_old h_ex_upd h_st _ _ =>
-    -- update replaces d_upd; d_new.status = d_old.status; if d_idx = d_upd, d = d_old so d_new.status ≠ .Revoked
+  | update _ _ d_upd d_new d_old h_ex_upd _ _ h_not_rev_new _ _ =>
+    -- update cannot produce .Revoked (h_not_rev_new)
     cases Nat.decEq d_idx d_upd with
     | isTrue heq =>
       have h_val := get?_modifyAt_eq s.ledger d_upd (fun _ => d_new) d_old h_ex_upd
       rw [heq] at h_get'
       rw [h_val] at h_get'
       injection h_get' with h_eq'
-      -- d' = d_new; d_new.status = d_old.status = d.status ≠ .Revoked
-      have h_d_eq : d = d_old := by
-        rw [heq] at h_get
-        rw [h_ex_upd] at h_get
-        injection h_get with h_e
-        exact h_e.symm
       intro h_rev
       rw [← h_eq'] at h_rev
-      exact h_not_revoked (h_d_eq ▸ (h_st.symm.trans h_rev))
+      exact h_not_rev_new h_rev
     | isFalse hne =>
       have h_unch := get?_modifyAt_ne s.ledger d_upd d_idx (fun _ => d_new) hne
       rw [h_unch] at h_get'
