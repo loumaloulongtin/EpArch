@@ -555,12 +555,18 @@ Each architectural constraint creates both a capability and an exploitable surfa
 | `corrigible_needs_revision` | `CorrigibleLedgerGoal` (single premise) | `HasRevisionCapability` |
 | `self_correction_needs_revision` | `SelfCorrectingSystem` (single premise) | `HasRevisionCapability` |
 | `sound_deposits_needs_verification` | `SoundDepositsGoal` + `∃truth` | `HasVerificationCapability` |
+| `autonomy_forces_bridge_or_escalation` | `AutonomyUnderPRPGoal` + `mustHandle B d` + novel over-budget witness | budgeted analogical bridge exists for `d` or principled escalation is available |
+| `no_escalation_forces_bridge` | `AutonomyUnderPRPGoal` + `mustHandle B d` + novel over-budget witness + `¬canEscalate B d` | budgeted analogical bridge is forced |
 
 ### Math Form
 
 $$\text{CorrigibleLedgerGoal}(M) \Rightarrow \text{HasRevisionCapability}(M)$$
 
 $$\text{SelfCorrectingSystem}(M) \Rightarrow \text{HasRevisionCapability}(M)$$
+
+`AutonomyUnderPRPGoal` lives over `AutonomyModel`, not `CoreModel`: it is a
+health-specific extension goal for novel-claim coverage under PRP, not yet part
+of the config/certification surface.
 
 ---
 
