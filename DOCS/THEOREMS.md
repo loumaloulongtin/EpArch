@@ -555,8 +555,8 @@ Each architectural constraint creates both a capability and an exploitable surfa
 | `corrigible_needs_revision` | `CorrigibleLedgerGoal` (single premise) | `HasRevisionCapability` |
 | `self_correction_needs_revision` | `SelfCorrectingSystem` (single premise) | `HasRevisionCapability` |
 | `sound_deposits_needs_verification` | `SoundDepositsGoal` + `∃truth` | `HasVerificationCapability` |
-| `autonomy_forces_bridge_or_escalation` | `AutonomyUnderPRPGoal` + `mustHandle B d` + over-budget scratch-failure witness | budgeted analogical bridge exists for `d` or principled escalation is available |
-| `no_escalation_forces_bridge` | `AutonomyUnderPRPGoal` + `mustHandle B d` + over-budget scratch-failure witness + `¬canEscalate B d` | budgeted analogical bridge is forced |
+| `autonomy_forces_bridge_or_escalation` | `AutonomyUnderPRPGoal` + `mustHandle B d` + scratch-verification failure within `effectiveTime` | budgeted analogical bridge exists for `d` or principled escalation is available |
+| `no_escalation_forces_bridge` | `AutonomyUnderPRPGoal` + `mustHandle B d` + scratch-verification failure within `effectiveTime` + `¬canEscalate B d` | budgeted analogical bridge is forced |
 
 ### Math Form
 

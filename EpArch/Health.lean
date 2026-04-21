@@ -246,7 +246,8 @@ theorem authorized_withdrawal_needs_differentiation (M : CoreModel)
   · exact absurd (h_eq ▸ h_sub) h_no_sub
   · exact ⟨a₁, a₂, h_eq, B, d, h_sub, h_no_sub⟩
 
-/-- Autonomy under PRP forces bridge-or-escalation for required over-budget claims.
+/-- Autonomy under PRP forces bridge-or-escalation for required claims that are
+  not scratch-verifiable within the effective-time budget.
 
     If a required claim cannot be scratch-verified within the effective-time
     budget, then the health goal leaves exactly two sound branches: a budgeted
@@ -262,22 +263,22 @@ theorem autonomy_forces_bridge_or_escalation (M : AutonomyModel)
         M.ops.analogSim b d ∧
         M.ops.verifyVia B b d (M.ops.effectiveTime B)) ∨
     M.ops.canEscalate B d := by
-    have h_response := h_auto B d h_required
-    cases h_response with
-    | inl h_scratch =>
+  have h_response := h_auto B d h_required
+  cases h_response with
+  | inl h_scratch =>
       exact absurd h_scratch h_novel
-    | inr h_rest =>
+  | inr h_rest =>
       cases h_rest with
       | inl h_bridge =>
-        exact Or.inl h_bridge
+          exact Or.inl h_bridge
       | inr h_esc =>
-        exact Or.inr h_esc
+          exact Or.inr h_esc
 
 /-- If escalation is unavailable, a budgeted bridge is forced.
 
     This is the no-refusal branch of the autonomy goal: once scratch
-  verification is ruled out by the over-budget witness and escalation is
-  disallowed, the bridge branch must supply the sound response. -/
+  verification is ruled out by failure within the effective-time budget and
+  escalation is disallowed, the bridge branch must supply the sound response. -/
 theorem no_escalation_forces_bridge (M : AutonomyModel)
     (h_auto : AutonomyUnderPRPGoal M)
     (B : M.sig.Bubble) (d : M.sig.Deposit)
