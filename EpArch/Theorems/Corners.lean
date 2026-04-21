@@ -415,7 +415,7 @@ theorem finite_budget_forces_triage
     same pathology to a single agent's Ladder state. -/
 
 /-- An entrenched agent: has certainty on P and structurally refuses
-    to revise when the Bank signals quarantine or revocation. -/
+    to revise when the Bank signals quarantine, revocation, or forgetting. -/
 structure EntrenchedAgent where
   agent : Agent
   claim : Claim
@@ -433,15 +433,15 @@ def deposit_no_longer_active
     (d.status = .Quarantined ∨ d.status = .Revoked ∨ d.status = .Forgotten)
 
 /-- ENTRENCHMENT THEOREM: An entrenched agent who relies on a
-    quarantined/revoked deposit cannot satisfy safe withdrawal.
+    quarantined/revoked/forgotten deposit cannot satisfy safe withdrawal.
 
     Forcing argument:
     1. Agent is at Certainty on P → treats P as closed premise
-    2. Bank has quarantined or revoked the deposit backing P
+    2. Bank has quarantined, revoked, or forgotten the deposit backing P
     3. Normal revision would demote P to Belief or Ignorance
     4. Entrenchment blocks step 3 → agent still acts on P
     5. But withdrawal requires isDeposited (status = .Deposited)
-    6. Quarantined/Revoked ≠ Deposited → withdrawal gate fails
+    6. Quarantined/Revoked/Forgotten ≠ Deposited → withdrawal gate fails
 
     Therefore: Entrenchment + Bank status change → ¬safe withdrawal.
     Entrenchment blocks the demotion that Bank status change would require.
