@@ -151,12 +151,12 @@ def AutonomyModel.toCoreModel (M : AutonomyModel) : CoreModel where
     For every deposit the system is obligated to handle, one of three branches
     must hold: scratch verification fits the budget; a budgeted analogical
     bridge is available from prior material; or a principled escalation path is
-  available.  The goal is obligation-scoped (`mustHandle`), not universal over
-  the whole deposit type.
+    available.  The goal is obligation-scoped (`mustHandle`), not universal over
+    the whole deposit type.
 
-  This is an operational predicate, not a metaphysical one: the bridge branch
-  requires an available witness from the system's prior material, not a proof
-  that no analogous item exists anywhere outside the system. -/
+    This is an operational predicate, not a metaphysical one: the bridge branch
+    requires an available witness from the system's prior material, not a proof
+    that no analogous item exists anywhere outside the system. -/
 def AutonomyUnderPRPGoal (M : AutonomyModel) : Prop :=
   ∀ (B : M.sig.Bubble) (d : M.sig.Deposit),
     M.ops.mustHandle B d →
@@ -246,13 +246,14 @@ theorem authorized_withdrawal_needs_differentiation (M : CoreModel)
   · exact absurd (h_eq ▸ h_sub) h_no_sub
   · exact ⟨a₁, a₂, h_eq, B, d, h_sub, h_no_sub⟩
 
-/-- Autonomy under PRP forces bridge-or-escalation for required claims that are
-  not scratch-verifiable within the effective-time budget.
+/-- Autonomy under PRP forces bridge-or-escalation for required claims that
+    are not scratch-verifiable within the effective-time budget.
 
-    If a required claim cannot be scratch-verified within the effective-time
-    budget, then the health goal leaves exactly two sound branches: a budgeted
-    analogical bridge from available prior material, or a principled escalation
-    path for that claim. -/
+    **Theorem shape:** `AutonomyUnderPRPGoal M` + `mustHandle B d` +
+    `¬verifyWithin B d (effectiveTime B)` → bridge-or-escalation at B for d.
+    **Proof strategy:** apply `h_auto` to B, d, `h_required`; `cases` rules
+    out the scratch branch via `h_scratch_fail`; the bridge and escalation
+    branches pass through directly. -/
 theorem autonomy_forces_bridge_or_escalation (M : AutonomyModel)
     (h_auto : AutonomyUnderPRPGoal M)
     (B : M.sig.Bubble) (d : M.sig.Deposit)
@@ -276,9 +277,11 @@ theorem autonomy_forces_bridge_or_escalation (M : AutonomyModel)
 
 /-- If escalation is unavailable, a budgeted bridge is forced.
 
-    This is the no-refusal branch of the autonomy goal: once scratch
-  verification is ruled out by failure within the effective-time budget and
-  escalation is disallowed, the bridge branch must supply the sound response. -/
+    **Theorem shape:** same premises as `autonomy_forces_bridge_or_escalation`
+    plus `¬canEscalate B d` → a budgeted bridge is the unique sound response.
+    **Proof strategy:** delegates to `autonomy_forces_bridge_or_escalation`;
+    `cases` on the Or; bridge branch is the conclusion directly; escalation
+    branch contradicts `h_no_esc` via `False.elim`. -/
 theorem no_escalation_forces_bridge (M : AutonomyModel)
     (h_auto : AutonomyUnderPRPGoal M)
     (B : M.sig.Bubble) (d : M.sig.Deposit)
