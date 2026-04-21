@@ -973,14 +973,113 @@ theorem step_no_revision_preserves_deposited
       have h_unchanged := get?_modifyAt_ne s.ledger d_upd d_idx (fun _ => d_new) hne
       exact ⟨d, h_unchanged.trans h_get, Or.inl h_status⟩
 
+/-- .Purged is an absorbing status: no Step can transition away from it.
+
+    Every constructor either leaves the slot at d_idx unchanged (submit, register,
+    withdraw, tick) or carries a precondition that conflicts with .Purged at d_idx:
+    - challenge: requires isDeposited at that index (status = .Deposited)
+    - revoke/repair: require isQuarantined (status = .Quarantined)
+    - promote: requires isCandidate (status = .Candidate)
+    - purge: carries h_not_purged (d_old.status ≠ .Purged)
+    - update: carries h_not_purged (d_old.status ≠ .Purged)
+    In all cases d_idx is either unaffected or the precondition contradicts .Purged. -/
+theorem purged_status_stable_step
+    (s s' : SystemState PropLike Standard ErrorModel Provenance)
+    (a : Action PropLike Standard ErrorModel Provenance Reason Evidence)
+    (h_step : Step (Reason := Reason) (Evidence := Evidence) s a s')
+    (d_idx : Nat) (d : Deposit PropLike Standard ErrorModel Provenance)
+    (h_get : s.ledger.get? d_idx = some d)
+    (h_pur : d.status = .Purged) :
+    s'.ledger.get? d_idx = some d := by
+  have h_in_orig : d_idx < s.ledger.length := List.get?_some_lt' s.ledger d_idx d h_get
+  cases h_step with
+  | submit _ _ =>
+    exact (List.get?_append_left' s.ledger _ d_idx h_in_orig).trans h_get
+  | register _ _ =>
+    exact (List.get?_append_left' s.ledger _ d_idx h_in_orig).trans h_get
+  | withdraw _ _ _ _ =>
+    exact h_get
+  | challenge _ _ _ d_chal_idx h_deposited =>
+    cases Nat.decEq d_idx d_chal_idx with
+    | isTrue heq =>
+      let ⟨d_dep, h_get_dep, h_status_dep⟩ := h_deposited
+      rw [heq] at h_get; rw [h_get] at h_get_dep; cases h_get_dep
+      rw [h_pur] at h_status_dep
+      exact DepositStatus.noConfusion h_status_dep
+    | isFalse hne =>
+      exact (get?_updateDepositStatus_ne s.ledger d_chal_idx d_idx .Quarantined hne).trans h_get
+  | tick _ _ =>
+    exact h_get
+  | revoke _ _ d_rev_idx h_quarantined =>
+    cases Nat.decEq d_idx d_rev_idx with
+    | isTrue heq =>
+      let ⟨d_q, h_get_q, h_status_q⟩ := h_quarantined
+      rw [heq] at h_get; rw [h_get] at h_get_q; cases h_get_q
+      rw [h_pur] at h_status_q
+      exact DepositStatus.noConfusion h_status_q
+    | isFalse hne =>
+      exact (get?_updateDepositStatus_ne s.ledger d_rev_idx d_idx .Revoked hne).trans h_get
+  | repair _ _ d_rep_idx _ h_quarantined =>
+    cases Nat.decEq d_idx d_rep_idx with
+    | isTrue heq =>
+      let ⟨d_q, h_get_q, h_status_q⟩ := h_quarantined
+      rw [heq] at h_get; rw [h_get] at h_get_q; cases h_get_q
+      rw [h_pur] at h_status_q
+      exact DepositStatus.noConfusion h_status_q
+    | isFalse hne =>
+      exact (get?_updateDepositStatus_ne s.ledger d_rep_idx d_idx .Candidate hne).trans h_get
+  | promote _ _ d_p_idx h_candidate =>
+    cases Nat.decEq d_idx d_p_idx with
+    | isTrue heq =>
+      let ⟨d_c, h_get_c, h_status_c⟩ := h_candidate
+      rw [heq] at h_get; rw [h_get] at h_get_c; cases h_get_c
+      rw [h_pur] at h_status_c
+      exact DepositStatus.noConfusion h_status_c
+    | isFalse hne =>
+      exact (get?_updateDepositStatus_ne s.ledger d_p_idx d_idx .Deposited hne).trans h_get
+  | purge _ _ d_pur d_old h_ex h_not_purged =>
+    cases Nat.decEq d_idx d_pur with
+    | isTrue heq =>
+      -- d_idx = d_pur; h_ex and h_get both address the same slot, so d_old = d.
+      -- But h_not_purged : d_old.status ≠ .Purged contradicts h_pur.
+      rw [heq] at h_get; rw [h_ex] at h_get
+      simp only [Option.some.injEq] at h_get
+      exact absurd (h_get ▸ h_pur) h_not_purged
+    | isFalse hne =>
+      exact (get?_updateDepositStatus_ne s.ledger d_pur d_idx .Purged hne).trans h_get
+  | update _ _ d_upd _ d_old h_ex _ _ h_not_purged =>
+    cases Nat.decEq d_idx d_upd with
+    | isTrue heq =>
+      -- Same slot: h_ex and h_get unify d_old = d, contradicting h_not_purged.
+      rw [heq] at h_get; rw [h_ex] at h_get
+      simp only [Option.some.injEq] at h_get
+      exact absurd (h_get ▸ h_pur) h_not_purged
+    | isFalse hne =>
+      exact (get?_modifyAt_ne s.ledger d_upd d_idx (fun _ => _) hne).trans h_get
+
+/-- Trace-level version of purged_status_stable_step: .Purged propagates through
+    any trace, regardless of which actions appear. Proof by induction on trace. -/
+theorem purged_status_stable_trace
+    (s s' : SystemState PropLike Standard ErrorModel Provenance)
+    (t : Trace (Reason := Reason) (Evidence := Evidence) s s')
+    (d_idx : Nat) (d : Deposit PropLike Standard ErrorModel Provenance)
+    (h_get : s.ledger.get? d_idx = some d)
+    (h_pur : d.status = .Purged) :
+    s'.ledger.get? d_idx = some d := by
+  induction t with
+  | nil _ => exact h_get
+  | cons a h_step rest ih =>
+    have h_mid := purged_status_stable_step _ _ a h_step d_idx d h_get h_pur
+    exact ih h_mid
+
 /-- Trace-level version: revision-free traces leave a Deposited entry either
     still Deposited or explicitly purged (the agent chose to free the slot).
 
     Proof by induction on trace using step_no_revision_preserves_deposited.
-    The Deposited case threads directly through the IH. The Purged case requires
-    `purge_status_stable_trace` (Purged is absorbing: no step transitions away
-    from .Purged); that lemma is deferred in review.txt pending the full
-    case-split proof. -/
+    The Deposited branch threads through the IH. The Purged branch uses
+    purged_status_stable_trace: once an entry reaches .Purged, every subsequent
+    step leaves it there (purge and update both carry h_not_purged; all other
+    constructors either leave the slot unchanged or require a conflicting status). -/
 theorem trace_no_revision_preserves_deposited
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (t : Trace (Reason := Reason) (Evidence := Evidence) s s')
@@ -1010,9 +1109,8 @@ theorem trace_no_revision_preserves_deposited
       -- Still Deposited; feed to IH as isDeposited
       exact ih h_rest_no_rev ⟨d_mid, hd_mid, h_dep_mid⟩
     | inr h_pur_mid =>
-      -- Now Purged; .Purged is absorbing (no step transitions away from it).
-      -- Full propagation through rest requires purge_status_stable_trace; deferred.
-      sorry
+      -- Now Purged; use purged_status_stable_trace to propagate through rest
+      exact ⟨d_mid, purged_status_stable_trace _ _ rest d_idx d_mid hd_mid h_pur_mid, Or.inr h_pur_mid⟩
 
 /-- COMPETITION GATE THEOREM:
     If revision is prohibited, self-correction is impossible.
@@ -1989,22 +2087,73 @@ theorem purge_is_agent_invoked (a : Agent) (B : Bubble) (d_idx : Nat) :
     ∃ ag : Agent, ag = a :=
   ⟨a, rfl⟩
 
+/-- Filter count helper: replacing a filter-passing element with a filter-failing one
+    decreases the filter count by exactly 1.
+
+    Proved by induction on the list: the zero-index case cancels the head contribution;
+    the successor case applies the IH and adjusts for the head term by cases on p head. -/
+private theorem filter_set_active_to_inactive {α : Type _} (p : α → Bool) :
+    ∀ (l : List α) (i : Nat) (y : α),
+    (∃ x, l.get? i = some x ∧ p x = true) → p y = false → i < l.length →
+    ((l.set i y).filter p).length + 1 = (l.filter p).length := by
+  intro l
+  induction l with
+  | nil =>
+    intro i _ _ _ hi
+    exact absurd hi (Nat.not_lt_zero i)
+  | cons head tail ih =>
+    intro i y ⟨x, h_get, h_px⟩ h_py h_len
+    cases i with
+    | zero =>
+      -- head = x; set replaces head with y
+      simp only [List.get?] at h_get
+      have h_head : head = x := Option.some.inj h_get
+      subst h_head
+      simp only [List.set, List.filter, h_px, h_py, ite_true, ite_false, List.length]
+    | succ n =>
+      simp only [List.get?] at h_get
+      have h_len' : n < tail.length := Nat.lt_of_succ_lt_succ h_len
+      simp only [List.set]
+      have h_ih := ih n y ⟨x, h_get, h_px⟩ h_py h_len'
+      simp only [List.filter]
+      cases h_head : p head with
+      | true =>
+        simp only [ite_true, List.length]
+        -- Nat.succ A + 1 = Nat.succ B where A + 1 = B
+        rw [Nat.succ_add]
+        exact congrArg Nat.succ h_ih
+      | false =>
+        simp only [ite_false]
+        exact h_ih
+
 /-- PURGE REDUCES ACTIVE COUNT: a purge step on an active deposit decreases activeCount by 1.
 
     Applies only when the purged deposit was active before the step (h_active). Purging
     a Revoked deposit does not change activeCount since Revoked entries are already
-    excluded from the count.
-
-    The proof requires List.filter arithmetic not available in Lean 4.3.0 core.
-    The structural facts (purge_sets_purged_status, purge_preserves_index_stability)
-    are the load-bearing results; this count consequence is deferred in review.txt. -/
+    excluded from the count. -/
 theorem purge_reduces_active_count
     (s : SystemState PropLike Standard ErrorModel Provenance)
     (a : Agent) (B : Bubble) (d_idx : Nat)
     (h_active : isActive s d_idx) :
     activeCount { s with ledger := updateDepositStatus s.ledger d_idx .Purged } + 1 =
       activeCount s := by
-  sorry
+  let ⟨d_old, h_get, h_not_rev, h_not_pur⟩ := h_active
+  have h_len : d_idx < s.ledger.length := List.get?_some_lt' s.ledger d_idx d_old h_get
+  have hmod : updateDepositStatus s.ledger d_idx .Purged =
+      s.ledger.set d_idx { d_old with status := .Purged } := by
+    unfold updateDepositStatus modifyAt; simp only [h_get]
+  -- Pre-compute decide facts to avoid rewrite-direction confusion
+  have h1 : decide (d_old.status ≠ .Revoked) = true := decide_eq_true h_not_rev
+  have h2 : decide (d_old.status ≠ .Purged) = true := decide_eq_true h_not_pur
+  have h3 : decide (DepositStatus.Purged ≠ DepositStatus.Purged) = false :=
+    decide_eq_false (fun h : DepositStatus.Purged ≠ DepositStatus.Purged => h rfl)
+  unfold activeCount
+  rw [hmod]
+  -- apply the list-filter helper; simp handles beta reduction in each subgoal
+  apply filter_set_active_to_inactive
+  · exact ⟨d_old, h_get, by simp only [h1, h2]; rfl⟩
+  · simp only [h3, Bool.and_false]
+  · exact h_len
 
 /-! ### Update Theorems -/
 
