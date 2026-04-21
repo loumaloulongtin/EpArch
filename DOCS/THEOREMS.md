@@ -401,11 +401,13 @@ Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_w
 
 ---
 
-## Bucket 9e: Bounded Recall — τ-Expiry as Forced Consequence (Minimality.lean §9)
+## Bucket 9e: Bounded Recall — Recall-Admissibility Filtering as Forced Consequence (Minimality.lean §9)
 
-**Role:** Extends the bounded-budget impossibility argument from the *import* direction (§2, `BoundedVerification`) to the *recall* (withdrawal) direction. When an agent recalls a banked deposit it must re-verify that the deposit's provenance chain is still intact. For any fixed recall budget, deposits with V-chain depth exceeding the budget cannot be re-verified. `RecallBudget` is the parallel structure to `BoundedVerification`; `recall_only_withdrawal_incomplete` is the parallel impossibility theorem; `bounded_recall_forces_recency_filter` shows τ-expiry is a sufficient forcing response.
+**Role:** Extends the bounded-budget impossibility argument from the *import* direction (§2, `BoundedVerification`) to the *recall* (withdrawal) direction. When an agent recalls a banked deposit it must re-verify that the deposit's provenance chain is still intact. For any fixed recall budget, deposits with V-chain depth exceeding the budget cannot be re-verified. `RecallBudget` is the parallel structure to `BoundedVerification`; `recall_only_withdrawal_incomplete` is the parallel impossibility theorem. Bounded recall forces *some* recall-admissibility filter; τ-expiry is the canonical clock-based sufficient implementation, not the uniquely forced mechanism.
 
-**Scope:** Does not prove τ is the *only* valid recency filter (priority eviction also works). Does not fix V-chain growth rate (bounded-by-age is a caller hypothesis). Does not connect to the LTS: `Step.withdraw` requires only `isDeposited`; the recency filter is agent policy, not a bank gate.
+**Note:** `RecallBudget` is not a ninth `Pressure` constructor. It embeds into `BoundedVerification` via `recallBudget_to_bounded` (§9.6): recall pressure is trust-pressure applied at withdrawal time. The §9 theorem family is a Minimality-layer consequence, not a new convergence dimension.
+
+**Scope:** Does not prove τ is the *only* valid recency filter (priority eviction also works; see §9b). Does not fix V-chain growth rate (bounded-by-age is a caller hypothesis). Does not connect to the LTS: `Step.withdraw` requires only `isDeposited`; the recency filter is agent policy, not a bank gate.
 
 ### Theorems
 
@@ -413,7 +415,7 @@ Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_w
 |---------|-----------|------|
 | `recall_only_withdrawal_incomplete` | `RecallBudget` | No fixed recall budget covers all provenance chains; parallel to `verification_only_import_incomplete` |
 | `depth_recall_incomplete` | `depth_recall_budget d` | Kernel witness: budget-d agent cannot re-verify depth-(d+1) chain |
-| `bounded_recall_forces_recency_filter` | `RecallBudget` + `tau_window = budget` hypothesis | If V-chain depth is bounded by `tau_window`, `recall_only_withdrawal_incomplete` fires — τ-expiry is forced |
+| `bounded_recall_forces_recency_filter` | `RecallBudget` + `tau_window = budget` hypothesis | If V-chain depth is bounded by `tau_window`, `recall_only_withdrawal_incomplete` fires — a recall-admissibility filter is forced; τ-expiry is a sufficient clock-based implementation |
 | `recall_is_bounded_verification_instance` | `recallBudget_to_bounded` embedding | Recall impossibility is an instance of the general bounded-budget impossibility via `BoundedVerification` |
 
 ---

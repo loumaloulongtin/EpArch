@@ -5,7 +5,7 @@ Eight Represents* structures that enrich a WorkingSystem with concrete scenario 
 enabling the abstract structural impossibility models from EpArch.Minimality to fire
 on specific systems.  Also defines the bundled witness packages used by Feasibility.
 
-Eight scenarios:
+The eight canonical forcing dimensions:
   1. RepresentsDisagreement         (scope / bubbles dimension)
   2. RepresentsPrivateCoordination  (bank dimension)
   3. RepresentsMonotonicLifecycle   (revocation dimension)
@@ -14,6 +14,10 @@ Eight scenarios:
   6. RepresentsClosedEndorsement    (redeemability dimension)
   7. RepresentsUniformAccess        (authorization / granular ACL dimension)
   8. RepresentsBoundedCapacity      (storage management dimension)
+
+Bounded recall (§9 of Minimality.lean) is not a ninth dimension: `RecallBudget`
+embeds into `BoundedVerification` (§9.6), so recall pressure is trust-pressure
+applied at withdrawal time.  The §9 theorem family lives in Minimality.lean only.
 
 Bundled packages:
   SystemOperationalBundle -- scope + headers + bank + authorization + storage dimensions
@@ -700,85 +704,6 @@ theorem bounded_capacity_storage_embed
   · exact Or.inr ⟨R.toStorage, h_storage_bounded hst⟩
 
 
-/-! ### Scenario 9: Bounded Recall (Recall Budget → Recency Filter)
-
-When re-verification at withdrawal time has unbounded cost, some provenance
-chains exceed any fixed recall budget.  A bank without a recency filter
-accumulates irrecallable deposits: entries that remain formally Deposited
-but cannot be re-verified at withdrawal time.
-
-`RepresentsBoundedRecall` enriches a `WorkingSystem` with a concrete
-provenance universe where at least one chain exceeds the recall budget.
-When `¬HasRecencyFilter`, the system is in the `RecallBudget` scenario.
-
-The bridge condition ("without recency filtering, all withdrawable chains
-stay within budget") plays the same structural role as `h_storage_bounded`
-for the storage dimension.
-
-Parallel to `RepresentsBoundedCapacity` for the recall dimension.
-The recall impossibility is also an instance of `BoundedVerification`
-(§9.6 in Minimality.lean), but the forcing path here is independent:
-it proceeds via `RecallBudget` / `recall_only_withdrawal_incomplete`
-rather than via `BoundedVerification`. -/
-
-/-- A system represents a bounded-recall scenario if it has a concrete
-    provenance chain whose re-verification cost exceeds the declared recall budget.
-
-    The bridge condition ("without recency filtering, all withdrawable chains
-    stay within the budget") lives in the forcing theorem as `h_bounded`,
-    following the same structural pattern as the other per-dimension bridge
-    hypotheses. -/
-structure RepresentsBoundedRecall (W : WorkingSystem) where
-  /-- The type of provenance chains (the V-field). -/
-  Provenance     : Type
-  /-- Cost to re-verify a provenance chain at withdrawal time. -/
-  recall_cost    : Provenance → Nat
-  /-- Maximum recall budget (fixed per agent). -/
-  budget         : Nat
-  /-- A provenance chain that exceeds the recall budget. -/
-  deep_chain     : Provenance
-  /-- The deep chain demonstrably exceeds the budget. -/
-  exceeds_budget : recall_cost deep_chain > budget
-
-/-- Extract `RecallBudget` from a `RepresentsBoundedRecall` witness. -/
-def RepresentsBoundedRecall.toRecall {W : WorkingSystem}
-    (R : RepresentsBoundedRecall W) : RecallBudget where
-  Provenance     := R.Provenance
-  recall_cost    := R.recall_cost
-  budget         := R.budget
-  deep_chain     := R.deep_chain
-  exceeds_budget := R.exceeds_budget
-
-/-- **Right-branch embedding (recall direction).**
-
-    A system with bounded-recall needs and no recency filter:
-    `recall_only_withdrawal_incomplete` fires to prove that no fixed
-    budget can cover all withdrawable provenance chains. -/
-theorem bounded_recall_without_recency_embeds
-    (W : WorkingSystem)
-    (R : RepresentsBoundedRecall W)
-    (_h_no_filter : ¬HasRecencyFilter W)
-    (h_all : ∀ v : R.Provenance, R.recall_cost v ≤ R.budget) :
-    False :=
-  recall_only_withdrawal_incomplete R.toRecall h_all
-
-/-- **Per-dimension structural forcing (recency filter).**
-
-    Any system carrying a `RepresentsBoundedRecall` witness and evidence that
-    all withdrawable chains stay within budget absent a recency filter is
-    forced to have a recency filter.  No `handles_recall W` required.
-
-    Parallel to `bounded_capacity_forces_storage_management` for the recall
-    dimension. -/
-theorem bounded_recall_forces_recency_management
-    (W : WorkingSystem) (R : RepresentsBoundedRecall W)
-    (h_bounded : ¬HasRecencyFilter W → ∀ v : R.Provenance, R.recall_cost v ≤ R.budget) :
-    HasRecencyFilter W := by
-  by_cases h : HasRecencyFilter W
-  · exact h
-  · exact (bounded_recall_without_recency_embeds W R h (h_bounded h)).elim
-
-
 /-! ## Bundled Witness Packages
 
 Two structures replace the 20+ loose parameters of the all-eight forcing theorem
@@ -829,7 +754,7 @@ structure SystemOperationalBundle (W : WorkingSystem) where
   /-- Authorization dimension: a two-tier access scenario witness. -/
   Ra : RepresentsUniformAccess W
   /-- Without granular ACL, a flat predicate represents both the submission and commit tiers.
-      Architecturally parallel to `flat_accept for scope, `f_import for headers,
+      Architecturally parallel to `flat_accept` for scope, `f_import` for headers,
       shared_deposit for bank: the bridge condition lives in the bundle, not in
       the structural witness record. -/
   h_no_acl_flat : ¬HasGranularACL W → ∃ f : Ra.Agent → Ra.Claim → Prop,

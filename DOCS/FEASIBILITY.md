@@ -104,11 +104,13 @@ at *withdrawal* time: an agent recalling a banked deposit must re-verify that it
 provenance chain (V) is still intact. For any fixed recall budget, deposits with V-chain
 depth exceeding the budget cannot be re-verified. `RecallBudget` is the parallel
 structure to `BoundedVerification`; `recall_only_withdrawal_incomplete` closes via the
-same `Nat.not_le_of_gt` path. `bounded_recall_forces_recency_filter` shows τ-expiry is a
-sufficient forcing response: setting `tau_window = budget` keeps all withdrawable
-deposits within the recall budget. The recall impossibility embeds into
+same `Nat.not_le_of_gt` path. Bounded recall forces *some* recall-admissibility filter;
+τ-expiry is a sufficient clock-based implementation (setting `tau_window = budget` keeps
+deposits within the recall budget), but priority eviction or provenance compression via
+`Step.update` are equally valid responses. The recall impossibility embeds into
 `BoundedVerification` via `recallBudget_to_bounded`, confirming both directions share the
-same formal structure.
+same formal structure. `RecallBudget` is not a ninth `Pressure` constructor: it is a
+Minimality-layer consequence of the trust/bounded-audit dimension.
 
 ### `w_lies_forces_revocation_need`
 

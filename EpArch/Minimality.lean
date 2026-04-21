@@ -89,11 +89,6 @@ def HasGranularACL (W : WorkingSystem) : Prop := W.spec.has_granular_acl = true
     Forced by: Bounded storage constraint -/
 def HasStorageManagement (W : WorkingSystem) : Prop := W.spec.has_storage_management = true
 
-/-- Predicate: system has a recency filter (τ-expiry or equivalent) bounding
-    V-chain depth at withdrawal time.
-    Forced by: Bounded recall budget constraint (§9). -/
-def HasRecencyFilter (W : WorkingSystem) : Prop := W.spec.has_recency_filter = true
-
 
 /-! ## Eight Operational Properties
 
