@@ -54,6 +54,11 @@ structure SystemSpec where
   /-- System has bounded storage management (finite active-deposit capacity).
       Forced by: Bounded storage constraint. -/
   has_storage_management : Bool := false
+
+  /-- System has a recency filter (τ-expiry or equivalent) that bounds V-chain
+      depth at withdrawal time.
+      Forced by: Bounded recall budget constraint (§9). -/
+  has_recency_filter : Bool := false
   deriving DecidableEq, Repr
 
 
