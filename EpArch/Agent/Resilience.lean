@@ -339,7 +339,7 @@ theorem submit_preserves_deposited_claims
     - `revoke`: sets `.Revoked` — noConfusion.
     - `repair`: sets `.Candidate` — noConfusion.
     - `promote`: sets `.Deposited` — return left disjunct (a).
-    - `purge`: sets `.Purged` — noConfusion.
+    - `forget`: sets `.Forgotten` — noConfusion.
     - `update`: status-preserving; if the slot was Deposited and d_new.P = c, return (c);
       all other entries traced back to s via mem_modifyAt — h_not. -/
 theorem deposited_claim_arises_from_promote_or_register
@@ -436,8 +436,8 @@ theorem deposited_claim_arises_from_promote_or_register
   | promote ag B d_idx _ =>
     -- Step.promote sets .Deposited via updateDepositStatus; return promote witness
     exact Or.inl ⟨ag, B, d_idx, rfl⟩
-  | purge _ _ _ _ _ _ =>
-    -- purge sets .Purged; .Purged ≠ .Deposited
+  | forget _ _ _ _ _ _ =>
+    -- forget sets .Forgotten; .Forgotten ≠ .Deposited
     apply absurd h_after; intro ⟨d', hd', hP', hstatus'⟩
     simp only at hd'
     unfold EpArch.StepSemantics.updateDepositStatus at hd'
@@ -450,7 +450,7 @@ theorem deposited_claim_arises_from_promote_or_register
       | intro x hx =>
         rw [← hx.2] at hstatus'
         exact DepositStatus.noConfusion hstatus'
-  | update ag B d_upd d_new _ _ _ _ _ =>
+  | update ag B d_upd d_new _ _ _ _ =>
     -- status-preserving update: entries outside d_upd trace back via mem_modifyAt;
     -- the new slot content is d_new, so if d_new.P = c return the third disjunct
     cases h_after with

@@ -120,11 +120,11 @@ theorem frozen_canon_no_revocation
       injection h_get' with h_eq'
       rw [← h_eq']
       exact h_not_revoked
-  | purge _ _ d_pur _ h_ex_pur _ =>
-    -- purge sets .Purged at d_pur; .Purged ≠ .Revoked
-    cases Nat.decEq d_idx d_pur with
+  | forget _ _ d_for _ h_ex_pur _ =>
+    -- forget sets .Forgotten at d_for; .Forgotten ≠ .Revoked
+    cases Nat.decEq d_idx d_for with
     | isTrue heq =>
-      have h_upd := get?_updateDepositStatus_eq s.ledger d_pur .Purged _ h_ex_pur
+      have h_upd := get?_updateDepositStatus_eq s.ledger d_for .Forgotten _ h_ex_pur
       rw [heq] at h_get'
       rw [h_upd] at h_get'
       injection h_get' with h_eq'
@@ -132,13 +132,13 @@ theorem frozen_canon_no_revocation
       rw [← h_eq'] at h_rev
       exact DepositStatus.noConfusion h_rev
     | isFalse hne =>
-      have h_unch := get?_updateDepositStatus_ne s.ledger d_pur d_idx .Purged hne
+      have h_unch := get?_updateDepositStatus_ne s.ledger d_for d_idx .Forgotten hne
       rw [h_unch] at h_get'
       rw [h_get] at h_get'
       injection h_get' with h_eq'
       rw [← h_eq']
       exact h_not_revoked
-  | update _ _ d_upd d_new d_old h_ex_upd _ _ h_not_rev_new _ _ =>
+  | update _ _ d_upd d_new d_old h_ex_upd _ h_not_rev_new _ _ =>
     -- update cannot produce .Revoked (h_not_rev_new)
     cases Nat.decEq d_idx d_upd with
     | isTrue heq =>
@@ -178,7 +178,7 @@ theorem allRestricted_implies_no_revision
     have h_not_rev : a.isRevision = false := by
       cases a with
       | Submit _ _ | Register _ _ | Withdraw _ _ _ | Tick | Promote _ _ _
-      | Purge _ _ _ | Update _ _ _ _ =>
+      | Forget _ _ _ | Update _ _ _ _ =>
         simp [Action.isRevision]
       | Challenge _ _ _ | Revoke _ _ _ | Repair _ _ _ _ =>
         simp [isContestationAction] at h_not_contest

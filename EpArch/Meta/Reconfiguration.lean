@@ -382,7 +382,10 @@ theorem pwf_add_storage_management (W : WorkingSystem) (S : ConstraintSubset)
       isQuarantined s d_idx’; after heq rewrite contradicts h_before.
     - submit/register: appended deposit has .Candidate/.Deposited; existing unchanged.
     - withdraw/tick: ledger unchanged; h_after = h_before, contradiction.
-    - promote at d_idx’ = d_idx: updates to .Deposited ≠ .Quarantined. -/
+    - promote at d_idx' = d_idx: updates to .Deposited ≠ .Quarantined.
+    - forget at d_idx' = d_idx: updates to .Forgotten ≠ .Quarantined.
+    - update at d_idx' = d_idx: h_not_quarantined_new directly contradicts h_stat'.
+    - forget/update at d_idx' ≠ d_idx: index unchanged; h_before applies. -/
 theorem quarantine_requires_challenge
     (s s' : SystemState PropLike Standard ErrorModel Provenance)
     (d_idx : Nat)
@@ -481,21 +484,21 @@ theorem quarantine_requires_challenge
       let ⟨d', h_get', h_stat'⟩ := h_after
       rw [get?_updateDepositStatus_ne s.ledger d_idx' d_idx .Deposited hne] at h_get'
       exact absurd ⟨d', h_get', h_stat'⟩ h_before
-  | purge _ _ d_pur _ h_ex_p _ =>
-    -- purge sets .Purged at d_pur; .Purged ≠ .Quarantined
-    cases Nat.decEq d_idx d_pur with
+  | forget _ _ d_for _ h_ex_f _ =>
+    -- forget sets .Forgotten at d_for; .Forgotten ≠ .Quarantined
+    cases Nat.decEq d_idx d_for with
     | isTrue heq =>
       let ⟨d', h_get', h_stat'⟩ := h_after
-      have h_upd := get?_updateDepositStatus_eq s.ledger d_pur .Purged _ h_ex_p
+      have h_upd := get?_updateDepositStatus_eq s.ledger d_for .Forgotten _ h_ex_f
       rw [heq, h_upd] at h_get'
       simp only [Option.some.injEq] at h_get'
       rw [← h_get'] at h_stat'
       exact DepositStatus.noConfusion h_stat'
     | isFalse hne =>
       let ⟨d', h_get', h_stat'⟩ := h_after
-      rw [get?_updateDepositStatus_ne s.ledger d_pur d_idx .Purged hne] at h_get'
+      rw [get?_updateDepositStatus_ne s.ledger d_for d_idx .Forgotten hne] at h_get'
       exact absurd ⟨d', h_get', h_stat'⟩ h_before
-  | update _ _ d_upd d_new d_old h_ex _ _ _ _ h_not_quarantined_new =>
+  | update _ _ d_upd d_new d_old h_ex _ _ _ h_not_quarantined_new =>
     -- update cannot produce .Quarantined (h_not_quarantined_new)
     cases Nat.decEq d_idx d_upd with
     | isTrue heq =>
@@ -566,7 +569,7 @@ theorem no_self_healing_bank
   | revoke _ _ _ _ => intro h; cases h
   | repair _ _ _ _ _ => intro h; cases h
   | promote _ _ _ _ => intro h; cases h
-  | purge _ _ _ _ _ _ => intro h; cases h
-  | update _ _ _ _ _ _ _ _ _ _ _ => intro h; cases h
+  | forget _ _ _ _ _ _ => intro h; cases h
+  | update _ _ _ _ _ _ _ _ _ _ => intro h; cases h
 
 end EpArch.Meta.Reconfiguration

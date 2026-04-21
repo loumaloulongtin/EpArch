@@ -349,30 +349,12 @@ theorem initial_satisfies_bubbles_exist10 :
     exact List.Mem.head _
   | tail _ h => cases h
 
-/-- The initial concrete state satisfies inv_revoked_terminal.
-    Proof: the only deposit in the ledger has status .Deposited, not .Revoked,
-    so the antecedent `d.status = .Revoked` is never satisfied. -/
-theorem initial_satisfies_revoked_terminal10 :
-    inv_revoked_terminal initialConcreteState7 := by
-  intro R E d_idx d h_get h_revoked _ _ _
-  simp only [initialConcreteState7] at h_get
-  cases d_idx with
-  | zero =>
-    simp only [List.get?] at h_get
-    simp only [Option.some.injEq] at h_get
-    -- h_get : witness_deposit = d; witness_deposit.status = .Deposited ≠ .Revoked
-    have h_status : d.status = .Deposited := by rw [← h_get]; exact rfl
-    exact absurd (h_revoked.symm.trans h_status) (by decide)
-  | succ n =>
-    simp [List.get?] at h_get
-
 /-- The initial concrete state is well-formed. -/
 theorem initial_is_well_formed10 :
     WellFormedState initialConcreteState7 := by
   unfold WellFormedState
   exact ⟨initial_satisfies_valid_status10,
-         initial_satisfies_bubbles_exist10,
-         initial_satisfies_revoked_terminal10⟩
+         initial_satisfies_bubbles_exist10⟩
 
 /-- Non-vacuity: WellFormedState has concrete instances. -/
 noncomputable example : ∃ s : SystemState String CStandard String String, WellFormedState s :=
