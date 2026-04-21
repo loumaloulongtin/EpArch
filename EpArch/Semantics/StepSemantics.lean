@@ -1041,7 +1041,7 @@ theorem forgotten_status_stable_trace
     s'.ledger.get? d_idx = some d := by
   induction t with
   | nil _ => exact h_get
-  | cons a h_step rest ih =>
+  | cons a h_step _rest ih =>
     have h_mid := forgotten_status_stable_step _ _ a h_step d_idx d h_get h_for
     exact ih h_mid
 
@@ -1908,7 +1908,7 @@ def activeCount (s : SystemState PropLike Standard ErrorModel Provenance) : Nat 
     **Proof strategy:** apply get?_updateDepositStatus_eq at the target index. -/
 theorem forget_sets_forgotten_status
     (s : SystemState PropLike Standard ErrorModel Provenance)
-    (a : Agent) (B : Bubble) (d_idx : Nat)
+    (_ : Agent) (_ : Bubble) (d_idx : Nat)
     (d_old : Deposit PropLike Standard ErrorModel Provenance)
     (h_exists : s.ledger.get? d_idx = some d_old) :
     ({ s with ledger := updateDepositStatus s.ledger d_idx .Forgotten }).ledger.get? d_idx =
@@ -1921,7 +1921,7 @@ theorem forget_sets_forgotten_status
     **Proof strategy:** get?_updateDepositStatus_ne at the different index. -/
 theorem forget_preserves_index_stability
     (s : SystemState PropLike Standard ErrorModel Provenance)
-    (a : Agent) (B : Bubble) (d_idx j : Nat)
+    (_ : Agent) (_ : Bubble) (d_idx j : Nat)
     (hne : j ≠ d_idx) :
     ({ s with ledger := updateDepositStatus s.ledger d_idx .Forgotten }).ledger.get? j =
       s.ledger.get? j :=
@@ -1931,7 +1931,7 @@ theorem forget_preserves_index_stability
 
     **Theorem shape:** Action.Forget a B d_idx witnesses an agent a by construction.
     **Proof strategy:** direct witness. -/
-theorem forget_is_agent_invoked (a : Agent) (B : Bubble) (d_idx : Nat) :
+theorem forget_is_agent_invoked (a : Agent) (_ : Bubble) (_ : Nat) :
     ∃ ag : Agent, ag = a :=
   ⟨a, rfl⟩
 
@@ -1981,7 +1981,7 @@ private theorem filter_set_active_to_inactive {α : Type _} (p : α → Bool) :
     excluded from the count. -/
 theorem forget_reduces_active_count
     (s : SystemState PropLike Standard ErrorModel Provenance)
-    (a : Agent) (B : Bubble) (d_idx : Nat)
+    (_ : Agent) (_ : Bubble) (d_idx : Nat)
     (h_active : isActive s d_idx) :
     activeCount { s with ledger := updateDepositStatus s.ledger d_idx .Forgotten } + 1 =
       activeCount s := by
@@ -2011,10 +2011,10 @@ theorem forget_reduces_active_count
     **Proof strategy:** get?_modifyAt_eq at the target index. -/
 theorem update_replaces_slot
     (s : SystemState PropLike Standard ErrorModel Provenance)
-    (a : Agent) (B : Bubble) (d_idx : Nat)
+    (_ : Agent) (_ : Bubble) (d_idx : Nat)
     (d_new d_old : Deposit PropLike Standard ErrorModel Provenance)
     (h_exists     : s.ledger.get? d_idx = some d_old)
-    (h_not_forgotten : d_old.status ≠ .Forgotten) :
+    (_ : d_old.status ≠ .Forgotten) :
     ({ s with ledger := modifyAt s.ledger d_idx (fun _ => d_new) }).ledger.get? d_idx =
       some d_new :=
   get?_modifyAt_eq s.ledger d_idx (fun _ => d_new) d_old h_exists
@@ -2025,10 +2025,10 @@ theorem update_replaces_slot
     **Proof strategy:** get?_modifyAt_ne at the different index. -/
 theorem update_preserves_other_slots
     (s : SystemState PropLike Standard ErrorModel Provenance)
-    (a : Agent) (B : Bubble) (d_idx j : Nat)
+    (_ : Agent) (_ : Bubble) (d_idx j : Nat)
     (d_new d_old : Deposit PropLike Standard ErrorModel Provenance)
-    (h_exists     : s.ledger.get? d_idx = some d_old)
-    (h_not_forgotten : d_old.status ≠ .Forgotten)
+    (_ : s.ledger.get? d_idx = some d_old)
+    (_ : d_old.status ≠ .Forgotten)
     (hne : j ≠ d_idx) :
     ({ s with ledger := modifyAt s.ledger d_idx (fun _ => d_new) }).ledger.get? j =
       s.ledger.get? j :=
@@ -2045,7 +2045,7 @@ theorem update_does_not_require_challenge
     (s : SystemState PropLike Standard ErrorModel Provenance)
     (a : Agent) (B : Bubble) (d_idx : Nat)
     (d_new d_old : Deposit PropLike Standard ErrorModel Provenance)
-    (h_candidate     : isCandidate s d_idx)
+    (_ : isCandidate s d_idx)
     (h_not_forgotten : d_old.status ≠ .Forgotten)
     (h_exists        : s.ledger.get? d_idx = some d_old) :
     ¬isQuarantined s d_idx →
@@ -2056,8 +2056,8 @@ theorem update_does_not_require_challenge
 /-- UPDATE AGENT RESPONSIBILITY: Step.update carries an agent; it is not an autonomous bank action.
 
     **Theorem shape:** Action.Update a B d_idx d_new witnesses an agent a by construction. -/
-theorem update_is_agent_invoked (a : Agent) (B : Bubble) (d_idx : Nat)
-    (d_new : Deposit PropLike Standard ErrorModel Provenance) :
+theorem update_is_agent_invoked (a : Agent) (_ : Bubble) (_ : Nat)
+    (_ : Deposit PropLike Standard ErrorModel Provenance) :
     ∃ ag : Agent, ag = a :=
   ⟨a, rfl⟩
 

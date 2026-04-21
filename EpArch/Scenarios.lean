@@ -693,7 +693,7 @@ theorem bounded_capacity_storage_embed
     (W : WorkingSystem)
     (R : RepresentsBoundedCapacity W)
     (h_storage_bounded : ¬HasStorageManagement W → ∀ s : R.State, R.count s ≤ R.budget)
-    (h : handles_storage W) :
+    (_ : handles_storage W) :
     HasStorageManagement W ∨ BridgeStorage W := by
   by_cases hst : HasStorageManagement W
   · exact Or.inl hst
