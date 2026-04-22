@@ -14,7 +14,7 @@ Key exports:
   residual_risk_forced_when_no_scratch_no_escalation,
   no_risk_free_bridge_when_all_usable_bridges_risky
 - FullSystemHealth, AutonomyHealth, AutonomyRiskHealth (bundles)
-- PRPObligationStream, eventual_forced_residual_risk
+- PRPObligationStream, forced_residual_risk_at_stream_index
 -/
 
 import EpArch.Basic
@@ -560,7 +560,7 @@ structure PRPObligationStream (M : RiskAutonomyModel) where
     **Proof strategy:** one-line delegation to
     `residual_risk_forced_when_no_scratch_no_escalation`, supplying the
     four gate-closure fields from `S` directly. -/
-theorem eventual_forced_residual_risk (M : RiskAutonomyModel)
+theorem forced_residual_risk_at_stream_index (M : RiskAutonomyModel)
     (h_auto : AutonomyUnderPRPGoal M.toAutonomyModel)
     (S : PRPObligationStream M) :
     let B := S.bubble_stream S.risky_index

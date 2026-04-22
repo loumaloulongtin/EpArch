@@ -598,6 +598,25 @@ Each architectural constraint creates both a capability and an exploitable surfa
 | `autonomy_forces_bridge_or_escalation` | `AutonomyUnderPRPGoal` + `mustHandle B d` + scratch-verification failure within `effectiveTime` | budgeted analogical bridge exists for `d` or principled escalation is available |
 | `no_escalation_forces_bridge` | `AutonomyUnderPRPGoal` + `mustHandle B d` + scratch-verification failure within `effectiveTime` + `¬canEscalate B d` | budgeted analogical bridge is forced |
 
+### Residual-Risk Autonomy Theorems (Health.lean)
+
+| Theorem | Premise | Conclusion |
+|---------|---------|------------|
+| `residual_risk_forced_when_no_scratch_no_escalation` | `AutonomyUnderPRPGoal` + `mustHandle B d` + scratch failure + `¬canEscalate B d` + every usable bridge risky | a bridge exists that is available, similar, verifies within `effectiveTime`, and carries residual risk |
+| `no_risk_free_bridge_when_all_usable_bridges_risky` | every usable bridge for `B, d` carries residual risk | no usable bridge for `B, d` is risk-free (bridge-classification lemma; no autonomy-regime premises required) |
+| `forced_residual_risk_at_stream_index` | `AutonomyUnderPRPGoal` + `PRPObligationStream M` | residual risk is forced at `S.risky_index` |
+
+`forced_residual_risk_at_stream_index` does not derive the risky index from
+`AutonomyUnderPRPGoal` alone.  `PRPObligationStream` packages two obligation
+sequences together with a witness index where all gate-closure conditions hold:
+scratch verification fails, escalation is unavailable, and every usable bridge
+carries residual risk.  The theorem is a stream-level packaging of
+`residual_risk_forced_when_no_scratch_no_escalation`; the gate-closure conditions
+migrate from theorem premises into stream fields.
+
+The Minimality-layer companion is Bucket 9g: `ResidualRiskBridge` provides the
+structural reason why `h_all_risky` is satisfiable when `certainty_gap` holds.
+
 ### Math Form
 
 $$\text{CorrigibleLedgerGoal}(M) \Rightarrow \text{HasRevisionCapability}(M)$$
