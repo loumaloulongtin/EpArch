@@ -363,7 +363,7 @@ classification predicate (`residualRiskVia`) beyond the frozen AutonomyOps surfa
 
 
 /-! ========================================================================
-    §T26a. RESIDUAL RISK UNDER AUTONOMOUS PRP OPERATION
+    RESIDUAL RISK UNDER AUTONOMOUS PRP OPERATION
 
     When a system operating under PRP cannot scratch-verify a required claim
     within budget, cannot escalate, and every available bridge for that claim
@@ -371,25 +371,25 @@ classification predicate (`residualRiskVia`) beyond the frozen AutonomyOps surfa
     response.  Risk-free handling is not available — this is a structural
     consequence, not an implementation defect.
 
-    **Dependency chain (local):**
-    T25 → `no_escalation_forces_bridge` supplies the bridge existential.
-    T26a applies `h_all_risky` to that bridge to yield the residual-risk witness.
+    **Dependency chain:**
+    `no_escalation_forces_bridge` supplies the bridge existential.
+    `h_all_risky` is then applied to that bridge to yield the residual-risk witness.
 
-    **Connection to Minimality §11 (T26b):**
-    `h_all_risky` is an abstract hypothesis here.  T26b (`ResidualRiskBridge` in
-    Minimality.lean) provides the structural Minimality-layer reason why any bridge
+    **Connection to Minimality §11:**
+    `h_all_risky` is an abstract hypothesis here.  `ResidualRiskBridge` in
+    Minimality.lean provides the structural Minimality-layer reason why any bridge
     cheaper than scratch for a novel over-budget claim cannot be risk-free.
     The two layers are independent; neither cites the other; they meet at
     the architectural reading.
     ======================================================================== -/
 
-/-! ## §T26a.1  Risk-Extended Operations and Model -/
+/-! ## Risk-Extended Operations and Model -/
 
 /-- Risk-extended autonomy operations: adds a residual-risk predicate for
     bridge-based verification.  `residualRiskVia B b d` states that using bridge
     `b` to verify deposit `d` at bubble `B` carries irreducible residual risk.
 
-    `AutonomyOps` (T25) is frozen; `RiskAutonomyOps` extends it non-destructively.
+    `AutonomyOps` is frozen; `RiskAutonomyOps` extends it non-destructively.
     Whether a bridge is risk-free is system-defined; the theorem only requires
     that the system can distinguish risky from risk-free bridges. -/
 structure RiskAutonomyOps (Sig : CoreSig) extends AutonomyOps Sig where
@@ -405,15 +405,15 @@ structure RiskAutonomyModel where
 /-- Forgetful projection from a risk-extended model to the plain AutonomyModel.
 
     Drops `residualRiskVia`; keeps the inherited `AutonomyOps` fields intact.
-    Used to apply T25 theorems (`no_escalation_forces_bridge`) to a
-    `RiskAutonomyModel` without threading risk through every T25 argument. -/
+    Used to apply `no_escalation_forces_bridge` to a `RiskAutonomyModel`
+    without threading risk through every autonomy-model argument. -/
 def RiskAutonomyModel.toAutonomyModel (M : RiskAutonomyModel) : AutonomyModel where
   sig       := M.sig
   ops       := M.ops.toAutonomyOps
   hasBubble := M.hasBubble
 
 
-/-! ## §T26a.2  Residual Risk Forced -/
+/-! ## Residual Risk Forced -/
 
 /-- RESIDUAL RISK FORCED: when scratch verification fails, escalation is
     unavailable, and every usable bridge carries residual risk, a risky
@@ -446,7 +446,7 @@ theorem residual_risk_forced_when_no_scratch_no_escalation (M : RiskAutonomyMode
         M.ops.analogSim b d ∧
         M.ops.verifyVia B b d (M.ops.effectiveTime B) ∧
         M.ops.residualRiskVia B b d := by
-  -- T25: scratch and escalation are closed → a budgeted bridge must exist
+  -- `no_escalation_forces_bridge`: scratch and escalation are closed → a budgeted bridge must exist
   have ⟨b, h_avail, h_sim, h_verify⟩ :=
     no_escalation_forces_bridge M.toAutonomyModel h_auto B d
       h_required h_scratch_fail h_no_esc
@@ -479,13 +479,13 @@ theorem no_risk_free_bridge_when_all_usable_bridges_risky (M : RiskAutonomyModel
   exact h_no_risk (h_all_risky b h_avail h_sim h_verify)
 
 
-/-! ## §T26a.3  AutonomyRiskHealth Bundle -/
+/-! ## AutonomyRiskHealth Bundle -/
 
 /-- A risk-extended autonomy model satisfies the base PRP coverage goal.
 
     Does not assert that risks are bounded, accepted, eliminated, or calibrated;
     it only packages `AutonomyUnderPRPGoal` over `RiskAutonomyModel`.
-    Separate from `AutonomyHealth` (T25) because it requires `RiskAutonomyModel`. -/
+    Separate from `AutonomyHealth` because it requires `RiskAutonomyModel`. -/
 structure AutonomyRiskHealth (M : RiskAutonomyModel) where
   autonomy_coverage : AutonomyUnderPRPGoal M.toAutonomyModel
 
