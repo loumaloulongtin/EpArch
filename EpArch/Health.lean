@@ -291,7 +291,7 @@ theorem no_escalation_forces_bridge (M : AutonomyModel)
     ∃ b : M.sig.Deposit,
       M.ops.bridgeAvailable B b ∧
       M.ops.analogSim b d ∧
-    M.ops.verifyVia B b d (M.ops.effectiveTime B) := by
+      M.ops.verifyVia B b d (M.ops.effectiveTime B) := by
   have h_response := autonomy_forces_bridge_or_escalation M h_auto B d h_required h_scratch_fail
   cases h_response with
   | inl h_bridge =>

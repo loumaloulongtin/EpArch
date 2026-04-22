@@ -442,9 +442,9 @@ def autonomyWitness : (c : EnabledAutonomyCluster) → AutonomyWitness c
 Each `prop_*` def stores one blocked cluster's theorem statement with every
 universe-polymorphic type pinned to `.{0}`.  With all universes concrete,
 no free universe variable appears and the def compiles as a plain `Prop`.
-These serve as the match-arm values in `clusterValid` for the 15 clusters
+These serve as the match-arm values in `clusterValid` for the 16 clusters
 whose proposition types live at `Type (u+1)` (Goal, WorldCtx, Tier4-bank,
-Lattice families). -/
+Lattice, Autonomy families). -/
 
 private def prop_goal_safeWithdrawal : Prop :=
   ∀ (E : ExtModel.{0}) (C : CoreModel.{0}),
@@ -728,9 +728,9 @@ private theorem enabledAutonomyCluster_mem_all (c : EnabledAutonomyCluster) :
 /-! ## §5  Soundness: `clusterEnabled cfg c = true → clusterValid c` -/
 
 /-- `clusterEnabled` is sound: every cluster it marks enabled satisfies `clusterValid`.
-    All 31 clusters are non-trivially closed: Tier 2 by `constraintSpec.witness.proof`,
-    inline Tier 4/World/Meta clusters by the corresponding theorem, and the 15
-    `prop_*`-wrapped clusters by the corresponding transport/lattice/world theorem. -/
+    All 32 clusters are non-trivially closed: Tier 2 by `constraintSpec.witness.proof`,
+    inline Tier 4/World/Meta clusters by the corresponding theorem, and the 16
+    `prop_*`-wrapped clusters by the corresponding transport/lattice/world/autonomy theorem. -/
 theorem clusterEnabled_sound (cfg : EpArchConfig) (c : ClusterTag)
     (_h : clusterEnabled cfg c = true) : clusterValid c := by
   unfold clusterValid
@@ -788,7 +788,7 @@ cluster and holds machine-checked evidence that each one is valid. -/
 
 /-- A certified bundle: the enabled clusters for `cfg`, with proofs.
 
-    **Layer 1 (routing):** `enabled`, `complete`, `sound` — all 31 cluster tags.
+    **Layer 1 (routing):** `enabled`, `complete`, `sound` — all 32 cluster tags.
     `sound` proves `clusterValid c` non-trivially for every enabled cluster.
 
     **Layer 2 (constraint proofs):** `constraintWitnesses` — full `ConstraintProof`
@@ -800,14 +800,14 @@ cluster and holds machine-checked evidence that each one is valid. -/
     `enabledGoalWitnesses`, `enabledWorldWitnesses`, `enabledTier4Witnesses` — filtered
     to only the clusters enabled by `cfg` (using dependent pairs `Σ c, WitnessType c`).
 
-    **Layer 4 (proof-content):** `cluster_*` witnesses in §5b cover all 31 clusters. -/
+    **Layer 4 (proof-content):** `cluster_*` witnesses in §5b cover all 32 clusters. -/
 structure CertifiedProjection (cfg : EpArchConfig) where
   /-- The list of enabled clusters (equal to `explainConfig cfg`). -/
   enabled                   : List ClusterTag
   /-- Faithfully mirrors `explainConfig`. -/
   complete                  : enabled = explainConfig cfg
   /-- Every enabled cluster satisfies `clusterValid`. For Tier 2 and the 8 inline
-      clusters this is the raw proposition; for the 15 `prop_*`-wrapped clusters
+      clusters this is the raw proposition; for the 16 `prop_*`-wrapped clusters
       this is the theorem statement pinned at universe 0 (see §4g). -/
   sound                     : ∀ c, c ∈ enabled → clusterValid c
   /-- Tier 2 proof carriers (all eight, config-independent).

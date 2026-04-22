@@ -1172,7 +1172,7 @@ for each cluster.
 | `clusterValid` | Meta/Config.lean | `ClusterTag → Prop` — genuine proved proposition for each of the 32 clusters; 16 clusters use `prop_*` defs pinned at universe 0 to eliminate free universe variables |
 | `showConfig` | Meta/ClusterRegistry.lean | `EpArchConfig → List String` — `#eval`-able routing report |
 | `ConstraintProof` | Meta/Config.lean | Proof-carrying record: `statement : Prop`, `proof : statement` (Tier 2 only) |
-| `CertifiedProjection` | Meta/Config.lean | Proof-carrying record: enabled clusters + soundness + `constraintWitnesses` + `metaModularWitnesses` + `latticeWitnesses` + filtered enabled lists for all families |
+| `CertifiedProjection` | Meta/Config.lean | Proof-carrying record: enabled clusters + soundness + `constraintWitnesses` + `metaModularWitnesses` + `latticeWitnesses` + `autonomyWitnesses` + filtered enabled lists for all families |
 | `certify` | Meta/Config.lean | `EpArchConfig → CertifiedProjection cfg` |
 
 ### Theorems
