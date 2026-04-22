@@ -20,7 +20,7 @@ unconditionally and require no configuration.
 
 | Family | Count | What it covers |
 |---|---|---|
-| **Forcing clusters** (Tier 2) | 8 | Each constraint forces a structural feature. Two paths: (1) `StructurallyForced W`/`handles_X W` operational path — `StructurallyForced.forcing : ∀ P : Pressure, handles_pressure W P → forced_feature W P`; (2) structural `Represents*`/`*_forces_*` path — no `handles_X W`, no biconditionals, strictly stronger. Per-dimension `*_forces_*` theorems are orthogonal: each fires independently (`disagreement_forces_bubbles`, `private_coordination_forces_bank`, `monotonic_lifecycle_forces_revocation`, `discriminating_import_forces_headers`, `bounded_verification_forces_trust_bridges`, `closed_endorsement_forces_redeemability`, `uniform_access_forces_granular_acl`, `bounded_capacity_forces_storage_management`). |
+| **Forcing clusters** (Tier 2) | 8 | Each constraint forces a structural feature. Two paths: (1) `StructurallyForced W`/`handles_X W` operational path — `StructurallyForced.forcing : ∀ P : Pressure, handles_pressure W P → forced_feature W P`; (2) structural `Represents*`/`*_forces_*` path — no `handles_X W`, no biconditionals, strictly stronger. Per-dimension `*_forces_*` theorems are orthogonal: each fires independently (`disagreement_forces_bubbles`, `private_coordination_forces_bank`, `monotonic_lifecycle_forces_revocation`, `discriminating_import_forces_headers`, `bounded_verification_forces_trust_bridges`, `closed_endorsement_forces_redeemability`, `uniform_access_forces_acl`, `bounded_capacity_forces_storage_management`). |
 | **Goal transport** (Tier 3) | 6 | Each health goal is preserved under compatible model extension |
 | **Tier 4 library clusters** | 5 | Commitments pack, structural theorems, LTS-universal gates, bank-goal transport |
 | **World obligations** (Tier 1) | 8 | Each `W_*` bundle enables a slice of adversarial/world theorems |
@@ -335,7 +335,7 @@ The **preferred forcing path** is `StructurallyForced W → SatisfiesAllProperti
 | `adversarial_pressure` | `.revocation` | `HasRevocation` | `monotonic_lifecycle_forces_revocation` |
 | `coordination_need` | `.bank` | `HasBank` | `private_coordination_forces_bank` |
 | `truth_pressure` | `.redeemability` | `HasRedeemability` | `closed_endorsement_forces_redeemability` |
-| `multi_agent_authorization` | `.authorization` | `HasGranularACL` | `uniform_access_forces_granular_acl` |
+| `multi_agent_authorization` | `.authorization` | `HasGranularACL` | `uniform_access_forces_acl` |
 | `bounded_storage` | `.storage` | `HasStorageManagement` | `bounded_capacity_forces_storage_management` |
 
 **Global theorem:** `convergence_structural` = all eight implemented by `∀ P : Pressure, handles_pressure W P → forced_feature W P` (via `StructurallyForced`). If you only accept k constraints, the k individual forcing theorems not involving the dropped dimension still hold independently.

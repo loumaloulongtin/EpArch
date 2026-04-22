@@ -341,7 +341,7 @@ Eight independent theorems — one per EpArch dimension — each taking a single
 | `discriminating_import_forces_headers` | `RepresentsDiscriminatingImport W` + sound/complete import witnesses | `HasHeaders W` |
 | `bounded_verification_forces_trust_bridges` | `RepresentsBoundedVerification W` + verification witnesses | `HasTrustBridges W` |
 | `closed_endorsement_forces_redeemability` | `RepresentsClosedEndorsement W` + endorsement witnesses | `HasRedeemability W` |
-| `uniform_access_forces_granular_acl` | `RepresentsUniformAccess W` + two-tier witnesses | `HasGranularACL W` |
+| `uniform_access_forces_acl` | `RepresentsUniformAccess W` + two-tier witnesses | `HasGranularACL W` |
 | `bounded_capacity_forces_storage_management` | `RepresentsBoundedCapacity W` + overflow witnesses | `HasStorageManagement W` |
 
 Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_without_feature ... h ...).elim` — classical case split with the abstract impossibility model closing the negative branch.
