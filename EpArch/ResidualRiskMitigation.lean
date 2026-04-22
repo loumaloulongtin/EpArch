@@ -7,8 +7,8 @@ novelty handling is covered by a prescribed EpArch mechanism.
 Grounded coverage layer: companion proof-grounded relation where each constructor
 carries upstream theorem evidence or structural field/projection evidence.
 
-Grounded mode layer: structural forcing evidence showing each mode is unavoidable,
-not an arbitrary taxonomy choice.
+Grounded mode layer: structural evidence showing each mode is backed by
+upstream theorem evidence, not an arbitrary taxonomy choice.
 
 Key exports:
 - `ResidualRiskMode`: nine structural failure modes induced by the operating regime
@@ -502,7 +502,7 @@ theorem eparch_surface_groundedly_covers_residual_risk_modes :
     - `GroundedRiskMode r`     — mode is backed by upstream structural evidence
     - `GroundedMitigates m r`  — mode is addressed with machine-checked evidence -/
 
-/-! ## GroundedMode — Forcing Evidence for Each Mode -/
+/-! ## GroundedRiskMode — Structural Evidence for Each Mode -/
 
 /-- `GroundedRiskMode r` carries upstream structural evidence that mode `r` is
     backed by a real structural constraint — not merely introduced as a label.
