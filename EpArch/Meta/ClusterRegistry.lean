@@ -115,7 +115,7 @@ inductive ClusterTag where
 
 /-! ## §2b  Per-Family Cluster Enumerations
 
-Six `EnabledXxxCluster` inductives — one per family — enable per-family proof
+Seven `EnabledXxxCluster` inductives — one per family — enable per-family proof
 carriers in EpArch.Meta.Config.  Tier 2 uses a direct `ConstraintProof` record;
 all other families use indexed inductive witness carriers. -/
 
@@ -342,7 +342,9 @@ def constraintClusterOfTag? (t : ClusterTag) : Option EnabledConstraintCluster :
     Tier 4 structural/LTS/commitments clusters are always applicable.
     Constraint-forcing clusters are gated on the constraint being listed.
     Goal-transport clusters are gated on the goal being listed.
-    Bank-goal bundles require the full goal set. -/
+    Bank-goal bundles require the full CoreModel transport goal set
+    (the five goals in `EnabledGoalCluster`; `autonomyUnderPRP` is not a
+    transport goal and is not required). -/
 def clusterEnabled (cfg : EpArchConfig) : ClusterTag → Bool
   -- Tier 3: health-goal transport clusters
   | .goal_safeWithdrawal        => cfg.goals.contains .safeWithdrawal

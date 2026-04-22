@@ -795,10 +795,12 @@ cluster and holds machine-checked evidence that each one is valid. -/
     for all eight Tier 2 forcing clusters (total, config-independent).
     `enabledConstraintWitnesses` — filtered to only the clusters enabled by `cfg`.
 
-    **Layer 3 (indexed witnesses):** `goalWitnesses`, `worldWitnesses`, `tier4Witnesses`
-    — indexed inductives packaging the real transport theorem for each cluster.
-    `enabledGoalWitnesses`, `enabledWorldWitnesses`, `enabledTier4Witnesses` — filtered
-    to only the clusters enabled by `cfg` (using dependent pairs `Σ c, WitnessType c`).
+    **Layer 3 (indexed witnesses):** `goalWitnesses`, `worldWitnesses`, `tier4Witnesses`,
+    `metaModularWitnesses`, `latticeWitnesses`, `autonomyWitnesses`
+    — indexed inductives packaging the real transport or necessity theorem for each cluster.
+    `enabledGoalWitnesses`, `enabledWorldWitnesses`, `enabledTier4Witnesses`,
+    `enabledMetaModularWitnesses`, `enabledLatticeWitnesses`, `enabledAutonomyWitnesses`
+    — filtered to only the clusters enabled by `cfg` (using dependent pairs `Σ c, WitnessType c`).
 
     **Layer 4 (proof-content):** `cluster_*` witnesses in §5b cover all 32 clusters. -/
 structure CertifiedProjection (cfg : EpArchConfig) where

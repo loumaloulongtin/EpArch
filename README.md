@@ -157,7 +157,7 @@ The framework has three layers:
 | `WorldBridges.lean` | World-to-structural bridge theorems: `w_bounded_forces_incompleteness`, `w_lies_forces_revocation_need`, `w_partial_obs_forces_redeemability`; `WorldAwareSystem` def; `world_assumptions_force_bank_primitives` (W_* bundle path); `bundled_structure_forces_bank_primitives` (headline: `SystemOperationalBundle` + `WorldBridgeBundle` → `containsBankPrimitives`); `kernel_world_forces_bank_primitives` (zero-assumption corollary) |
 | `Health.lean` | Health goal predicates and necessity theorems |
 | `Invariants.lean` | System invariants (grounded operational theorems, 0 axiom declarations) |
-| `Meta/TheoremTransport.lean` | Health-goal transport schema: all 5 health goals are transport-safe under Compatible extensions (Tier 3 closure) |
+| `Meta/TheoremTransport.lean` | Health-goal transport schema: all 5 CoreModel transport health goals are transport-safe under Compatible extensions (Tier 3 closure) |
 | `Meta/Tier4Transport.lean` | Main theorem library transport: standalone commitments, structural, and ConcreteBankModel clusters (Tier 4 closure) |
 | `Meta/Modular.lean` | Constraint-subset modularity: `PartialWellFormed`, `modular` (∀ S ⊆ constraints, biconditional fragment → forcing projection), `allConstraints`/`noConstraints` |
 | `Meta/ClusterRegistry.lean` | 32-cluster tag registry: `ClusterTag`, `EnabledXxxCluster` inductives, per-family canonical lists, `clusterEnabled` routing |
