@@ -2289,8 +2289,8 @@ theorem recall_is_bounded_verification_instance (M : RecallBudget) :
     handled by a budgeted bridge, unless the Health-layer system routes
     it to escalation.
 
-    **Connection to T25 (Health.lean).**  `AutonomyUnderPRPGoal` defines
-    the health goal: every required deposit is handled by scratch, bridge,
+    **Connection to Health.lean.**  `AutonomyUnderPRPGoal` defines the
+    health goal: every required deposit is handled by scratch, bridge,
     or escalation.  This section proves the independent Minimality-layer
     direction: scratch verification alone is insufficient for novel
     over-budget inputs.  The two proofs are independent; neither cites

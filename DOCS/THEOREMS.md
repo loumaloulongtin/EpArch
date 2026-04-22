@@ -424,7 +424,7 @@ Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_w
 
 **Role:** Extends the bounded-budget impossibility argument to the *analogical import* direction. When an agent encounters a novel input whose scratch-verification cost exceeds its budget, scratch verification cannot supply coverage. An analogical bridge — a prior entry similar to the novel input from which bridge-based verification stays within budget — is the only in-scope alternative to escalation. `AnalogicalBridge` is the parallel structure to `BoundedVerification` (§2) and `RecallBudget` (§9); `scratch_verification_insufficient_for_novel_inputs` is the parallel impossibility theorem.
 
-**Connection to T25 (Health.lean):** `AutonomyUnderPRPGoal` defines the health goal (scratch, bridge, or escalation for every required deposit). This §10 block is the independent Minimality-layer direction: scratch verification alone is provably insufficient for novel over-budget inputs. The two proofs are independent; neither cites the other.
+**Connection to Health.lean (`AutonomyUnderPRPGoal`):** `AutonomyUnderPRPGoal` defines the health goal (scratch, bridge, or escalation for every required deposit). This §10 block is the independent Minimality-layer direction: scratch verification alone is provably insufficient for novel over-budget inputs. The two proofs are independent; neither cites the other.
 
 **Note:** `AnalogicalBridge` is not a ninth `Pressure` constructor. It embeds into `BoundedVerification` via `analogicalBridge_to_bounded` (§10.6): scratch-verification insufficiency is trust-pressure applied at the novel-input boundary. The §10 theorem family is a Minimality-layer consequence, not a new convergence dimension.
 
@@ -596,9 +596,9 @@ health-specific extension goal for required over-budget claim handling under PRP
 not part of `EnabledGoalCluster` / `GoalWitness` because it is not a `CoreModel`
 transport theorem; it is carried by `EnabledAutonomyCluster` / `AutonomyWitness`
 as an `AutonomyModel`-specific necessity theorem. The cluster count is therefore
-32 (was 31 before T25c).
+32.
 
-The T25 theorems are operational, not metaphysical: they reason about whether
+The autonomy-health theorems are operational, not metaphysical: they reason about whether
 an available bridge witness exists in the system's prior material, not whether
 no analogous item exists anywhere in principle. The Minimality-layer companion
 is Bucket 9f: `AnalogicalBridge` proves scratch-verification insufficiency for

@@ -423,7 +423,7 @@ def RiskAutonomyModel.toAutonomyModel (M : RiskAutonomyModel) : AutonomyModel wh
     `¬verifyWithin B d (effectiveTime B)` + `¬canEscalate B d` +
     `h_all_risky` → forced risky bridge existential.
     **Proof strategy:**
-    1. `no_escalation_forces_bridge` (T25) delivers `⟨b, h_avail, h_sim, h_verify⟩`.
+    1. `no_escalation_forces_bridge` delivers `⟨b, h_avail, h_sim, h_verify⟩`.
     2. `h_all_risky b h_avail h_sim h_verify` yields `residualRiskVia B b d`.
     3. Package the four-component existential.
 
