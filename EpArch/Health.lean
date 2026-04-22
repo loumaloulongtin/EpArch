@@ -497,7 +497,7 @@ structure AutonomyRiskHealth (M : RiskAutonomyModel) where
     A `PRPObligationStream` packages two infinite sequences (bubbles and
     deposits) together with a witness index at which all three gates are
     closed: scratch verification fails, escalation is unavailable, and
-    every usable bridge carries residual risk.  `eventual_forced_residual_risk`
+    every usable bridge carries residual risk.  `forced_residual_risk_at_stream_index`
     shows that at that index the system is forced to a risky bridge.
 
     This is the stream-level consequence of
