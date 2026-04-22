@@ -1,22 +1,21 @@
 /-
-EpArch.ResidualRiskMitigation — Residual Risk Mitigation Coverage (T27 / T27b)
+EpArch.ResidualRiskMitigation — Residual Risk Mitigation Coverage
 
-Classification theorem (T27a): every residual-risk mode induced by bounded autonomous
+Classification theorem: every residual-risk mode induced by bounded autonomous
 novelty handling is covered by a prescribed EpArch mechanism.
 
-Grounded coverage layer (T27b): companion proof-grounded relation showing that every
-residual-risk mode has a mitigation pairing backed by upstream theorem evidence or
-concrete structural field/projection evidence.
+Grounded coverage layer: companion proof-grounded relation where each constructor
+carries upstream theorem evidence or structural field/projection evidence.
 
 Key exports:
 - `ResidualRiskMode`: nine structural failure modes induced by the operating regime
 - `EpArchMechanism`: eleven prescribed architectural mechanisms
 - `Mitigates`: declared coverage relation; each constructor is definitional evidence for a pairing
-- `eparch_surface_covers_residual_risk_modes`: capstone coverage theorem (T27a)
+- `eparch_surface_covers_residual_risk_modes`: capstone coverage theorem
 - `GroundedMitigates`: proof-backed companion; each constructor carries upstream theorem or
   structural projection evidence
-- `grounded_mitigation_implies_mitigation`: T27b implies T27a
-- `eparch_surface_groundedly_covers_residual_risk_modes`: grounded coverage theorem (T27b)
+- `grounded_mitigation_implies_mitigation`: every grounded pairing implies a declared pairing
+- `eparch_surface_groundedly_covers_residual_risk_modes`: grounded coverage theorem
 -/
 
 import EpArch.Health
@@ -33,7 +32,8 @@ namespace EpArch
 The nine distinct failure modes that remain once risk-free autonomous novelty
 handling is unavailable.  Each constructor names a mode, not an implementation
 defect.  The modes exist because the operating regime (bounded verification +
-PRP + novel inputs) generates them structurally; T25–T26 explain why. -/
+PRP + novel inputs) generates them structurally; see
+`residual_risk_forced_when_no_scratch_no_escalation` in `EpArch.Health`. -/
 
 /-- The distinct structural failure modes that remain once risk-free autonomous
     novelty handling is unavailable.  Each constructor names a mode, not an
@@ -76,14 +76,16 @@ inductive ResidualRiskMode where
 
 The eleven mechanisms that compose the EpArch mitigation surface.  Each is
 present because it mitigates at least one `ResidualRiskMode` that the operating
-regime forces.  The surface is prescribed by the architecture; T27 establishes
-coverage, T28 establishes irredundancy. -/
+regime forces.  The surface is prescribed by the architecture;
+`eparch_surface_covers_residual_risk_modes` establishes coverage; irredundancy
+is proved in a companion theorem. -/
 
 /-- The EpArch mechanisms that compose the mitigation surface.
     Each constructor names a structural mechanism; each is present because it
     mitigates at least one `ResidualRiskMode` that the operating regime forces.
     The surface is prescribed by the architecture, not proved irredundant here:
-    T27 establishes coverage, not minimality in the strict sense.
+    `eparch_surface_covers_residual_risk_modes` establishes coverage, not
+    minimality in the strict sense.
     The `Mitigates` inductive below contains one or more constructors
     for every mechanism. -/
 inductive EpArchMechanism where
@@ -96,8 +98,8 @@ inductive EpArchMechanism where
   | authorization     -- ACL: submit / promote / update permissions
   | bankLifecycle     -- Candidate → Deposited → Quarantined → Revoked / Forgotten
   | redeemability     -- challenge + required correction path
-  | boundedRecall     -- recall-admissibility filtering (Minimality §9)
-  | escalation        -- principled non-action / referral branch (T25)
+  | boundedRecall     -- recall-admissibility filtering; see recall_only_withdrawal_incomplete
+  | escalation        -- principled non-action / referral branch; see no_escalation_forces_bridge
   deriving DecidableEq, Repr
 
 /-! ## Mitigates — Coverage Relation
@@ -153,14 +155,14 @@ inductive Mitigates : EpArchMechanism → ResidualRiskMode → Prop where
   | lifecycle_defect        : Mitigates .bankLifecycle .unrevokedDefect
   /-- A trust bridge carries an explicit verification gap (`residualRiskVia`);
       overbudget reliance is labelled, not hidden.
-      `risk_not_eliminable_by_budgeted_bridge` (Minimality §11) shows why the
-      gap is irreducible; the bridge mechanism makes it explicit rather than hidden.
+      `risk_not_eliminable_by_budgeted_bridge` shows why the gap is irreducible;
+      the bridge mechanism makes it explicit rather than hidden.
       Overbudget-reliance risk is converted into an explicit gap-labelling obligation. -/
   | bridge_overbudget       : Mitigates .trustBridge .overbudgetReliance
   /-- The escalation branch (`canEscalate`) is the sound non-action path.
-      `no_escalation_forces_bridge` (Health.lean, T25) shows that without it
-      the system is forced to bridge-or-nothing; with it, unsafe autonomous
-      action is not the only remaining option.
+      `no_escalation_forces_bridge` shows that without it the system is forced
+      to bridge-or-nothing; with it, unsafe autonomous action is not the only
+      remaining option.
       Unsafe-autonomy risk is converted into a principled-referral obligation. -/
   | escalation_unsafe       : Mitigates .escalation .unsafeAutonomy
   /-- Redeemability makes the challenge-and-correction path explicit and
@@ -172,15 +174,14 @@ inductive Mitigates : EpArchMechanism → ResidualRiskMode → Prop where
       An unrevoked defect without a redeemability structure has no correction
       obligation; with it, the obligation is explicit and auditable. -/
   | redeemability_defect    : Mitigates .redeemability .unrevokedDefect
-  /-- Bounded-recall discipline (Minimality §9: `recall_only_withdrawal_incomplete`)
-      shows that provenance chains exceeding the recall budget make recall-only
-      verification structurally incomplete.  The `boundedRecall` mechanism
-      prevents silent over-reliance: old deposits that exhaust the recall budget
-      are filtered, converting silent overbudget reliance into an explicit
-      scope failure. -/
+  /-- `recall_only_withdrawal_incomplete` shows that provenance chains exceeding
+      the recall budget make recall-only verification structurally incomplete.
+      The `boundedRecall` mechanism prevents silent over-reliance: old deposits
+      that exhaust the recall budget are filtered, converting silent overbudget
+      reliance into an explicit scope failure. -/
   | bounded_recall_overbudget : Mitigates .boundedRecall .overbudgetReliance
 
-/-! ## Coverage Theorem (T27)
+/-! ## Coverage Theorem
 
 `eparch_surface_covers_residual_risk_modes` is the capstone classification
 theorem: every declared residual-risk mode is answered by some EpArch
@@ -197,7 +198,8 @@ matching `Mitigates` constructor. -/
     **Proof strategy:** `cases r`; supply the matching `Mitigates` constructor.
 
     This theorem is a classification theorem, not an impossibility theorem.
-    The structural depth lives in T25–T26: those results explain why the
+    The structural depth lives in `residual_risk_forced_when_no_scratch_no_escalation`
+    and related theorems in `EpArch.Health`: those results explain why the
     nine risk modes are not arbitrary.  This theorem shows that EpArch's
     surface is *complete* with respect to those modes — no mode is left
     unaddressed.
@@ -230,26 +232,23 @@ theorem eparch_surface_covers_residual_risk_modes :
   | unsafeAutonomy    => exact ⟨.escalation,       .escalation_unsafe⟩
 
 /-! ========================================================================
-    GROUNDED COVERAGE LAYER (T27b) — Proof-Backed Mitigation Evidence
+    GROUNDED COVERAGE LAYER — Proof-Backed Mitigation Evidence
     ========================================================================
 
-    T27a establishes declared coverage: every `ResidualRiskMode` has some
-    `Mitigates` pairing.  `Mitigates` constructors are definitional evidence —
-    they name the mechanism and the mode, backed by doc-comment reasoning.
+    `eparch_surface_covers_residual_risk_modes` establishes declared coverage:
+    every `ResidualRiskMode` has some `Mitigates` pairing — constructors are
+    definitional evidence backed by doc-comment reasoning.
 
-    T27b adds a companion layer: `GroundedMitigates` requires that each
-    constructor carry *actual proof evidence* — either an upstream theorem
-    (applied to its real inputs) or a structural projection from an existing
-    field.  This makes the coverage machine-verifiable in depth, not just
-    in classification.
+    `GroundedMitigates` is a companion inductive where each constructor carries
+    *actual proof evidence* — either an upstream theorem (applied to its real
+    inputs) or a structural projection from an existing field.  This makes
+    coverage machine-verifiable in depth, not just in classification.
 
-    Scope:
-    - Does NOT prove strict minimality / irredundancy of the surface.  That is T28.
-    - Does NOT use `True`, `trivial`, or fake evidence arguments.
-    - Does NOT mutate `Mitigates` or delete T27a.
-    - Each upstream-theorem case carries the theorem as a function value.
-    - Structural cases carry either field-projection evidence (proved by `rfl`) or
-      a small proof from an existing structural field, such as `PathExists.ttl_valid`. -/
+    Does not prove strict minimality or irredundancy of the surface; irredundancy
+    is proved in a companion theorem over the same surface.
+    Each upstream-theorem case carries the theorem as a function value.
+    Structural cases carry either field-projection evidence (proved by `rfl`) or
+    a small proof from an existing structural field, such as `PathExists.ttl_valid`. -/
 
 /-! ## GroundedMitigates — Proof-Backed Coverage Relation -/
 
@@ -309,8 +308,8 @@ inductive GroundedMitigates : EpArchMechanism → ResidualRiskMode → Prop wher
   /-- Temporal window enforcement grounded by `PathExists.ttl_valid`.
       `AdversarialObligations.PathExists d` requires `d.h.τ > 0` (`ttl_valid` field).
       A deposit with `τ = 0` structurally cannot carry a valid path witness.
-      Grounding: `PathExists.ttl_valid : d.h.τ > 0` used directly via `omega`
-      to derive `False` from `d.h.τ = 0 ∧ PathExists d`. -/
+      Proof: `simp [h_zero]` rewrites `ttl_valid : τ > 0` to `0 > 0` given
+      `h_zero : τ = 0`, closing the contradiction. -/
   | tau_staleness :
       (∀ (PL S E P : Type) (d : Deposit PL S E P),
           d.h.τ = 0 → ¬AdversarialObligations.PathExists d) →
@@ -320,7 +319,7 @@ inductive GroundedMitigates : EpArchMechanism → ResidualRiskMode → Prop wher
       `flat_authorization_impossible (M : TwoTierAccess)` proves that no flat
       authorization predicate can represent both the submission tier and the
       commit tier — granular ACL is structurally forced.
-      Grounding: `flat_authorization_impossible` from `EpArch.Minimality` §7. -/
+      Grounding: `flat_authorization_impossible` from `EpArch.Minimality`. -/
   | auth_adversarial :
       (∀ (M : TwoTierAccess),
           ¬∃ (f : M.Agent → M.Claim → Prop),
@@ -341,7 +340,7 @@ inductive GroundedMitigates : EpArchMechanism → ResidualRiskMode → Prop wher
   /-- Overbudget-reliance grounded by `risk_not_eliminable_by_budgeted_bridge`.
       Any similar bridge that fits within the verification budget carries
       residual risk — the gap cannot be closed by cost-constrained bridging.
-      Grounding: `risk_not_eliminable_by_budgeted_bridge` from `EpArch.Minimality` §11. -/
+      Grounding: `risk_not_eliminable_by_budgeted_bridge` from `EpArch.Minimality`. -/
   | bridge_overbudget :
       (∀ (R : ResidualRiskBridge) (b : R.Bridge),
           R.sim b R.novel_claim →
@@ -354,7 +353,7 @@ inductive GroundedMitigates : EpArchMechanism → ResidualRiskMode → Prop wher
       escalation is unavailable, a bridge is the only sound response.
       The escalation mechanism supplies the principled non-action branch
       that makes unsafe autonomous action structurally avoidable.
-      Grounding: `no_escalation_forces_bridge` from `EpArch.Health` (T25). -/
+      Grounding: `no_escalation_forces_bridge` from `EpArch.Health`. -/
   | escalation_unsafe :
       (∀ (M : AutonomyModel) (_ : AutonomyUnderPRPGoal M)
           (B : M.sig.Bubble) (d : M.sig.Deposit)
@@ -385,12 +384,12 @@ inductive GroundedMitigates : EpArchMechanism → ResidualRiskMode → Prop wher
       `¬∀ v : M.Provenance, M.recall_cost v ≤ M.budget`.
       This proves that silent recall-only withdrawal is incomplete,
       which is precisely the residual that `boundedRecall` makes explicit.
-      Grounding: `recall_only_withdrawal_incomplete` from `EpArch.Minimality` §9. -/
+      Grounding: `recall_only_withdrawal_incomplete` from `EpArch.Minimality`. -/
   | bounded_recall_overbudget :
       (∀ (M : RecallBudget), ¬∀ v : M.Provenance, M.recall_cost v ≤ M.budget) →
       GroundedMitigates .boundedRecall .overbudgetReliance
 
-/-! ## T27b Theorems -/
+/-! ## Grounded Coverage Theorems -/
 
 /-- GROUNDED MITIGATION IMPLIES DECLARED MITIGATION.
 
@@ -417,36 +416,28 @@ theorem grounded_mitigation_implies_mitigation {m : EpArchMechanism} {r : Residu
   | redeemability_defect _        => exact .redeemability_defect
   | bounded_recall_overbudget _   => exact .bounded_recall_overbudget
 
-/-- EPARCH SURFACE GROUNDEDLY COVERS RESIDUAL RISK MODES (T27b).
+/-- EPARCH SURFACE GROUNDEDLY COVERS RESIDUAL RISK MODES.
 
     Every residual-risk mode has a mitigation pairing backed by upstream theorem
-    evidence or structural field-projection evidence.  This strengthens the
-    declared coverage of T27a: the grounding confirms that each pairing is not
-    merely a taxonomy claim but reflects structural or proof-level constraints
-    in the formalization.
+    evidence or structural field-projection evidence.  This strengthens
+    `eparch_surface_covers_residual_risk_modes`: the grounding confirms that each
+    pairing is not merely a taxonomy claim but reflects structural or proof-level
+    constraints in the formalization.
 
     **Theorem shape:** `∀ r : ResidualRiskMode, ∃ m : EpArchMechanism, GroundedMitigates m r`
     **Proof strategy:** `cases r`; supply the matching `GroundedMitigates` constructor
     with the actual proof witness for each mode.
 
-    Evidence sources by mode:
-    - `scopeLeak`          : `Deposit.bubble` field projection
-    - `standardMismatch`   : `Header.S` field projection
-    - `unmodeledError`     : `Header.E` field projection
-    - `provenanceGap`      : `Header.V` field projection
-    - `staleness`          : `PathExists.ttl_valid` — τ = 0 blocks any PathExists
-    - `adversarialImport`  : `flat_authorization_impossible` (Minimality §7)
-    - `unrevokedDefect`    : `challenge_produces_quarantined` (Bank.lean)
-    - `overbudgetReliance` : `risk_not_eliminable_by_budgeted_bridge` (Minimality §11)
-    - `unsafeAutonomy`     : `no_escalation_forces_bridge` (Health.lean T25)
-    - `unrevokedDefect`    : `redeemable_implies_surface_aligned` (Commitments.lean)
-                             (covered by `.redeemability` or `.bankLifecycle`)
-    - `overbudgetReliance` : `recall_only_withdrawal_incomplete` (Minimality §9)
-                             (covered by `.boundedRecall` or `.trustBridge`)
+    `GroundedMitigates` has eleven constructors but this proof uses nine — one per
+    `ResidualRiskMode` constructor.  `redeemability_defect` and
+    `bounded_recall_overbudget` are not used here because `unrevokedDefect` and
+    `overbudgetReliance` are already covered by `lifecycle_defect` and
+    `bridge_overbudget` respectively.  Both constructors remain available for the
+    per-mechanism obligation in the irredundancy companion theorem.
 
     Does not say: the mechanisms are irredundant or the surface is minimal.
     Does not say: the upstream theorems eliminate the underlying risk.
-    Strict minimality / irredundancy is T28. -/
+    Irredundancy is proved in a companion theorem over the same surface. -/
 theorem eparch_surface_groundedly_covers_residual_risk_modes :
     ∀ r : ResidualRiskMode, ∃ m : EpArchMechanism, GroundedMitigates m r := by
   intro r; cases r with
@@ -463,7 +454,7 @@ theorem eparch_surface_groundedly_covers_residual_risk_modes :
     exact ⟨.provenanceHeader,
       .provenance_gap (fun S E P h => ⟨h.V, rfl⟩)⟩
   | staleness =>
-    -- PathExists.ttl_valid : d.h.τ > 0; if τ = 0 then 0 > 0, contradiction via omega.
+    -- PathExists.ttl_valid requires d.h.τ > 0; h_zero : τ = 0 contradicts this via simp.
     exact ⟨.tau,
       .tau_staleness (fun PL S E P d h_zero pe =>
         absurd pe.ttl_valid (by simp [h_zero]))⟩
@@ -486,15 +477,5 @@ theorem eparch_surface_groundedly_covers_residual_risk_modes :
     exact ⟨.escalation,
       .escalation_unsafe (fun M h_auto B d h_req h_fail h_no_esc =>
         no_escalation_forces_bridge M h_auto B d h_req h_fail h_no_esc)⟩
-
--- Note: T27a declared coverage (`eparch_surface_covers_residual_risk_modes`) is
--- already proved independently.  The derivation from T27b follows directly:
---   let ⟨m, hg⟩ := eparch_surface_groundedly_covers_residual_risk_modes r
---   ⟨m, grounded_mitigation_implies_mitigation hg⟩
--- A standalone theorem is omitted here because the call to
--- `eparch_surface_groundedly_covers_residual_risk_modes` introduces universe
--- parameters (from the `Deposit`/`redeemable` polymorphism in constructors)
--- that would also need to appear in the derived theorem's signature.  The
--- derivation is valid; the T27a theorem itself is the citable result.
 
 end EpArch
