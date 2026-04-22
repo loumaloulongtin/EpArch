@@ -462,13 +462,19 @@ Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_w
 
 ---
 
-## Bucket 9h: Residual Risk Mitigation Coverage (ResidualRiskMitigation.lean — T27)
+## Bucket 9h: Residual Risk Mitigation Coverage (ResidualRiskMitigation.lean — T27 / T27b)
 
-**Role:** Classification / capstone theorem. Every residual-risk mode induced by bounded
-autonomous novelty handling (T25–T26) is covered by a prescribed EpArch mechanism that
+**Role:** Two-layer classification / coverage theorem.
+
+T27a establishes *declared* coverage: every residual-risk mode induced by bounded
+autonomous novelty handling (T25–T26) has some `Mitigates` pairing — mechanism `m`
 converts the mode from an unstructured failure possibility into an auditable operational
-obligation. This is not an impossibility theorem: the depth lives in T25–T26; T27 shows
+obligation. T27a is a classification theorem: the depth lives in T25–T26; T27a shows
 the prescribed surface is complete with respect to those modes.
+
+T27b strengthens that by adding a *proof-grounded* companion relation, `GroundedMitigates`,
+where each constructor carries actual upstream-theorem evidence or structural field-projection
+evidence. T27b does not prove strict minimality or irredundancy of the surface — that is T28.
 
 **Cross-references:** Bucket 9e (`recall_only_withdrawal_incomplete`, Minimality §9),
 Bucket 9f (analogical bridge, Minimality §10), Bucket 9g (`risk_not_eliminable_by_budgeted_bridge`,
@@ -481,15 +487,18 @@ Minimality §11), Bucket 14 (Health necessity theorems: `no_escalation_forces_br
 |------|------|-------------|
 | `ResidualRiskMode` | `inductive` | Nine structural failure modes: `scopeLeak`, `standardMismatch`, `unmodeledError`, `provenanceGap`, `staleness`, `adversarialImport`, `unrevokedDefect`, `overbudgetReliance`, `unsafeAutonomy` |
 | `EpArchMechanism` | `inductive` | Eleven prescribed mechanisms: `bubbles`, `standardsHeader`, `errorHeader`, `provenanceHeader`, `tau`, `trustBridge`, `authorization`, `bankLifecycle`, `redeemability`, `boundedRecall`, `escalation` |
-| `Mitigates` | `inductive Prop` | `Mitigates m r` — mechanism `m` converts risk mode `r` into an auditable obligation; eleven constructors, each naming the grounding (upstream theorem or structural invariant) |
+| `Mitigates` | `inductive Prop` | `Mitigates m r` — declared coverage; mechanism `m` converts risk mode `r` into an auditable obligation; eleven constructors naming the grounding |
+| `GroundedMitigates` | `inductive Prop` | `GroundedMitigates m r` — proof-backed companion; each constructor carries upstream theorem evidence or structural projection evidence; implies `Mitigates m r` |
 
 ### Theorems
 
 | Theorem | Shape | Proof strategy |
 |---------|-------|----------------|
-| `eparch_surface_covers_residual_risk_modes` | `∀ r : ResidualRiskMode, ∃ m : EpArchMechanism, Mitigates m r` | `cases r`; supply matching `Mitigates` constructor per branch |
+| `eparch_surface_covers_residual_risk_modes` | `∀ r : ResidualRiskMode, ∃ m : EpArchMechanism, Mitigates m r` | `cases r`; supply matching `Mitigates` constructor per branch (T27a) |
+| `grounded_mitigation_implies_mitigation` | `GroundedMitigates m r → Mitigates m r` | `cases` on `GroundedMitigates` constructor; supply matching `Mitigates` constructor (T27b) |
+| `eparch_surface_groundedly_covers_residual_risk_modes` | `∀ r : ResidualRiskMode, ∃ m : EpArchMechanism, GroundedMitigates m r` | `cases r`; supply `GroundedMitigates` constructor with its proof witness per branch (T27b) |
 
-### Grounding table
+### Grounding table (T27a — declared `Mitigates` constructors)
 
 | Constructor | Kind | Grounding |
 |-------------|------|-----------|
@@ -504,6 +513,30 @@ Minimality §11), Bucket 14 (Health necessity theorems: `no_escalation_forces_br
 | `error_unmodeled` | structural | `Deposit.Header.E : ErrorModel` is a required field; known failure modes are declared at deposit time |
 | `provenance_gap` | structural | `Deposit.Header.V : Provenance` is a required field; `PathExists.ttl_valid` and `status_live` make the path auditable |
 | `auth_adversarial` | structural / agent-layer | `Header.acl` records the ACL surface; authorization forcing is handled by `AuthorizedWithdrawalGoal` / `TwoTierAccess` / granular ACL theorems; abstract bank Step LTS does not enforce ACL as a constructor precondition |
+
+### Proof-grounding table (T27b — `GroundedMitigates` constructors)
+
+Each constructor carries an evidence argument that is a genuine proof, not a restatement
+of the pairing. Upstream-theorem cases carry the theorem as a universally-quantified function;
+structural-projection cases carry a field-projection proposition proved by `rfl`.
+
+| Constructor | Evidence argument | Upstream theorem / structural field |
+|-------------|-------------------|-------------------------------------|
+| `bubbles_scope_leak` | `∀ PL S E P (d : Deposit PL S E P), ∃ b : Bubble, d.bubble = b` | `Deposit.bubble` field projection (`rfl`) |
+| `standards_mismatch` | `∀ S E P (h : Header S E P), ∃ s : S, h.S = s` | `Header.S` field projection (`rfl`) |
+| `error_unmodeled` | `∀ S E P (h : Header S E P), ∃ e : E, h.E = e` | `Header.E` field projection (`rfl`) |
+| `provenance_gap` | `∀ S E P (h : Header S E P), ∃ v : P, h.V = v` | `Header.V` field projection (`rfl`) |
+| `tau_staleness` | `∀ PL S E P (d : Deposit PL S E P), d.h.τ = 0 → ¬AdversarialObligations.PathExists d` | `PathExists.ttl_valid`: τ = 0 contradicts `d.h.τ > 0` |
+| `auth_adversarial` | `∀ M : TwoTierAccess, ¬∃ f, ...` | `flat_authorization_impossible` (Minimality §7) |
+| `lifecycle_defect` | `∀ PL S E P B (d : Deposit PL S E P) f, d.status = .Deposited → (Challenge_B B d f).status = .Quarantined` | `challenge_produces_quarantined` (Bank.lean) |
+| `bridge_overbudget` | `∀ R b, R.sim b R.novel_claim → R.bridge_cost b ≤ R.budget → ¬R.risk_free b R.novel_claim` | `risk_not_eliminable_by_budgeted_bridge` (Minimality §11) |
+| `escalation_unsafe` | `∀ M (_ : AutonomyUnderPRPGoal M) B d ..., ∃ b, M.ops.bridgeAvailable B b ∧ ...` | `no_escalation_forces_bridge` (Health.lean T25) |
+| `redeemability_defect` | `∀ PL S E P (d : Deposit PL S E P), redeemable d → ∃ vp : VerificationPath, vp.deposit = d ∧ vp.surface = d.h.redeem` | `redeemable_implies_surface_aligned` (Commitments.lean) |
+| `bounded_recall_overbudget` | `∀ M : RecallBudget, ¬∀ v : M.Provenance, M.recall_cost v ≤ M.budget` | `recall_only_withdrawal_incomplete` (Minimality §9) |
+
+T27b does not prove that the mechanisms are irredundant or that the surface is minimal.
+Strict minimality / irredundancy — showing that removing any mechanism from
+`EpArchMechanism` breaks grounded coverage — is T28.
 
 ---
 
