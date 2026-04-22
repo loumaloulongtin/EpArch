@@ -14,6 +14,7 @@ Key exports:
   residual_risk_forced_when_no_scratch_no_escalation,
   no_risk_free_bridge_when_all_usable_bridges_risky
 - FullSystemHealth, AutonomyHealth, AutonomyRiskHealth (bundles)
+- PRPObligationStream, eventual_forced_residual_risk
 -/
 
 import EpArch.Basic
@@ -488,5 +489,88 @@ theorem no_risk_free_bridge_when_all_usable_bridges_risky (M : RiskAutonomyModel
     Separate from `AutonomyHealth` because it requires `RiskAutonomyModel`. -/
 structure AutonomyRiskHealth (M : RiskAutonomyModel) where
   autonomy_coverage : AutonomyUnderPRPGoal M.toAutonomyModel
+
+
+/-! ========================================================================
+    PRP OBLIGATION STREAM — Residual Risk at a Specific Stream Index
+
+    A `PRPObligationStream` packages two infinite sequences (bubbles and
+    deposits) together with a witness index at which all three gates are
+    closed: scratch verification fails, escalation is unavailable, and
+    every usable bridge carries residual risk.  `eventual_forced_residual_risk`
+    shows that at that index the system is forced to a risky bridge.
+
+    This is the stream-level consequence of
+    `residual_risk_forced_when_no_scratch_no_escalation`: the gate-closure
+    conditions live on the stream structure; the proof is a one-line
+    delegation.
+    ======================================================================== -/
+
+/-! ## PRPObligationStream -/
+
+/-- Two infinite obligation sequences with a distinguished index at
+    which all gates are closed.
+
+    Uses separate `bubble_stream` and `deposit_stream` functions (rather
+    than a product-valued function) so that later field types contain only
+    function applications, not product projections.
+
+    Fields `h_required`, `h_scratch_fail`, `h_no_esc`, and `h_all_risky`
+    are the four gate-closure conditions at `risky_index`, transferred
+    directly to `residual_risk_forced_when_no_scratch_no_escalation`. -/
+structure PRPObligationStream (M : RiskAutonomyModel) where
+  /-- The sequence of obligation bubbles. -/
+  bubble_stream  : Nat → M.sig.Bubble
+  /-- The sequence of obligation deposits. -/
+  deposit_stream : Nat → M.sig.Deposit
+  /-- Index at which all gate-closure conditions hold. -/
+  risky_index    : Nat
+  /-- The deposit at `risky_index` is a required claim. -/
+  h_required     : M.ops.mustHandle
+                     (bubble_stream risky_index)
+                     (deposit_stream risky_index)
+  /-- Scratch verification fails within the effective-time budget. -/
+  h_scratch_fail : ¬M.ops.verifyWithin
+                     (bubble_stream risky_index)
+                     (deposit_stream risky_index)
+                     (M.ops.effectiveTime (bubble_stream risky_index))
+  /-- No principled escalation path is available. -/
+  h_no_esc       : ¬M.ops.canEscalate
+                     (bubble_stream risky_index)
+                     (deposit_stream risky_index)
+  /-- Every usable bridge for this obligation carries residual risk. -/
+  h_all_risky    : ∀ b : M.sig.Deposit,
+                     M.ops.bridgeAvailable (bubble_stream risky_index) b →
+                     M.ops.analogSim b (deposit_stream risky_index) →
+                     M.ops.verifyVia
+                       (bubble_stream risky_index) b
+                       (deposit_stream risky_index)
+                       (M.ops.effectiveTime (bubble_stream risky_index)) →
+                     M.ops.residualRiskVia
+                       (bubble_stream risky_index) b
+                       (deposit_stream risky_index)
+
+
+/-! ## Stream-Level Residual Risk -/
+
+/-- A risky bridge is forced at the gate-closure index of the obligation stream.
+
+    **Theorem shape:** `AutonomyUnderPRPGoal` + `PRPObligationStream M` →
+    forced risky bridge existential at `S.risky_index`.
+    **Proof strategy:** one-line delegation to
+    `residual_risk_forced_when_no_scratch_no_escalation`, supplying the
+    four gate-closure fields from `S` directly. -/
+theorem eventual_forced_residual_risk (M : RiskAutonomyModel)
+    (h_auto : AutonomyUnderPRPGoal M.toAutonomyModel)
+    (S : PRPObligationStream M) :
+    let B := S.bubble_stream S.risky_index
+    let d := S.deposit_stream S.risky_index
+    ∃ b : M.sig.Deposit,
+        M.ops.bridgeAvailable B b ∧
+        M.ops.analogSim b d ∧
+        M.ops.verifyVia B b d (M.ops.effectiveTime B) ∧
+        M.ops.residualRiskVia B b d :=
+  residual_risk_forced_when_no_scratch_no_escalation M h_auto
+    _ _ S.h_required S.h_scratch_fail S.h_no_esc S.h_all_risky
 
 end EpArch
