@@ -12,8 +12,7 @@ implementations can differ.
 Key exports:
 - WorkingSystem (record wrapping SystemSpec configuration flags)
 - Eight structural impossibility models and their impossibility theorems
-- ResidualRiskBridge, risk_not_eliminable_by_budgeted_bridge,
-  all_budgeted_bridges_carry_residual_risk
+- ResidualRiskBridge, risk_not_eliminable_by_budgeted_bridge
 -/
 
 import EpArch.Basic
@@ -2599,10 +2598,10 @@ theorem analogical_is_bounded_verification_instance (A : AnalogicalBridge) :
     for a novel over-budget claim cannot be risk-free.  The certainty gap —
     the irreducible difference between scratch-verification cost and
     bridge-verification cost — means that cost savings on verification are
-    purchased with residual uncertainty.  Under the constraint that bridges
-    must stay within budget and scratch verification exceeds it, every
-    available bridge carries residual risk: risk cannot be eliminated by
-    switching to a cheaper verification path.
+    purchased with residual uncertainty.  For any bridge that stays within
+    budget while scratch verification exceeds it, the certainty gap forces
+    residual risk: risk cannot be eliminated by switching to a cheaper
+    verification path.
 
     **Connection to Health.lean.**  `residual_risk_forced_when_no_scratch_no_escalation`
     takes `h_all_risky` as a hypothesis.  This section provides the
@@ -2677,17 +2676,5 @@ theorem risk_not_eliminable_by_budgeted_bridge (R : ResidualRiskBridge)
     ¬R.risk_free b R.novel_claim :=
   R.certainty_gap b h_sim
     (Nat.lt_of_le_of_lt h_budget R.exceeds_full)
-
-/-- All budgeted bridges for the novel claim carry residual risk.
-
-    **Theorem shape:** `∀ b, sim b novel_claim → bridge_cost b ≤ budget →
-    ¬risk_free b novel_claim`.
-    **Proof strategy:** delegate to `risk_not_eliminable_by_budgeted_bridge`;
-    threads `h_budget` through directly. -/
-theorem all_budgeted_bridges_carry_residual_risk (R : ResidualRiskBridge) :
-    ∀ b : R.Bridge, R.sim b R.novel_claim →
-      R.bridge_cost b R.novel_claim ≤ R.budget →
-      ¬R.risk_free b R.novel_claim :=
-  fun b h_sim h_budget => risk_not_eliminable_by_budgeted_bridge R b h_sim h_budget
 
 end EpArch

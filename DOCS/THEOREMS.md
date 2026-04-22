@@ -456,8 +456,7 @@ Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_w
 
 | Theorem | Structure | Role |
 |---------|-----------|------|
-| `risk_not_eliminable_by_budgeted_bridge` | `ResidualRiskBridge` | `sim b novel_claim → bridge_cost b ≤ budget → ¬risk_free b novel_claim`; proof via `Nat.lt_of_le_of_lt h_budget exceeds_full` into `certainty_gap` |
-| `all_budgeted_bridges_carry_residual_risk` | `ResidualRiskBridge` | Universal form: all similar budget-feasible bridges carry residual risk; delegates to `risk_not_eliminable_by_budgeted_bridge` |
+| `risk_not_eliminable_by_budgeted_bridge` | `ResidualRiskBridge` | `∀ b, sim b novel_claim → bridge_cost b ≤ budget → ¬risk_free b novel_claim`; proof via `Nat.lt_of_le_of_lt h_budget exceeds_full` into `certainty_gap` |
 
 ---
 
