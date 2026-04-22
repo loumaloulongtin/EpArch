@@ -444,6 +444,23 @@ Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_w
 
 ---
 
+## Bucket 9g: Residual Risk Bridge — Certainty Gap for Budgeted Bridges (Minimality.lean §11)
+
+**Role:** Extends the analogical-bridge story with a residual-risk result. If scratch verification exceeds the budget and a similar bridge is budget-feasible, the `certainty_gap` structural invariant forces that bridge to carry residual risk: cost savings on verification are purchased with residual uncertainty. `ResidualRiskBridge` is the parallel structure to `AnalogicalBridge` (§10); it adds a `risk_free` predicate and replaces `bridge_sufficiency` with `certainty_gap`.
+
+**Connection to Health.lean (`residual_risk_forced_when_no_scratch_no_escalation`):** That theorem takes `h_all_risky` as a hypothesis. This §11 block is the independent Minimality-layer structural reason why `h_all_risky` is satisfiable: for any bridge that is both similar and budget-feasible, `certainty_gap` witnesses why it cannot be risk-free. The two layers are independent; neither cites the other.
+
+**Scope:** `certainty_gap` is a structural invariant, not an empirical claim. Budget-feasibility (`bridge_cost b ≤ budget`) is a per-theorem hypothesis, not a global field: the theorems hold for each bridge that actually fits within budget. Does not fix the similarity metric (`sim` is abstract). Does not assert that escalation is unavailable or that risk-free bridges cannot exist in other cost regimes.
+
+### Theorems
+
+| Theorem | Structure | Role |
+|---------|-----------|------|
+| `risk_not_eliminable_by_budgeted_bridge` | `ResidualRiskBridge` | `sim b novel_claim → bridge_cost b ≤ budget → ¬risk_free b novel_claim`; proof via `Nat.lt_of_le_of_lt h_budget exceeds_full` into `certainty_gap` |
+| `all_budgeted_bridges_carry_residual_risk` | `ResidualRiskBridge` | Universal form: all similar budget-feasible bridges carry residual risk; delegates to `risk_not_eliminable_by_budgeted_bridge` |
+
+---
+
 ## Bucket 10: Adversarial Model (Adversarial/Base.lean)
 
 **Role:** Formalize attack patterns and boundary conditions.
@@ -1129,7 +1146,7 @@ other selected constraints remain live implications backed by the required bicon
 
 ## Bucket 28: Configurable Certification Engine — `EpArchConfig → ClusterTag → certified proof`
 
-**Role:** Closes the claim that all 31 theorem clusters are individually certified:
+**Role:** Closes the claim that all 32 theorem clusters are individually certified:
 26 clusters (constraint, goal, Tier 4, world) are user-selectable via `EpArchConfig`;
 the remaining 5 (1 constraint-modularity meta-theorem cluster + 3 lattice-stability
 clusters + 1 always-on meta-modular cluster) are always enabled because they depend on no config gate. Given any
@@ -1145,7 +1162,7 @@ that no agent can determine from observations alone — independent of the PRP c
 argument. Together, PRP (cost) and partial observability (underdetermination) give two
 orthogonal reasons terminal epistemic closure is unreachable.
 
-**Files:** `Meta/ClusterRegistry.lean` (31-cluster tag registry, routing, per-family canonical lists) and `Meta/Config.lean` (witness carriers, `certify`, completeness theorems, named proof witnesses)
+**Files:** `Meta/ClusterRegistry.lean` (32-cluster tag registry, routing, per-family canonical lists) and `Meta/Config.lean` (witness carriers, `certify`, completeness theorems, named proof witnesses)
 
 **Design:** `clusterEnabled cfg c : Bool` is the computable routing function. `showConfig cfg`
 is `#eval`-able and returns the enabled cluster tag names (via `reprStr`). `certify cfg` returns a

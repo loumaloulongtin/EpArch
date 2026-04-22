@@ -13,7 +13,7 @@ Key exports:
 - WorkingSystem (record wrapping SystemSpec configuration flags)
 - Eight structural impossibility models and their impossibility theorems
 - ResidualRiskBridge, risk_not_eliminable_by_budgeted_bridge,
-  all_available_bridges_carry_residual_risk
+  all_budgeted_bridges_carry_residual_risk
 -/
 
 import EpArch.Basic
@@ -2678,13 +2678,13 @@ theorem risk_not_eliminable_by_budgeted_bridge (R : ResidualRiskBridge)
   R.certainty_gap b h_sim
     (Nat.lt_of_le_of_lt h_budget R.exceeds_full)
 
-/-- All available bridges for the novel claim carry residual risk.
+/-- All budgeted bridges for the novel claim carry residual risk.
 
     **Theorem shape:** `∀ b, sim b novel_claim → bridge_cost b ≤ budget →
     ¬risk_free b novel_claim`.
     **Proof strategy:** delegate to `risk_not_eliminable_by_budgeted_bridge`;
     threads `h_budget` through directly. -/
-theorem all_available_bridges_carry_residual_risk (R : ResidualRiskBridge) :
+theorem all_budgeted_bridges_carry_residual_risk (R : ResidualRiskBridge) :
     ∀ b : R.Bridge, R.sim b R.novel_claim →
       R.bridge_cost b R.novel_claim ≤ R.budget →
       ¬R.risk_free b R.novel_claim :=
