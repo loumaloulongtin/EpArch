@@ -18,7 +18,7 @@ EpArch.Meta.ClusterRegistry — pure metadata (no EpArch-specific imports):
 
 EpArch.Meta.Config (this file) — proof-carrying layer:
   `ConstraintProof`, `ConstraintClusterSpec`, `GoalWitness`, `WorldWitness`,
-  `Tier4Witness`, `MetaModularWitness`, `LatticeWitness`,
+  `Tier4Witness`, `MetaModularWitness`, `LatticeWitness`, `AutonomyWitness`,
   `CertifiedProjection`, `certify`, completeness theorems,
   and the `cluster_*` named proof witnesses.
 
@@ -28,10 +28,10 @@ EpArch.Meta.Config (this file) — proof-carrying layer:
 - **Constraint proofs** — `constraintSpec`/`constraintProof`: `ConstraintClusterSpec` carries
   a genuine Lean proposition and machine-checked proof for each Tier 2 cluster.
 - **Indexed witnesses** — `goalWitness`, `worldWitness`, `tier4Witness`,
-  `metaModularWitness`, `latticeWitness`: one indexed inductive per family,
+  `metaModularWitness`, `latticeWitness`, `autonomyWitness`: one indexed inductive per family,
   constructors store the real transport theorem as a Prop-valued argument.
 - **Named witnesses** — `cluster_*` in §5b: universe-polymorphic standalone theorems
-  for all 31 clusters, the authoritative typed form.
+  for all 32 clusters, the authoritative typed form.
 
 ## Usage
 
@@ -409,14 +409,42 @@ def latticeWitness : (c : EnabledLatticeCluster) → LatticeWitness c
   | .lattice_pack       => .pack      modularity_pack
 
 
+/-! ## §4e→  Autonomy Witness Carrier
+
+Indexed proof carrier for the autonomy-goal cluster. Not transport-shaped:
+the constructor carries `autonomy_forces_bridge_or_escalation` directly.
+Patterns after `MetaModularWitness` — necessity theorem, not transport. -/
+
+/-- Indexed proof carrier for the autonomy-goal cluster.
+    Carries the necessity theorem `autonomy_forces_bridge_or_escalation`
+    rather than a transport schema — `AutonomyModel` is not `CoreModel`-shaped. -/
+inductive AutonomyWitness : EnabledAutonomyCluster → Type 1 where
+  | autonomyUnderPRP :
+      (∀ (M : AutonomyModel)
+         (h_auto : AutonomyUnderPRPGoal M)
+         (B : M.sig.Bubble) (d : M.sig.Deposit),
+          M.ops.mustHandle B d →
+          ¬M.ops.verifyWithin B d (M.ops.effectiveTime B) →
+          (∃ b : M.sig.Deposit,
+              M.ops.bridgeAvailable B b ∧
+              M.ops.analogSim b d ∧
+              M.ops.verifyVia B b d (M.ops.effectiveTime B)) ∨
+          M.ops.canEscalate B d) →
+      AutonomyWitness .goal_autonomyUnderPRP
+
+/-- For the autonomy-goal cluster, deliver its `AutonomyWitness`. -/
+def autonomyWitness : (c : EnabledAutonomyCluster) → AutonomyWitness c
+  | .goal_autonomyUnderPRP => .autonomyUnderPRP autonomy_forces_bridge_or_escalation
+
+
 /-! ## §4g-pre  Universe-grounded cluster propositions (private)
 
 Each `prop_*` def stores one blocked cluster's theorem statement with every
 universe-polymorphic type pinned to `.{0}`.  With all universes concrete,
 no free universe variable appears and the def compiles as a plain `Prop`.
-These serve as the match-arm values in `clusterValid` for the 15 clusters
+These serve as the match-arm values in `clusterValid` for the 16 clusters
 whose proposition types live at `Type (u+1)` (Goal, WorldCtx, Tier4-bank,
-Lattice families). -/
+Lattice, Autonomy families). -/
 
 private def prop_goal_safeWithdrawal : Prop :=
   ∀ (E : ExtModel.{0}) (C : CoreModel.{0}),
@@ -481,25 +509,42 @@ private def prop_lattice_pack : Prop :=
   (∀ (C : CoreModel.{0}) (R : RevisionSafeExtension.{0} C),
      RevisionGate.{0} C → RevisionGate.{0} (forget.{0} R.ext))
 
+/-- Autonomy necessity cluster proposition, pinned at universe 0.
+    `AutonomyModel` inherits `CoreSig`'s universe polymorphism; this def
+    pins every type at `.{0}` to eliminate the free universe variable that
+    would otherwise block use as a `clusterValid` match-arm value. -/
+private def prop_goal_autonomyUnderPRP : Prop :=
+  ∀ (M : AutonomyModel.{0})
+    (h_auto : AutonomyUnderPRPGoal.{0} M)
+    (B : M.sig.Bubble) (d : M.sig.Deposit),
+    M.ops.mustHandle B d →
+    ¬M.ops.verifyWithin B d (M.ops.effectiveTime B) →
+    (∃ b : M.sig.Deposit,
+        M.ops.bridgeAvailable B b ∧
+        M.ops.analogSim b d ∧
+        M.ops.verifyVia B b d (M.ops.effectiveTime B)) ∨
+    M.ops.canEscalate B d
 
-/-! ## §4g  Cluster Validity — All 31 Clusters Wired
 
-`clusterValid c` is the machine-proved proposition for all 31 clusters.
+/-! ## §4g  Cluster Validity — All 32 Clusters Wired
+
+`clusterValid c` is the machine-proved proposition for all 32 clusters.
 - Tier 2 (8): inline forcing propositions via `constraintSpec`.
 - Tier 3 Goal (6): `prop_goal_*` — the transport theorem at universe 0.
 - Tier 4 (3 inline + 2 via `prop_tier4_bank_goals_*`).
 - World (4 inline adversarial + 4 via `prop_world_*`).
 - Meta (1): inline.
 - Lattice (3): `prop_lattice_*` — the lattice theorem at universe 0.
+- Autonomy (1): `prop_goal_autonomyUnderPRP` — necessity theorem at universe 0.
 
-**Universe escape hatch:** the 15 blocked clusters use private `prop_*` defs
+**Universe escape hatch:** the 16 blocked clusters use private `prop_*` defs
 (§4g-pre) where every universe-polymorphic type is explicitly pinned to `.{0}`.
 This eliminates all free universe variables, allowing the defs to appear as
 match-arm values of `clusterValid : ClusterTag → Prop`. -/
 
 /-- A cluster is valid: `clusterValid c` is the machine-proved proposition for all
-    31 clusters.  Tier 2 and the 8 inline Tier 4/World/Meta clusters use raw
-    propositions; the remaining 15 use `prop_*` defs pinned at universe 0 (see §4g). -/
+    32 clusters.  Tier 2 and the 8 inline Tier 4/World/Meta clusters use raw
+    propositions; the remaining 16 use `prop_*` defs pinned at universe 0 (see §4g). -/
 def clusterValid (c : ClusterTag) : Prop :=
   match c with
   -- Tier 2 (8): forcing propositions via constraintSpec
@@ -601,6 +646,8 @@ def clusterValid (c : ClusterTag) : Prop :=
   | .lattice_graceful  => prop_lattice_graceful
   | .lattice_sub_safety => prop_lattice_sub_safety
   | .lattice_pack      => prop_lattice_pack
+  -- Autonomy necessity (1): theorem at universe 0
+  | .goal_autonomyUnderPRP => prop_goal_autonomyUnderPRP
 
 
 
@@ -673,12 +720,17 @@ private theorem enabledLatticeCluster_mem_all (c : EnabledLatticeCluster) :
   · exact .tail _ (.head _)
   · exact .tail _ (.tail _ (.head _))
 
+private theorem enabledAutonomyCluster_mem_all (c : EnabledAutonomyCluster) :
+    c ∈ allAutonomyClusters := by
+  unfold allAutonomyClusters; cases c
+  · exact .head _
+
 /-! ## §5  Soundness: `clusterEnabled cfg c = true → clusterValid c` -/
 
 /-- `clusterEnabled` is sound: every cluster it marks enabled satisfies `clusterValid`.
-    All 31 clusters are non-trivially closed: Tier 2 by `constraintSpec.witness.proof`,
-    inline Tier 4/World/Meta clusters by the corresponding theorem, and the 15
-    `prop_*`-wrapped clusters by the corresponding transport/lattice/world theorem. -/
+    All 32 clusters are non-trivially closed: Tier 2 by `constraintSpec.witness.proof`,
+    inline Tier 4/World/Meta clusters by the corresponding theorem, and the 16
+    `prop_*`-wrapped clusters by the corresponding transport/lattice/world/autonomy theorem. -/
 theorem clusterEnabled_sound (cfg : EpArchConfig) (c : ClusterTag)
     (_h : clusterEnabled cfg c = true) : clusterValid c := by
   unfold clusterValid
@@ -726,6 +778,7 @@ theorem clusterEnabled_sound (cfg : EpArchConfig) (c : ClusterTag)
   | .lattice_graceful           => exact graceful_degradation
   | .lattice_sub_safety         => exact sub_revision_safety
   | .lattice_pack               => exact modularity_pack
+  | .goal_autonomyUnderPRP      => exact autonomy_forces_bridge_or_escalation
 
 
 /-! ## §6  Certified Projection
@@ -735,26 +788,28 @@ cluster and holds machine-checked evidence that each one is valid. -/
 
 /-- A certified bundle: the enabled clusters for `cfg`, with proofs.
 
-    **Layer 1 (routing):** `enabled`, `complete`, `sound` — all 31 cluster tags.
+    **Layer 1 (routing):** `enabled`, `complete`, `sound` — all 32 cluster tags.
     `sound` proves `clusterValid c` non-trivially for every enabled cluster.
 
     **Layer 2 (constraint proofs):** `constraintWitnesses` — full `ConstraintProof`
     for all eight Tier 2 forcing clusters (total, config-independent).
     `enabledConstraintWitnesses` — filtered to only the clusters enabled by `cfg`.
 
-    **Layer 3 (indexed witnesses):** `goalWitnesses`, `worldWitnesses`, `tier4Witnesses`
-    — indexed inductives packaging the real transport theorem for each cluster.
-    `enabledGoalWitnesses`, `enabledWorldWitnesses`, `enabledTier4Witnesses` — filtered
-    to only the clusters enabled by `cfg` (using dependent pairs `Σ c, WitnessType c`).
+    **Layer 3 (indexed witnesses):** `goalWitnesses`, `worldWitnesses`, `tier4Witnesses`,
+    `metaModularWitnesses`, `latticeWitnesses`, `autonomyWitnesses`
+    — indexed inductives packaging the real transport or necessity theorem for each cluster.
+    `enabledGoalWitnesses`, `enabledWorldWitnesses`, `enabledTier4Witnesses`,
+    `enabledMetaModularWitnesses`, `enabledLatticeWitnesses`, `enabledAutonomyWitnesses`
+    — filtered to only the clusters enabled by `cfg` (using dependent pairs `Σ c, WitnessType c`).
 
-    **Layer 4 (proof-content):** `cluster_*` witnesses in §5b cover all 31 clusters. -/
+    **Layer 4 (proof-content):** `cluster_*` witnesses in §5b cover all 32 clusters. -/
 structure CertifiedProjection (cfg : EpArchConfig) where
   /-- The list of enabled clusters (equal to `explainConfig cfg`). -/
   enabled                   : List ClusterTag
   /-- Faithfully mirrors `explainConfig`. -/
   complete                  : enabled = explainConfig cfg
   /-- Every enabled cluster satisfies `clusterValid`. For Tier 2 and the 8 inline
-      clusters this is the raw proposition; for the 15 `prop_*`-wrapped clusters
+      clusters this is the raw proposition; for the 16 `prop_*`-wrapped clusters
       this is the theorem statement pinned at universe 0 (see §4g). -/
   sound                     : ∀ c, c ∈ enabled → clusterValid c
   /-- Tier 2 proof carriers (all eight, config-independent).
@@ -786,6 +841,11 @@ structure CertifiedProjection (cfg : EpArchConfig) where
   enabledMetaModularWitnesses : List (Σ c : EnabledMetaModularCluster, MetaModularWitness c)
   /-- Filtered lattice-stability witnesses: clusters enabled by `cfg` (always all three). -/
   enabledLatticeWitnesses    : List (Σ c : EnabledLatticeCluster, LatticeWitness c)
+  /-- Autonomy-goal proof carriers (all autonomy clusters, config-independent).
+      Each `AutonomyWitness c` packages `autonomy_forces_bridge_or_escalation`. -/
+  autonomyWitnesses          : (c : EnabledAutonomyCluster) → AutonomyWitness c
+  /-- Filtered autonomy witnesses: clusters enabled by `cfg`. -/
+  enabledAutonomyWitnesses   : List (Σ c : EnabledAutonomyCluster, AutonomyWitness c)
 
 /-- Compute and certify the full projection for any `EpArchConfig`. -/
 def certify (cfg : EpArchConfig) : CertifiedProjection cfg where
@@ -848,6 +908,12 @@ def certify (cfg : EpArchConfig) : CertifiedProjection cfg where
       if clusterEnabled cfg c.toClusterTag
       then some ⟨c, latticeWitness c⟩
       else none
+  autonomyWitnesses := autonomyWitness
+  enabledAutonomyWitnesses :=
+    allAutonomyClusters.filterMap fun c =>
+      if clusterEnabled cfg c.toClusterTag
+      then some ⟨c, autonomyWitness c⟩
+      else none
 
 /-! ## §4f-cont  Correspondence Lemmas
 
@@ -893,6 +959,13 @@ theorem mem_enabledLatticeWitnesses_of_enabled (cfg : EpArchConfig)
     ⟨c, latticeWitness c⟩ ∈ (certify cfg).enabledLatticeWitnesses := by
   simp only [certify]
   exact filterMap_mem_of_pos _ _ c _ (enabledLatticeCluster_mem_all c) (by simp [h])
+
+/-- **Completeness** of `enabledAutonomyWitnesses`. -/
+theorem mem_enabledAutonomyWitnesses_of_enabled (cfg : EpArchConfig)
+    (c : EnabledAutonomyCluster) (h : clusterEnabled cfg c.toClusterTag = true) :
+    ⟨c, autonomyWitness c⟩ ∈ (certify cfg).enabledAutonomyWitnesses := by
+  simp only [certify]
+  exact filterMap_mem_of_pos _ _ c _ (enabledAutonomyCluster_mem_all c) (by simp [h])
 
 /-! ## §5b  Named Proof Witnesses
 
@@ -972,8 +1045,8 @@ def cluster_goal_corrigible_full := transport_corrigible_ledger
 
 -- ── Tier 4 bank goal bundles ─────────────────────────────────────────────
 
-/-- Cluster `.tier4_bank_goals_compat`: all five ∀-health goals + universal
-    corrigibility transport through any plain Compatible extension. -/
+/-- Cluster `.tier4_bank_goals_compat`: all five CoreModel transport health goals +
+    universal corrigibility transport through any plain Compatible extension. -/
 def cluster_tier4_bank_goals_compat
     (E : ExtModel) (C : CoreModel) (h : Compatible E C)
     (h_sw : SafeWithdrawalGoal C) (h_re : ReliableExportGoal C)
@@ -990,8 +1063,8 @@ def cluster_tier4_bank_goals_compat
    transport_self_correction E C h h_sc,
    transport_corrigible_universal E C h h_cl⟩
 
-/-- Cluster `.tier4_bank_goals_surj`: all five health goals including full
-    CorrigibleLedgerGoal (∃+∀) transport via SurjectiveCompatible. -/
+/-- Cluster `.tier4_bank_goals_surj`: all five CoreModel transport health goals
+    including full CorrigibleLedgerGoal (∃+∀) transport via SurjectiveCompatible. -/
 def cluster_tier4_bank_goals_surj
     (E : ExtModel) (C : CoreModel) (h : SurjectiveCompatible E C)
     (h_sw : SafeWithdrawalGoal C) (h_re : ReliableExportGoal C)
@@ -1077,17 +1150,39 @@ def cluster_lattice_sub_safety := sub_revision_safety
 def cluster_lattice_pack := modularity_pack
 
 
+-- ── Autonomy necessity cluster ────────────────────────────────────────────────
+
+/-- Cluster `.goal_autonomyUnderPRP`: forced bridge-or-escalation for required
+    over-budget claims under autonomous PRP operation.
+    Carries `autonomy_forces_bridge_or_escalation` from `EpArch.Health` directly;
+    not transport-shaped (AutonomyModel is not CoreModel-shaped). -/
+theorem cluster_goal_autonomyUnderPRP :
+    ∀ (M : AutonomyModel)
+      (h_auto : AutonomyUnderPRPGoal M)
+      (B : M.sig.Bubble) (d : M.sig.Deposit),
+      M.ops.mustHandle B d →
+      ¬M.ops.verifyWithin B d (M.ops.effectiveTime B) →
+      (∃ b : M.sig.Deposit,
+          M.ops.bridgeAvailable B b ∧
+          M.ops.analogSim b d ∧
+          M.ops.verifyVia B b d (M.ops.effectiveTime B)) ∨
+      M.ops.canEscalate B d :=
+  autonomy_forces_bridge_or_escalation
+
+
 /-! ## §8  Sample Configurations
 
 Uncomment `#eval` lines to inspect routing interactively. -/
 
-/-- Full EpArch configuration: all eight constraints, all five goals, all eight worlds. -/
+/-- Full EpArch configuration: all eight constraints, all six goals, all eight worlds.
+    Goals include both the five CoreModel transport goals and the AutonomyModel
+    necessity goal `autonomyUnderPRP`. -/
 def fullConfig : EpArchConfig where
   constraints := [.distributed_agents, .bounded_audit, .export_across_boundaries,
                   .adversarial_pressure, .coordination_need, .truth_pressure,
                   .multi_agent_access, .bounded_storage]
   goals       := [.safeWithdrawal, .reliableExport, .corrigibleLedger,
-                  .soundDeposits, .selfCorrection]
+                  .soundDeposits, .selfCorrection, .autonomyUnderPRP]
   worlds      := [.lies_possible, .bounded_verification, .partial_observability,
                   .asymmetric_costs, .spoofedV, .lies_scale, .rolex_ddos, .ddos]
 
@@ -1097,11 +1192,11 @@ def minimalConfig : EpArchConfig where
   goals       := [.safeWithdrawal]
   worlds      := []
 
-/-- Goal-only configuration: no constraints declared, all five goals. -/
+/-- Goal-only configuration: no constraints declared, all six goals. -/
 def goalsOnlyConfig : EpArchConfig where
   constraints := []
   goals       := [.safeWithdrawal, .reliableExport, .corrigibleLedger,
-                  .soundDeposits, .selfCorrection]
+                  .soundDeposits, .selfCorrection, .autonomyUnderPRP]
   worlds      := []
 
 -- #eval showConfig fullConfig

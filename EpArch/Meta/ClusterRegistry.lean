@@ -1,7 +1,7 @@
 /-
 EpArch.Meta.ClusterRegistry — Cluster Tag Registry and Routing
 
-Defines the EpArchConfig language, the 31 ClusterTag values and their
+Defines the EpArchConfig language, the 32 ClusterTag values and their
 per-family enumerations, the authoritative allXxxClusters lists, and the
 routing/display functions.
 
@@ -29,13 +29,17 @@ inductive ConstraintTag where
   | bounded_storage
   deriving DecidableEq, BEq, Repr
 
-/-- The five health goals from `EpArch.Health`. -/
+/-- The six config-selectable health goals. The first five are CoreModel
+    transport goals (gated on `GoalWitness`/`EnabledGoalCluster`). The sixth,
+    `autonomyUnderPRP`, is an AutonomyModel necessity goal carried by
+    `AutonomyWitness`/`EnabledAutonomyCluster`. -/
 inductive GoalTag where
   | safeWithdrawal
   | reliableExport
   | corrigibleLedger
   | soundDeposits
   | selfCorrection
+  | autonomyUnderPRP
   deriving DecidableEq, BEq, Repr
 
 /-- The eight named world bundles. -/
@@ -61,8 +65,9 @@ structure EpArchConfig where
 
 /-! ## §2  Cluster Tags -/
 
-/-- The 31 theorem clusters certified in EpArch Tiers 2–4 plus world-bundle obligations,
-    constraint-modularity meta-theorems, and lattice-stability results. -/
+/-- The 32 theorem clusters certified in EpArch Tiers 2–4 plus world-bundle obligations,
+    constraint-modularity meta-theorems, lattice-stability results, and the
+    AutonomyModel necessity cluster. -/
 inductive ClusterTag where
   -- Tier 2: constraint-forcing theorems (8 clusters)
   | forcing_distributed_agents
@@ -101,12 +106,16 @@ inductive ClusterTag where
   | lattice_graceful          -- graceful_degradation: NoSelfCorrection → RevisionGate
   | lattice_sub_safety        -- sub_revision_safety: Compatible sub-bundle extension is safe
   | lattice_pack              -- modularity_pack: full bidirectional lattice-stability
+  -- Autonomy necessity cluster (AutonomyModel-specific health goal).
+  -- Placed last in the constructor list for backwards compatibility;
+  -- `allClusters` groups it with goal families (after CoreModel goals, before Tier 4).
+  | goal_autonomyUnderPRP     -- autonomy_forces_bridge_or_escalation: forced bridge-or-escalation under PRP
   deriving DecidableEq, BEq, Repr
 
 
 /-! ## §2b  Per-Family Cluster Enumerations
 
-Six `EnabledXxxCluster` inductives — one per family — enable per-family proof
+Seven `EnabledXxxCluster` inductives — one per family — enable per-family proof
 carriers in EpArch.Meta.Config.  Tier 2 uses a direct `ConstraintProof` record;
 all other families use indexed inductive witness carriers. -/
 
@@ -144,6 +153,13 @@ inductive EnabledMetaModularCluster where
 /-- The three lattice-stability clusters (from `EpArch.Modularity`). -/
 inductive EnabledLatticeCluster where
   | lattice_graceful | lattice_sub_safety | lattice_pack
+  deriving DecidableEq, BEq, Repr
+
+/-- Autonomy-goal clusters: health goals over `AutonomyModel`, not `CoreModel`.
+    Carries necessity theorems directly (not transport-shaped).
+    The correct home for any future AutonomyModel-specific health goals. -/
+inductive EnabledAutonomyCluster where
+  | goal_autonomyUnderPRP
   deriving DecidableEq, BEq, Repr
 
 
@@ -249,6 +265,10 @@ def EnabledLatticeCluster.toClusterTag : EnabledLatticeCluster → ClusterTag
   | .lattice_sub_safety => .lattice_sub_safety
   | .lattice_pack       => .lattice_pack
 
+/-- Embed an autonomy-goal cluster into the global tag space. -/
+def EnabledAutonomyCluster.toClusterTag : EnabledAutonomyCluster → ClusterTag
+  | .goal_autonomyUnderPRP => .goal_autonomyUnderPRP
+
 
 /-! ## §3  Routing
 
@@ -292,12 +312,19 @@ def allMetaModularClusters : List EnabledMetaModularCluster :=
 def allLatticeClusters : List EnabledLatticeCluster :=
   [.lattice_graceful, .lattice_sub_safety, .lattice_pack]
 
-/-- All 31 cluster tags, in canonical order.  Derived from the per-family lists
+/-- The autonomy-goal cluster, in canonical order. -/
+def allAutonomyClusters : List EnabledAutonomyCluster :=
+  [.goal_autonomyUnderPRP]
+
+/-- All 32 cluster tags, in canonical order.  Derived from the per-family lists
     so ordering stays consistent with those lists automatically.
+    Family order: constraints → CoreModel goals → AutonomyModel goals →
+    Tier 4 library → world bundles → meta-modularity → lattice.
     Used by `explainConfig`. -/
 def allClusters : List ClusterTag :=
   (allConstraintClusters.map  EnabledConstraintCluster.toClusterTag) ++
   (allGoalClusters.map        EnabledGoalCluster.toClusterTag) ++
+  (allAutonomyClusters.map    EnabledAutonomyCluster.toClusterTag) ++
   (allTier4Clusters.map       EnabledTier4Cluster.toClusterTag) ++
   (allWorldClusters.map       EnabledWorldCluster.toClusterTag) ++
   (allMetaModularClusters.map EnabledMetaModularCluster.toClusterTag) ++
@@ -315,7 +342,9 @@ def constraintClusterOfTag? (t : ClusterTag) : Option EnabledConstraintCluster :
     Tier 4 structural/LTS/commitments clusters are always applicable.
     Constraint-forcing clusters are gated on the constraint being listed.
     Goal-transport clusters are gated on the goal being listed.
-    Bank-goal bundles require the full goal set. -/
+    Bank-goal bundles require the full CoreModel transport goal set
+    (the five goals in `EnabledGoalCluster`; `autonomyUnderPRP` is not a
+    transport goal and is not required). -/
 def clusterEnabled (cfg : EpArchConfig) : ClusterTag → Bool
   -- Tier 3: health-goal transport clusters
   | .goal_safeWithdrawal        => cfg.goals.contains .safeWithdrawal
@@ -354,6 +383,8 @@ def clusterEnabled (cfg : EpArchConfig) : ClusterTag → Bool
   | .lattice_graceful        => true
   | .lattice_sub_safety      => true
   | .lattice_pack            => true
+  -- Autonomy necessity cluster: gated on goal
+  | .goal_autonomyUnderPRP   => cfg.goals.contains .autonomyUnderPRP
   -- Tier 2: only forcing tags reach this arm; dispatch through constraintMeta
   | t => match constraintClusterOfTag? t with
          | some c => (constraintMeta c).enabledBy cfg

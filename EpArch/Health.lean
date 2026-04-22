@@ -6,10 +6,11 @@ derivable from definitions rather than axioms.
 
 Key exports:
 - SafeWithdrawalGoal, ReliableExportGoal, CorrigibleLedgerGoal,
-  SoundDepositsGoal, SelfCorrectionGoal
+  SoundDepositsGoal, SelfCorrectionGoal, AutonomyUnderPRPGoal
 - Necessity theorems: corrigible_needs_revision,
-  self_correction_needs_revision, sound_deposits_needs_verification
-- FullSystemHealth (bundle)
+  self_correction_needs_revision, sound_deposits_needs_verification,
+  autonomy_forces_bridge_or_escalation, no_escalation_forces_bridge
+- FullSystemHealth, AutonomyHealth (bundles)
 -/
 
 import EpArch.Basic
@@ -105,6 +106,68 @@ def SelfCorrectingSystem (M : CoreModel) : Prop :=
   SelfCorrectionGoal M ∧ ∃ B : M.sig.Bubble, M.ops.selfCorrects B
 
 
+/-! ## Autonomy Extension and Health Goal
+
+Novel-claim coverage under PRP is not part of the frozen `CoreOps` surface.
+It is a health-specific extension: the model needs an obligation trigger
+(`mustHandle`), bridge availability, analogical similarity, bridge-based
+verification, and a principled escalation path. -/
+
+/-- Autonomy-specific operations extending the frozen core surface.
+
+    These predicates describe how a system responds to required claims under
+    PRP: either by scratch verification, by a budgeted analogical bridge from
+    available prior material, or by principled escalation. -/
+structure AutonomyOps (Sig : CoreSig) extends CoreOps Sig where
+  /-- PRP trigger: deposit `d` is a claim this bubble is obligated to handle. -/
+  mustHandle : Sig.Bubble → Sig.Deposit → Prop
+  /-- Bridge candidate `b` is available/banked in bubble `B`. -/
+  bridgeAvailable : Sig.Bubble → Sig.Deposit → Prop
+  /-- Abstract similarity relation between prior material and required claim. -/
+  analogSim : Sig.Deposit → Sig.Deposit → Prop
+  /-- Claim `d` can be verified in `B` via bridge `b` within time `t`. -/
+  verifyVia : Sig.Bubble → Sig.Deposit → Sig.Deposit → Sig.Time → Prop
+  /-- Bubble `B` has a principled escalation path for deposit `d`. -/
+  canEscalate : Sig.Bubble → Sig.Deposit → Prop
+
+/-- A core model extended with autonomy-specific operations. -/
+structure AutonomyModel where
+  sig : CoreSig
+  ops : AutonomyOps sig
+  hasBubble : Nonempty sig.Bubble
+
+/-- Forgetful projection from an autonomy extension back to the frozen core model.
+
+    This makes the extension relationship explicit: `AutonomyModel` adds
+    health-specific operations, but its underlying `CoreModel` is obtained by
+    forgetting those extra predicates and keeping the inherited `CoreOps` fields. -/
+def AutonomyModel.toCoreModel (M : AutonomyModel) : CoreModel where
+  sig := M.sig
+  ops := M.ops.toCoreOps
+  hasBubble := M.hasBubble
+
+/-- AutonomyUnderPRPGoal: every required claim has a sound response.
+
+    For every deposit the system is obligated to handle, one of three branches
+    must hold: scratch verification fits the budget; a budgeted analogical
+    bridge is available from prior material; or a principled escalation path is
+    available.  The goal is obligation-scoped (`mustHandle`), not universal over
+    the whole deposit type.
+
+    This is an operational predicate, not a metaphysical one: the bridge branch
+    requires an available witness from the system's prior material, not a proof
+    that no analogous item exists anywhere outside the system. -/
+def AutonomyUnderPRPGoal (M : AutonomyModel) : Prop :=
+  ∀ (B : M.sig.Bubble) (d : M.sig.Deposit),
+    M.ops.mustHandle B d →
+      M.ops.verifyWithin B d (M.ops.effectiveTime B) ∨
+      (∃ b : M.sig.Deposit,
+          M.ops.bridgeAvailable B b ∧
+          M.ops.analogSim b d ∧
+          M.ops.verifyVia B b d (M.ops.effectiveTime B)) ∨
+      M.ops.canEscalate B d
+
+
 /-! ## Capability Predicates (Definitional)
 
 These predicates state what capabilities a system MUST have.
@@ -183,6 +246,59 @@ theorem authorized_withdrawal_needs_differentiation (M : CoreModel)
   · exact absurd (h_eq ▸ h_sub) h_no_sub
   · exact ⟨a₁, a₂, h_eq, B, d, h_sub, h_no_sub⟩
 
+/-- Autonomy under PRP forces bridge-or-escalation for required claims that
+    are not scratch-verifiable within the effective-time budget.
+
+    **Theorem shape:** `AutonomyUnderPRPGoal M` + `mustHandle B d` +
+    `¬verifyWithin B d (effectiveTime B)` → bridge-or-escalation at B for d.
+    **Proof strategy:** apply `h_auto` to B, d, `h_required`; `cases` rules
+    out the scratch branch via `h_scratch_fail`; the bridge and escalation
+    branches pass through directly. -/
+theorem autonomy_forces_bridge_or_escalation (M : AutonomyModel)
+    (h_auto : AutonomyUnderPRPGoal M)
+    (B : M.sig.Bubble) (d : M.sig.Deposit)
+    (h_required : M.ops.mustHandle B d)
+    (h_scratch_fail : ¬M.ops.verifyWithin B d (M.ops.effectiveTime B)) :
+    (∃ b : M.sig.Deposit,
+        M.ops.bridgeAvailable B b ∧
+        M.ops.analogSim b d ∧
+        M.ops.verifyVia B b d (M.ops.effectiveTime B)) ∨
+    M.ops.canEscalate B d := by
+  have h_response := h_auto B d h_required
+  cases h_response with
+  | inl h_scratch =>
+      exact absurd h_scratch h_scratch_fail
+  | inr h_rest =>
+      cases h_rest with
+      | inl h_bridge =>
+          exact Or.inl h_bridge
+      | inr h_esc =>
+          exact Or.inr h_esc
+
+/-- If escalation is unavailable, a budgeted bridge is forced.
+
+    **Theorem shape:** same premises as `autonomy_forces_bridge_or_escalation`
+    plus `¬canEscalate B d` → a budgeted bridge is the unique sound response.
+    **Proof strategy:** delegates to `autonomy_forces_bridge_or_escalation`;
+    `cases` on the Or; bridge branch is the conclusion directly; escalation
+    branch contradicts `h_no_esc` via `False.elim`. -/
+theorem no_escalation_forces_bridge (M : AutonomyModel)
+    (h_auto : AutonomyUnderPRPGoal M)
+    (B : M.sig.Bubble) (d : M.sig.Deposit)
+    (h_required : M.ops.mustHandle B d)
+    (h_scratch_fail : ¬M.ops.verifyWithin B d (M.ops.effectiveTime B))
+    (h_no_esc : ¬M.ops.canEscalate B d) :
+    ∃ b : M.sig.Deposit,
+      M.ops.bridgeAvailable B b ∧
+      M.ops.analogSim b d ∧
+      M.ops.verifyVia B b d (M.ops.effectiveTime B) := by
+  have h_response := autonomy_forces_bridge_or_escalation M h_auto B d h_required h_scratch_fail
+  cases h_response with
+  | inl h_bridge =>
+    exact h_bridge
+  | inr h_esc =>
+    exact False.elim (h_no_esc h_esc)
+
 
 /-! ## Combined System Health (Definitional) -/
 
@@ -194,11 +310,16 @@ structure FullSystemHealth (M : CoreModel) where
   sound_deposits : SoundDepositsGoal M
   self_correction : SelfCorrectionGoal M
 
+/-- A healthy autonomy extension satisfies the novel-claim coverage goal. -/
+structure AutonomyHealth (M : AutonomyModel) where
+  autonomy_coverage : AutonomyUnderPRPGoal M
+
 
 /-! ## Design Note
 
 All necessity theorems (corrigible_needs_revision, self_correction_needs_revision,
-sound_deposits_needs_verification) are proved from definitions, not axioms.
+sound_deposits_needs_verification, autonomy_forces_bridge_or_escalation,
+no_escalation_forces_bridge) are proved from definitions, not axioms.
 
 Note: SelfCorrectionGoal is definitionally identical to RevisionSafety.RevisionGate —
 the two names refer to the same predicate; no bridge theorem is needed. -/
@@ -216,15 +337,21 @@ The health predicates connect to the architectural invariants:
 | SoundDepositsGoal | Verification | `verifyWithin`, `effectiveTime` | All systems |
 | SelfCorrectionGoal | Revision | `hasRevision` (= RevisionGate) | All systems |
 | AuthorizedWithdrawalGoal | Agent-differentiated certification | `submit` | Multi-agent only |
+| AutonomyUnderPRPGoal | Budgeted bridge or escalation for required claims | `mustHandle`, `bridgeAvailable`, `analogSim`, `verifyVia`, `canEscalate` | PRP handling of required over-budget claims |
 
-Health goals ARE definitional predicates over CoreOps.
-Necessity theorems follow from what health MEANS.
+Core health goals are definitional predicates over CoreOps.
+AutonomyUnderPRPGoal is a health-specific extension predicate over AutonomyModel.
+Necessity theorems follow from what the corresponding health predicate means.
 
 AuthorizedWithdrawalGoal is not part of FullSystemHealth because it is
 only meaningful in the multi-agent collaboration case.  A single agent
 managing their own bank does not satisfy it and does not need to.  The
 world-level forcing story lives in WorldCtx.W_multi_agent_heterogeneous
 and the bridge theorem w_multi_agent_forces_authorization_need in WorldBridges.
+
+AutonomyUnderPRPGoal is packaged separately as `AutonomyHealth` because it is
+defined over `AutonomyModel`, not `CoreModel`: the goal depends on health-specific
+extension predicates rather than the frozen core surface.
 -/
 
 end EpArch

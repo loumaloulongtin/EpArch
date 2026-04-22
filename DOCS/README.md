@@ -75,7 +75,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | 25 | Theorem Transport — Health Goal Layer (Tier 3 closure) |
 | 26 | Theorem Transport — Main Library Layer (Tier 4 closure: standalone commitments + structural + LTS + health goals) |
 | 27 | Modularity Meta-Theorem — ∀ S ⊆ Constraints, projection_valid S |
-| 28 | Certification Engine — `EpArchConfig → ClusterTag → certified proof` (31 clusters) |
+| 28 | Certification Engine — `EpArchConfig → ClusterTag → certified proof` (32 clusters) |
 | 29 | Lean Kernel Instantiation — Lean's type-checking kernel modeled as EpArch-compliant (`LeanKernelCtx`, `LeanWorkingSystem`, World.lean and SFailure.lean) |
 
 ### Key Files
@@ -92,7 +92,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | `Semantics/ScopeIrrelevance.lean` | Scope irrelevance theorems | 0 |
 | `Bank.lean` | Bank substrate, lifecycle operators | 0 |
 | `Commitments.lean` | 8 structural commitments; all proved as standalone theorems; `commitments_pack` bundles the unconditional ones (C3/C4b/C7b/C8) | 0 |
-| `Meta/ClusterRegistry.lean` | 31-cluster tag registry, routing, per-family canonical lists | 0 |
+| `Meta/ClusterRegistry.lean` | 32-cluster tag registry, routing, per-family canonical lists | 0 |
 | `Meta/Config.lean` | Certification engine: `certify`, proof witnesses, completeness theorems | 0 |
 | `Health.lean` | Health predicates + necessity theorems | 0 |
 | `Invariants.lean` | Protocol requirements | 0 |

@@ -420,6 +420,30 @@ Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_w
 
 ---
 
+## Bucket 9f: Analogical Bridge — Scratch-Verification Insufficiency for Novel Inputs (Minimality.lean §10)
+
+**Role:** Extends the bounded-budget impossibility argument to the *analogical import* direction. When an agent encounters a novel input whose scratch-verification cost exceeds its budget, scratch verification cannot supply coverage. An analogical bridge — a prior entry similar to the novel input from which bridge-based verification stays within budget — is the only in-scope alternative to escalation. `AnalogicalBridge` is the parallel structure to `BoundedVerification` (§2) and `RecallBudget` (§9); `scratch_verification_insufficient_for_novel_inputs` is the parallel impossibility theorem.
+
+**Connection to T25 (Health.lean):** `AutonomyUnderPRPGoal` defines the health goal (scratch, bridge, or escalation for every required deposit). This §10 block is the independent Minimality-layer direction: scratch verification alone is provably insufficient for novel over-budget inputs. The two proofs are independent; neither cites the other.
+
+**Note:** `AnalogicalBridge` is not a ninth `Pressure` constructor. It embeds into `BoundedVerification` via `analogicalBridge_to_bounded` (§10.6): scratch-verification insufficiency is trust-pressure applied at the novel-input boundary. The §10 theorem family is a Minimality-layer consequence, not a new convergence dimension.
+
+**Scope:** Does not fix the similarity metric (`sim` is fully abstract). Does not prove escalation is always available (`canEscalate B d` is system-dependent). Does not prove the bridge is safe or correct — existence and budget-bound are forced; calibration is implementation-defined.
+
+### Theorems
+
+| Theorem | Structure | Role |
+|---------|-----------|------|
+| `scratch_verification_insufficient_for_novel_inputs` | `AnalogicalBridge` | No fixed scratch budget covers all claims; parallel to `verification_only_import_incomplete` |
+| `depth_analogical_incomplete` | `depth_analogical_bridge d` | Kernel witness: budget-d agent cannot scratch-verify depth-(d+1) novel claim |
+| `analogical_recall_forced` | `AnalogicalBridge` + `h_coverage` (budget-or-bridge) | If every claim is within budget or has a bridge, the novel over-budget claim must have a *budgeted* bridge (sim witness + `bridge_sufficiency` supplies the cost bound) |
+| `semanticDistance_recall_insufficient` | `SemanticDistanceBridge` → `AnalogicalBridge` embedding | Semantic-distance retrieval does not escape the impossibility |
+| `prototype_recall_insufficient` | `PrototypeBridge` → `AnalogicalBridge` embedding | Prototype-based retrieval does not escape the impossibility |
+| `hierarchical_recall_insufficient` | `HierarchicalBridge` → `AnalogicalBridge` embedding | Hierarchical generalization does not escape the impossibility |
+| `analogical_is_bounded_verification_instance` | `analogicalBridge_to_bounded` embedding | Scratch-verification insufficiency is an instance of the general bounded-budget impossibility via `BoundedVerification` |
+
+---
+
 ## Bucket 10: Adversarial Model (Adversarial/Base.lean)
 
 **Role:** Formalize attack patterns and boundary conditions.
@@ -555,12 +579,32 @@ Each architectural constraint creates both a capability and an exploitable surfa
 | `corrigible_needs_revision` | `CorrigibleLedgerGoal` (single premise) | `HasRevisionCapability` |
 | `self_correction_needs_revision` | `SelfCorrectingSystem` (single premise) | `HasRevisionCapability` |
 | `sound_deposits_needs_verification` | `SoundDepositsGoal` + `∃truth` | `HasVerificationCapability` |
+| `autonomy_forces_bridge_or_escalation` | `AutonomyUnderPRPGoal` + `mustHandle B d` + scratch-verification failure within `effectiveTime` | budgeted analogical bridge exists for `d` or principled escalation is available |
+| `no_escalation_forces_bridge` | `AutonomyUnderPRPGoal` + `mustHandle B d` + scratch-verification failure within `effectiveTime` + `¬canEscalate B d` | budgeted analogical bridge is forced |
 
 ### Math Form
 
 $$\text{CorrigibleLedgerGoal}(M) \Rightarrow \text{HasRevisionCapability}(M)$$
 
 $$\text{SelfCorrectingSystem}(M) \Rightarrow \text{HasRevisionCapability}(M)$$
+
+`AutonomyUnderPRPGoal` lives over `AutonomyModel`, not `CoreModel`: it is a
+health-specific extension goal for required over-budget claim handling under PRP.
+
+`AutonomyUnderPRPGoal` is exposed through the config/certification surface as
+`ClusterTag.goal_autonomyUnderPRP`, gated by `GoalTag.autonomyUnderPRP`. It is
+not part of `EnabledGoalCluster` / `GoalWitness` because it is not a `CoreModel`
+transport theorem; it is carried by `EnabledAutonomyCluster` / `AutonomyWitness`
+as an `AutonomyModel`-specific necessity theorem. The cluster count is therefore
+32 (was 31 before T25c).
+
+The T25 theorems are operational, not metaphysical: they reason about whether
+an available bridge witness exists in the system's prior material, not whether
+no analogous item exists anywhere in principle. The Minimality-layer companion
+is Bucket 9f: `AnalogicalBridge` proves scratch-verification insufficiency for
+novel over-budget inputs and, under a coverage assumption, forces a budgeted
+bridge. The Health-layer theorems and Minimality-layer theorems are independent;
+they meet in the architectural reading.
 
 ---
 
@@ -1113,22 +1157,22 @@ for each cluster.
 **Three-layer architecture:**
 1. **Routing layer** — `clusterEnabled`, `enabled`, `complete`, `sound` (all clusters; `clusterValid c` returns a genuine proved proposition for every cluster, not `True`)
 2. **Constraint proof layer** — `constraintProof`/`constraintWitnesses` (Tier 2 forcing clusters: real `ConstraintProof` with genuine proposition + proof; possible because `WorkingSystem` is monomorphic)
-3. **Proof-content layer** — `cluster_*` universe-polymorphic theorems (all 31 clusters; 15 non-Tier2 clusters use private `prop_*` defs pinned at universe 0 in §4g-pre to avoid free universe variables in the `clusterValid` match)
+3. **Proof-content layer** — `cluster_*` universe-polymorphic theorems (all 32 clusters; 16 non-Tier2 clusters use private `prop_*` defs pinned at universe 0 in §4g-pre to avoid free universe variables in the `clusterValid` match)
 
 ### Definitions / Configuration Language
 
 | Definition | File | Purpose |
 |------------|------|---------|
 | `ConstraintTag` | Meta/ClusterRegistry.lean | 8 constraint tags (distributed_agents … bounded_storage) |
-| `GoalTag` | Meta/ClusterRegistry.lean | 5 health-goal tags (safeWithdrawal … selfCorrection) |
+| `GoalTag` | Meta/ClusterRegistry.lean | 6 health-goal tags: 5 CoreModel transport goals (safeWithdrawal … selfCorrection) + `autonomyUnderPRP` (AutonomyModel necessity goal) |
 | `WorldTag` | Meta/ClusterRegistry.lean | 8 world-bundle tags (lies_possible … ddos) |
 | `EpArchConfig` | Meta/ClusterRegistry.lean | User-supplied config: lists of active constraints/goals/worlds |
-| `ClusterTag` | Meta/ClusterRegistry.lean | 31 cluster tags spanning Tiers 2–4, world obligations, constraint-modularity, and lattice-stability |
+| `ClusterTag` | Meta/ClusterRegistry.lean | 32 cluster tags spanning Tiers 2–4, world obligations, constraint-modularity, lattice-stability, and the AutonomyModel necessity cluster |
 | `clusterEnabled` | Meta/ClusterRegistry.lean | `EpArchConfig → ClusterTag → Bool` (computable routing); meta-modular and lattice always enabled |
-| `clusterValid` | Meta/Config.lean | `ClusterTag → Prop` — genuine proved proposition for each of the 31 clusters; 15 clusters use `prop_*` defs pinned at universe 0 to eliminate free universe variables |
+| `clusterValid` | Meta/Config.lean | `ClusterTag → Prop` — genuine proved proposition for each of the 32 clusters; 16 clusters use `prop_*` defs pinned at universe 0 to eliminate free universe variables |
 | `showConfig` | Meta/ClusterRegistry.lean | `EpArchConfig → List String` — `#eval`-able routing report |
 | `ConstraintProof` | Meta/Config.lean | Proof-carrying record: `statement : Prop`, `proof : statement` (Tier 2 only) |
-| `CertifiedProjection` | Meta/Config.lean | Proof-carrying record: enabled clusters + soundness + `constraintWitnesses` + `metaModularWitnesses` + `latticeWitnesses` + filtered enabled lists for all families |
+| `CertifiedProjection` | Meta/Config.lean | Proof-carrying record: enabled clusters + soundness + `constraintWitnesses` + `metaModularWitnesses` + `latticeWitnesses` + `autonomyWitnesses` + filtered enabled lists for all families |
 | `certify` | Meta/Config.lean | `EpArchConfig → CertifiedProjection cfg` |
 
 ### Theorems
