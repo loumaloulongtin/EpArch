@@ -171,7 +171,7 @@ import EpArch.Adversarial.Obligations  -- Adversarial axioms → obligation theo
 import EpArch.Semantics.LTS  -- Generic LTS for revision safety
 import EpArch.Semantics.RevisionSafety  -- Revision safety meta-theorems
 import EpArch.Health  -- Health predicates and necessity theorems
-import EpArch.ResidualRiskMitigation  -- Residual-risk mitigation coverage
+import EpArch.ResidualRiskMitigation  -- Residual-risk mitigation coverage and relative minimality
 import EpArch.Mechanisms  -- Canonical mechanism predicates
 import EpArch.Semantics.ScopeIrrelevance  -- Scope/irrelevance theorems
 import EpArch.Agent.Constraints   -- AgentConstraints, PRP, PRP theorems

@@ -874,19 +874,19 @@ theorem mitigates_obligation_implies_grounded
   | auth_adversarial =>
     exact ⟨_, .auth_adversarial (fun M h => flat_authorization_impossible M h)⟩
   | lifecycle_defect =>
-    -- pre-split mode: .unrevokedDefect
+    -- Witness mode is .unrevokedDefect (the pre-split mode for this obligation).
     exact ⟨_, .lifecycle_defect (fun PL S E P B d f h =>
       challenge_produces_quarantined B d f h)⟩
   | redeemability_gap =>
-    -- pre-split mode: .unrevokedDefect
+    -- Witness mode is .unrevokedDefect (the pre-split mode for this obligation).
     exact ⟨_, .redeemability_defect (fun PL S E P d h_red =>
       redeemable_implies_surface_aligned d h_red)⟩
   | bridge_hidden_gap =>
-    -- pre-split mode: .overbudgetReliance
+    -- Witness mode is .overbudgetReliance (the pre-split mode for this obligation).
     exact ⟨_, .bridge_overbudget (fun R b h_sim h_bud =>
       risk_not_eliminable_by_budgeted_bridge R b h_sim h_bud)⟩
   | recall_budget_overflow =>
-    -- pre-split mode: .overbudgetReliance
+    -- Witness mode is .overbudgetReliance (the pre-split mode for this obligation).
     exact ⟨_, .bounded_recall_overbudget (fun M => recall_only_withdrawal_incomplete M)⟩
   | escalation_unsafe =>
     exact ⟨_, .escalation_unsafe (fun M h_auto B d h_req h_fail h_no_esc =>
@@ -919,8 +919,10 @@ theorem removing_any_mechanism_leaves_obligation_uncovered :
   | bubbles =>
     refine ⟨.scopeLeak, ?_⟩
     intro ⟨m', h_ne, h_mit⟩
+    -- The only `MitigatesObligation` constructor for `.scopeLeak` is `bubbles_scope_leak`,
+    -- which forces `m' = .bubbles`; `h_ne : m' ≠ .bubbles` then closes the goal. The same
+    -- one-constructor-per-obligation pattern applies in every branch below.
     cases h_mit
-    -- only constructor for scopeLeak is bubbles_scope_leak, forcing m' = .bubbles
     exact h_ne rfl
   | standardsHeader =>
     refine ⟨.standardMismatch, ?_⟩

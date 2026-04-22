@@ -569,8 +569,10 @@ structural-projection cases carry a field-projection proposition proved by `rfl`
 
 `GroundedMitigates` has eleven constructors but `eparch_surface_groundedly_covers_residual_risk_modes`
 uses nine — one per `ResidualRiskMode`.  `redeemability_defect` and `bounded_recall_overbudget`
-are not needed by the coverage proof but remain available for a separate per-mechanism
-obligation result.
+are not needed by the mode-level coverage proof; both are used by
+`mitigates_obligation_implies_grounded` to ground the four split obligations
+(`lifecycleDefect`, `redeemabilityGap`, `hiddenBridgeGap`, `recallBudgetOverflow`)
+at their pre-split modes.
 
 ### Mode-grounding table (`GroundedRiskMode` constructors)
 
@@ -596,7 +598,7 @@ is minimal.  Irredundancy is handled separately.
 
 ### Obligation taxonomy and irredundancy
 
-The T27 `ResidualRiskMode` taxonomy has two modes with multiple mitigators —
+The `ResidualRiskMode` taxonomy has two modes with multiple mitigators —
 `unrevokedDefect` (bankLifecycle + redeemability) and `overbudgetReliance`
 (trustBridge + boundedRecall).  Removal-irredundancy over `ResidualRiskMode` is not
 provable as stated because removing one mitigator from a multi-covered mode still
