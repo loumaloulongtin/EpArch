@@ -13,6 +13,10 @@ Key exports:
 - WorkingSystem (record wrapping SystemSpec configuration flags)
 - Eight structural impossibility models and their impossibility theorems
 - ResidualRiskBridge, risk_not_eliminable_by_budgeted_bridge
+- Five residual-risk mode forcing theorems (mode taxonomy grounding):
+    scope_leak_forced, implicit_standard_forces_mismatch,
+    implicit_error_model_forces_gap, implicit_provenance_forces_gap,
+    no_lifecycle_cannot_ensure_nondefective
 -/
 
 import EpArch.Basic
@@ -2676,5 +2680,164 @@ theorem risk_not_eliminable_by_budgeted_bridge (R : ResidualRiskBridge)
     ¬R.risk_free b R.novel_claim :=
   R.certainty_gap b h_sim
     (Nat.lt_of_le_of_lt h_budget R.exceeds_full)
+
+/-! ========================================================================
+    RESIDUAL RISK MODE FORCING — Structural Basis of the Mode Taxonomy
+
+    These theorems establish that each `ResidualRiskMode` constructor in
+    `EpArch.ResidualRiskMitigation` names a mode that is structurally forced
+    by the operating regime: the mode cannot be eliminated by architectural
+    choice — it must be addressed.  Coverage theorems alone cannot carry this
+    weight; the forcing theorems show the modes are not arbitrary.
+
+    Four modes already have upstream forcing theorems elsewhere:
+    - `staleness`         → `PathExists.ttl_valid` (Header / AdversarialObligations)
+    - `adversarialImport` → `flat_authorization_impossible` (§7 above)
+    - `overbudgetReliance`→ `risk_not_eliminable_by_budgeted_bridge` (§11 above)
+    - `unsafeAutonomy`    → `no_escalation_forces_bridge` (EpArch.Health)
+
+    The five sections below cover the remaining modes.
+    ======================================================================== -/
+
+/-! ## Scope Leak Mode Forcing -/
+
+/-- SCOPE LEAK IS FORCED WITHOUT BUBBLE ISOLATION.
+
+    In a flat-scope system a single reliance predicate is aligned to one
+    scope's acceptance criteria.  Because it carries no scope tag it cannot
+    block a claim that a second, disagreeing scope would reject.
+    `AgentDisagreement` (§1) provides the concrete witness.
+
+    **Theorem shape:** given a flat predicate `f` aligned to `accept₁`, there
+    exists a claim that `f` permits but `accept₂` rejects — the claim leaks
+    across the scope boundary.
+    **Proof strategy:** supply `D.witness`; `hf` transfers acceptance from
+    `accept₁` to `f`; `D.agent2_rejects` closes the leak side. -/
+theorem scope_leak_forced (D : AgentDisagreement)
+    (f : D.Claim → Prop)
+    (hf : ∀ c, f c ↔ D.accept₁ c) :
+    ∃ c : D.Claim, f c ∧ ¬D.accept₂ c :=
+  ⟨D.witness, (hf D.witness).mpr D.agent1_accepts, D.agent2_rejects⟩
+
+/-! ## Standard Mismatch Mode Forcing -/
+
+/-- A claim universe where two claims require different acceptance standards.
+    Without a per-claim S field there is no mechanism to verify at reliance
+    time that the applied standard matches the one under which the claim was
+    deposited.  Standard mismatch is structurally present whenever the claim
+    universe contains claims with heterogeneous required standards. -/
+structure HeterogeneousStandards where
+  Claim            : Type
+  Standard         : Type
+  /-- A claim requiring acceptance standard `required₁`. -/
+  claim₁           : Claim
+  /-- A claim requiring acceptance standard `required₂`. -/
+  claim₂           : Claim
+  required₁        : Standard
+  required₂        : Standard
+  /-- The two required standards are distinct. -/
+  standards_differ : required₁ ≠ required₂
+
+/-- STANDARD MISMATCH IS FORCED WITHOUT A PER-CLAIM S FIELD.
+
+    No single implicit standard can simultaneously equal the required
+    standard for both claims.  A relying party that applies a uniform
+    standard necessarily mismatches at least one claim.
+
+    **Theorem shape:** `¬∃ s, s = required₁ ∧ s = required₂`
+    **Proof strategy:** assume a uniform `s`; `h₁.symm.trans h₂` yields
+    `required₁ = required₂`; `standards_differ` closes. -/
+theorem implicit_standard_forces_mismatch (M : HeterogeneousStandards) :
+    ¬∃ (s : M.Standard), s = M.required₁ ∧ s = M.required₂ :=
+  fun ⟨_, h₁, h₂⟩ => M.standards_differ (h₁.symm.trans h₂)
+
+/-! ## Unmodeled Error Mode Forcing -/
+
+/-- A claim universe where two claims were produced under different error models
+    (different failure modes were considered during verification).  Without a
+    per-claim E field the failure-mode coverage of a claim is invisible at
+    reliance time. -/
+structure HeterogeneousErrors where
+  Claim         : Type
+  ErrorModel    : Type
+  claim₁        : Claim
+  claim₂        : Claim
+  /-- Error model under which `claim₁` was verified. -/
+  model₁        : ErrorModel
+  /-- Error model under which `claim₂` was verified. -/
+  model₂        : ErrorModel
+  models_differ : model₁ ≠ model₂
+
+/-- UNMODELED ERROR IS FORCED WITHOUT A PER-CLAIM E FIELD.
+
+    No single implicit error model can represent the failure-mode coverage
+    of both claims.  A relying party that assumes a uniform error model
+    necessarily overlooks failure modes declared in one claim's context.
+
+    **Theorem shape:** `¬∃ e, e = model₁ ∧ e = model₂`
+    **Proof strategy:** identical to `implicit_standard_forces_mismatch`. -/
+theorem implicit_error_model_forces_gap (M : HeterogeneousErrors) :
+    ¬∃ (e : M.ErrorModel), e = M.model₁ ∧ e = M.model₂ :=
+  fun ⟨_, h₁, h₂⟩ => M.models_differ (h₁.symm.trans h₂)
+
+/-! ## Provenance Gap Mode Forcing -/
+
+/-- A claim universe where two claims have different provenance sources.
+    Without a per-claim V field the origin of a claim is invisible at
+    reliance time: the relying party cannot audit or challenge the source
+    chain. -/
+structure HeterogeneousProvenance where
+  Claim          : Type
+  Provenance     : Type
+  claim₁         : Claim
+  claim₂         : Claim
+  /-- Provenance source of `claim₁`. -/
+  source₁        : Provenance
+  /-- Provenance source of `claim₂`. -/
+  source₂        : Provenance
+  sources_differ : source₁ ≠ source₂
+
+/-- PROVENANCE GAP IS FORCED WITHOUT A PER-CLAIM V FIELD.
+
+    No single implicit source identity can represent the provenance of both
+    claims.  A relying party that assumes a uniform source cannot distinguish
+    claims with different origins, making chain auditing impossible.
+
+    **Theorem shape:** `¬∃ v, v = source₁ ∧ v = source₂`
+    **Proof strategy:** identical to `implicit_standard_forces_mismatch`. -/
+theorem implicit_provenance_forces_gap (M : HeterogeneousProvenance) :
+    ¬∃ (v : M.Provenance), v = M.source₁ ∧ v = M.source₂ :=
+  fun ⟨_, h₁, h₂⟩ => M.sources_differ (h₁.symm.trans h₂)
+
+/-! ## Unrevoked Defect Mode Forcing -/
+
+/-- A bank scenario where a defective claim was admitted and no correction
+    operation is available.  Models a lifecycle-free bank: claims can be
+    admitted (Promoted) but there is no Challenge or Revoke transition.
+    Bounded verification may admit a defective claim without detecting the
+    defect; without a correction path, the defect cannot be removed. -/
+structure DefectiveBank where
+  Claim        : Type
+  /-- Admission predicate: claim `c` passed the bank's admission gate. -/
+  admit        : Claim → Prop
+  /-- Defect predicate: claim `c` has a defect missed at admission time. -/
+  defective    : Claim → Prop
+  /-- A witness claim that is both admitted and defective. -/
+  witness      : Claim
+  admitted     : admit witness
+  is_defective : defective witness
+
+/-- UNREVOKED DEFECT IS FORCED WITHOUT A CORRECTION LIFECYCLE.
+
+    The existence of an admitted defective claim refutes the bank-wide
+    guarantee that all admitted claims are non-defective.  A lifecycle-free
+    bank cannot maintain `∀ c, admit c → ¬defective c`.
+
+    **Theorem shape:** `¬∀ c, admit c → ¬defective c`
+    **Proof strategy:** supply `witness`; `admitted` satisfies the premise;
+    `is_defective` directly contradicts the conclusion. -/
+theorem no_lifecycle_cannot_ensure_nondefective (M : DefectiveBank) :
+    ¬∀ c : M.Claim, M.admit c → ¬M.defective c :=
+  fun h => h M.witness M.admitted M.is_defective
 
 end EpArch
