@@ -222,6 +222,47 @@ plus explicit bridge hypotheses, without bundling them into `SystemOperationalBu
 unpacks into. Prefer the bundled form for citations; use the explicit form when auditing
 the per-dimension obligations.
 
+### `WorldSystemCompat` / `world_deriving_bridge`
+
+**File:** `EpArch/WorldBridges.lean`
+
+```lean
+structure WorldSystemCompat (C : WorldCtx) (W : WorkingSystem) where
+  lifecycle        : C.W_lies_possible → RepresentsMonotonicLifecycle W
+  n_rev            : Nat
+  lifecycle_escape : ∀ (wl : C.W_lies_possible), ...
+  verification     : C.W_bounded_verification → RepresentsBoundedVerification W
+  trust_all        : ∀ (wv : C.W_bounded_verification), ...
+  endorsement      : C.W_partial_observability → RepresentsClosedEndorsement W
+  endorsement_witness : ∀ (wo : C.W_partial_observability), ...
+
+theorem world_deriving_bridge
+    (C : WorldCtx) (W : WorkingSystem)
+    (compat : WorldSystemCompat C W)
+    (wl : C.W_lies_possible) (wv : C.W_bounded_verification) (wo : C.W_partial_observability) :
+    WorldBridgeBundle W
+```
+
+`WorldSystemCompat C W` is the formal certificate that system `W` genuinely operates
+under the `WorldCtx` conditions: it records, for each of the three world-adjacent
+dimensions, a function from the relevant `W_*` bundle to the corresponding `Represents*`
+witness for `W`, plus the bridge hypothesis. It is the adapter layer between
+`WorldCtx` world pressure and `WorkingSystem` structural evidence without refactoring
+either.
+
+`world_deriving_bridge` assembles a `WorldBridgeBundle W` from a `WorldSystemCompat C W`
+certificate plus the three `W_*` witnesses. Any system genuinely operating under the
+EpArch world conditions satisfies `WorldBridgeBundle` without supplying the seven
+bridge-bundle fields as independent explicit parameters. This closes the construction
+gap noted in the `WorldBridgeBundle` design comment in `Scenarios.lean`.
+
+This does not eliminate the universe boundary: `W_*` bundles are `Prop`-valued; the
+`Represents*` fields (`State : Type`, `Claim : Type`) are `Type`-valued. The gap is
+not closed by deriving `Type` from `Prop` — `WorldSystemCompat` provides the
+`Type`-valued witnesses explicitly. The derivation removes the redundancy of spelling
+them out separately from the world witnesses when the system genuinely instantiates all
+three world pressures.
+
 ---
 
 ## Non-Vacuity Theorems

@@ -16,6 +16,11 @@ above the abstract structural machinery and below the concrete witnesses.
 - `world_assumptions_force_bank_primitives`: world-conditional variant using
   WorldCtx W_* bundles directly.
 - `kernel_world_forces_bank_primitives`: zero-hypothesis corollary.
+- `WorldSystemCompat`: bridge structure encoding how world conditions supply the
+  three world-adjacent Represents* witnesses and their bridge hypotheses for a
+  specific WorkingSystem.
+- `world_deriving_bridge`: derives WorldBridgeBundle W from WorldSystemCompat C W
+  plus the three W_* witnesses — closes the construction gap noted in Scenarios.lean.
 
 ## Dependencies
 
@@ -373,5 +378,94 @@ theorem bundled_structure_forces_bank_primitives
     O.h_no_acl_flat
     O.h_storage_bounded
     h_sat
+
+/-! ## WorldSystemCompat — Deriving WorldBridgeBundle from World Conditions
+
+When a system genuinely operates under the EpArch world conditions,
+`WorldBridgeBundle` can be derived from a compatibility certificate plus
+the three `W_*` witnesses, rather than supplied as independent explicit
+parameters.
+
+`WorldSystemCompat C W` is the formal certificate of that compatibility:
+it records, for each world-adjacent dimension, how the world pressure (a
+`W_*` bundle) supplies the corresponding `Represents*` structural witness
+and bridge hypothesis for the specific system `W`.
+
+`world_deriving_bridge` then produces `WorldBridgeBundle W` from
+`WorldSystemCompat C W` plus the three `W_*` witnesses — compatibility
+and world conditions together, not world conditions alone. -/
+
+/-- System-world compatibility for the three world-adjacent EpArch dimensions.
+
+    Each field group encodes: given that the world satisfies pressure X (a W_*
+    bundle), here is the structural scenario evidence for system W and its bridge
+    hypothesis for that dimension.
+
+    This structure is the additive bridge layer that connects `WorldCtx` world
+    bundles to `WorldBridgeBundle` structural witnesses without refactoring either.
+
+    **Structural invariant:** `n_rev` is a property of W, shared across all
+    W_lies_possible instances; `lifecycle_escape` carries the per-dimension bridge
+    hypothesis parameterized over the world witness. -/
+structure WorldSystemCompat (C : WorldCtx) (W : WorkingSystem) where
+  /-- Revocation dimension: world adversarial pressure supplies the lifecycle witness. -/
+  lifecycle        : C.W_lies_possible → RepresentsMonotonicLifecycle W
+  /-- The step count at which the accepted state escapes absent revocation.
+      Property of W, not of the world bundle. -/
+  n_rev            : Nat
+  /-- Bridge: absent revocation, the accepted state escapes at step n_rev. -/
+  lifecycle_escape : ∀ (wl : C.W_lies_possible),
+      ¬HasRevocation W →
+      iter (lifecycle wl).step n_rev (lifecycle wl).accepted ≠ (lifecycle wl).accepted
+  /-- Trust dimension: bounded verification pressure supplies the verification witness. -/
+  verification     : C.W_bounded_verification → RepresentsBoundedVerification W
+  /-- Bridge: absent trust bridges, all claims fit within the budget. -/
+  trust_all        : ∀ (wv : C.W_bounded_verification),
+      ¬HasTrustBridges W → ∀ c, (verification wv).verify_cost c ≤ (verification wv).budget
+  /-- Redeemability dimension: partial observability pressure supplies the endorsement witness. -/
+  endorsement      : C.W_partial_observability → RepresentsClosedEndorsement W
+  /-- Bridge data: for each partial-observability witness, a claim that is endorsed
+      and (absent redeemability) externally falsifiable. Carried as a dependent pair
+      so the claim type is correctly scoped to the specific endorsement witness. -/
+  endorsement_witness : ∀ (wo : C.W_partial_observability),
+      Σ' (c : (endorsement wo).Claim),
+        (endorsement wo).endorsed c ∧
+        (¬HasRedeemability W → (endorsement wo).externally_falsifiable c)
+
+/-- WORLD-DERIVING BRIDGE THEOREM
+
+    Derives `WorldBridgeBundle W` from a `WorldSystemCompat C W` certificate
+    plus the three `W_*` world witnesses.
+
+    `WorldSystemCompat C W` is the formal definition of what it means for a
+    system to genuinely operate under the EpArch world conditions: it records
+    how each world pressure supplies the corresponding structural witness for W.
+    Any system holding that certificate plus the three world witnesses satisfies
+    `WorldBridgeBundle` without supplying the bridge witnesses as separate
+    explicit parameters.
+
+    **Theorem shape:** WorldSystemCompat C W + three W_* witnesses → WorldBridgeBundle W.
+    **Proof strategy:** Extract each Represents* witness and bridge hypothesis
+    from the compat fields; destructure endorsement_witness for the dependent
+    triple ⟨c_re, h_endorsed, h_fals⟩; assemble the WorldBridgeBundle record. -/
+theorem world_deriving_bridge
+    (C : WorldCtx)
+    (W : WorkingSystem)
+    (compat : WorldSystemCompat C W)
+    (wl : C.W_lies_possible)
+    (wv : C.W_bounded_verification)
+    (wo : C.W_partial_observability) :
+    WorldBridgeBundle W :=
+  -- Destructure the redeemability dependent pair to get c_re and its properties.
+  let ⟨c_re, h_endorsed, h_fals⟩ := compat.endorsement_witness wo
+  { Rm           := compat.lifecycle wl
+    n_rev        := compat.n_rev
+    h_rev_escape := compat.lifecycle_escape wl
+    Rb           := compat.verification wv
+    h_trust_all  := compat.trust_all wv
+    Re           := compat.endorsement wo
+    c_re         := c_re
+    h_endorsed   := h_endorsed
+    h_fals       := h_fals }
 
 end EpArch.WorldBridges
