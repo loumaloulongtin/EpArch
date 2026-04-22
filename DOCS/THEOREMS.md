@@ -462,6 +462,118 @@ Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_w
 
 ---
 
+## Bucket 9h: Residual Risk Mitigation Coverage (ResidualRiskMitigation.lean)
+
+**Role:** Two-layer classification / coverage theorem.
+
+`eparch_surface_covers_residual_risk_modes` establishes *declared* coverage: every
+residual-risk mode induced by bounded autonomous novelty handling has some `Mitigates`
+pairing — mechanism `m` converts the mode from an unstructured failure possibility into
+an auditable operational obligation.  The structural depth lives in
+`residual_risk_forced_when_no_scratch_no_escalation` and related theorems in `EpArch.Health`;
+this theorem shows the prescribed surface is complete with respect to those modes.
+
+`eparch_surface_groundedly_covers_residual_risk_modes` strengthens that by requiring each
+`GroundedMitigates` constructor to carry actual upstream-theorem evidence or structural
+field-projection evidence.  It does not prove strict minimality or irredundancy of the
+surface — irredundancy is handled separately.
+
+`GroundedRiskMode` and `all_modes_structurally_grounded` add a parallel layer over the
+mode taxonomy itself: each `ResidualRiskMode` constructor carries upstream structural
+evidence (a forcing or impossibility theorem), confirming the modes are not arbitrary
+labels.  `all_modes_grounded_and_groundedly_covered` is the bilateral capstone pairing
+the two grounded sides: every mode is both structurally grounded and proof-backed addressed.
+
+**Cross-references:** Bucket 9e (`recall_only_withdrawal_incomplete`),
+Bucket 9f (analogical bridge), Bucket 9g (`risk_not_eliminable_by_budgeted_bridge`),
+Bucket 14 (`no_escalation_forces_bridge`, `residual_risk_forced_when_no_scratch_no_escalation`).
+
+### Types
+
+| Name | Kind | Description |
+|------|------|-------------|
+| `ResidualRiskMode` | `inductive` | Nine structural failure modes: `scopeLeak`, `standardMismatch`, `unmodeledError`, `provenanceGap`, `staleness`, `adversarialImport`, `unrevokedDefect`, `overbudgetReliance`, `unsafeAutonomy` |
+| `EpArchMechanism` | `inductive` | Eleven prescribed mechanisms: `bubbles`, `standardsHeader`, `errorHeader`, `provenanceHeader`, `tau`, `trustBridge`, `authorization`, `bankLifecycle`, `redeemability`, `boundedRecall`, `escalation` |
+| `Mitigates` | `inductive Prop` | `Mitigates m r` — declared coverage; mechanism `m` converts risk mode `r` into an auditable obligation; eleven constructors naming the grounding |
+| `GroundedMitigates` | `inductive Prop` | `GroundedMitigates m r` — proof-backed companion; each constructor carries upstream theorem evidence or structural projection evidence; implies `Mitigates m r` |
+| `GroundedRiskMode` | `inductive Prop` | `GroundedRiskMode r` — carries upstream structural evidence backing mode `r`; nine constructors, one per `ResidualRiskMode` |
+
+### Theorems
+
+| Theorem | Shape | Proof strategy |
+|---------|-------|----------------|
+| `eparch_surface_covers_residual_risk_modes` | `∀ r : ResidualRiskMode, ∃ m : EpArchMechanism, Mitigates m r` | `cases r`; supply matching `Mitigates` constructor per branch |
+| `grounded_mitigation_implies_mitigation` | `GroundedMitigates m r → Mitigates m r` | `cases` on `GroundedMitigates` constructor; supply matching `Mitigates` constructor |
+| `eparch_surface_groundedly_covers_residual_risk_modes` | `∀ r : ResidualRiskMode, ∃ m : EpArchMechanism, GroundedMitigates m r` | `cases r`; supply `GroundedMitigates` constructor with its proof witness per branch |
+| `all_modes_structurally_grounded` | `∀ r : ResidualRiskMode, GroundedRiskMode r` | `cases r`; supply matching `GroundedRiskMode` constructor with its upstream theorem |
+| `all_modes_grounded_and_groundedly_covered` | `∀ r, GroundedRiskMode r ∧ ∃ m, GroundedMitigates m r` | pair `all_modes_structurally_grounded` with `eparch_surface_groundedly_covers_residual_risk_modes` |
+
+### Grounding table (declared `Mitigates` constructors)
+
+| Constructor | Kind | Grounding |
+|-------------|------|-----------|
+| `bridge_overbudget` | upstream theorem | `risk_not_eliminable_by_budgeted_bridge`: verification gap is irreducible; trust bridge makes it explicit |
+| `escalation_unsafe` | upstream theorem | `no_escalation_forces_bridge`: without escalation the system is forced to bridge-or-nothing |
+| `bounded_recall_overbudget` | upstream theorem | `recall_only_withdrawal_incomplete`: recall-only verification is provably incomplete when provenance chains exceed the budget |
+| `tau_staleness` | structural | `PathExists.ttl_valid : d.h.τ > 0`: a deposit with `τ = 0` cannot carry a `PathExists` witness |
+| `lifecycle_defect` | structural | `challenge_produces_quarantined`, `Repair_B_produces_candidate`, `revoke_produces_revoked` in `Bank.lean`; `Step.challenge`, `Step.repair`, `Step.revoke` in `StepSemantics.lean` |
+| `redeemability_defect` | structural | `redeemable d` requires a `VerificationPath` aligned to `d.h.redeem` (`Commitments.lean`); `challenge_produces_quarantined` starts the correction pipeline |
+| `bubbles_scope_leak` | structural | `Deposit.bubble` carries claim scope; bank-side predicates (`deposited B d`) enforce locality |
+| `standards_mismatch` | structural | `Deposit.Header.S : Standard` is a required field in every deposit record |
+| `error_unmodeled` | structural | `Deposit.Header.E : ErrorModel` is a required field; known failure modes are declared at deposit time |
+| `provenance_gap` | structural | `Deposit.Header.V : Provenance` is a required field; `PathExists.ttl_valid` and `status_live` make the path auditable |
+| `auth_adversarial` | structural / agent-layer | `Header.acl` records the ACL surface; authorization forcing is handled by `AuthorizedWithdrawalGoal` / `TwoTierAccess` / granular ACL theorems; abstract bank Step LTS does not enforce ACL as a constructor precondition |
+
+### Proof-grounding table (`GroundedMitigates` constructors)
+
+Each constructor carries an evidence argument that is a genuine proof, not a restatement
+of the pairing. Upstream-theorem cases carry the theorem as a universally-quantified function;
+structural-projection cases carry a field-projection proposition proved by `rfl`;
+`tau_staleness` uses `PathExists.ttl_valid` and `simp [h_zero]` rather than a plain field projection.
+
+| Constructor | Evidence argument | Upstream theorem / structural field |
+|-------------|-------------------|-------------------------------------|
+| `bubbles_scope_leak` | `∀ PL S E P (d : Deposit PL S E P), ∃ b : Bubble, d.bubble = b` | `Deposit.bubble` field projection (`rfl`) |
+| `standards_mismatch` | `∀ S E P (h : Header S E P), ∃ s : S, h.S = s` | `Header.S` field projection (`rfl`) |
+| `error_unmodeled` | `∀ S E P (h : Header S E P), ∃ e : E, h.E = e` | `Header.E` field projection (`rfl`) |
+| `provenance_gap` | `∀ S E P (h : Header S E P), ∃ v : P, h.V = v` | `Header.V` field projection (`rfl`) |
+| `tau_staleness` | `∀ PL S E P (d : Deposit PL S E P), d.h.τ = 0 → ¬AdversarialObligations.PathExists d` | `PathExists.ttl_valid`: τ = 0 contradicts `d.h.τ > 0` |
+| `auth_adversarial` | `∀ M : TwoTierAccess, ¬∃ f, ...` | `flat_authorization_impossible` |
+| `lifecycle_defect` | `∀ PL S E P B (d : Deposit PL S E P) f, d.status = .Deposited → (Challenge_B B d f).status = .Quarantined` | `challenge_produces_quarantined` |
+| `bridge_overbudget` | `∀ R b, R.sim b R.novel_claim → R.bridge_cost b ≤ R.budget → ¬R.risk_free b R.novel_claim` | `risk_not_eliminable_by_budgeted_bridge` |
+| `escalation_unsafe` | `∀ M (_ : AutonomyUnderPRPGoal M) B d ..., ∃ b, M.ops.bridgeAvailable B b ∧ ...` | `no_escalation_forces_bridge` |
+| `redeemability_defect` | `∀ PL S E P (d : Deposit PL S E P), redeemable d → ∃ vp : VerificationPath, vp.deposit = d ∧ vp.surface = d.h.redeem` | `redeemable_implies_surface_aligned` (Commitments.lean) |
+| `bounded_recall_overbudget` | `∀ M : RecallBudget, ¬∀ v : M.Provenance, M.recall_cost v ≤ M.budget` | `recall_only_withdrawal_incomplete` |
+
+`GroundedMitigates` has eleven constructors but `eparch_surface_groundedly_covers_residual_risk_modes`
+uses nine — one per `ResidualRiskMode`.  `redeemability_defect` and `bounded_recall_overbudget`
+are not needed by the coverage proof but remain available for a separate per-mechanism
+obligation result.
+
+### Mode-grounding table (`GroundedRiskMode` constructors)
+
+Each constructor carries the upstream theorem (or structural witness) that backs the
+corresponding `ResidualRiskMode`.  Five mode-grounding theorems live in `EpArch.Minimality`
+(scope leak, standard mismatch, unmodeled error, provenance gap, unrevoked defect); the
+other four reuse upstream theorems from elsewhere in the formalization.
+
+| Constructor | Mode | Upstream evidence | Source |
+|-------------|------|------------------|--------|
+| `scope_leak` | `scopeLeak` | `scope_leak_forced` | `EpArch.Minimality` |
+| `standard_mismatch` | `standardMismatch` | `implicit_standard_forces_mismatch` | `EpArch.Minimality` |
+| `unmodeled_error` | `unmodeledError` | `implicit_error_model_forces_gap` | `EpArch.Minimality` |
+| `provenance_gap` | `provenanceGap` | `implicit_provenance_forces_gap` | `EpArch.Minimality` |
+| `staleness` | `staleness` | `PathExists.ttl_valid` (τ = 0 contradicts τ > 0) | `EpArch.Adversarial.Obligations` |
+| `adversarial_import` | `adversarialImport` | `flat_authorization_impossible` | `EpArch.Minimality` |
+| `unrevoked_defect` | `unrevokedDefect` | `no_lifecycle_cannot_ensure_nondefective` | `EpArch.Minimality` |
+| `overbudget_reliance` | `overbudgetReliance` | `risk_not_eliminable_by_budgeted_bridge` | `EpArch.Minimality` |
+| `unsafe_autonomy` | `unsafeAutonomy` | `no_escalation_forces_bridge` | `EpArch.Health` |
+
+This proof layer does not establish that the mechanisms are irredundant or that the surface
+is minimal.  Irredundancy is handled separately.
+
+---
+
 ## Bucket 10: Adversarial Model (Adversarial/Base.lean)
 
 **Role:** Formalize attack patterns and boundary conditions.

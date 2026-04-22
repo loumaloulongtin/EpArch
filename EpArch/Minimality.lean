@@ -13,6 +13,10 @@ Key exports:
 - WorkingSystem (record wrapping SystemSpec configuration flags)
 - Eight structural impossibility models and their impossibility theorems
 - ResidualRiskBridge, risk_not_eliminable_by_budgeted_bridge
+- Five residual-risk mode grounding theorems (taxonomy backing):
+    scope_leak_forced, implicit_standard_forces_mismatch,
+    implicit_error_model_forces_gap, implicit_provenance_forces_gap,
+    no_lifecycle_cannot_ensure_nondefective
 -/
 
 import EpArch.Basic
@@ -2676,5 +2680,242 @@ theorem risk_not_eliminable_by_budgeted_bridge (R : ResidualRiskBridge)
     ¬R.risk_free b R.novel_claim :=
   R.certainty_gap b h_sim
     (Nat.lt_of_le_of_lt h_budget R.exceeds_full)
+
+/-! ========================================================================
+    RESIDUAL RISK MODE GROUNDING — Structural Basis of the Mode Taxonomy
+
+    These theorems supply upstream structural evidence for each
+    `ResidualRiskMode` constructor in `EpArch.ResidualRiskMitigation`: each mode
+    is backed by an impossibility or structural-witness theorem rather than
+    being introduced as a label.  The `GroundedRiskMode` inductive in
+    `ResidualRiskMitigation` packages these into per-mode evidence.
+
+    Four modes already have upstream theorems elsewhere:
+    - `staleness`         → `PathExists.ttl_valid` (Header / AdversarialObligations)
+    - `adversarialImport` → `flat_authorization_impossible` (§7 above)
+    - `overbudgetReliance`→ `risk_not_eliminable_by_budgeted_bridge` (§11 above)
+    - `unsafeAutonomy`    → `no_escalation_forces_bridge` (EpArch.Health)
+
+    The five sections below cover the remaining modes.
+    ======================================================================== -/
+
+/-! ## Scope Leak Mode Forcing -/
+
+/-- SCOPE LEAK IS FORCED WITHOUT BUBBLE ISOLATION.
+
+    In a flat-scope system a single reliance predicate is aligned to one
+    scope's acceptance criteria.  Because it carries no scope tag it cannot
+    block a claim that a second, disagreeing scope would reject.
+    `AgentDisagreement` (§1) provides the concrete witness.
+
+    **Theorem shape:** given a flat predicate `f` aligned to `accept₁`, there
+    exists a claim that `f` permits but `accept₂` rejects — the claim leaks
+    across the scope boundary.
+    **Proof strategy:** supply `D.witness`; `hf` transfers acceptance from
+    `accept₁` to `f`; `D.agent2_rejects` closes the leak side. -/
+theorem scope_leak_forced (D : AgentDisagreement)
+    (f : D.Claim → Prop)
+    (hf : ∀ c, f c ↔ D.accept₁ c) :
+    ∃ c : D.Claim, f c ∧ ¬D.accept₂ c :=
+  ⟨D.witness, (hf D.witness).mpr D.agent1_accepts, D.agent2_rejects⟩
+
+/-! ## Standard Mismatch Mode Forcing -/
+
+/-- A claim universe where two claims require different acceptance standards.
+    Without a per-claim S field there is no mechanism to verify at reliance
+    time that the applied standard matches the one under which the claim was
+    deposited.  Standard mismatch is structurally present whenever the claim
+    universe contains claims with heterogeneous required standards. -/
+structure HeterogeneousStandards where
+  Standard         : Type
+  required₁        : Standard
+  required₂        : Standard
+  /-- The two required standards are distinct. -/
+  standards_differ : required₁ ≠ required₂
+
+/-- STANDARD MISMATCH IS FORCED WITHOUT A PER-CLAIM S FIELD.
+
+    No single implicit standard can simultaneously equal the required
+    standard for both claims.  A relying party that applies a uniform
+    standard necessarily mismatches at least one claim.
+
+    **Theorem shape:** `¬∃ s, s = required₁ ∧ s = required₂`
+    **Proof strategy:** assume a uniform `s`; `h₁.symm.trans h₂` yields
+    `required₁ = required₂`; `standards_differ` closes. -/
+theorem implicit_standard_forces_mismatch (M : HeterogeneousStandards) :
+    ¬∃ (s : M.Standard), s = M.required₁ ∧ s = M.required₂ :=
+  fun ⟨_, h₁, h₂⟩ => M.standards_differ (h₁.symm.trans h₂)
+
+/-- Any `DiscriminatingImport` scenario directly inhabits `HeterogeneousStandards`:
+    the good and bad claims are structurally distinct, so they carry different
+    required standards.  The operating regime produces `DiscriminatingImport`
+    witnesses (see `routing_requires_header`, §3); this embedding makes
+    `HeterogeneousStandards` inhabited by those same witnesses.
+    Mapping: `Standard := Claim`; `required c := c`; `standards_differ := good_ne_bad`. -/
+def discriminating_to_heterogeneous_standards (M : DiscriminatingImport) :
+    HeterogeneousStandards where
+  Standard         := M.Claim
+  required₁        := M.good
+  required₂        := M.bad
+  standards_differ := M.good_ne_bad
+
+/-- Standard mismatch is forced in any discriminating import scenario.
+
+    **Theorem shape:** `¬∃ s : M.Claim, s = M.good ∧ s = M.bad`
+    **Proof strategy:** embed via `discriminating_to_heterogeneous_standards`,
+    apply `implicit_standard_forces_mismatch`. -/
+theorem discriminating_import_forces_standard_mismatch (M : DiscriminatingImport) :
+    ¬∃ s : M.Claim, s = M.good ∧ s = M.bad :=
+  implicit_standard_forces_mismatch (discriminating_to_heterogeneous_standards M)
+
+/-! ## Unmodeled Error Mode Forcing -/
+
+/-- A claim universe where two claims were produced under different error models
+    (different failure modes were considered during verification).  Without a
+    per-claim E field the failure-mode coverage of a claim is invisible at
+    reliance time. -/
+structure HeterogeneousErrors where
+  ErrorModel    : Type
+  /-- Error model under which a first claim was verified. -/
+  model₁        : ErrorModel
+  /-- Error model under which a second claim was verified. -/
+  model₂        : ErrorModel
+  models_differ : model₁ ≠ model₂
+
+/-- UNMODELED ERROR IS FORCED WITHOUT A PER-CLAIM E FIELD.
+
+    No single implicit error model can represent the failure-mode coverage
+    of both claims.  A relying party that assumes a uniform error model
+    necessarily overlooks failure modes declared in one claim's context.
+
+    **Theorem shape:** `¬∃ e, e = model₁ ∧ e = model₂`
+    **Proof strategy:** identical to `implicit_standard_forces_mismatch`. -/
+theorem implicit_error_model_forces_gap (M : HeterogeneousErrors) :
+    ¬∃ (e : M.ErrorModel), e = M.model₁ ∧ e = M.model₂ :=
+  fun ⟨_, h₁, h₂⟩ => M.models_differ (h₁.symm.trans h₂)
+
+/-- Any `DiscriminatingImport` scenario directly inhabits `HeterogeneousErrors`:
+    the good and bad claims were necessarily verified under different error models,
+    because they require different import decisions.
+    Mapping: `ErrorModel := Claim`; `model c := c`; `models_differ := good_ne_bad`. -/
+def discriminating_to_heterogeneous_errors (M : DiscriminatingImport) :
+    HeterogeneousErrors where
+  ErrorModel    := M.Claim
+  model₁        := M.good
+  model₂        := M.bad
+  models_differ := M.good_ne_bad
+
+/-- Unmodeled error gap is forced in any discriminating import scenario.
+
+    **Theorem shape:** `¬∃ e : M.Claim, e = M.good ∧ e = M.bad`
+    **Proof strategy:** embed via `discriminating_to_heterogeneous_errors`,
+    apply `implicit_error_model_forces_gap`. -/
+theorem discriminating_import_forces_error_gap (M : DiscriminatingImport) :
+    ¬∃ e : M.Claim, e = M.good ∧ e = M.bad :=
+  implicit_error_model_forces_gap (discriminating_to_heterogeneous_errors M)
+
+/-! ## Provenance Gap Mode Forcing -/
+
+/-- A claim universe where two claims have different provenance sources.
+    Without a per-claim V field the origin of a claim is invisible at
+    reliance time: the relying party cannot audit or challenge the source
+    chain. -/
+structure HeterogeneousProvenance where
+  Provenance     : Type
+  /-- Provenance source of a first claim. -/
+  source₁        : Provenance
+  /-- Provenance source of a second claim. -/
+  source₂        : Provenance
+  sources_differ : source₁ ≠ source₂
+
+/-- PROVENANCE GAP IS FORCED WITHOUT A PER-CLAIM V FIELD.
+
+    No single implicit source identity can represent the provenance of both
+    claims.  A relying party that assumes a uniform source cannot distinguish
+    claims with different origins, making chain auditing impossible.
+
+    **Theorem shape:** `¬∃ v, v = source₁ ∧ v = source₂`
+    **Proof strategy:** identical to `implicit_standard_forces_mismatch`. -/
+theorem implicit_provenance_forces_gap (M : HeterogeneousProvenance) :
+    ¬∃ (v : M.Provenance), v = M.source₁ ∧ v = M.source₂ :=
+  fun ⟨_, h₁, h₂⟩ => M.sources_differ (h₁.symm.trans h₂)
+
+/-- Any `DiscriminatingImport` scenario directly inhabits `HeterogeneousProvenance`:
+    the good and bad claims come from structurally distinct origins.
+    Mapping: `Provenance := Claim`; `source c := c`; `sources_differ := good_ne_bad`. -/
+def discriminating_to_heterogeneous_provenance (M : DiscriminatingImport) :
+    HeterogeneousProvenance where
+  Provenance     := M.Claim
+  source₁        := M.good
+  source₂        := M.bad
+  sources_differ := M.good_ne_bad
+
+/-- Provenance gap is forced in any discriminating import scenario.
+
+    **Theorem shape:** `¬∃ v : M.Claim, v = M.good ∧ v = M.bad`
+    **Proof strategy:** embed via `discriminating_to_heterogeneous_provenance`,
+    apply `implicit_provenance_forces_gap`. -/
+theorem discriminating_import_forces_provenance_gap (M : DiscriminatingImport) :
+    ¬∃ v : M.Claim, v = M.good ∧ v = M.bad :=
+  implicit_provenance_forces_gap (discriminating_to_heterogeneous_provenance M)
+
+/-! ## Unrevoked Defect Mode Forcing -/
+
+/-- A bank scenario where a defective claim was admitted and no correction
+    operation is available.  Models a lifecycle-free bank: claims can be
+    admitted (Promoted) but there is no Challenge or Revoke transition.
+    Bounded verification may admit a defective claim without detecting the
+    defect; without a correction path, the defect cannot be removed. -/
+structure DefectiveBank where
+  Claim        : Type
+  /-- Admission predicate: claim `c` passed the bank's admission gate. -/
+  admit        : Claim → Prop
+  /-- Defect predicate: claim `c` has a defect missed at admission time. -/
+  defective    : Claim → Prop
+  /-- A witness claim that is both admitted and defective. -/
+  witness      : Claim
+  admitted     : admit witness
+  is_defective : defective witness
+
+/-- UNREVOKED DEFECT IS FORCED WITHOUT A CORRECTION LIFECYCLE.
+
+    The existence of an admitted defective claim refutes the bank-wide
+    guarantee that all admitted claims are non-defective.  A lifecycle-free
+    bank cannot maintain `∀ c, admit c → ¬defective c`.
+
+    **Theorem shape:** `¬∀ c, admit c → ¬defective c`
+    **Proof strategy:** supply `witness`; `admitted` satisfies the premise;
+    `is_defective` directly contradicts the conclusion. -/
+theorem no_lifecycle_cannot_ensure_nondefective (M : DefectiveBank) :
+    ¬∀ c : M.Claim, M.admit c → ¬M.defective c :=
+  fun h => h M.witness M.admitted M.is_defective
+
+/-- Any `BoundedVerification` scenario directly inhabits `DefectiveBank`: the hard
+    claim can be admitted (any claim is promotable via trust bridge or analogical
+    import — that is the whole point of the bounded-verification regime), and it
+    carries a structural defect: its verification cost exceeds the budget, leaving
+    an unresolved verification gap.  Without a correction lifecycle the gap cannot
+    be removed.
+    Mapping: `admit c := True`; `defective c := verify_cost c > budget`;
+    `witness := hard_claim`; `is_defective := exceeds_budget`. -/
+def bounded_to_defective_bank (M : BoundedVerification) : DefectiveBank where
+  Claim        := M.Claim
+  admit        := fun _ => True
+  defective c  := M.verify_cost c > M.budget
+  witness      := M.hard_claim
+  admitted     := True.intro
+  is_defective := M.exceeds_budget
+
+/-- Unrevoked defect is forced under bounded verification without a correction lifecycle.
+
+    **Theorem shape:** `¬∀ c : M.Claim, ¬M.verify_cost c > M.budget`
+    **Proof strategy:** embed via `bounded_to_defective_bank`, apply
+    `no_lifecycle_cannot_ensure_nondefective`, and discharge the trivial
+    `True` admission premise. -/
+theorem bounded_verification_forces_defect (M : BoundedVerification) :
+    ¬∀ c : M.Claim, ¬M.verify_cost c > M.budget := by
+  intro h
+  exact no_lifecycle_cannot_ensure_nondefective
+    (bounded_to_defective_bank M) (fun c _ => h c)
 
 end EpArch
