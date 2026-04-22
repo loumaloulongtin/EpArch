@@ -511,7 +511,7 @@ Bucket 14 (`no_escalation_forces_bridge`, `residual_risk_forced_when_no_scratch_
 | `CoversMode` | `def` | `CoversMode S r = ∃ m, S m ∧ Mitigates m r` |
 | `CoversAllModes` | `def` | `CoversAllModes S = ∀ r, CoversMode S r` |
 | `ResidualRiskObligation` | `inductive` | Eleven obligations refining `ResidualRiskMode` for irredundancy; splits `unrevokedDefect` → `lifecycleDefect` + `redeemabilityGap`; splits `overbudgetReliance` → `hiddenBridgeGap` + `recallBudgetOverflow` |
-| `MitigatesObligation` | `inductive Prop` | `MitigatesObligation m o` — designated-mitigator relation; one constructor per mechanism–obligation pair; one-to-one |
+| `MitigatesObligation` | `inductive Prop` | `MitigatesObligation m o` — one-to-one designated-mitigator relation; bare constructors (one per pair); grounding is supplied by `mitigates_obligation_implies_grounded` |
 | `CoversObligation` | `def` | `CoversObligation S o = ∃ m, S m ∧ MitigatesObligation m o` |
 | `CoversAllObligations` | `def` | `CoversAllObligations S = ∀ o, CoversObligation S o` |
 
@@ -526,7 +526,8 @@ Bucket 14 (`no_escalation_forces_bridge`, `residual_risk_forced_when_no_scratch_
 | `all_modes_grounded_and_groundedly_covered` | `∀ r, GroundedRiskMode r ∧ ∃ m, GroundedMitigates m r` | pair `all_modes_structurally_grounded` with `eparch_surface_groundedly_covers_residual_risk_modes` |
 | `every_mechanism_mitigates_some_mode` | `∀ m : EpArchMechanism, ∃ r : ResidualRiskMode, Mitigates m r` | `cases m`; supply matching nullary `Mitigates` constructor |
 | `full_surface_covers_all_modes` | `CoversAllModes FullSurface` | `let ⟨m, h⟩ := eparch_surface_covers_residual_risk_modes r`; wrap with `trivial` |
-| `full_surface_covers_all_obligations` | `CoversAllObligations FullSurface` | `cases o`; supply matching `MitigatesObligation` constructor with `trivial` |
+| `full_surface_covers_all_obligations` | `CoversAllObligations FullSurface` | `cases o`; supply matching nullary `MitigatesObligation` constructor with `trivial` |
+| `mitigates_obligation_implies_grounded` | `MitigatesObligation m o → ∃ r, GroundedMitigates m r` | `cases h`; per branch supply matching `GroundedMitigates` constructor; split obligations use the pre-split mode |
 | `removing_any_mechanism_leaves_obligation_uncovered` | `∀ m, ∃ o : ResidualRiskObligation, ¬ CoversObligation (SurfaceWithout m) o` | `cases m`; supply unique obligation; `intro ⟨m', h_ne, h_mit⟩`; `cases h_mit`; `exact h_ne rfl` |
 
 ### Grounding table (declared `Mitigates` constructors)

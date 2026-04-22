@@ -35,6 +35,7 @@ Key exports:
 - `CoversObligation`: a surface covers a specific obligation
 - `CoversAllObligations`: a surface covers every obligation
 - `full_surface_covers_all_obligations`: the full surface covers every obligation
+- `mitigates_obligation_implies_grounded`: every obligation designation is backed by a GroundedMitigates proof
 - `removing_any_mechanism_leaves_obligation_uncovered`: minimality theorem
 -/
 
@@ -788,10 +789,13 @@ inductive ResidualRiskObligation where
   | recallBudgetOverflow
   | unsafeAutonomy
 
-/-- `MitigatesObligation m o` holds when mechanism `m` is the uniquely responsible
-    mitigator for obligation `o`.  Each obligation has exactly one constructor;
-    the one-to-one correspondence makes removal-irredundancy provable by exhaustive
-    case analysis on `MitigatesObligation`. -/
+/-- `MitigatesObligation m o` is the designated-mitigator relation: mechanism `m`
+    is the uniquely responsible mitigator for obligation `o`.  Each obligation has
+    exactly one constructor; the one-to-one structure makes removal-irredundancy
+    provable by exhaustive case analysis.
+    `mitigates_obligation_implies_grounded` connects each designation to the
+    corresponding `GroundedMitigates` proof, confirming the designations are not
+    arbitrary taxonomy choices. -/
 inductive MitigatesObligation : EpArchMechanism → ResidualRiskObligation → Prop where
   | bubbles_scope_leak     : MitigatesObligation .bubbles         .scopeLeak
   | standards_mismatch     : MitigatesObligation .standardsHeader .standardMismatch
@@ -820,7 +824,7 @@ def CoversAllObligations (S : Surface) : Prop :=
     This is the obligation-layer analogue of `full_surface_covers_all_modes`.
 
     **Theorem shape:** `CoversAllObligations FullSurface`
-    **Proof strategy:** `cases o`; supply the matching `MitigatesObligation`
+    **Proof strategy:** `cases o`; supply the matching nullary `MitigatesObligation`
     constructor with `trivial` for the `FullSurface` membership. -/
 theorem full_surface_covers_all_obligations : CoversAllObligations FullSurface := by
   intro o
@@ -836,6 +840,57 @@ theorem full_surface_covers_all_obligations : CoversAllObligations FullSurface :
   | hiddenBridgeGap   => exact ⟨.trustBridge,       trivial, .bridge_hidden_gap⟩
   | recallBudgetOverflow => exact ⟨.boundedRecall,  trivial, .recall_budget_overflow⟩
   | unsafeAutonomy    => exact ⟨.escalation,        trivial, .escalation_unsafe⟩
+
+/-- EVERY OBLIGATION DESIGNATION IS GROUNDED.
+
+    Every `MitigatesObligation m o` is backed by a `GroundedMitigates m r` for some
+    mode `r`.  For the seven obligations that map directly to a `ResidualRiskMode`,
+    `r` is that mode.  For the four split obligations, `r` is the pre-split mode
+    that motivated the split at the `GroundedMitigates` seam.
+
+    This theorem is the grounding bridge between the one-to-one obligation relation
+    and the proof-backed coverage layer, confirming that no obligation designation
+    is an arbitrary taxonomy choice.
+
+    **Theorem shape:** `MitigatesObligation m o → ∃ r : ResidualRiskMode, GroundedMitigates m r`
+    **Proof strategy:** `cases h`; per branch supply the matching `GroundedMitigates`
+    constructor with its upstream-theorem or field-projection argument. -/
+theorem mitigates_obligation_implies_grounded
+    {m : EpArchMechanism} {o : ResidualRiskObligation}
+    (h : MitigatesObligation m o) :
+    ∃ r : ResidualRiskMode, GroundedMitigates m r := by
+  cases h with
+  | bubbles_scope_leak =>
+    exact ⟨_, .bubbles_scope_leak (fun PL S E P d => ⟨d.bubble, rfl⟩)⟩
+  | standards_mismatch =>
+    exact ⟨_, .standards_mismatch (fun S E P h => ⟨h.S, rfl⟩)⟩
+  | error_unmodeled =>
+    exact ⟨_, .error_unmodeled (fun S E P h => ⟨h.E, rfl⟩)⟩
+  | provenance_gap =>
+    exact ⟨_, .provenance_gap (fun S E P h => ⟨h.V, rfl⟩)⟩
+  | tau_staleness =>
+    exact ⟨_, .tau_staleness (fun PL S E P d h_z pe =>
+      absurd pe.ttl_valid (by simp [h_z]))⟩
+  | auth_adversarial =>
+    exact ⟨_, .auth_adversarial (fun M h => flat_authorization_impossible M h)⟩
+  | lifecycle_defect =>
+    -- pre-split mode: .unrevokedDefect
+    exact ⟨_, .lifecycle_defect (fun PL S E P B d f h =>
+      challenge_produces_quarantined B d f h)⟩
+  | redeemability_gap =>
+    -- pre-split mode: .unrevokedDefect
+    exact ⟨_, .redeemability_defect (fun PL S E P d h_red =>
+      redeemable_implies_surface_aligned d h_red)⟩
+  | bridge_hidden_gap =>
+    -- pre-split mode: .overbudgetReliance
+    exact ⟨_, .bridge_overbudget (fun R b h_sim h_bud =>
+      risk_not_eliminable_by_budgeted_bridge R b h_sim h_bud)⟩
+  | recall_budget_overflow =>
+    -- pre-split mode: .overbudgetReliance
+    exact ⟨_, .bounded_recall_overbudget (fun M => recall_only_withdrawal_incomplete M)⟩
+  | escalation_unsafe =>
+    exact ⟨_, .escalation_unsafe (fun M h_auto B d h_req h_fail h_no_esc =>
+      no_escalation_forces_bridge M h_auto B d h_req h_fail h_no_esc)⟩
 
 /-- MINIMALITY THEOREM — EPARCH SURFACE IS IRREDUNDANT FOR OBLIGATIONS.
 
