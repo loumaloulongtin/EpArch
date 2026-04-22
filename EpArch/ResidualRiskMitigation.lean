@@ -32,7 +32,9 @@ Key exports:
 - `full_surface_covers_all_modes`: full surface covers every risk mode
 - `ResidualRiskObligation`: eleven obligations refining ResidualRiskMode for irredundancy
 - `MitigatesObligation`: one-to-one designated-mitigator relation
-- `CoversObligation`: a surface covers an obligation
+- `CoversObligation`: a surface covers a specific obligation
+- `CoversAllObligations`: a surface covers every obligation
+- `full_surface_covers_all_obligations`: the full surface covers every obligation
 - `removing_any_mechanism_leaves_obligation_uncovered`: minimality theorem
 -/
 
@@ -669,30 +671,32 @@ theorem all_modes_grounded_and_groundedly_covered :
              eparch_surface_groundedly_covers_residual_risk_modes r⟩
 
 /-! ========================================================================
-    T28 — RELATIVE MINIMALITY OF THE RESIDUAL-RISK MITIGATION SURFACE
+    RELATIVE MINIMALITY OF THE RESIDUAL-RISK MITIGATION SURFACE
     ========================================================================
 
-    T27 proved coverage: every residual-risk mode is answered by some EpArch
-    mechanism.  T28 proves the converse direction and irredundancy:
+    Coverage (above) proves every residual-risk mode is answered by some
+    mechanism.  The theorems below prove the converse direction and
+    irredundancy:
 
-    - T28a: every mechanism addresses at least one risk mode (non-idleness).
-    - T28b: infrastructure definitions for surface-subset coverage.
-    - T28c: removing any mechanism leaves some obligation uncovered
-            (removal irredundancy — the minimality result).
+    - Non-idleness: every mechanism addresses at least one risk mode.
+    - Surface infrastructure: definitions for surface-subset coverage.
+    - Obligation coverage: the full surface covers every obligation.
+    - Removal irredundancy: removing any mechanism leaves some obligation
+      uncovered (the minimality result).
 
     The minimality result is relative: minimal with respect to the declared
     `ResidualRiskObligation` taxonomy derived from bounded autonomous PRP
     handling.  It does not claim minimality among all possible epistemic
     architectures.
 
-    The `ResidualRiskObligation` taxonomy (T28c) refines `ResidualRiskMode`
+    The `ResidualRiskObligation` taxonomy refines `ResidualRiskMode`
     at the two `GroundedMitigates` seams where coverage had overlap:
     - `unrevokedDefect` splits into `lifecycleDefect` + `redeemabilityGap`
     - `overbudgetReliance` splits into `hiddenBridgeGap` + `recallBudgetOverflow`
     Each of the resulting eleven obligations has exactly one responsible
     mechanism, making removal-irredundancy provable. -/
 
-/-! ## T28a — Non-Idleness -/
+/-! ## Non-Idleness -/
 
 /-- EVERY MECHANISM MITIGATES SOME MODE (non-idleness).
 
@@ -701,8 +705,7 @@ theorem all_modes_grounded_and_groundedly_covered :
 
     **Theorem shape:** `∀ m : EpArchMechanism, ∃ r : ResidualRiskMode, Mitigates m r`
     **Proof strategy:** `cases m`; supply the matching nullary `Mitigates` constructor
-    per branch.  `grounded_mitigation_implies_mitigation` confirms the route from T27
-    is available, but the `Mitigates` constructors are the direct witnesses. -/
+    per branch. -/
 theorem every_mechanism_mitigates_some_mode :
     ∀ m : EpArchMechanism, ∃ r : ResidualRiskMode, Mitigates m r := by
   intro m
@@ -719,7 +722,7 @@ theorem every_mechanism_mitigates_some_mode :
   | boundedRecall   => exact ⟨.overbudgetReliance, .bounded_recall_overbudget⟩
   | escalation      => exact ⟨.unsafeAutonomy,     .escalation_unsafe⟩
 
-/-! ## T28b — Surface-Coverage Infrastructure -/
+/-! ## Surface-Coverage Infrastructure -/
 
 /-- A mitigation surface is a predicate selecting a subset of EpArch mechanisms. -/
 def Surface := EpArchMechanism → Prop
@@ -751,11 +754,11 @@ theorem full_surface_covers_all_modes : CoversAllModes FullSurface := by
   let ⟨m, h⟩ := eparch_surface_covers_residual_risk_modes r
   exact ⟨m, trivial, h⟩
 
-/-! ## T28c — Residual-Risk Obligation Taxonomy and Removal Irredundancy -/
+/-! ## Residual-Risk Obligation Taxonomy and Removal Irredundancy -/
 
 /-! ### ResidualRiskObligation — refined taxonomy for irredundancy
 
-The T27 `ResidualRiskMode` taxonomy has two modes with multiple mitigators:
+The `ResidualRiskMode` taxonomy has two modes with multiple mitigators:
 - `unrevokedDefect` is covered by both `bankLifecycle` and `redeemability`
 - `overbudgetReliance` is covered by both `trustBridge` and `boundedRecall`
 
@@ -764,10 +767,10 @@ removing one mitigator from a multi-covered mode still leaves the other.
 The fix splits each overlapping mode at its `GroundedMitigates` seam — each
 resulting obligation has exactly one responsible mechanism. -/
 
-/-- Residual-risk obligations: the T27 `ResidualRiskMode` taxonomy refined to
+/-- Residual-risk obligations: the `ResidualRiskMode` taxonomy refined to
     resolve the two multi-mitigator overlaps so that each obligation has a
-    single responsible mechanism.  Used for T28c irredundancy only.
-    The T27 coverage theorem and `ResidualRiskMode` are not modified. -/
+    single responsible mechanism.  Used for removal-irredundancy only.
+    `ResidualRiskMode` and the coverage theorems above are not modified. -/
 inductive ResidualRiskObligation where
   | scopeLeak
   | standardMismatch
@@ -806,6 +809,33 @@ inductive MitigatesObligation : EpArchMechanism → ResidualRiskObligation → P
     designated mitigator for that obligation. -/
 def CoversObligation (S : Surface) (o : ResidualRiskObligation) : Prop :=
   ∃ m : EpArchMechanism, S m ∧ MitigatesObligation m o
+
+/-- A surface covers all residual-risk obligations. -/
+def CoversAllObligations (S : Surface) : Prop :=
+  ∀ o : ResidualRiskObligation, CoversObligation S o
+
+/-- FULL SURFACE COVERS ALL OBLIGATIONS.
+
+    Every residual-risk obligation has a designated mechanism in the full surface.
+    This is the obligation-layer analogue of `full_surface_covers_all_modes`.
+
+    **Theorem shape:** `CoversAllObligations FullSurface`
+    **Proof strategy:** `cases o`; supply the matching `MitigatesObligation`
+    constructor with `trivial` for the `FullSurface` membership. -/
+theorem full_surface_covers_all_obligations : CoversAllObligations FullSurface := by
+  intro o
+  cases o with
+  | scopeLeak         => exact ⟨.bubbles,          trivial, .bubbles_scope_leak⟩
+  | standardMismatch  => exact ⟨.standardsHeader,  trivial, .standards_mismatch⟩
+  | unmodeledError    => exact ⟨.errorHeader,       trivial, .error_unmodeled⟩
+  | provenanceGap     => exact ⟨.provenanceHeader,  trivial, .provenance_gap⟩
+  | staleness         => exact ⟨.tau,               trivial, .tau_staleness⟩
+  | adversarialImport => exact ⟨.authorization,     trivial, .auth_adversarial⟩
+  | lifecycleDefect   => exact ⟨.bankLifecycle,     trivial, .lifecycle_defect⟩
+  | redeemabilityGap  => exact ⟨.redeemability,     trivial, .redeemability_gap⟩
+  | hiddenBridgeGap   => exact ⟨.trustBridge,       trivial, .bridge_hidden_gap⟩
+  | recallBudgetOverflow => exact ⟨.boundedRecall,  trivial, .recall_budget_overflow⟩
+  | unsafeAutonomy    => exact ⟨.escalation,        trivial, .escalation_unsafe⟩
 
 /-- MINIMALITY THEOREM — EPARCH SURFACE IS IRREDUNDANT FOR OBLIGATIONS.
 

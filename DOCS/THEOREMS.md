@@ -484,12 +484,13 @@ evidence (a forcing or impossibility theorem), confirming the modes are not arbi
 labels.  `all_modes_grounded_and_groundedly_covered` is the bilateral capstone pairing
 the two grounded sides: every mode is both structurally grounded and proof-backed addressed.
 
-`every_mechanism_mitigates_some_mode` (T28a) proves non-idleness: every mechanism
-addresses at least one declared risk mode.  `removing_any_mechanism_leaves_obligation_uncovered`
-(T28c) proves relative minimality: removing any mechanism leaves some obligation in the
-refined `ResidualRiskObligation` taxonomy uncovered.  Together with the coverage theorems,
-this constitutes a bijective coverage result: every obligation is covered and every
-mechanism is necessary.
+`every_mechanism_mitigates_some_mode` proves non-idleness: every mechanism
+addresses at least one declared risk mode.  `full_surface_covers_all_obligations`
+proves that the full surface covers every obligation in the refined
+`ResidualRiskObligation` taxonomy.  `removing_any_mechanism_leaves_obligation_uncovered`
+proves relative minimality: removing any mechanism leaves at least one designated
+obligation uncovered.  Together these constitute a relative minimal cover:
+every obligation is covered by the full surface, and no mechanism is superfluous.
 
 **Cross-references:** Bucket 9e (`recall_only_withdrawal_incomplete`),
 Bucket 9f (analogical bridge), Bucket 9g (`risk_not_eliminable_by_budgeted_bridge`),
@@ -512,6 +513,7 @@ Bucket 14 (`no_escalation_forces_bridge`, `residual_risk_forced_when_no_scratch_
 | `ResidualRiskObligation` | `inductive` | Eleven obligations refining `ResidualRiskMode` for irredundancy; splits `unrevokedDefect` → `lifecycleDefect` + `redeemabilityGap`; splits `overbudgetReliance` → `hiddenBridgeGap` + `recallBudgetOverflow` |
 | `MitigatesObligation` | `inductive Prop` | `MitigatesObligation m o` — designated-mitigator relation; one constructor per mechanism–obligation pair; one-to-one |
 | `CoversObligation` | `def` | `CoversObligation S o = ∃ m, S m ∧ MitigatesObligation m o` |
+| `CoversAllObligations` | `def` | `CoversAllObligations S = ∀ o, CoversObligation S o` |
 
 ### Theorems
 
@@ -524,6 +526,7 @@ Bucket 14 (`no_escalation_forces_bridge`, `residual_risk_forced_when_no_scratch_
 | `all_modes_grounded_and_groundedly_covered` | `∀ r, GroundedRiskMode r ∧ ∃ m, GroundedMitigates m r` | pair `all_modes_structurally_grounded` with `eparch_surface_groundedly_covers_residual_risk_modes` |
 | `every_mechanism_mitigates_some_mode` | `∀ m : EpArchMechanism, ∃ r : ResidualRiskMode, Mitigates m r` | `cases m`; supply matching nullary `Mitigates` constructor |
 | `full_surface_covers_all_modes` | `CoversAllModes FullSurface` | `let ⟨m, h⟩ := eparch_surface_covers_residual_risk_modes r`; wrap with `trivial` |
+| `full_surface_covers_all_obligations` | `CoversAllObligations FullSurface` | `cases o`; supply matching `MitigatesObligation` constructor with `trivial` |
 | `removing_any_mechanism_leaves_obligation_uncovered` | `∀ m, ∃ o : ResidualRiskObligation, ¬ CoversObligation (SurfaceWithout m) o` | `cases m`; supply unique obligation; `intro ⟨m', h_ne, h_mit⟩`; `cases h_mit`; `exact h_ne rfl` |
 
 ### Grounding table (declared `Mitigates` constructors)
