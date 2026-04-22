@@ -476,7 +476,13 @@ this theorem shows the prescribed surface is complete with respect to those mode
 `eparch_surface_groundedly_covers_residual_risk_modes` strengthens that by requiring each
 `GroundedMitigates` constructor to carry actual upstream-theorem evidence or structural
 field-projection evidence.  It does not prove strict minimality or irredundancy of the
-surface — irredundancy is proved in a companion theorem over the same surface.
+surface — irredundancy is handled separately.
+
+`GroundedRiskMode` and `all_modes_structurally_grounded` add a parallel layer over the
+mode taxonomy itself: each `ResidualRiskMode` constructor carries upstream structural
+evidence (a forcing or impossibility theorem), confirming the modes are not arbitrary
+labels.  `all_modes_grounded_and_groundedly_covered` is the bilateral capstone pairing
+the two grounded sides: every mode is both structurally grounded and proof-backed addressed.
 
 **Cross-references:** Bucket 9e (`recall_only_withdrawal_incomplete`),
 Bucket 9f (analogical bridge), Bucket 9g (`risk_not_eliminable_by_budgeted_bridge`),
@@ -490,6 +496,7 @@ Bucket 14 (`no_escalation_forces_bridge`, `residual_risk_forced_when_no_scratch_
 | `EpArchMechanism` | `inductive` | Eleven prescribed mechanisms: `bubbles`, `standardsHeader`, `errorHeader`, `provenanceHeader`, `tau`, `trustBridge`, `authorization`, `bankLifecycle`, `redeemability`, `boundedRecall`, `escalation` |
 | `Mitigates` | `inductive Prop` | `Mitigates m r` — declared coverage; mechanism `m` converts risk mode `r` into an auditable obligation; eleven constructors naming the grounding |
 | `GroundedMitigates` | `inductive Prop` | `GroundedMitigates m r` — proof-backed companion; each constructor carries upstream theorem evidence or structural projection evidence; implies `Mitigates m r` |
+| `GroundedRiskMode` | `inductive Prop` | `GroundedRiskMode r` — carries upstream structural evidence backing mode `r`; nine constructors, one per `ResidualRiskMode` |
 
 ### Theorems
 
@@ -498,6 +505,8 @@ Bucket 14 (`no_escalation_forces_bridge`, `residual_risk_forced_when_no_scratch_
 | `eparch_surface_covers_residual_risk_modes` | `∀ r : ResidualRiskMode, ∃ m : EpArchMechanism, Mitigates m r` | `cases r`; supply matching `Mitigates` constructor per branch |
 | `grounded_mitigation_implies_mitigation` | `GroundedMitigates m r → Mitigates m r` | `cases` on `GroundedMitigates` constructor; supply matching `Mitigates` constructor |
 | `eparch_surface_groundedly_covers_residual_risk_modes` | `∀ r : ResidualRiskMode, ∃ m : EpArchMechanism, GroundedMitigates m r` | `cases r`; supply `GroundedMitigates` constructor with its proof witness per branch |
+| `all_modes_structurally_grounded` | `∀ r : ResidualRiskMode, GroundedRiskMode r` | `cases r`; supply matching `GroundedRiskMode` constructor with its upstream theorem |
+| `all_modes_grounded_and_groundedly_covered` | `∀ r, GroundedRiskMode r ∧ ∃ m, GroundedMitigates m r` | pair `all_modes_structurally_grounded` with `eparch_surface_groundedly_covers_residual_risk_modes` |
 
 ### Grounding table (declared `Mitigates` constructors)
 
@@ -538,11 +547,30 @@ structural-projection cases carry a field-projection proposition proved by `rfl`
 
 `GroundedMitigates` has eleven constructors but `eparch_surface_groundedly_covers_residual_risk_modes`
 uses nine — one per `ResidualRiskMode`.  `redeemability_defect` and `bounded_recall_overbudget`
-are not needed by the coverage proof but remain available for the per-mechanism obligation
-in the irredundancy companion theorem.
+are not needed by the coverage proof but remain available for a separate per-mechanism
+obligation result.
+
+### Mode-grounding table (`GroundedRiskMode` constructors)
+
+Each constructor carries the upstream theorem (or structural witness) that backs the
+corresponding `ResidualRiskMode`.  Five mode-grounding theorems live in `EpArch.Minimality`
+(scope leak, standard mismatch, unmodeled error, provenance gap, unrevoked defect); the
+other four reuse upstream theorems from elsewhere in the formalization.
+
+| Constructor | Mode | Upstream evidence | Source |
+|-------------|------|------------------|--------|
+| `scope_leak` | `scopeLeak` | `scope_leak_forced` | `EpArch.Minimality` |
+| `standard_mismatch` | `standardMismatch` | `implicit_standard_forces_mismatch` | `EpArch.Minimality` |
+| `unmodeled_error` | `unmodeledError` | `implicit_error_model_forces_gap` | `EpArch.Minimality` |
+| `provenance_gap` | `provenanceGap` | `implicit_provenance_forces_gap` | `EpArch.Minimality` |
+| `staleness` | `staleness` | `PathExists.ttl_valid` (τ = 0 contradicts τ > 0) | `EpArch.Adversarial.Obligations` |
+| `adversarial_import` | `adversarialImport` | `flat_authorization_impossible` | `EpArch.Minimality` |
+| `unrevoked_defect` | `unrevokedDefect` | `no_lifecycle_cannot_ensure_nondefective` | `EpArch.Minimality` |
+| `overbudget_reliance` | `overbudgetReliance` | `risk_not_eliminable_by_budgeted_bridge` | `EpArch.Minimality` |
+| `unsafe_autonomy` | `unsafeAutonomy` | `no_escalation_forces_bridge` | `EpArch.Health` |
 
 This proof layer does not establish that the mechanisms are irredundant or that the surface
-is minimal.  Irredundancy is proved in a companion theorem over the same surface.
+is minimal.  Irredundancy is handled separately.
 
 ---
 
