@@ -106,7 +106,9 @@ inductive ClusterTag where
   | lattice_graceful          -- graceful_degradation: NoSelfCorrection → RevisionGate
   | lattice_sub_safety        -- sub_revision_safety: Compatible sub-bundle extension is safe
   | lattice_pack              -- modularity_pack: full bidirectional lattice-stability
-  -- Autonomy necessity cluster (AutonomyModel-specific health goal)
+  -- Autonomy necessity cluster (AutonomyModel-specific health goal).
+  -- Placed last in the constructor list for backwards compatibility;
+  -- `allClusters` groups it with goal families (after CoreModel goals, before Tier 4).
   | goal_autonomyUnderPRP     -- autonomy_forces_bridge_or_escalation: forced bridge-or-escalation under PRP
   deriving DecidableEq, BEq, Repr
 
@@ -316,15 +318,17 @@ def allAutonomyClusters : List EnabledAutonomyCluster :=
 
 /-- All 32 cluster tags, in canonical order.  Derived from the per-family lists
     so ordering stays consistent with those lists automatically.
+    Family order: constraints → CoreModel goals → AutonomyModel goals →
+    Tier 4 library → world bundles → meta-modularity → lattice.
     Used by `explainConfig`. -/
 def allClusters : List ClusterTag :=
   (allConstraintClusters.map  EnabledConstraintCluster.toClusterTag) ++
   (allGoalClusters.map        EnabledGoalCluster.toClusterTag) ++
+  (allAutonomyClusters.map    EnabledAutonomyCluster.toClusterTag) ++
   (allTier4Clusters.map       EnabledTier4Cluster.toClusterTag) ++
   (allWorldClusters.map       EnabledWorldCluster.toClusterTag) ++
   (allMetaModularClusters.map EnabledMetaModularCluster.toClusterTag) ++
-  (allLatticeClusters.map     EnabledLatticeCluster.toClusterTag) ++
-  (allAutonomyClusters.map    EnabledAutonomyCluster.toClusterTag)
+  (allLatticeClusters.map     EnabledLatticeCluster.toClusterTag)
 
 /-- Reverse lookup: given a `ClusterTag`, return the matching
     `EnabledConstraintCluster` if it is a Tier 2 forcing tag, or `none`

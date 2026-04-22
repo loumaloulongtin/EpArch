@@ -589,8 +589,14 @@ $$\text{CorrigibleLedgerGoal}(M) \Rightarrow \text{HasRevisionCapability}(M)$$
 $$\text{SelfCorrectingSystem}(M) \Rightarrow \text{HasRevisionCapability}(M)$$
 
 `AutonomyUnderPRPGoal` lives over `AutonomyModel`, not `CoreModel`: it is a
-health-specific extension goal for required over-budget claim handling under
-PRP, not yet part of the config/certification surface.
+health-specific extension goal for required over-budget claim handling under PRP.
+
+`AutonomyUnderPRPGoal` is exposed through the config/certification surface as
+`ClusterTag.goal_autonomyUnderPRP`, gated by `GoalTag.autonomyUnderPRP`. It is
+not part of `EnabledGoalCluster` / `GoalWitness` because it is not a `CoreModel`
+transport theorem; it is carried by `EnabledAutonomyCluster` / `AutonomyWitness`
+as an `AutonomyModel`-specific necessity theorem. The cluster count is therefore
+32 (was 31 before T25c).
 
 The T25 theorems are operational, not metaphysical: they reason about whether
 an available bridge witness exists in the system's prior material, not whether
@@ -1151,19 +1157,19 @@ for each cluster.
 **Three-layer architecture:**
 1. **Routing layer** — `clusterEnabled`, `enabled`, `complete`, `sound` (all clusters; `clusterValid c` returns a genuine proved proposition for every cluster, not `True`)
 2. **Constraint proof layer** — `constraintProof`/`constraintWitnesses` (Tier 2 forcing clusters: real `ConstraintProof` with genuine proposition + proof; possible because `WorkingSystem` is monomorphic)
-3. **Proof-content layer** — `cluster_*` universe-polymorphic theorems (all 31 clusters; 15 non-Tier2 clusters use private `prop_*` defs pinned at universe 0 in §4g-pre to avoid free universe variables in the `clusterValid` match)
+3. **Proof-content layer** — `cluster_*` universe-polymorphic theorems (all 32 clusters; 16 non-Tier2 clusters use private `prop_*` defs pinned at universe 0 in §4g-pre to avoid free universe variables in the `clusterValid` match)
 
 ### Definitions / Configuration Language
 
 | Definition | File | Purpose |
 |------------|------|---------|
 | `ConstraintTag` | Meta/ClusterRegistry.lean | 8 constraint tags (distributed_agents … bounded_storage) |
-| `GoalTag` | Meta/ClusterRegistry.lean | 5 health-goal tags (safeWithdrawal … selfCorrection) |
+| `GoalTag` | Meta/ClusterRegistry.lean | 6 health-goal tags: 5 CoreModel transport goals (safeWithdrawal … selfCorrection) + `autonomyUnderPRP` (AutonomyModel necessity goal) |
 | `WorldTag` | Meta/ClusterRegistry.lean | 8 world-bundle tags (lies_possible … ddos) |
 | `EpArchConfig` | Meta/ClusterRegistry.lean | User-supplied config: lists of active constraints/goals/worlds |
-| `ClusterTag` | Meta/ClusterRegistry.lean | 31 cluster tags spanning Tiers 2–4, world obligations, constraint-modularity, and lattice-stability |
+| `ClusterTag` | Meta/ClusterRegistry.lean | 32 cluster tags spanning Tiers 2–4, world obligations, constraint-modularity, lattice-stability, and the AutonomyModel necessity cluster |
 | `clusterEnabled` | Meta/ClusterRegistry.lean | `EpArchConfig → ClusterTag → Bool` (computable routing); meta-modular and lattice always enabled |
-| `clusterValid` | Meta/Config.lean | `ClusterTag → Prop` — genuine proved proposition for each of the 31 clusters; 15 clusters use `prop_*` defs pinned at universe 0 to eliminate free universe variables |
+| `clusterValid` | Meta/Config.lean | `ClusterTag → Prop` — genuine proved proposition for each of the 32 clusters; 16 clusters use `prop_*` defs pinned at universe 0 to eliminate free universe variables |
 | `showConfig` | Meta/ClusterRegistry.lean | `EpArchConfig → List String` — `#eval`-able routing report |
 | `ConstraintProof` | Meta/Config.lean | Proof-carrying record: `statement : Prop`, `proof : statement` (Tier 2 only) |
 | `CertifiedProjection` | Meta/Config.lean | Proof-carrying record: enabled clusters + soundness + `constraintWitnesses` + `metaModularWitnesses` + `latticeWitnesses` + filtered enabled lists for all families |
