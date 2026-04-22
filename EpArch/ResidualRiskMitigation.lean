@@ -1,5 +1,5 @@
 /-
-EpArch.ResidualRiskMitigation — Residual Risk Mitigation Coverage
+EpArch.ResidualRiskMitigation — Residual Risk Mitigation Coverage and Minimality
 
 Classification theorem: every residual-risk mode induced by bounded autonomous
 novelty handling is covered by a prescribed EpArch mechanism.
@@ -9,6 +9,9 @@ carries upstream theorem evidence or structural field/projection evidence.
 
 Grounded mode layer: structural evidence showing each mode is backed by
 upstream theorem evidence, not an arbitrary taxonomy choice.
+
+Minimality layer: every mechanism is necessary — removing any one leaves some
+obligation uncovered (relative minimality w.r.t. the obligation taxonomy).
 
 Key exports:
 - `ResidualRiskMode`: nine structural failure modes induced by the operating regime
@@ -24,6 +27,13 @@ Key exports:
 - `all_modes_structurally_grounded`: every mode is backed by an upstream structural theorem
 - `all_modes_grounded_and_groundedly_covered`: bilateral capstone; every mode is both
   structurally grounded (GroundedRiskMode) and proof-backed addressed (GroundedMitigates)
+- `every_mechanism_mitigates_some_mode`: non-idleness; every mechanism addresses some mode
+- `Surface`, `FullSurface`, `SurfaceWithout`, `CoversMode`, `CoversAllModes`: surface infrastructure
+- `full_surface_covers_all_modes`: full surface covers every risk mode
+- `ResidualRiskObligation`: eleven obligations refining ResidualRiskMode for irredundancy
+- `MitigatesObligation`: one-to-one designated-mitigator relation
+- `CoversObligation`: a surface covers an obligation
+- `removing_any_mechanism_leaves_obligation_uncovered`: minimality theorem
 -/
 
 import EpArch.Health
@@ -657,5 +667,225 @@ theorem all_modes_grounded_and_groundedly_covered :
         GroundedRiskMode r ∧ ∃ m : EpArchMechanism, GroundedMitigates m r :=
   fun r => ⟨all_modes_structurally_grounded r,
              eparch_surface_groundedly_covers_residual_risk_modes r⟩
+
+/-! ========================================================================
+    T28 — RELATIVE MINIMALITY OF THE RESIDUAL-RISK MITIGATION SURFACE
+    ========================================================================
+
+    T27 proved coverage: every residual-risk mode is answered by some EpArch
+    mechanism.  T28 proves the converse direction and irredundancy:
+
+    - T28a: every mechanism addresses at least one risk mode (non-idleness).
+    - T28b: infrastructure definitions for surface-subset coverage.
+    - T28c: removing any mechanism leaves some obligation uncovered
+            (removal irredundancy — the minimality result).
+
+    The minimality result is relative: minimal with respect to the declared
+    `ResidualRiskObligation` taxonomy derived from bounded autonomous PRP
+    handling.  It does not claim minimality among all possible epistemic
+    architectures.
+
+    The `ResidualRiskObligation` taxonomy (T28c) refines `ResidualRiskMode`
+    at the two `GroundedMitigates` seams where coverage had overlap:
+    - `unrevokedDefect` splits into `lifecycleDefect` + `redeemabilityGap`
+    - `overbudgetReliance` splits into `hiddenBridgeGap` + `recallBudgetOverflow`
+    Each of the resulting eleven obligations has exactly one responsible
+    mechanism, making removal-irredundancy provable. -/
+
+/-! ## T28a — Non-Idleness -/
+
+/-- EVERY MECHANISM MITIGATES SOME MODE (non-idleness).
+
+    Every EpArch mechanism addresses at least one declared residual-risk mode.
+    No mechanism in the surface is ornamental.
+
+    **Theorem shape:** `∀ m : EpArchMechanism, ∃ r : ResidualRiskMode, Mitigates m r`
+    **Proof strategy:** `cases m`; supply the matching nullary `Mitigates` constructor
+    per branch.  `grounded_mitigation_implies_mitigation` confirms the route from T27
+    is available, but the `Mitigates` constructors are the direct witnesses. -/
+theorem every_mechanism_mitigates_some_mode :
+    ∀ m : EpArchMechanism, ∃ r : ResidualRiskMode, Mitigates m r := by
+  intro m
+  cases m with
+  | bubbles         => exact ⟨.scopeLeak,         .bubbles_scope_leak⟩
+  | standardsHeader => exact ⟨.standardMismatch,  .standards_mismatch⟩
+  | errorHeader     => exact ⟨.unmodeledError,     .error_unmodeled⟩
+  | provenanceHeader => exact ⟨.provenanceGap,     .provenance_gap⟩
+  | tau             => exact ⟨.staleness,          .tau_staleness⟩
+  | trustBridge     => exact ⟨.overbudgetReliance, .bridge_overbudget⟩
+  | authorization   => exact ⟨.adversarialImport,  .auth_adversarial⟩
+  | bankLifecycle   => exact ⟨.unrevokedDefect,    .lifecycle_defect⟩
+  | redeemability   => exact ⟨.unrevokedDefect,    .redeemability_defect⟩
+  | boundedRecall   => exact ⟨.overbudgetReliance, .bounded_recall_overbudget⟩
+  | escalation      => exact ⟨.unsafeAutonomy,     .escalation_unsafe⟩
+
+/-! ## T28b — Surface-Coverage Infrastructure -/
+
+/-- A mitigation surface is a predicate selecting a subset of EpArch mechanisms. -/
+def Surface := EpArchMechanism → Prop
+
+/-- The full EpArch surface — includes every declared mechanism. -/
+def FullSurface : Surface := fun _ => True
+
+/-- The surface with mechanism `x` removed. -/
+def SurfaceWithout (x : EpArchMechanism) : Surface := fun m => m ≠ x
+
+/-- A surface covers a risk mode if at least one of its mechanisms mitigates it. -/
+def CoversMode (S : Surface) (r : ResidualRiskMode) : Prop :=
+  ∃ m : EpArchMechanism, S m ∧ Mitigates m r
+
+/-- A surface covers all risk modes. -/
+def CoversAllModes (S : Surface) : Prop :=
+  ∀ r : ResidualRiskMode, CoversMode S r
+
+/-- FULL SURFACE COVERS ALL MODES.
+
+    A direct corollary of `eparch_surface_covers_residual_risk_modes`: the full
+    surface (every mechanism included) covers every residual-risk mode.
+
+    **Theorem shape:** `CoversAllModes FullSurface`
+    **Proof strategy:** unfold `CoversAllModes` / `CoversMode` / `FullSurface`;
+    apply `eparch_surface_covers_residual_risk_modes` to get a witness mechanism. -/
+theorem full_surface_covers_all_modes : CoversAllModes FullSurface := by
+  intro r
+  let ⟨m, h⟩ := eparch_surface_covers_residual_risk_modes r
+  exact ⟨m, trivial, h⟩
+
+/-! ## T28c — Residual-Risk Obligation Taxonomy and Removal Irredundancy -/
+
+/-! ### ResidualRiskObligation — refined taxonomy for irredundancy
+
+The T27 `ResidualRiskMode` taxonomy has two modes with multiple mitigators:
+- `unrevokedDefect` is covered by both `bankLifecycle` and `redeemability`
+- `overbudgetReliance` is covered by both `trustBridge` and `boundedRecall`
+
+Removal-irredundancy over `ResidualRiskMode` is not provable as stated because
+removing one mitigator from a multi-covered mode still leaves the other.
+The fix splits each overlapping mode at its `GroundedMitigates` seam — each
+resulting obligation has exactly one responsible mechanism. -/
+
+/-- Residual-risk obligations: the T27 `ResidualRiskMode` taxonomy refined to
+    resolve the two multi-mitigator overlaps so that each obligation has a
+    single responsible mechanism.  Used for T28c irredundancy only.
+    The T27 coverage theorem and `ResidualRiskMode` are not modified. -/
+inductive ResidualRiskObligation where
+  | scopeLeak
+  | standardMismatch
+  | unmodeledError
+  | provenanceGap
+  | staleness
+  | adversarialImport
+  /-- `unrevokedDefect` split: quarantine / revocation / repair lifecycle transitions. -/
+  | lifecycleDefect
+  /-- `unrevokedDefect` split: challenge-correction path obligation at redemption surface. -/
+  | redeemabilityGap
+  /-- `overbudgetReliance` split: bridge use is unlabelled as non-scratch at verification. -/
+  | hiddenBridgeGap
+  /-- `overbudgetReliance` split: recall chain exceeds admissible budget silently. -/
+  | recallBudgetOverflow
+  | unsafeAutonomy
+
+/-- `MitigatesObligation m o` holds when mechanism `m` is the uniquely responsible
+    mitigator for obligation `o`.  Each obligation has exactly one constructor;
+    the one-to-one correspondence makes removal-irredundancy provable by exhaustive
+    case analysis on `MitigatesObligation`. -/
+inductive MitigatesObligation : EpArchMechanism → ResidualRiskObligation → Prop where
+  | bubbles_scope_leak     : MitigatesObligation .bubbles         .scopeLeak
+  | standards_mismatch     : MitigatesObligation .standardsHeader .standardMismatch
+  | error_unmodeled        : MitigatesObligation .errorHeader     .unmodeledError
+  | provenance_gap         : MitigatesObligation .provenanceHeader .provenanceGap
+  | tau_staleness          : MitigatesObligation .tau             .staleness
+  | auth_adversarial       : MitigatesObligation .authorization   .adversarialImport
+  | lifecycle_defect       : MitigatesObligation .bankLifecycle   .lifecycleDefect
+  | redeemability_gap      : MitigatesObligation .redeemability   .redeemabilityGap
+  | bridge_hidden_gap      : MitigatesObligation .trustBridge     .hiddenBridgeGap
+  | recall_budget_overflow : MitigatesObligation .boundedRecall   .recallBudgetOverflow
+  | escalation_unsafe      : MitigatesObligation .escalation      .unsafeAutonomy
+
+/-- A surface covers an obligation if at least one of its mechanisms is the
+    designated mitigator for that obligation. -/
+def CoversObligation (S : Surface) (o : ResidualRiskObligation) : Prop :=
+  ∃ m : EpArchMechanism, S m ∧ MitigatesObligation m o
+
+/-- MINIMALITY THEOREM — EPARCH SURFACE IS IRREDUNDANT FOR OBLIGATIONS.
+
+    Removing any declared EpArch mechanism leaves at least one residual-risk
+    obligation uncovered by the remaining surface.  Every mechanism is necessary
+    for the obligation it uniquely covers.
+
+    This is a relative minimality result: minimal with respect to the
+    `ResidualRiskObligation` taxonomy derived from bounded autonomous PRP
+    handling.  It does not claim minimality among all possible epistemic
+    architectures.
+
+    **Theorem shape:**
+    `∀ m : EpArchMechanism, ∃ o : ResidualRiskObligation, ¬ CoversObligation (SurfaceWithout m) o`
+
+    **Proof strategy:** `cases m`; for each mechanism supply the obligation it
+    uniquely covers; unfold `CoversObligation` / `SurfaceWithout`; introduce the
+    existential; `cases` on the `MitigatesObligation` constructor — since each
+    obligation has exactly one constructor, the only match forces the mechanism
+    to equal `m`, contradicting `h_ne : m' ≠ m`. -/
+theorem removing_any_mechanism_leaves_obligation_uncovered :
+    ∀ m : EpArchMechanism,
+      ∃ o : ResidualRiskObligation, ¬ CoversObligation (SurfaceWithout m) o := by
+  intro m
+  cases m with
+  | bubbles =>
+    refine ⟨.scopeLeak, ?_⟩
+    intro ⟨m', h_ne, h_mit⟩
+    cases h_mit
+    -- only constructor for scopeLeak is bubbles_scope_leak, forcing m' = .bubbles
+    exact h_ne rfl
+  | standardsHeader =>
+    refine ⟨.standardMismatch, ?_⟩
+    intro ⟨m', h_ne, h_mit⟩
+    cases h_mit
+    exact h_ne rfl
+  | errorHeader =>
+    refine ⟨.unmodeledError, ?_⟩
+    intro ⟨m', h_ne, h_mit⟩
+    cases h_mit
+    exact h_ne rfl
+  | provenanceHeader =>
+    refine ⟨.provenanceGap, ?_⟩
+    intro ⟨m', h_ne, h_mit⟩
+    cases h_mit
+    exact h_ne rfl
+  | tau =>
+    refine ⟨.staleness, ?_⟩
+    intro ⟨m', h_ne, h_mit⟩
+    cases h_mit
+    exact h_ne rfl
+  | trustBridge =>
+    refine ⟨.hiddenBridgeGap, ?_⟩
+    intro ⟨m', h_ne, h_mit⟩
+    cases h_mit
+    exact h_ne rfl
+  | authorization =>
+    refine ⟨.adversarialImport, ?_⟩
+    intro ⟨m', h_ne, h_mit⟩
+    cases h_mit
+    exact h_ne rfl
+  | bankLifecycle =>
+    refine ⟨.lifecycleDefect, ?_⟩
+    intro ⟨m', h_ne, h_mit⟩
+    cases h_mit
+    exact h_ne rfl
+  | redeemability =>
+    refine ⟨.redeemabilityGap, ?_⟩
+    intro ⟨m', h_ne, h_mit⟩
+    cases h_mit
+    exact h_ne rfl
+  | boundedRecall =>
+    refine ⟨.recallBudgetOverflow, ?_⟩
+    intro ⟨m', h_ne, h_mit⟩
+    cases h_mit
+    exact h_ne rfl
+  | escalation =>
+    refine ⟨.unsafeAutonomy, ?_⟩
+    intro ⟨m', h_ne, h_mit⟩
+    cases h_mit
+    exact h_ne rfl
 
 end EpArch
