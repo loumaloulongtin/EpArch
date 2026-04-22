@@ -11,8 +11,8 @@ Key exports:
 - Necessity theorems: corrigible_needs_revision,
   self_correction_needs_revision, sound_deposits_needs_verification,
   autonomy_forces_bridge_or_escalation, no_escalation_forces_bridge,
-  residual_risk_forced_under_autonomous_novelty,
-  no_risk_free_autonomy_for_novel_overbudget_claims
+  residual_risk_forced_when_no_scratch_no_escalation,
+  no_risk_free_bridge_when_all_usable_bridges_risky
 - FullSystemHealth, AutonomyHealth, AutonomyRiskHealth (bundles)
 -/
 
@@ -415,20 +415,22 @@ def RiskAutonomyModel.toAutonomyModel (M : RiskAutonomyModel) : AutonomyModel wh
 
 /-! ## §T26a.2  Residual Risk Forced -/
 
-/-- RESIDUAL RISK FORCED UNDER AUTONOMOUS NOVELTY
+/-- RESIDUAL RISK FORCED: when scratch verification fails, escalation is
+    unavailable, and every usable bridge carries residual risk, a risky
+    bridge is the only remaining admissible response.
 
-    If a system must handle deposit `d` at bubble `B`, cannot scratch-verify it
-    within budget, cannot escalate, and every available budgeted bridge for `d`
-    carries residual risk, then the system is forced to use a risky bridge.
-
-    **Theorem shape:** five hypotheses close all risk-free branches; the remaining
-    branch is a bridge satisfying `bridgeAvailable`, `analogSim`, `verifyVia`,
-    and `residualRiskVia`.
+    **Theorem shape:** `AutonomyUnderPRPGoal` + `mustHandle B d` +
+    `¬verifyWithin B d (effectiveTime B)` + `¬canEscalate B d` +
+    `h_all_risky` → forced risky bridge existential.
     **Proof strategy:**
     1. `no_escalation_forces_bridge` (T25) delivers `⟨b, h_avail, h_sim, h_verify⟩`.
     2. `h_all_risky b h_avail h_sim h_verify` yields `residualRiskVia B b d`.
-    3. Package the four-component existential. -/
-theorem residual_risk_forced_under_autonomous_novelty (M : RiskAutonomyModel)
+    3. Package the four-component existential.
+
+    `h_all_risky` is obligation-scoped: every bridge the system can actually
+    use for this `B` and `d` is risky.  It does not claim risk-free bridges
+    cannot exist in principle. -/
+theorem residual_risk_forced_when_no_scratch_no_escalation (M : RiskAutonomyModel)
     (h_auto  : AutonomyUnderPRPGoal M.toAutonomyModel)
     (B : M.sig.Bubble) (d : M.sig.Deposit)
     (h_required    : M.ops.mustHandle B d)
@@ -452,19 +454,15 @@ theorem residual_risk_forced_under_autonomous_novelty (M : RiskAutonomyModel)
   exact ⟨b, h_avail, h_sim, h_verify, h_all_risky b h_avail h_sim h_verify⟩
 
 
-/-- No risk-free sound response exists for a required novel over-budget claim
-    when escalation is also unavailable.
+/-- If every usable bridge for `d` at `B` is risky, no usable bridge is risk-free.
 
-    **Theorem shape:** concludes `¬∃ b, ... ∧ ¬residualRiskVia B b d` from the
-    same regime hypotheses.
-    **Proof strategy:** assume a risk-free bridge witness; apply `h_all_risky`
-    to obtain `residualRiskVia`; contradicts the risk-free assumption. -/
-theorem no_risk_free_autonomy_for_novel_overbudget_claims (M : RiskAutonomyModel)
-    (_h_auto  : AutonomyUnderPRPGoal M.toAutonomyModel)
+    **Theorem shape:** `h_all_risky` alone → `¬∃ b, ... ∧ ¬residualRiskVia B b d`.
+    This is a bridge-classification lemma: the proof does not require the autonomy
+    regime (no `AutonomyUnderPRPGoal`, no `mustHandle`, no scratch-fail, no escalation
+    premise).  The autonomy-regime consequence is `residual_risk_forced_when_no_scratch_no_escalation`.
+    **Proof strategy:** intro + apply `h_all_risky`; contradicts `h_no_risk`. -/
+theorem no_risk_free_bridge_when_all_usable_bridges_risky (M : RiskAutonomyModel)
     (B : M.sig.Bubble) (d : M.sig.Deposit)
-    (_h_required    : M.ops.mustHandle B d)
-    (_h_scratch_fail : ¬M.ops.verifyWithin B d (M.ops.effectiveTime B))
-    (_h_no_esc      : ¬M.ops.canEscalate B d)
     (h_all_risky   : ∀ b : M.sig.Deposit,
         M.ops.bridgeAvailable B b →
         M.ops.analogSim b d →
@@ -482,9 +480,10 @@ theorem no_risk_free_autonomy_for_novel_overbudget_claims (M : RiskAutonomyModel
 
 /-! ## §T26a.3  AutonomyRiskHealth Bundle -/
 
-/-- A system is risk-conformant for autonomous PRP operation if it satisfies
-    the autonomy coverage goal over its risk-extended model.
+/-- A risk-extended autonomy model satisfies the base PRP coverage goal.
 
+    Does not assert that risks are bounded, accepted, eliminated, or calibrated;
+    it only packages `AutonomyUnderPRPGoal` over `RiskAutonomyModel`.
     Separate from `AutonomyHealth` (T25) because it requires `RiskAutonomyModel`.
     `AutonomyRiskHealth` is the base bundle; T26c (`PRPObligationStream`) is the
     stream-level extension. -/
