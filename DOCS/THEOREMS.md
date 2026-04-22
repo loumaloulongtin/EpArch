@@ -777,6 +777,14 @@ Each architectural constraint creates both a capability and an exploitable surfa
 | `no_risk_free_bridge_when_all_usable_bridges_risky` | every usable bridge for `B, d` carries residual risk | no usable bridge for `B, d` is risk-free (bridge-classification lemma; no autonomy-regime premises required) |
 | `forced_residual_risk_at_stream_index` | `AutonomyUnderPRPGoal` + `PRPObligationStream M` | residual risk is forced at `S.risky_index` |
 
+### Policy Incompatibility (Health.lean)
+
+| Item | Kind | Description |
+|------|------|-------------|
+| `GloballyRiskFreeBridgePolicy` | type/def | Policy asserting every available, similar, budget-feasible bridge is risk-free |
+| `no_global_risk_free_bridge_policy_under_witnessed_stream` | theorem | `AutonomyUnderPRPGoal` + `PRPObligationStream M` + `GloballyRiskFreeBridgePolicy M` → `False` |
+| `not_globally_risk_free_bridge_policy_under_witnessed_stream` | theorem | `AutonomyUnderPRPGoal` + `PRPObligationStream M` → `¬GloballyRiskFreeBridgePolicy M` |
+
 `forced_residual_risk_at_stream_index` does not derive the risky index from
 `AutonomyUnderPRPGoal` alone.  `PRPObligationStream` packages two obligation
 sequences together with a witness index where all gate-closure conditions hold:

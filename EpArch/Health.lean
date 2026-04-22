@@ -15,6 +15,8 @@ Key exports:
   no_risk_free_bridge_when_all_usable_bridges_risky
 - FullSystemHealth, AutonomyHealth, AutonomyRiskHealth (bundles)
 - PRPObligationStream, forced_residual_risk_at_stream_index
+- GloballyRiskFreeBridgePolicy, no_global_risk_free_bridge_policy_under_witnessed_stream,
+  not_globally_risk_free_bridge_policy_under_witnessed_stream
 -/
 
 import EpArch.Basic
@@ -574,5 +576,74 @@ theorem forced_residual_risk_at_stream_index (M : RiskAutonomyModel)
         M.ops.residualRiskVia B b d :=
   residual_risk_forced_when_no_scratch_no_escalation M h_auto
     _ _ S.h_required S.h_scratch_fail S.h_no_esc S.h_all_risky
+
+/-! ## Policy Incompatibility -/
+
+/-- A global zero-residual-risk bridge policy: every bridge that is available,
+    analogically similar, and budget-feasible for any claim at any bubble is
+    risk-free.  This is the policy-level claim that no usable bridge carries
+    residual risk.
+
+    Refuted by `no_global_risk_free_bridge_policy_under_witnessed_stream`:
+    any `PRPObligationStream` where all gate-closure conditions hold at
+    `risky_index` is a counter-model to this policy. -/
+def GloballyRiskFreeBridgePolicy (M : RiskAutonomyModel) : Prop :=
+  ∀ (B : M.sig.Bubble) (d b : M.sig.Deposit),
+    M.ops.bridgeAvailable B b →
+    M.ops.analogSim b d →
+    M.ops.verifyVia B b d (M.ops.effectiveTime B) →
+    ¬M.ops.residualRiskVia B b d
+
+/-- POLICY INCOMPATIBILITY: global zero-risk bridge policy is contradicted by a
+    witnessed PRP obligation stream.
+
+    `GloballyRiskFreeBridgePolicy M` and a `PRPObligationStream M` with
+    `AutonomyUnderPRPGoal` are jointly contradictory.
+    `forced_residual_risk_at_stream_index` produces a bridge that is available,
+    similar, and verifiable at `risky_index` and carries residual risk;
+    `h_policy` applied to that same bridge claims it is risk-free.
+
+    This is the policy-level complement to `forced_residual_risk_at_stream_index`:
+    the stream result says a risky bridge is forced at one index; this says no
+    global policy can rule out risky bridges, because the stream is a counter-model.
+
+    Does not say: every system is always risky.  The conclusion is conditional on
+    the `PRPObligationStream` witness, which packages the gate-closure conditions
+    (scratch failure, no escalation, all usable bridges risky) at a specific index.
+    A system that never satisfies the stream hypothesis is not in scope.
+
+    **Theorem shape:** `AutonomyUnderPRPGoal` + `PRPObligationStream M` +
+    `GloballyRiskFreeBridgePolicy M` → `False`
+    **Proof strategy:** apply `forced_residual_risk_at_stream_index` to get
+    `⟨b, h_avail, h_sim, h_verify, h_risky⟩`; apply `h_policy` to get
+    `¬M.ops.residualRiskVia B b d`; the negation (a function to `False`) consumes
+    `h_risky`. -/
+theorem no_global_risk_free_bridge_policy_under_witnessed_stream
+    (M : RiskAutonomyModel)
+    (h_auto : AutonomyUnderPRPGoal M.toAutonomyModel)
+    (S : PRPObligationStream M)
+    (h_policy : GloballyRiskFreeBridgePolicy M) : False := by
+  let ⟨b, h_avail, h_sim, h_verify, h_risky⟩ :=
+    forced_residual_risk_at_stream_index M h_auto S
+  -- h_policy produces ¬residualRiskVia (a function to False); apply it to h_risky.
+  exact (h_policy _ _ _ h_avail h_sim h_verify) h_risky
+
+/-- POLICY INCOMPATIBILITY (negated-policy form).
+
+    Under a witnessed PRP obligation stream, the global zero-risk bridge policy
+    is false.  This is the more searchable form of
+    `no_global_risk_free_bridge_policy_under_witnessed_stream`: the conclusion
+    is `¬GloballyRiskFreeBridgePolicy M` rather than `False`.
+
+    **Theorem shape:** `AutonomyUnderPRPGoal` + `PRPObligationStream M` →
+    `¬GloballyRiskFreeBridgePolicy M`
+    **Proof strategy:** `fun h_policy => no_global_risk_free_bridge_policy_under_witnessed_stream
+    M h_auto S h_policy`. -/
+theorem not_globally_risk_free_bridge_policy_under_witnessed_stream
+    (M : RiskAutonomyModel)
+    (h_auto : AutonomyUnderPRPGoal M.toAutonomyModel)
+    (S : PRPObligationStream M) :
+    ¬GloballyRiskFreeBridgePolicy M := fun h_policy =>
+  no_global_risk_free_bridge_policy_under_witnessed_stream M h_auto S h_policy
 
 end EpArch
