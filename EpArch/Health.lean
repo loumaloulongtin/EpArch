@@ -7,10 +7,14 @@ derivable from definitions rather than axioms.
 Key exports:
 - SafeWithdrawalGoal, ReliableExportGoal, CorrigibleLedgerGoal,
   SoundDepositsGoal, SelfCorrectionGoal, AutonomyUnderPRPGoal
+- RiskAutonomyOps, RiskAutonomyModel, RiskAutonomyModel.toAutonomyModel
 - Necessity theorems: corrigible_needs_revision,
   self_correction_needs_revision, sound_deposits_needs_verification,
-  autonomy_forces_bridge_or_escalation, no_escalation_forces_bridge
-- FullSystemHealth, AutonomyHealth (bundles)
+  autonomy_forces_bridge_or_escalation, no_escalation_forces_bridge,
+  residual_risk_forced_when_no_scratch_no_escalation,
+  no_risk_free_bridge_when_all_usable_bridges_risky
+- FullSystemHealth, AutonomyHealth, AutonomyRiskHealth (bundles)
+- PRPObligationStream, forced_residual_risk_at_stream_index
 -/
 
 import EpArch.Basic
@@ -352,6 +356,223 @@ and the bridge theorem w_multi_agent_forces_authorization_need in WorldBridges.
 AutonomyUnderPRPGoal is packaged separately as `AutonomyHealth` because it is
 defined over `AutonomyModel`, not `CoreModel`: the goal depends on health-specific
 extension predicates rather than the frozen core surface.
+
+RiskAutonomyModel extends AutonomyModel with a residual-risk predicate and is
+packaged separately as `AutonomyRiskHealth` for the same reason: it adds a
+classification predicate (`residualRiskVia`) beyond the frozen AutonomyOps surface.
 -/
+
+
+/-! ========================================================================
+    RESIDUAL RISK UNDER AUTONOMOUS PRP OPERATION
+
+    When a system operating under PRP cannot scratch-verify a required claim
+    within budget, cannot escalate, and every available bridge for that claim
+    carries residual risk, a risky bridge is the only remaining admissible
+    response.  Risk-free handling is not available — this is a structural
+    consequence, not an implementation defect.
+
+    **Dependency chain:**
+    `no_escalation_forces_bridge` supplies the bridge existential.
+    `h_all_risky` is then applied to that bridge to yield the residual-risk witness.
+
+    **Connection to Minimality §11:**
+    `h_all_risky` is an abstract hypothesis here.  `ResidualRiskBridge` in
+    Minimality.lean provides the structural Minimality-layer reason why any bridge
+    cheaper than scratch for a novel over-budget claim cannot be risk-free.
+    The two layers are independent; neither cites the other; they meet at
+    the architectural reading.
+    ======================================================================== -/
+
+/-! ## Risk-Extended Operations and Model -/
+
+/-- Risk-extended autonomy operations: adds a residual-risk predicate for
+    bridge-based verification.  `residualRiskVia B b d` states that using bridge
+    `b` to verify deposit `d` at bubble `B` carries irreducible residual risk.
+
+    `AutonomyOps` is frozen; `RiskAutonomyOps` extends it non-destructively.
+    Whether a bridge is risk-free is system-defined; the theorem only requires
+    that the system can distinguish risky from risk-free bridges. -/
+structure RiskAutonomyOps (Sig : CoreSig) extends AutonomyOps Sig where
+  /-- Bridge `b` carries residual risk when used to verify `d` at `B`. -/
+  residualRiskVia : Sig.Bubble → Sig.Deposit → Sig.Deposit → Prop
+
+/-- An autonomy model extended with risk-classification operations. -/
+structure RiskAutonomyModel where
+  sig      : CoreSig
+  ops      : RiskAutonomyOps sig
+  hasBubble : Nonempty sig.Bubble
+
+/-- Forgetful projection from a risk-extended model to the plain AutonomyModel.
+
+    Drops `residualRiskVia`; keeps the inherited `AutonomyOps` fields intact.
+    Used to apply `no_escalation_forces_bridge` to a `RiskAutonomyModel`
+    without threading risk through every autonomy-model argument. -/
+def RiskAutonomyModel.toAutonomyModel (M : RiskAutonomyModel) : AutonomyModel where
+  sig       := M.sig
+  ops       := M.ops.toAutonomyOps
+  hasBubble := M.hasBubble
+
+
+/-! ## Residual Risk Forced -/
+
+/-- RESIDUAL RISK FORCED: when scratch verification fails, escalation is
+    unavailable, and every usable bridge carries residual risk, a risky
+    bridge is the only remaining admissible response.
+
+    **Theorem shape:** `AutonomyUnderPRPGoal` + `mustHandle B d` +
+    `¬verifyWithin B d (effectiveTime B)` + `¬canEscalate B d` +
+    `h_all_risky` → forced risky bridge existential.
+    **Proof strategy:**
+    1. `no_escalation_forces_bridge` delivers `⟨b, h_avail, h_sim, h_verify⟩`.
+    2. `h_all_risky b h_avail h_sim h_verify` yields `residualRiskVia B b d`.
+    3. Package the four-component existential.
+
+    `h_all_risky` is obligation-scoped: every bridge the system can actually
+    use for this `B` and `d` is risky.  It does not claim risk-free bridges
+    cannot exist in principle. -/
+theorem residual_risk_forced_when_no_scratch_no_escalation (M : RiskAutonomyModel)
+    (h_auto  : AutonomyUnderPRPGoal M.toAutonomyModel)
+    (B : M.sig.Bubble) (d : M.sig.Deposit)
+    (h_required    : M.ops.mustHandle B d)
+    (h_scratch_fail : ¬M.ops.verifyWithin B d (M.ops.effectiveTime B))
+    (h_no_esc      : ¬M.ops.canEscalate B d)
+    (h_all_risky   : ∀ b : M.sig.Deposit,
+        M.ops.bridgeAvailable B b →
+        M.ops.analogSim b d →
+        M.ops.verifyVia B b d (M.ops.effectiveTime B) →
+        M.ops.residualRiskVia B b d) :
+    ∃ b : M.sig.Deposit,
+        M.ops.bridgeAvailable B b ∧
+        M.ops.analogSim b d ∧
+        M.ops.verifyVia B b d (M.ops.effectiveTime B) ∧
+        M.ops.residualRiskVia B b d := by
+  -- `no_escalation_forces_bridge`: scratch and escalation are closed → a budgeted bridge must exist
+  have ⟨b, h_avail, h_sim, h_verify⟩ :=
+    no_escalation_forces_bridge M.toAutonomyModel h_auto B d
+      h_required h_scratch_fail h_no_esc
+  -- h_all_risky applied to that bridge supplies the residual-risk component
+  exact ⟨b, h_avail, h_sim, h_verify, h_all_risky b h_avail h_sim h_verify⟩
+
+
+/-- If every usable bridge for `d` at `B` is risky, no usable bridge is risk-free.
+
+    **Theorem shape:** `h_all_risky` alone → `¬∃ b, ... ∧ ¬residualRiskVia B b d`.
+    Bridge-classification lemma: the proof does not require the autonomy regime
+    (`AutonomyUnderPRPGoal`, `mustHandle`, scratch-fail, escalation are all absent).
+    The autonomy-regime consequence is
+    `residual_risk_forced_when_no_scratch_no_escalation`.
+    **Proof strategy:** intro + apply `h_all_risky`; contradicts `h_no_risk`. -/
+theorem no_risk_free_bridge_when_all_usable_bridges_risky (M : RiskAutonomyModel)
+    (B : M.sig.Bubble) (d : M.sig.Deposit)
+    (h_all_risky   : ∀ b : M.sig.Deposit,
+        M.ops.bridgeAvailable B b →
+        M.ops.analogSim b d →
+        M.ops.verifyVia B b d (M.ops.effectiveTime B) →
+        M.ops.residualRiskVia B b d) :
+    ¬∃ b : M.sig.Deposit,
+        M.ops.bridgeAvailable B b ∧
+        M.ops.analogSim b d ∧
+        M.ops.verifyVia B b d (M.ops.effectiveTime B) ∧
+        ¬M.ops.residualRiskVia B b d := by
+  intro ⟨b, h_avail, h_sim, h_verify, h_no_risk⟩
+  -- h_all_risky forces risk on every available budgeted bridge; contradiction
+  exact h_no_risk (h_all_risky b h_avail h_sim h_verify)
+
+
+/-! ## AutonomyRiskHealth Bundle -/
+
+/-- A risk-extended autonomy model satisfies the base PRP coverage goal.
+
+    Does not assert that risks are bounded, accepted, eliminated, or calibrated;
+    it only packages `AutonomyUnderPRPGoal` over `RiskAutonomyModel`.
+    Separate from `AutonomyHealth` because it requires `RiskAutonomyModel`. -/
+structure AutonomyRiskHealth (M : RiskAutonomyModel) where
+  autonomy_coverage : AutonomyUnderPRPGoal M.toAutonomyModel
+
+
+/-! ========================================================================
+    PRP OBLIGATION STREAM — Residual Risk at a Specific Stream Index
+
+    A `PRPObligationStream` packages two infinite sequences (bubbles and
+    deposits) together with a witness index at which all three gates are
+    closed: scratch verification fails, escalation is unavailable, and
+    every usable bridge carries residual risk.  `forced_residual_risk_at_stream_index`
+    shows that at that index the system is forced to a risky bridge.
+
+    This is the stream-level consequence of
+    `residual_risk_forced_when_no_scratch_no_escalation`: the gate-closure
+    conditions live on the stream structure; the proof is a one-line
+    delegation.
+    ======================================================================== -/
+
+/-! ## PRPObligationStream -/
+
+/-- Two infinite obligation sequences with a distinguished index at
+    which all gates are closed.
+
+    Uses separate `bubble_stream` and `deposit_stream` functions (rather
+    than a product-valued function) so that later field types contain only
+    function applications, not product projections.
+
+    Field `h_required` is the obligation premise at `risky_index`;
+    `h_scratch_fail`, `h_no_esc`, and `h_all_risky` are the three
+    gate-closure conditions.  All four transfer directly to
+    `residual_risk_forced_when_no_scratch_no_escalation`. -/
+structure PRPObligationStream (M : RiskAutonomyModel) where
+  /-- The sequence of obligation bubbles. -/
+  bubble_stream  : Nat → M.sig.Bubble
+  /-- The sequence of obligation deposits. -/
+  deposit_stream : Nat → M.sig.Deposit
+  /-- Index at which all gate-closure conditions hold. -/
+  risky_index    : Nat
+  /-- The deposit at `risky_index` is a required claim. -/
+  h_required     : M.ops.mustHandle
+                     (bubble_stream risky_index)
+                     (deposit_stream risky_index)
+  /-- Scratch verification fails within the effective-time budget. -/
+  h_scratch_fail : ¬M.ops.verifyWithin
+                     (bubble_stream risky_index)
+                     (deposit_stream risky_index)
+                     (M.ops.effectiveTime (bubble_stream risky_index))
+  /-- No principled escalation path is available. -/
+  h_no_esc       : ¬M.ops.canEscalate
+                     (bubble_stream risky_index)
+                     (deposit_stream risky_index)
+  /-- Every usable bridge for this obligation carries residual risk. -/
+  h_all_risky    : ∀ b : M.sig.Deposit,
+                     M.ops.bridgeAvailable (bubble_stream risky_index) b →
+                     M.ops.analogSim b (deposit_stream risky_index) →
+                     M.ops.verifyVia
+                       (bubble_stream risky_index) b
+                       (deposit_stream risky_index)
+                       (M.ops.effectiveTime (bubble_stream risky_index)) →
+                     M.ops.residualRiskVia
+                       (bubble_stream risky_index) b
+                       (deposit_stream risky_index)
+
+
+/-! ## Stream-Level Residual Risk -/
+
+/-- A risky bridge is forced at the gate-closure index of the obligation stream.
+
+    **Theorem shape:** `AutonomyUnderPRPGoal` + `PRPObligationStream M` →
+    forced risky bridge existential at `S.risky_index`.
+    **Proof strategy:** one-line delegation to
+    `residual_risk_forced_when_no_scratch_no_escalation`, supplying the
+    obligation premise `h_required` and the three gate-closure fields
+    `h_scratch_fail`, `h_no_esc`, `h_all_risky` from `S` directly. -/
+theorem forced_residual_risk_at_stream_index (M : RiskAutonomyModel)
+    (h_auto : AutonomyUnderPRPGoal M.toAutonomyModel)
+    (S : PRPObligationStream M) :
+    let B := S.bubble_stream S.risky_index
+    let d := S.deposit_stream S.risky_index
+    ∃ b : M.sig.Deposit,
+        M.ops.bridgeAvailable B b ∧
+        M.ops.analogSim b d ∧
+        M.ops.verifyVia B b d (M.ops.effectiveTime B) ∧
+        M.ops.residualRiskVia B b d :=
+  residual_risk_forced_when_no_scratch_no_escalation M h_auto
+    _ _ S.h_required S.h_scratch_fail S.h_no_esc S.h_all_risky
 
 end EpArch
