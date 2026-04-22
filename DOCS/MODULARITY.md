@@ -12,7 +12,7 @@ certify that?
 
 ## 1. What Modularity Means in This Repo
 
-EpArch's theorem corpus is sliced into **31 certified clusters** across six families.
+EpArch's theorem corpus is sliced into **32 certified clusters** across six families.
 Constraint, goal, and world clusters are config-driven — activated by the `EpArchConfig`
 a user provides. Meta-modularity, lattice-stability, and all Tier 4 clusters (commitments,
 structural, LTS-universal, and bank-goal transport) are always-on: they hold
@@ -27,7 +27,7 @@ unconditionally and require no configuration.
 | **Meta-modularity** | 1 | `modular` — constraint-subset independence (`PartialWellFormed W S → projection_valid S W`) |
 | **Lattice-stability** | 3 | `graceful_degradation`, `sub_revision_safety`, `modularity_pack` |
 
-The 31 `ClusterTag` values in `ClusterRegistry.lean` are the canonical names for all of these.
+The 32 `ClusterTag` values in `ClusterRegistry.lean` are the canonical names for all of these.
 
 **Why this matters architecturally:** Modularity is not only a proof-engineering convenience — it is a kernel design constraint. EpArch must remain applicable across agents that do not share the same internal epistemology or constraint bundle, including minimal agents (e.g., an odometer-like system tracking position) that face only a sub-bundle of the full set. The cluster architecture ensures the kernel scales down gracefully: a system that does not face `FallibilityConstraint` simply does not receive the clusters that depend on it, and the remaining claims stay sound. This is why the kernel boundary stops at coordination-relevant architectural requirements rather than agent-internal dynamics models.
 
@@ -54,7 +54,7 @@ does what prevents confusion about where to look and where to edit.
 
 ### User-facing surface
 - **`EpArchConfig`** — user-supplied record of `constraints`, `goals`, `worlds` lists.
-- **`ClusterTag`** — the 31 cluster identifiers; what a user cites when requesting certification.
+- **`ClusterTag`** — the 32 cluster identifiers; what a user cites when requesting certification.
 - **`certify`** — `certify : EpArchConfig → CertifiedProjection cfg`; returns a record with
   one indexed witness per family. Access proof content via:
   `(certify myConfig).goalWitnesses`, `.tier4Witnesses`, `.worldWitnesses`,
@@ -281,7 +281,7 @@ These rules prevent the registry, config, and docs from drifting apart.
 | **I3** | Named `cluster_*` proof witnesses (e.g. `commitments_pack`, `structural_theorems_unconditional`, `lts_theorems_step_universal`) remain the authoritative typed witnesses — either `def X := upstream_name` re-exports or explicit `theorem` declarations where the signature needs stating separately. Config.lean match arms must reference them by name, not re-prove inline. |
 | **I4** | Every `ClusterTag` constructor that exists must have a matching witness constructor in `Config.lean` and a description in `ClusterRegistry.lean`. Orphaned tags are a build-time bug. |
 | **I5** | Documentation describes the cluster semantics as they exist now. Stale historical scaffolding (old transport wrappers, superseded pack shapes) must be removed — not left as comments or empty shells. |
-| **I6** | The cluster count (currently 31) is a documented fact. If you add or remove a cluster, update the count in this doc and in `README.md`. |
+| **I6** | The cluster count (currently 32) is a documented fact. If you add or remove a cluster, update the count in this doc and in `README.md`. |
 
 ---
 
@@ -566,7 +566,7 @@ This is the real Cluster C result — not just the competition gate but the full
 | `RevisionGate` / competition gate | `transport_core` + `sub_revision_safety` | ✅ Complete | `Semantics/RevisionSafety.lean`, `Meta/TheoremTransport.lean` |
 | Health goals (5 predicates) | `CoreModel`-parameterized + individual transport theorems | ✅ Complete | `Health.lean`, `Meta/TheoremTransport.lean` |
 | Main theorem library (109+) | Four-part schema: standalone commitments, structural unconditional, LTS-universal operational, all-five-health-goals bank bridge | ✅ Complete | `Meta/Tier4Transport.lean` |
-| Certified cluster surface (31 clusters) | `EpArchConfig → ClusterTag → Bool` routing + indexed witness carriers; all 6 cluster families are proof-carrying; constraint/goal/world families are config-selectable; Tier 4/meta-modular/lattice families are always-on | ✅ Complete | `Meta/ClusterRegistry.lean`, `Meta/Config.lean` |
+| Certified cluster surface (32 clusters) | `EpArchConfig → ClusterTag → Bool` routing + indexed witness carriers; all 6 cluster families are proof-carrying; constraint/goal/world families are config-selectable; Tier 4/meta-modular/lattice families are always-on | ✅ Complete | `Meta/ClusterRegistry.lean`, `Meta/Config.lean` |
 
 ---
 
