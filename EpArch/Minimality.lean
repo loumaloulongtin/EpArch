@@ -12,6 +12,8 @@ implementations can differ.
 Key exports:
 - WorkingSystem (record wrapping SystemSpec configuration flags)
 - Eight structural impossibility models and their impossibility theorems
+- ResidualRiskBridge, risk_not_eliminable_by_cheaper_bridge,
+  all_available_bridges_carry_residual_risk
 -/
 
 import EpArch.Basic
@@ -2588,5 +2590,105 @@ def analogicalBridge_to_bounded (A : AnalogicalBridge) : BoundedVerification whe
 theorem analogical_is_bounded_verification_instance (A : AnalogicalBridge) :
     ¬∀ c : A.Claim, A.verify_cost c ≤ A.budget :=
   verification_only_import_incomplete (analogicalBridge_to_bounded A)
+
+
+/-! ========================================================================
+    §11. RESIDUAL RISK BRIDGE — Certainty Gap Forces Residual Risk
+
+    **Argument.** A bridge that is cheaper than full scratch verification
+    for a novel over-budget claim cannot be risk-free.  The certainty gap —
+    the irreducible difference between scratch-verification cost and
+    bridge-verification cost — means that cost savings on verification are
+    purchased with residual uncertainty.  Under the constraint that bridges
+    must stay within budget and scratch verification exceeds it, every
+    available bridge carries residual risk: risk cannot be eliminated by
+    switching to a cheaper verification path.
+
+    **Connection to Health.lean.**  `residual_risk_forced_when_no_scratch_no_escalation`
+    takes `h_all_risky` as a hypothesis.  This section provides the
+    Minimality-layer structural reason why `h_all_risky` is satisfiable:
+    when every usable bridge is cheaper than scratch and scratch exceeds
+    the budget, the `certainty_gap` field witnesses why no bridge can be
+    risk-free.  The two layers are independent; neither cites the other.
+
+    **Proof technique.**  Nat arithmetic: `bridge_cheaper` supplies
+    `bridge_cost ≤ budget`; `exceeds_full` supplies `budget < verify_cost`;
+    `Nat.lt_of_le_of_lt` combines them to satisfy the strict-inequality
+    premise of `certainty_gap`.
+    ======================================================================== -/
+
+/-! ## §11.1  ResidualRiskBridge Structure -/
+
+/-- A claim universe where every budget-respecting bridge for a novel
+    over-budget claim carries irreducible residual risk.
+
+    Parallel to `AnalogicalBridge` (§10): adds a `risk_free` predicate
+    and the `certainty_gap` structural invariant that links cost
+    difference to unavoidable risk.
+
+    Structural invariant fields:
+    - `certainty_gap`: any bridge strictly cheaper than scratch cannot be
+      risk-free — encodes that cost savings purchase residual uncertainty.
+    - `bridge_cheaper`: any similar bridge stays within the budget —
+      ensures the budget constraint is the binding one, not an artefact
+      of the particular bridge chosen. -/
+structure ResidualRiskBridge where
+  /-- The type of claims (novel inputs). -/
+  Claim          : Type
+  /-- The type of bridge candidates (prior entries). -/
+  Bridge         : Type
+  /-- Cost to scratch-verify a claim. -/
+  verify_cost    : Claim → Nat
+  /-- Cost to bridge-verify a claim via a prior entry. -/
+  bridge_cost    : Bridge → Claim → Nat
+  /-- Similarity relation: bridge b is analogous to claim c. -/
+  sim            : Bridge → Claim → Prop
+  /-- Risk predicate: bridge b is risk-free for claim c. -/
+  risk_free      : Bridge → Claim → Prop
+  /-- Fixed verification budget. -/
+  budget         : Nat
+  /-- A novel claim whose scratch-verification cost exceeds the budget. -/
+  novel_claim    : Claim
+  /-- The novel claim's scratch cost exceeds the budget. -/
+  exceeds_full   : verify_cost novel_claim > budget
+  /-- Structural invariant: any bridge strictly cheaper than scratch for
+      the novel claim cannot be risk-free.  Cost savings on verification
+      are purchased with residual uncertainty. -/
+  certainty_gap  : ∀ b : Bridge, sim b novel_claim →
+                     bridge_cost b novel_claim < verify_cost novel_claim →
+                     ¬risk_free b novel_claim
+  /-- Any similar bridge stays within the verification budget. -/
+  bridge_cheaper : ∀ b : Bridge, sim b novel_claim →
+                     bridge_cost b novel_claim ≤ budget
+
+
+/-! ## §11.2  Residual Risk Theorems -/
+
+/-- RISK NOT ELIMINABLE BY CHEAPER BRIDGE: any similar bridge for the
+    novel claim carries residual risk.
+
+    **Theorem shape:** `sim b novel_claim` → `¬risk_free b novel_claim`.
+    **Proof strategy:** `bridge_cheaper` gives `bridge_cost b ≤ budget`;
+    `exceeds_full` gives `budget < verify_cost novel_claim`;
+    `Nat.lt_of_le_of_lt` yields the strict inequality required by
+    `certainty_gap`. -/
+theorem risk_not_eliminable_by_cheaper_bridge (R : ResidualRiskBridge)
+    (b : R.Bridge) (h_sim : R.sim b R.novel_claim) :
+    ¬R.risk_free b R.novel_claim :=
+  R.certainty_gap b h_sim
+    (Nat.lt_of_le_of_lt (R.bridge_cheaper b h_sim) R.exceeds_full)
+
+/-- All available bridges for the novel claim carry residual risk.
+
+    **Theorem shape:** `∀ b, sim b novel_claim → bridge_cost b ≤ budget →
+    ¬risk_free b novel_claim`.
+    **Proof strategy:** delegate to `risk_not_eliminable_by_cheaper_bridge`;
+    the `≤ budget` premise is dropped — it is already incorporated via
+    `bridge_cheaper` in the delegated proof. -/
+theorem all_available_bridges_carry_residual_risk (R : ResidualRiskBridge) :
+    ∀ b : R.Bridge, R.sim b R.novel_claim →
+      R.bridge_cost b R.novel_claim ≤ R.budget →
+      ¬R.risk_free b R.novel_claim :=
+  fun b h_sim _ => risk_not_eliminable_by_cheaper_bridge R b h_sim
 
 end EpArch
