@@ -248,7 +248,8 @@ theorem eparch_surface_covers_residual_risk_modes :
     - Does NOT use `True`, `trivial`, or fake evidence arguments.
     - Does NOT mutate `Mitigates` or delete T27a.
     - Each upstream-theorem case carries the theorem as a function value.
-    - Each structural case carries a field-projection proposition proved by `rfl`. -/
+    - Structural cases carry either field-projection evidence (proved by `rfl`) or
+      a small proof from an existing structural field, such as `PathExists.ttl_valid`. -/
 
 /-! ## GroundedMitigates — Proof-Backed Coverage Relation -/
 
@@ -261,9 +262,11 @@ theorem eparch_surface_covers_residual_risk_modes :
 
     - Upstream-theorem constructors carry a universally-quantified function
       whose body is an application of the named theorem.
-    - Structural-projection constructors carry a proposition proved by `rfl`
-      (a field-projection fact), confirming that the required field exists
-      and is accessible on every record of the relevant type.
+    - Structural constructors carry either a field-projection proposition
+      proved by `rfl` (confirming the required field exists and is accessible)
+      or a small proof obligation over an existing structural field
+      (for example, `tau_staleness` derives `False` from `τ = 0 ∧ PathExists.ttl_valid`
+      via `simp` rather than a plain field projection).
 
     `grounded_mitigation_implies_mitigation` shows this relation implies
     `Mitigates`; `eparch_surface_groundedly_covers_residual_risk_modes`
