@@ -515,9 +515,10 @@ structure AutonomyRiskHealth (M : RiskAutonomyModel) where
     than a product-valued function) so that later field types contain only
     function applications, not product projections.
 
-    Fields `h_required`, `h_scratch_fail`, `h_no_esc`, and `h_all_risky`
-    are the four gate-closure conditions at `risky_index`, transferred
-    directly to `residual_risk_forced_when_no_scratch_no_escalation`. -/
+    Field `h_required` is the obligation premise at `risky_index`;
+    `h_scratch_fail`, `h_no_esc`, and `h_all_risky` are the three
+    gate-closure conditions.  All four transfer directly to
+    `residual_risk_forced_when_no_scratch_no_escalation`. -/
 structure PRPObligationStream (M : RiskAutonomyModel) where
   /-- The sequence of obligation bubbles. -/
   bubble_stream  : Nat → M.sig.Bubble
@@ -559,7 +560,8 @@ structure PRPObligationStream (M : RiskAutonomyModel) where
     forced risky bridge existential at `S.risky_index`.
     **Proof strategy:** one-line delegation to
     `residual_risk_forced_when_no_scratch_no_escalation`, supplying the
-    four gate-closure fields from `S` directly. -/
+    obligation premise `h_required` and the three gate-closure fields
+    `h_scratch_fail`, `h_no_esc`, `h_all_risky` from `S` directly. -/
 theorem forced_residual_risk_at_stream_index (M : RiskAutonomyModel)
     (h_auto : AutonomyUnderPRPGoal M.toAutonomyModel)
     (S : PRPObligationStream M) :
