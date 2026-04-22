@@ -7,6 +7,9 @@ novelty handling is covered by a prescribed EpArch mechanism.
 Grounded coverage layer: companion proof-grounded relation where each constructor
 carries upstream theorem evidence or structural field/projection evidence.
 
+Grounded mode layer: structural forcing evidence showing each mode is unavoidable,
+not an arbitrary taxonomy choice.
+
 Key exports:
 - `ResidualRiskMode`: nine structural failure modes induced by the operating regime
 - `EpArchMechanism`: eleven prescribed architectural mechanisms
@@ -16,6 +19,11 @@ Key exports:
   structural projection evidence
 - `grounded_mitigation_implies_mitigation`: every grounded pairing implies a declared pairing
 - `eparch_surface_groundedly_covers_residual_risk_modes`: grounded coverage theorem
+- `GroundedMode`: forcing evidence for each mode; each constructor carries the upstream
+  impossibility theorem that proves the mode is structurally unavoidable
+- `all_modes_structurally_forced`: every mode is proved forced by an upstream theorem
+- `all_modes_forced_and_groundedly_covered`: bilateral capstone; every mode is both
+  forced (GroundedMode) and proof-backed addressed (GroundedMitigates)
 -/
 
 import EpArch.Health
@@ -391,6 +399,8 @@ inductive GroundedMitigates : EpArchMechanism → ResidualRiskMode → Prop wher
 
 /-! ## Grounded Coverage Theorems -/
 
+
+
 /-- GROUNDED MITIGATION IMPLIES DECLARED MITIGATION.
 
     Every proof-backed pairing in `GroundedMitigates` is also a declared pairing
@@ -477,5 +487,177 @@ theorem eparch_surface_groundedly_covers_residual_risk_modes :
     exact ⟨.escalation,
       .escalation_unsafe (fun M h_auto B d h_req h_fail h_no_esc =>
         no_escalation_forces_bridge M h_auto B d h_req h_fail h_no_esc)⟩
+
+/-! ========================================================================
+    GROUNDED MODE LAYER — Structural Forcing of the Mode Taxonomy
+    ========================================================================
+
+    `GroundedMode r` witnesses that residual-risk mode `r` is not an arbitrary
+    taxonomy choice but is structurally forced by the operating regime.  Each
+    constructor carries the upstream forcing theorem (from `EpArch.Minimality`
+    or `EpArch.Health`) that proves the mode cannot be avoided.
+
+    `all_modes_structurally_forced` closes the "modes are not arbitrary" attack.
+    `all_modes_forced_and_groundedly_covered` is the bilateral capstone: every
+    mode is both forced (cannot be avoided) and addressed (converted into an
+    auditable obligation by a proof-backed mechanism).  The two grounded sides
+    are:
+    - `GroundedMode r`         — mode is structurally necessitated
+    - `GroundedMitigates m r`  — mode is addressed with machine-checked evidence -/
+
+/-! ## GroundedMode — Forcing Evidence for Each Mode -/
+
+/-- `GroundedMode r` carries the structural forcing evidence that mode `r` is
+    unavoidable in the operating regime.  Each constructor holds the upstream
+    forcing theorem as a universally-quantified function applied to its proper
+    model-structure type.
+
+    This is the mode-taxonomy companion to `GroundedMitigates`: where
+    `GroundedMitigates m r` proves mechanism `m` addresses mode `r`,
+    `GroundedMode r` proves mode `r` is forced in the first place.
+
+    `all_modes_structurally_forced` instantiates every constructor from the
+    named theorems in `EpArch.Minimality` and `EpArch.Health`. -/
+inductive GroundedMode : ResidualRiskMode → Prop where
+
+  /-- Scope leak forced by `scope_leak_forced`.
+      A flat predicate aligned to one scope leaks claims a disagreeing scope
+      would reject — bubble isolation is structurally necessary. -/
+  | scope_leak :
+      (∀ (D : AgentDisagreement) (f : D.Claim → Prop),
+          (∀ c, f c ↔ D.accept₁ c) →
+          ∃ c : D.Claim, f c ∧ ¬D.accept₂ c) →
+      GroundedMode .scopeLeak
+
+  /-- Standard mismatch forced by `implicit_standard_forces_mismatch`.
+      No uniform standard serves claims verified under heterogeneous standards;
+      a per-claim S field is structurally necessary. -/
+  | standard_mismatch :
+      (∀ (M : HeterogeneousStandards),
+          ¬∃ (s : M.Standard), s = M.required₁ ∧ s = M.required₂) →
+      GroundedMode .standardMismatch
+
+  /-- Unmodeled error forced by `implicit_error_model_forces_gap`.
+      No uniform error model represents claims verified under different failure
+      models; a per-claim E field is structurally necessary. -/
+  | unmodeled_error :
+      (∀ (M : HeterogeneousErrors),
+          ¬∃ (e : M.ErrorModel), e = M.model₁ ∧ e = M.model₂) →
+      GroundedMode .unmodeledError
+
+  /-- Provenance gap forced by `implicit_provenance_forces_gap`.
+      No uniform source identity represents claims with different origins;
+      a per-claim V field is structurally necessary. -/
+  | provenance_gap :
+      (∀ (M : HeterogeneousProvenance),
+          ¬∃ (v : M.Provenance), v = M.source₁ ∧ v = M.source₂) →
+      GroundedMode .provenanceGap
+
+  /-- Staleness forced by `PathExists.ttl_valid`.
+      A deposit with τ = 0 structurally cannot carry a valid path witness;
+      temporal enforcement via the τ field is structurally necessary. -/
+  | staleness :
+      (∀ (PL S E P : Type) (d : Deposit PL S E P),
+          d.h.τ = 0 → ¬AdversarialObligations.PathExists d) →
+      GroundedMode .staleness
+
+  /-- Adversarial import forced by `flat_authorization_impossible`.
+      No flat predicate represents both submission and commit ACL tiers;
+      granular per-tier authorization is structurally forced. -/
+  | adversarial_import :
+      (∀ (M : TwoTierAccess),
+          ¬∃ (f : M.Agent → M.Claim → Prop),
+            (∀ a c, f a c ↔ M.can_propose a c) ∧
+            (∀ a c, f a c ↔ M.can_commit a c)) →
+      GroundedMode .adversarialImport
+
+  /-- Unrevoked defect forced by `no_lifecycle_cannot_ensure_nondefective`.
+      A lifecycle-free bank cannot guarantee all admitted claims are
+      non-defective; a correction lifecycle is structurally necessary. -/
+  | unrevoked_defect :
+      (∀ (M : DefectiveBank), ¬∀ c : M.Claim, M.admit c → ¬M.defective c) →
+      GroundedMode .unrevokedDefect
+
+  /-- Overbudget reliance forced by `risk_not_eliminable_by_budgeted_bridge`.
+      Any budget-feasible similar bridge for a novel over-budget claim carries
+      residual risk; the verification gap cannot be closed by cheaper bridging. -/
+  | overbudget_reliance :
+      (∀ (R : ResidualRiskBridge) (b : R.Bridge),
+          R.sim b R.novel_claim →
+          R.bridge_cost b R.novel_claim ≤ R.budget →
+          ¬R.risk_free b R.novel_claim) →
+      GroundedMode .overbudgetReliance
+
+  /-- Unsafe autonomy forced by `no_escalation_forces_bridge`.
+      Without an escalation path, a risky bridge is the only sound response
+      to a novel over-budget obligation; the escalation branch is structurally
+      necessary to make unsafe autonomous action avoidable. -/
+  | unsafe_autonomy :
+      (∀ (M : AutonomyModel) (_ : AutonomyUnderPRPGoal M)
+          (B : M.sig.Bubble) (d : M.sig.Deposit)
+          (_ : M.ops.mustHandle B d)
+          (_ : ¬M.ops.verifyWithin B d (M.ops.effectiveTime B))
+          (_ : ¬M.ops.canEscalate B d),
+          ∃ b : M.sig.Deposit,
+            M.ops.bridgeAvailable B b ∧
+            M.ops.analogSim b d ∧
+            M.ops.verifyVia B b d (M.ops.effectiveTime B)) →
+      GroundedMode .unsafeAutonomy
+
+/-! ## Mode Forcing and Bilateral Capstone -/
+
+/-- ALL MODES ARE STRUCTURALLY FORCED.
+
+    Every `ResidualRiskMode` constructor names a mode that is structurally
+    unavoidable in the operating regime.  The nine modes are not a taxonomy
+    choice — each is proved by an upstream structural impossibility theorem.
+
+    **Theorem shape:** `∀ r : ResidualRiskMode, GroundedMode r`
+    **Proof strategy:** `cases r`; supply the matching `GroundedMode` constructor
+    with the upstream forcing theorem as its direct function argument. -/
+theorem all_modes_structurally_forced : ∀ r : ResidualRiskMode, GroundedMode r := by
+  intro r; cases r with
+  | scopeLeak =>
+    exact .scope_leak (fun D f hf => scope_leak_forced D f hf)
+  | standardMismatch =>
+    exact .standard_mismatch (fun M => implicit_standard_forces_mismatch M)
+  | unmodeledError =>
+    exact .unmodeled_error (fun M => implicit_error_model_forces_gap M)
+  | provenanceGap =>
+    exact .provenance_gap (fun M => implicit_provenance_forces_gap M)
+  | staleness =>
+    -- PathExists.ttl_valid requires d.h.τ > 0; h_zero : τ = 0 contradicts this via simp.
+    exact .staleness (fun PL S E P d h_zero pe => absurd pe.ttl_valid (by simp [h_zero]))
+  | adversarialImport =>
+    exact .adversarial_import (fun M => flat_authorization_impossible M)
+  | unrevokedDefect =>
+    exact .unrevoked_defect (fun M => no_lifecycle_cannot_ensure_nondefective M)
+  | overbudgetReliance =>
+    exact .overbudget_reliance (fun R b h_sim h_bud =>
+      risk_not_eliminable_by_budgeted_bridge R b h_sim h_bud)
+  | unsafeAutonomy =>
+    exact .unsafe_autonomy (fun M h_auto B d h_req h_fail h_no_esc =>
+      no_escalation_forces_bridge M h_auto B d h_req h_fail h_no_esc)
+
+/-- ALL MODES ARE FORCED AND GROUNDEDLY COVERED (bilateral capstone).
+
+    Every residual-risk mode is:
+    (1) structurally forced — it cannot be avoided by the operating regime, and
+    (2) proof-backed addressed — some EpArch mechanism converts it into an
+        auditable operational obligation, with machine-checked evidence.
+
+    This closes both attack vectors simultaneously:
+    - "the modes are an arbitrary taxonomy" — refuted by `GroundedMode r`
+    - "the coverage is mere classification" — refuted by `GroundedMitigates m r`
+
+    **Theorem shape:**
+    `∀ r, GroundedMode r ∧ ∃ m : EpArchMechanism, GroundedMitigates m r`
+    **Proof strategy:** pair `all_modes_structurally_forced` with
+    `eparch_surface_groundedly_covers_residual_risk_modes`. -/
+theorem all_modes_forced_and_groundedly_covered :
+    ∀ r : ResidualRiskMode,
+        GroundedMode r ∧ ∃ m : EpArchMechanism, GroundedMitigates m r :=
+  fun r => ⟨all_modes_structurally_forced r,
+             eparch_surface_groundedly_covers_residual_risk_modes r⟩
 
 end EpArch
