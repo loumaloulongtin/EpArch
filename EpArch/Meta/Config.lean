@@ -421,7 +421,7 @@ Patterns after `MetaModularWitness` — necessity theorem, not transport. -/
 inductive AutonomyWitness : EnabledAutonomyCluster → Type 1 where
   | autonomyUnderPRP :
       (∀ (M : AutonomyModel)
-         (h_auto : AutonomyUnderPRPGoal M)
+         (_h_auto : AutonomyUnderPRPGoal M)
          (B : M.sig.Bubble) (d : M.sig.Deposit),
           M.ops.mustHandle B d →
           ¬M.ops.verifyWithin B d (M.ops.effectiveTime B) →
@@ -515,7 +515,7 @@ private def prop_lattice_pack : Prop :=
     would otherwise block use as a `clusterValid` match-arm value. -/
 private def prop_goal_autonomyUnderPRP : Prop :=
   ∀ (M : AutonomyModel.{0})
-    (h_auto : AutonomyUnderPRPGoal.{0} M)
+    (_h_auto : AutonomyUnderPRPGoal.{0} M)
     (B : M.sig.Bubble) (d : M.sig.Deposit),
     M.ops.mustHandle B d →
     ¬M.ops.verifyWithin B d (M.ops.effectiveTime B) →
@@ -1158,7 +1158,7 @@ def cluster_lattice_pack := modularity_pack
     not transport-shaped (AutonomyModel is not CoreModel-shaped). -/
 theorem cluster_goal_autonomyUnderPRP :
     ∀ (M : AutonomyModel)
-      (h_auto : AutonomyUnderPRPGoal M)
+      (_h_auto : AutonomyUnderPRPGoal M)
       (B : M.sig.Bubble) (d : M.sig.Deposit),
       M.ops.mustHandle B d →
       ¬M.ops.verifyWithin B d (M.ops.effectiveTime B) →
