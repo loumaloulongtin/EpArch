@@ -86,7 +86,7 @@ The eleven mechanisms that compose the EpArch mitigation surface.  Each is
 present because it mitigates at least one `ResidualRiskMode` that the operating
 regime forces.  The surface is prescribed by the architecture;
 `eparch_surface_covers_residual_risk_modes` establishes coverage; irredundancy
-is proved in a companion theorem. -/
+is handled separately. -/
 
 /-- The EpArch mechanisms that compose the mitigation surface.
     Each constructor names a structural mechanism; each is present because it
@@ -253,7 +253,7 @@ theorem eparch_surface_covers_residual_risk_modes :
     coverage machine-verifiable in depth, not just in classification.
 
     Does not prove strict minimality or irredundancy of the surface; irredundancy
-    is proved in a companion theorem over the same surface.
+    is handled separately.
     Each upstream-theorem case carries the theorem as a function value.
     Structural cases carry either field-projection evidence (proved by `rfl`) or
     a small proof from an existing structural field, such as `PathExists.ttl_valid`. -/
@@ -399,8 +399,6 @@ inductive GroundedMitigates : EpArchMechanism → ResidualRiskMode → Prop wher
 
 /-! ## Grounded Coverage Theorems -/
 
-
-
 /-- GROUNDED MITIGATION IMPLIES DECLARED MITIGATION.
 
     Every proof-backed pairing in `GroundedMitigates` is also a declared pairing
@@ -442,12 +440,12 @@ theorem grounded_mitigation_implies_mitigation {m : EpArchMechanism} {r : Residu
     `ResidualRiskMode` constructor.  `redeemability_defect` and
     `bounded_recall_overbudget` are not used here because `unrevokedDefect` and
     `overbudgetReliance` are already covered by `lifecycle_defect` and
-    `bridge_overbudget` respectively.  Both constructors remain available for the
-    per-mechanism obligation in the irredundancy companion theorem.
+    `bridge_overbudget` respectively.  Both constructors remain available for a
+    separate per-mechanism obligation result.
 
     Does not say: the mechanisms are irredundant or the surface is minimal.
     Does not say: the upstream theorems eliminate the underlying risk.
-    Irredundancy is proved in a companion theorem over the same surface. -/
+    Irredundancy is handled separately. -/
 theorem eparch_surface_groundedly_covers_residual_risk_modes :
     ∀ r : ResidualRiskMode, ∃ m : EpArchMechanism, GroundedMitigates m r := by
   intro r; cases r with
