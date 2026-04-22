@@ -2751,6 +2751,31 @@ theorem implicit_standard_forces_mismatch (M : HeterogeneousStandards) :
     ¬∃ (s : M.Standard), s = M.required₁ ∧ s = M.required₂ :=
   fun ⟨_, h₁, h₂⟩ => M.standards_differ (h₁.symm.trans h₂)
 
+/-- Any `DiscriminatingImport` scenario directly inhabits `HeterogeneousStandards`:
+    the good and bad claims are structurally distinct, so they carry different
+    required standards.  The operating regime produces `DiscriminatingImport`
+    witnesses (see `routing_requires_header`, §3); this embedding makes
+    `HeterogeneousStandards` inhabited by those same witnesses.
+    Mapping: `Standard := Claim`; `required c := c`; `standards_differ := good_ne_bad`. -/
+def discriminating_to_heterogeneous_standards (M : DiscriminatingImport) :
+    HeterogeneousStandards where
+  Claim            := M.Claim
+  Standard         := M.Claim
+  claim₁           := M.good
+  claim₂           := M.bad
+  required₁        := M.good
+  required₂        := M.bad
+  standards_differ := M.good_ne_bad
+
+/-- Standard mismatch is forced in any discriminating import scenario.
+
+    **Theorem shape:** `¬∃ s : M.Claim, s = M.good ∧ s = M.bad`
+    **Proof strategy:** embed via `discriminating_to_heterogeneous_standards`,
+    apply `implicit_standard_forces_mismatch`. -/
+theorem discriminating_import_forces_standard_mismatch (M : DiscriminatingImport) :
+    ¬∃ s : M.Claim, s = M.good ∧ s = M.bad :=
+  implicit_standard_forces_mismatch (discriminating_to_heterogeneous_standards M)
+
 /-! ## Unmodeled Error Mode Forcing -/
 
 /-- A claim universe where two claims were produced under different error models
@@ -2780,6 +2805,29 @@ theorem implicit_error_model_forces_gap (M : HeterogeneousErrors) :
     ¬∃ (e : M.ErrorModel), e = M.model₁ ∧ e = M.model₂ :=
   fun ⟨_, h₁, h₂⟩ => M.models_differ (h₁.symm.trans h₂)
 
+/-- Any `DiscriminatingImport` scenario directly inhabits `HeterogeneousErrors`:
+    the good and bad claims were necessarily verified under different error models,
+    because they require different import decisions.
+    Mapping: `ErrorModel := Claim`; `model c := c`; `models_differ := good_ne_bad`. -/
+def discriminating_to_heterogeneous_errors (M : DiscriminatingImport) :
+    HeterogeneousErrors where
+  Claim         := M.Claim
+  ErrorModel    := M.Claim
+  claim₁        := M.good
+  claim₂        := M.bad
+  model₁        := M.good
+  model₂        := M.bad
+  models_differ := M.good_ne_bad
+
+/-- Unmodeled error gap is forced in any discriminating import scenario.
+
+    **Theorem shape:** `¬∃ e : M.Claim, e = M.good ∧ e = M.bad`
+    **Proof strategy:** embed via `discriminating_to_heterogeneous_errors`,
+    apply `implicit_error_model_forces_gap`. -/
+theorem discriminating_import_forces_error_gap (M : DiscriminatingImport) :
+    ¬∃ e : M.Claim, e = M.good ∧ e = M.bad :=
+  implicit_error_model_forces_gap (discriminating_to_heterogeneous_errors M)
+
 /-! ## Provenance Gap Mode Forcing -/
 
 /-- A claim universe where two claims have different provenance sources.
@@ -2808,6 +2856,28 @@ structure HeterogeneousProvenance where
 theorem implicit_provenance_forces_gap (M : HeterogeneousProvenance) :
     ¬∃ (v : M.Provenance), v = M.source₁ ∧ v = M.source₂ :=
   fun ⟨_, h₁, h₂⟩ => M.sources_differ (h₁.symm.trans h₂)
+
+/-- Any `DiscriminatingImport` scenario directly inhabits `HeterogeneousProvenance`:
+    the good and bad claims come from structurally distinct origins.
+    Mapping: `Provenance := Claim`; `source c := c`; `sources_differ := good_ne_bad`. -/
+def discriminating_to_heterogeneous_provenance (M : DiscriminatingImport) :
+    HeterogeneousProvenance where
+  Claim          := M.Claim
+  Provenance     := M.Claim
+  claim₁         := M.good
+  claim₂         := M.bad
+  source₁        := M.good
+  source₂        := M.bad
+  sources_differ := M.good_ne_bad
+
+/-- Provenance gap is forced in any discriminating import scenario.
+
+    **Theorem shape:** `¬∃ v : M.Claim, v = M.good ∧ v = M.bad`
+    **Proof strategy:** embed via `discriminating_to_heterogeneous_provenance`,
+    apply `implicit_provenance_forces_gap`. -/
+theorem discriminating_import_forces_provenance_gap (M : DiscriminatingImport) :
+    ¬∃ v : M.Claim, v = M.good ∧ v = M.bad :=
+  implicit_provenance_forces_gap (discriminating_to_heterogeneous_provenance M)
 
 /-! ## Unrevoked Defect Mode Forcing -/
 
@@ -2839,5 +2909,30 @@ structure DefectiveBank where
 theorem no_lifecycle_cannot_ensure_nondefective (M : DefectiveBank) :
     ¬∀ c : M.Claim, M.admit c → ¬M.defective c :=
   fun h => h M.witness M.admitted M.is_defective
+
+/-- Any `BoundedVerification` scenario directly inhabits `DefectiveBank`: the hard
+    claim can be admitted (any claim is promotable via trust bridge or analogical
+    import — that is the whole point of the bounded-verification regime), and it
+    carries a structural defect: its verification cost exceeds the budget, leaving
+    an unresolved verification gap.  Without a correction lifecycle the gap cannot
+    be removed.
+    Mapping: `admit c := True`; `defective c := verify_cost c > budget`;
+    `witness := hard_claim`; `is_defective := exceeds_full`. -/
+def bounded_to_defective_bank (M : BoundedVerification) : DefectiveBank where
+  Claim        := M.Claim
+  admit        := fun _ => True
+  defective c  := M.verify_cost c > M.budget
+  witness      := M.hard_claim
+  admitted     := True.intro
+  is_defective := M.exceeds_budget
+
+/-- Unrevoked defect is forced under bounded verification without a correction lifecycle.
+
+    **Theorem shape:** `¬∀ c : M.Claim, True → ¬(M.verify_cost c > M.budget)`
+    **Proof strategy:** embed via `bounded_to_defective_bank`,
+    apply `no_lifecycle_cannot_ensure_nondefective`. -/
+theorem bounded_verification_forces_defect (M : BoundedVerification) :
+    ¬∀ c : M.Claim, (fun _ => True) c → ¬M.verify_cost c > M.budget :=
+  no_lifecycle_cannot_ensure_nondefective (bounded_to_defective_bank M)
 
 end EpArch
