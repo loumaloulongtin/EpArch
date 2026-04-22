@@ -594,7 +594,7 @@ other four reuse upstream theorems from elsewhere in the formalization.
 This proof layer does not establish that the mechanisms are irredundant or that the surface
 is minimal.  Irredundancy is handled separately.
 
-### T28c: Obligation taxonomy and irredundancy
+### Obligation taxonomy and irredundancy
 
 The T27 `ResidualRiskMode` taxonomy has two modes with multiple mitigators —
 `unrevokedDefect` (bankLifecycle + redeemability) and `overbudgetReliance`
