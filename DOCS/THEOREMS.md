@@ -462,6 +462,51 @@ Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_w
 
 ---
 
+## Bucket 9h: Residual Risk Mitigation Coverage (ResidualRiskMitigation.lean — T27)
+
+**Role:** Classification / capstone theorem. Every residual-risk mode induced by bounded
+autonomous novelty handling (T25–T26) is covered by a prescribed EpArch mechanism that
+converts the mode from an unstructured failure possibility into an auditable operational
+obligation. This is not an impossibility theorem: the depth lives in T25–T26; T27 shows
+the prescribed surface is complete with respect to those modes.
+
+**Cross-references:** Bucket 9e (`recall_only_withdrawal_incomplete`, Minimality §9),
+Bucket 9f (analogical bridge, Minimality §10), Bucket 9g (`risk_not_eliminable_by_budgeted_bridge`,
+Minimality §11), Bucket 14 (Health necessity theorems: `no_escalation_forces_bridge` T25,
+`residual_risk_forced_when_no_scratch_no_escalation` T26).
+
+### Types
+
+| Name | Kind | Description |
+|------|------|-------------|
+| `ResidualRiskMode` | `inductive` | Nine structural failure modes: `scopeLeak`, `standardMismatch`, `unmodeledError`, `provenanceGap`, `staleness`, `adversarialImport`, `unrevokedDefect`, `overbudgetReliance`, `unsafeAutonomy` |
+| `EpArchMechanism` | `inductive` | Eleven prescribed mechanisms: `bubbles`, `standardsHeader`, `errorHeader`, `provenanceHeader`, `tau`, `trustBridge`, `authorization`, `bankLifecycle`, `redeemability`, `boundedRecall`, `escalation` |
+| `Mitigates` | `inductive Prop` | `Mitigates m r` — mechanism `m` converts risk mode `r` into an auditable obligation; eleven constructors, each naming the grounding (upstream theorem or structural invariant) |
+
+### Theorems
+
+| Theorem | Shape | Proof strategy |
+|---------|-------|----------------|
+| `eparch_surface_covers_residual_risk_modes` | `∀ r : ResidualRiskMode, ∃ m : EpArchMechanism, Mitigates m r` | `cases r`; supply matching `Mitigates` constructor per branch |
+
+### Grounding table
+
+| Constructor | Kind | Grounding |
+|-------------|------|-----------|
+| `bridge_overbudget` | upstream theorem | `risk_not_eliminable_by_budgeted_bridge` (Minimality §11): verification gap is irreducible; trust bridge makes it explicit |
+| `escalation_unsafe` | upstream theorem | `no_escalation_forces_bridge` (Health.lean, T25): without escalation the system is forced to bridge-or-nothing |
+| `bounded_recall_overbudget` | upstream theorem | `recall_only_withdrawal_incomplete` (Minimality §9): recall-only verification is provably incomplete when provenance chains exceed the budget |
+| `tau_staleness` | structural | `PathExists.ttl_valid : d.h.τ > 0`: a deposit with `τ = 0` cannot carry a `PathExists` witness |
+| `lifecycle_defect` | structural | `challenge_produces_quarantined`, `Repair_B_produces_candidate`, `revoke_produces_revoked` in `Bank.lean`; `Step.challenge`, `Step.repair`, `Step.revoke` in `StepSemantics.lean` |
+| `redeemability_defect` | structural | `redeemable d` requires a `VerificationPath` aligned to `d.h.redeem` (`Commitments.lean`); `challenge_produces_quarantined` starts the correction pipeline |
+| `bubbles_scope_leak` | structural | `Deposit.bubble` carries claim scope; bank-side predicates (`deposited B d`) enforce locality |
+| `standards_mismatch` | structural | `Deposit.Header.S : Standard` is a required field in every deposit record |
+| `error_unmodeled` | structural | `Deposit.Header.E : ErrorModel` is a required field; known failure modes are declared at deposit time |
+| `provenance_gap` | structural | `Deposit.Header.V : Provenance` is a required field; `PathExists.ttl_valid` and `status_live` make the path auditable |
+| `auth_adversarial` | structural / agent-layer | `Header.acl` records the ACL surface; authorization forcing is handled by `AuthorizedWithdrawalGoal` / `TwoTierAccess` / granular ACL theorems; abstract bank Step LTS does not enforce ACL as a constructor precondition |
+
+---
+
 ## Bucket 10: Adversarial Model (Adversarial/Base.lean)
 
 **Role:** Formalize attack patterns and boundary conditions.
