@@ -363,7 +363,7 @@ classification predicate (`residualRiskVia`) beyond the frozen AutonomyOps surfa
 
 
 /-! ========================================================================
-    §T26a. RESIDUAL RISK UNDER AUTONOMOUS NOVEL-CLAIM HANDLING
+    §T26a. RESIDUAL RISK UNDER AUTONOMOUS PRP OPERATION
 
     When a system operating under PRP cannot scratch-verify a required claim
     within budget, cannot escalate, and every available bridge for that claim
@@ -396,7 +396,7 @@ structure RiskAutonomyOps (Sig : CoreSig) extends AutonomyOps Sig where
   /-- Bridge `b` carries residual risk when used to verify `d` at `B`. -/
   residualRiskVia : Sig.Bubble → Sig.Deposit → Sig.Deposit → Prop
 
-/-- A core model extended with risk-classification operations. -/
+/-- An autonomy model extended with risk-classification operations. -/
 structure RiskAutonomyModel where
   sig      : CoreSig
   ops      : RiskAutonomyOps sig
@@ -457,9 +457,10 @@ theorem residual_risk_forced_when_no_scratch_no_escalation (M : RiskAutonomyMode
 /-- If every usable bridge for `d` at `B` is risky, no usable bridge is risk-free.
 
     **Theorem shape:** `h_all_risky` alone → `¬∃ b, ... ∧ ¬residualRiskVia B b d`.
-    This is a bridge-classification lemma: the proof does not require the autonomy
-    regime (no `AutonomyUnderPRPGoal`, no `mustHandle`, no scratch-fail, no escalation
-    premise).  The autonomy-regime consequence is `residual_risk_forced_when_no_scratch_no_escalation`.
+    Bridge-classification lemma: the proof does not require the autonomy regime
+    (`AutonomyUnderPRPGoal`, `mustHandle`, scratch-fail, escalation are all absent).
+    The autonomy-regime consequence is
+    `residual_risk_forced_when_no_scratch_no_escalation`.
     **Proof strategy:** intro + apply `h_all_risky`; contradicts `h_no_risk`. -/
 theorem no_risk_free_bridge_when_all_usable_bridges_risky (M : RiskAutonomyModel)
     (B : M.sig.Bubble) (d : M.sig.Deposit)
@@ -484,9 +485,7 @@ theorem no_risk_free_bridge_when_all_usable_bridges_risky (M : RiskAutonomyModel
 
     Does not assert that risks are bounded, accepted, eliminated, or calibrated;
     it only packages `AutonomyUnderPRPGoal` over `RiskAutonomyModel`.
-    Separate from `AutonomyHealth` (T25) because it requires `RiskAutonomyModel`.
-    `AutonomyRiskHealth` is the base bundle; T26c (`PRPObligationStream`) is the
-    stream-level extension. -/
+    Separate from `AutonomyHealth` (T25) because it requires `RiskAutonomyModel`. -/
 structure AutonomyRiskHealth (M : RiskAutonomyModel) where
   autonomy_coverage : AutonomyUnderPRPGoal M.toAutonomyModel
 
