@@ -7,10 +7,13 @@ derivable from definitions rather than axioms.
 Key exports:
 - SafeWithdrawalGoal, ReliableExportGoal, CorrigibleLedgerGoal,
   SoundDepositsGoal, SelfCorrectionGoal, AutonomyUnderPRPGoal
+- RiskAutonomyOps, RiskAutonomyModel, RiskAutonomyModel.toAutonomyModel
 - Necessity theorems: corrigible_needs_revision,
   self_correction_needs_revision, sound_deposits_needs_verification,
-  autonomy_forces_bridge_or_escalation, no_escalation_forces_bridge
-- FullSystemHealth, AutonomyHealth (bundles)
+  autonomy_forces_bridge_or_escalation, no_escalation_forces_bridge,
+  residual_risk_forced_under_autonomous_novelty,
+  no_risk_free_autonomy_for_novel_overbudget_claims
+- FullSystemHealth, AutonomyHealth, AutonomyRiskHealth (bundles)
 -/
 
 import EpArch.Basic
@@ -352,6 +355,140 @@ and the bridge theorem w_multi_agent_forces_authorization_need in WorldBridges.
 AutonomyUnderPRPGoal is packaged separately as `AutonomyHealth` because it is
 defined over `AutonomyModel`, not `CoreModel`: the goal depends on health-specific
 extension predicates rather than the frozen core surface.
+
+RiskAutonomyModel extends AutonomyModel with a residual-risk predicate and is
+packaged separately as `AutonomyRiskHealth` for the same reason: it adds a
+classification predicate (`residualRiskVia`) beyond the frozen AutonomyOps surface.
 -/
+
+
+/-! ========================================================================
+    §T26a. RESIDUAL RISK UNDER AUTONOMOUS NOVEL-CLAIM HANDLING
+
+    When a system operating under PRP cannot scratch-verify a required claim
+    within budget, cannot escalate, and every available bridge for that claim
+    carries residual risk, a risky bridge is the only remaining admissible
+    response.  Risk-free handling is not available — this is a structural
+    consequence, not an implementation defect.
+
+    **Dependency chain (local):**
+    T25 → `no_escalation_forces_bridge` supplies the bridge existential.
+    T26a applies `h_all_risky` to that bridge to yield the residual-risk witness.
+
+    **Connection to Minimality §11 (T26b):**
+    `h_all_risky` is an abstract hypothesis here.  T26b (`ResidualRiskBridge` in
+    Minimality.lean) provides the structural Minimality-layer reason why any bridge
+    cheaper than scratch for a novel over-budget claim cannot be risk-free.
+    The two layers are independent; neither cites the other; they meet at
+    the architectural reading.
+    ======================================================================== -/
+
+/-! ## §T26a.1  Risk-Extended Operations and Model -/
+
+/-- Risk-extended autonomy operations: adds a residual-risk predicate for
+    bridge-based verification.  `residualRiskVia B b d` states that using bridge
+    `b` to verify deposit `d` at bubble `B` carries irreducible residual risk.
+
+    `AutonomyOps` (T25) is frozen; `RiskAutonomyOps` extends it non-destructively.
+    Whether a bridge is risk-free is system-defined; the theorem only requires
+    that the system can distinguish risky from risk-free bridges. -/
+structure RiskAutonomyOps (Sig : CoreSig) extends AutonomyOps Sig where
+  /-- Bridge `b` carries residual risk when used to verify `d` at `B`. -/
+  residualRiskVia : Sig.Bubble → Sig.Deposit → Sig.Deposit → Prop
+
+/-- A core model extended with risk-classification operations. -/
+structure RiskAutonomyModel where
+  sig      : CoreSig
+  ops      : RiskAutonomyOps sig
+  hasBubble : Nonempty sig.Bubble
+
+/-- Forgetful projection from a risk-extended model to the plain AutonomyModel.
+
+    Drops `residualRiskVia`; keeps the inherited `AutonomyOps` fields intact.
+    Used to apply T25 theorems (`no_escalation_forces_bridge`) to a
+    `RiskAutonomyModel` without threading risk through every T25 argument. -/
+def RiskAutonomyModel.toAutonomyModel (M : RiskAutonomyModel) : AutonomyModel where
+  sig       := M.sig
+  ops       := M.ops.toAutonomyOps
+  hasBubble := M.hasBubble
+
+
+/-! ## §T26a.2  Residual Risk Forced -/
+
+/-- RESIDUAL RISK FORCED UNDER AUTONOMOUS NOVELTY
+
+    If a system must handle deposit `d` at bubble `B`, cannot scratch-verify it
+    within budget, cannot escalate, and every available budgeted bridge for `d`
+    carries residual risk, then the system is forced to use a risky bridge.
+
+    **Theorem shape:** five hypotheses close all risk-free branches; the remaining
+    branch is a bridge satisfying `bridgeAvailable`, `analogSim`, `verifyVia`,
+    and `residualRiskVia`.
+    **Proof strategy:**
+    1. `no_escalation_forces_bridge` (T25) delivers `⟨b, h_avail, h_sim, h_verify⟩`.
+    2. `h_all_risky b h_avail h_sim h_verify` yields `residualRiskVia B b d`.
+    3. Package the four-component existential. -/
+theorem residual_risk_forced_under_autonomous_novelty (M : RiskAutonomyModel)
+    (h_auto  : AutonomyUnderPRPGoal M.toAutonomyModel)
+    (B : M.sig.Bubble) (d : M.sig.Deposit)
+    (h_required    : M.ops.mustHandle B d)
+    (h_scratch_fail : ¬M.ops.verifyWithin B d (M.ops.effectiveTime B))
+    (h_no_esc      : ¬M.ops.canEscalate B d)
+    (h_all_risky   : ∀ b : M.sig.Deposit,
+        M.ops.bridgeAvailable B b →
+        M.ops.analogSim b d →
+        M.ops.verifyVia B b d (M.ops.effectiveTime B) →
+        M.ops.residualRiskVia B b d) :
+    ∃ b : M.sig.Deposit,
+        M.ops.bridgeAvailable B b ∧
+        M.ops.analogSim b d ∧
+        M.ops.verifyVia B b d (M.ops.effectiveTime B) ∧
+        M.ops.residualRiskVia B b d := by
+  -- T25: scratch and escalation are closed → a budgeted bridge must exist
+  have ⟨b, h_avail, h_sim, h_verify⟩ :=
+    no_escalation_forces_bridge M.toAutonomyModel h_auto B d
+      h_required h_scratch_fail h_no_esc
+  -- h_all_risky applied to that bridge supplies the residual-risk component
+  exact ⟨b, h_avail, h_sim, h_verify, h_all_risky b h_avail h_sim h_verify⟩
+
+
+/-- No risk-free sound response exists for a required novel over-budget claim
+    when escalation is also unavailable.
+
+    **Theorem shape:** concludes `¬∃ b, ... ∧ ¬residualRiskVia B b d` from the
+    same regime hypotheses.
+    **Proof strategy:** assume a risk-free bridge witness; apply `h_all_risky`
+    to obtain `residualRiskVia`; contradicts the risk-free assumption. -/
+theorem no_risk_free_autonomy_for_novel_overbudget_claims (M : RiskAutonomyModel)
+    (_h_auto  : AutonomyUnderPRPGoal M.toAutonomyModel)
+    (B : M.sig.Bubble) (d : M.sig.Deposit)
+    (_h_required    : M.ops.mustHandle B d)
+    (_h_scratch_fail : ¬M.ops.verifyWithin B d (M.ops.effectiveTime B))
+    (_h_no_esc      : ¬M.ops.canEscalate B d)
+    (h_all_risky   : ∀ b : M.sig.Deposit,
+        M.ops.bridgeAvailable B b →
+        M.ops.analogSim b d →
+        M.ops.verifyVia B b d (M.ops.effectiveTime B) →
+        M.ops.residualRiskVia B b d) :
+    ¬∃ b : M.sig.Deposit,
+        M.ops.bridgeAvailable B b ∧
+        M.ops.analogSim b d ∧
+        M.ops.verifyVia B b d (M.ops.effectiveTime B) ∧
+        ¬M.ops.residualRiskVia B b d := by
+  intro ⟨b, h_avail, h_sim, h_verify, h_no_risk⟩
+  -- h_all_risky forces risk on every available budgeted bridge; contradiction
+  exact h_no_risk (h_all_risky b h_avail h_sim h_verify)
+
+
+/-! ## §T26a.3  AutonomyRiskHealth Bundle -/
+
+/-- A system is risk-conformant for autonomous PRP operation if it satisfies
+    the autonomy coverage goal over its risk-extended model.
+
+    Separate from `AutonomyHealth` (T25) because it requires `RiskAutonomyModel`.
+    `AutonomyRiskHealth` is the base bundle; T26c (`PRPObligationStream`) is the
+    stream-level extension. -/
+structure AutonomyRiskHealth (M : RiskAutonomyModel) where
+  autonomy_coverage : AutonomyUnderPRPGoal M.toAutonomyModel
 
 end EpArch
