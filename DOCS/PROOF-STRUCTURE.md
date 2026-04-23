@@ -10,6 +10,15 @@ routing / constraint-proof / proof-content structure of the `certify`
 surface. Both axes are present in the repo; this file covers only the
 per-dimension forcing chain.
 
+**Reading direction.** The sections below are ordered Layer 1 → Layer 2 →
+Layer 3 for completeness. For a reviewer asking *why* alternative
+architectures fail, the practical entry point is the other end: start with
+`StructurallyForced` in `Convergence.lean` and the impossibility witnesses
+stored in each `GroundedXStrict`, then follow the chain back to the Layer 1
+model in `Minimality.lean` for the proof content. `Minimality.lean` is where
+you go to understand the argument, not where you go to understand what is
+being claimed.
+
 The eight dimensions are not uniform in proof depth. "Mostly definitional"
 means the theorem is a direct extraction from constructor fields — correct
 and useful, but not where the mathematical content lives. "Interface-
