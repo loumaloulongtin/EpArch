@@ -41,8 +41,9 @@ EpArch must remain applicable across agents that do not share the same
 internal epistemology, including minimal agents (e.g. an odometer-like
 system) that face only a sub-bundle of the full eight pressures. The
 cluster architecture ensures the kernel scales down gracefully: a system
-that does not face `FallibilityConstraint` simply does not receive the
-clusters that depend on it, and the remaining claims stay sound.
+that does not face, say, `Pressure.revocation` (adversarial pressure)
+simply does not receive the clusters that depend on it, and the remaining
+claims stay sound.
 
 This is why the kernel boundary stops at coordination-relevant
 architectural requirements rather than agent-internal dynamics models.

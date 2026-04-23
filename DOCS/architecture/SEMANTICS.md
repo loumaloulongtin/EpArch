@@ -77,12 +77,13 @@ by construction*: once step-level preservation is proved for an invariant
 
 ## Gate theorems
 
-The withdrawal gate is the canonical example. `Step.withdraw` requires
-`isDeposited`, and the operational definition of `isDeposited` checks ACL
-membership, current τ, and a Deposited status flag. The withdrawal-gate
-theorem in `Theorems/Withdrawal.lean` therefore reads as a structural
-projection rather than an extra axiom: if `Step.Withdraw` fires, all three
-gates held in the source state.
+The withdrawal gate is the canonical example. `isDeposited` is a pure
+status predicate (`∃ d, ledger.get? d_idx = some d ∧ d.status = .Deposited`)
+— it checks the ledger slot, nothing else. The withdrawal-gate theorem in
+`Theorems/Withdrawal.lean` is the structural projection: if `Step.Withdraw`
+fires, then ACL permission, current τ, and `Deposited` status all held in
+the source state. The ACL/τ conditions are what the gate theorem documents;
+they are not checked by `isDeposited` itself.
 
 The same pattern produces `Repair → Candidate` (revalidation), `Promote
 requires Candidate`, and the `Forget` / `Update` slot-existence gates. These

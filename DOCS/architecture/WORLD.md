@@ -30,11 +30,16 @@ These are the minimum derived notions the obligation theorems use.
 
 ---
 
-## The three world bundles
+## The three core world-to-structural bundles
 
-Three `W_*` structures package conditions on a `WorldCtx`. They are
-*conditions* — some instantiations satisfy them, others (like a degenerate
-`TrivialCtx` with `Truth w P = True` always) provably do not.
+Three `W_*` structures in `WorldCtx.lean` package conditions on a
+`WorldCtx` and each independently forces one structural feature of the
+convergence chain. They are *conditions* — some instantiations satisfy
+them, others (like a degenerate `TrivialCtx` with `Truth w P = True`
+always) provably do not. Additional adversarial `W_*` bundles
+(`W_asymmetric_costs`, `W_spoofedV`, `W_lies_scale`, `W_ddos`, and others)
+live in `Adversarial/Obligations.lean` and enable the adversarial
+obligation theorems; they do not drive the structural convergence chain.
 
 ### `W_lies_possible`
 ```

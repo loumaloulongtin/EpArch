@@ -64,7 +64,7 @@ The independence interface is the formal locus where the agent-side
 constraints (`Agent/Constraints.lean`) and the resilience layer
 (`Agent/Resilience.lean`) connect to the bank's deposit lifecycle. The bank
 records what is presented; the agent decides what to present and through
-which sources. PRP (Public Receivability Pressure) is the upstream
+which sources. PRP (Permanent Redeemability Pressure) is the upstream
 framing: the corroboration theorems are what the formalization actually
 delivers when PRP is operationalized as multi-source attestation.
 
