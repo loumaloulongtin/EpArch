@@ -148,6 +148,16 @@ structure of `c_import_deposit`, not from anything inside `c_valid_export`.
 The theorems in `EpArch.Adversarial.Concrete` (`invalid_export_requires_reval_or_bridge`,
 `missing_export_gate_blocks_import`, `V_spoof_blocks_cross_bubble_reliance`) are proved
 over the current `c_valid_export` definition, which dispatches on `CTrustBridgeAuth`.
+
+`c_import_deposit` is the transfer-legitimacy gate: it asks whether the presenting
+agent was authorised to make the cross-bubble assertion. A second gate,
+`c_acl_import_deposit`, asks whether the *deposit itself* authorises the presenting
+agent to export it to the target bubble. The two gates are independent. A deposit can pass the transfer
+gate (revalidated or bridge passes) and still be blocked by the deposit's own ACL
+— this is the coconut oil pattern: a high-quality deposit the owner has chosen not
+to share. Conversely, a deposit whose ACL is open (empty entries list) passes the
+ACL gate trivially. `deposit_acl_blocks_import` in `EpArch.Adversarial.Concrete`
+proves the blocking direction: `c_deposit_allows_export = false → c_acl_import_deposit = none`.
 They hold for both modes because the proofs only rely on the absence of any bridge
 (`via_trust_bridge = none`), not on which auth variant is present.
 

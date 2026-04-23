@@ -21,10 +21,14 @@ Four-step demonstration connecting the abstract attack vocabulary
   trust bridge whose gate passes — either the presenting agent matches a named
   authorized agent (.byAgent), or the request carries a credential that the bridge's
   token_ok predicate accepts (.byToken). Absent both, c_import_deposit returns none.
-  The gate enforces transfer legitimacy — whether the receiving bubble has epistemic
-  grounds to accept the claim — not invocation order. Deposits are epistemic claims,
-  not tokens; there is no double-spending problem to sequence around. Bubbles never
-  communicate directly; there is always an agent in the middle.
+  A second gate, c_acl_import_deposit, applies the deposit's own ACL: if the
+  presenting agent is not listed as an authorized exporter, the deposit is blocked
+  regardless of the transfer gate result. This is the access-control layer, not a
+  quality-defect gate: an ACL-restricted deposit can have perfect S, E, V, and τ.
+  The combined gate enforces transfer legitimacy — whether the receiving bubble has
+  epistemic grounds to accept the claim — not invocation order. Deposits are epistemic
+  claims, not tokens; there is no double-spending problem to sequence around. Bubbles
+  never communicate directly; there is always an agent in the middle.
 -/
 
 import EpArch.Adversarial.Base
@@ -46,31 +50,47 @@ open EpArch EpArch.ConcreteModel
 /-- V stripped: a CDeposit with empty provenance chain — the V-spoofing attack surface. -/
 def V_stripped_deposit : CDeposit :=
   { claim := "spoofed-claim", S := 100, E := ["known-error"], V := [], τ := 1000,
-    cs := default }
+    acl := ⟨[]⟩, cs := default }
 
 /-- τ expired: a CDeposit whose τ falls below any non-trivial current_time — the τ-compression
     attack surface. At current_time ≥ 2, compute_status gives .Stale, not .Deposited. -/
 def τ_expired_deposit : CDeposit :=
   { claim := "stale-claim", S := 100, E := ["known-error"], V := ["src"], τ := 1,
-    cs := default }
+    acl := ⟨[]⟩, cs := default }
 
 /-- S zero: a CDeposit with no acceptance threshold — the standards-displacement surface.
     S = 0 means any claim clears the standard bar regardless of scrutiny. -/
 def S_zero_deposit : CDeposit :=
   { claim := "proxy-claim", S := 0, E := ["known-error"], V := ["src"], τ := 1000,
-    cs := default }
+    acl := ⟨[]⟩, cs := default }
 
 /-- E empty: a CDeposit with no error model — the diagnosis-blind surface.
     Without an error model, no failure mode can be named during challenge. -/
 def E_empty_deposit : CDeposit :=
   { claim := "no-error-model", S := 100, E := [], V := ["src"], τ := 1000,
-    cs := default }
+    acl := ⟨[]⟩, cs := default }
 
 /-- Fully stripped: S = 0, E = [], V = [] simultaneously. Witnesses c_header_stripped. -/
 def fully_stripped_deposit : CDeposit :=
-  { claim := "stripped-claim", S := 0, E := [], V := [], τ := 999, cs := default }
+  { claim := "stripped-claim", S := 0, E := [], V := [], τ := 999, acl := ⟨[]⟩, cs := default }
 
 example : c_header_stripped fully_stripped_deposit := Or.inl rfl
+
+/-- ACL restricted: a CDeposit marked for personal use only — the coconut oil pattern.
+    The deposit is high-quality (S, E, V all present, τ fresh) but the ACL
+    restricts export to the owner only. No other agent may export it.
+    All other header fields are valid; the restriction is a deliberate choice, not a defect.
+    Note: `cs` carries a non-empty domain and test_procedure so the witness
+    also satisfies `c_redeemable` — keeping the "high-quality" narrative honest. -/
+def acl_restricted_deposit : CDeposit :=
+  { claim := "secret-ingredient"
+    S := 100
+    E := ["recipe-exposure"]
+    V := ["personal-experience", "grandmother"]
+    τ := 1000
+    acl := ⟨[{ agent_id := "owner", bubble_id := "*",
+               claim_pattern := "*", permission := "export" }]⟩
+    cs := { domain := "culinary", test_procedure := "taste-test" } }
 
 /-! ========================================================================
     STEP 2 — THE GATES ARE STRUCTURALLY UN-BYPASSABLE
@@ -255,16 +275,25 @@ theorem ddos_V_channel_collapse_blocks_withdrawal
     ========================================================================
 
     CExportRequest packages a deposit with gate metadata (revalidated flag,
-    trust bridge) and a presenting_agent identity. c_valid_export requires
-    either revalidation at the destination or a passing trust bridge gate.
+    trust bridge) and a presenting_agent identity. Two gates apply in sequence:
+
+    Gate A — transfer legitimacy (c_import_deposit / c_valid_export):
+    Requires either revalidation at the destination or a passing trust bridge.
     Absent both, c_import_deposit returns none.
 
-    The gate enforces transfer legitimacy: did a vetted agent vouch for this
-    deposit (.byAgent: presenter identity matches), or does it carry a valid
-    credential (.byToken: token_ok passes), or was it revalidated at the
-    destination? Deposits are epistemic claims, not tokens — there is no
-    double-spending problem and no resource to deplete. Bubbles never
-    communicate directly; there is always an agent in the middle. -/
+    Gate B — deposit-level access control (c_acl_import_deposit):
+    Applies the deposit's own acl field. If the presenting agent is not listed
+    as an authorized exporter, c_acl_import_deposit returns none regardless of
+    the Gate A result. This blocks deliberate-restriction cases (the coconut oil
+    pattern: a high-quality deposit the owner has chosen not to share) separately
+    from quality-defect gates (V, τ, S, E).
+
+    Did a vetted agent vouch for this deposit (.byAgent: presenter identity
+    matches), or does it carry a valid credential (.byToken: token_ok passes),
+    or was it revalidated at the destination? And is that agent listed in the
+    deposit's own ACL? Deposits are epistemic claims, not tokens — there is no
+    double-spending problem and no resource to deplete. Bubbles never communicate
+    directly; there is always an agent in the middle. -/
 
 /-- invalid_export_requires_reval_or_bridge: absent both revalidation and trust bridge,
     c_valid_export returns false.
@@ -318,6 +347,30 @@ theorem V_spoof_blocks_cross_bubble_reliance (req : CExportRequest)
   missing_export_gate_blocks_import req
     (invalid_export_requires_reval_or_bridge req h_no_reval h_no_bridge)
 
+/-- deposit_acl_blocks_import: a deposit whose own ACL does not permit the presenting
+    agent is blocked at the full import gate, regardless of the transfer gate result.
+
+    This is the coconut oil case: P is excellent; S, E, V all pass; τ is fresh;
+    the block is a deliberate choice about who may receive the claim, not a quality failure.
+    Even with a passing trust bridge or revalidation, `c_acl_import_deposit` returns none.
+
+    Proof: unfold `c_acl_import_deposit`; `h_acl_denied` rewrites the ACL gate to false;
+    `Bool.false_and` closes the conjunction to false regardless of the transfer gate. -/
+theorem deposit_acl_blocks_import (req : CExportRequest)
+    (h_acl_denied : c_deposit_allows_export req.deposit req.presenting_agent req.target = false) :
+    c_acl_import_deposit req = none := by
+  unfold c_acl_import_deposit
+  rw [h_acl_denied, Bool.false_and]
+  rfl
+
+/-- Witness: `acl_restricted_deposit` is blocked for any non-owner agent.
+    A presenting agent whose id is not "owner" finds no matching ACL entry. -/
+example : c_deposit_allows_export acl_restricted_deposit
+    { id := "child", beliefs := [], confidence := fun _ => 0 }
+    { id := "child-kitchen", deposits := [] } = false := by
+  unfold c_deposit_allows_export acl_restricted_deposit
+  decide
+
 /-! ## Full-Stack Attack Witness -/
 
 /-- A concrete FullStackAttack with all Bool flags set to true (all attack conditions active).
@@ -354,7 +407,7 @@ theorem concrete_attack_succeeds : attack_succeeds concrete_full_stack_attack :=
 theorem full_stack_attack_concrete_blocked (acl : CACL) (a : CAgent) (B : CBubble) :
     ¬c_can_withdraw acl a B
       { claim := "victim-claim", S := 100, E := ["known-error"], V := [],
-        τ := 5, cs := default } 100 := by
+        τ := 5, acl := ⟨[]⟩, cs := default } 100 := by
   apply τ_expired_not_withdrawable
   -- Goal: (5 : CTime) ≤ 100
   decide

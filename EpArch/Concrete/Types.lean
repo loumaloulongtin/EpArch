@@ -32,6 +32,30 @@ structure CConstraintSurface where
   test_procedure : String
 deriving DecidableEq, Repr, Inhabited
 
+
+/-! ## Access Control List (ACL) -/
+
+/-- ACL entry: a single authorization rule that names which agent may
+    perform an operation ("export", "withdraw", etc.) on matching claims
+    in matching bubbles.  Used both as a deposit-level export ACL
+    (checked by `c_deposit_allows_export`) and as a general permission
+    record via `c_has_permission` / `c_can_withdraw`. -/
+structure CACLEntry where
+  agent_id : String
+  bubble_id : String
+  claim_pattern : String  -- "*" for all, or specific claim
+  permission : String     -- "read", "withdraw", "export"
+  deriving Repr, DecidableEq
+
+/-- An ACL is a list of `CACLEntry` rules.  Empty = unrestricted (open
+    access); non-empty = only the listed agents/bubbles/permissions are
+    authorised.  Used as both a bubble-level ACL and as `CDeposit.acl`
+    — the deposit-level export gate checked by `c_deposit_allows_export`. -/
+structure CACL where
+  entries : List CACLEntry
+  deriving Repr, DecidableEq, Inhabited
+
+
 /-- Concrete deposit with all header fields. -/
 structure CDeposit where
   claim : CProp
@@ -39,6 +63,7 @@ structure CDeposit where
   E : CErrorModel         -- known failure modes
   V : CProvenance         -- source chain
   τ : CTime               -- time-to-live
+  acl : CACL              -- who may receive or rely on this deposit
   cs : CConstraintSurface -- redeemability reference
 deriving Repr, DecidableEq, Inhabited
 
@@ -91,20 +116,7 @@ def compute_status (d : CDeposit) (current_time : CTime) : CDepositStatus :=
   else .Deposited
 
 
-/-! ## Access Control List (ACL) -/
-
-/-- ACL entry: who can withdraw what from where. -/
-structure CACLEntry where
-  agent_id : String
-  bubble_id : String
-  claim_pattern : String  -- "*" for all, or specific claim
-  permission : String     -- "read", "withdraw", "export"
-  deriving Repr
-
-/-- ACL for a bubble. -/
-structure CACL where
-  entries : List CACLEntry
-  deriving Repr
+/-! ## Access Control List (ACL) — predicates -/
 
 /-- Check if agent has permission for action on claim in bubble. -/
 def c_has_permission (acl : CACL) (agent : CAgent) (bubble : CBubble)
@@ -175,6 +187,28 @@ def c_import_deposit (req : CExportRequest) : Option CDeposit :=
     some (mutate_header_for_export req.deposit req.source)
   else
     none
+
+/-- Check if deposit's own ACL allows export by this agent to this target bubble.
+    An empty entries list means unrestricted (the default for all open deposits).
+    A non-empty list is checked entry-by-entry: at least one entry must match
+    the presenting agent, target bubble, claim, and "export" permission. -/
+def c_deposit_allows_export (d : CDeposit) (agent : CAgent) (target : CBubble) : Bool :=
+  d.acl.entries.isEmpty ||
+  d.acl.entries.any (fun e =>
+    (e.agent_id == agent.id || e.agent_id == "*") &&
+    (e.bubble_id == target.id || e.bubble_id == "*") &&
+    (e.claim_pattern == d.claim || e.claim_pattern == "*") &&
+    e.permission == "export")
+
+/-- Full import gate: deposit's own ACL must permit the export AND the transfer
+    must carry revalidation or a passing trust bridge.
+    `c_import_deposit` checks the transfer gate alone; this function applies both.
+    An ACL-restricted deposit is blocked even when the transfer gate passes. -/
+def c_acl_import_deposit (req : CExportRequest) : Option CDeposit :=
+  if c_deposit_allows_export req.deposit req.presenting_agent req.target &&
+     c_valid_export req
+  then some (mutate_header_for_export req.deposit req.source)
+  else none
 
 
 /-! ## Predicates on Concrete Types -/

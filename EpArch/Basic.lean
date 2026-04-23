@@ -215,7 +215,7 @@ The five minimal states are the architectural boundary: implementations
 may use internal multi-stage pipelines between Candidate and Deposited,
 but the architecture does not prescribe or observe those intermediate stages.
 
-`.Forgotten` is the capacity-deletion terminal state (added in task 23b). It is
+`.Forgotten` is the capacity-deletion terminal state. It is
 categorically distinct from `.Revoked`: Revoked is an epistemic signal ("this
 path was tested and closed"); Forgotten is an operational tombstone ("this slot
 was freed for storage reasons"). See EpArch.Semantics.StepSemantics.Step.forget. -/

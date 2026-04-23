@@ -107,7 +107,6 @@ Not claimed anywhere in the formalization.
 |----------|--------|
 | Cryptographic security | Not a cryptographic proof |
 | Implementation correctness | Spec ≠ implementation |
-| Physical realizability | Formal model only |
 | Empirical correspondence | Model ≠ world |
 | Optimality | No optimality claim |
 | Uniqueness of realization | Multiple realizations may exist |

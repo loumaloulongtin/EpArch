@@ -661,7 +661,16 @@ un-bypassable at the concrete model level.
 | `concrete_attack_succeeds` | Adversarial/Concrete.lean | `attack_succeeds concrete_full_stack_attack` holds | Attack vocab non-vacuity |
 | `full_stack_attack_concrete_blocked` | Adversarial/Concrete.lean | Matching `CDeposit` blocked by τ gate at current_time 100 | End-to-end |
 
-**Scope boundary:** these theorems prove gate conditions are un-bypassable *when invoked*. Whether an agent must invoke `c_can_withdraw` before constructing a `CExportRequest` is an agent-layer protocol obligation, not enforced by `EpArch.Adversarial.Concrete`. EpArch proves the gates are sound; agents prove the gates are invoked in the right order.
+### Step 4: Export Gate Conditions
+
+| Theorem | File | Statement | Claim |
+|---------|------|-----------|-------|
+| `invalid_export_requires_reval_or_bridge` | Adversarial/Concrete.lean | `req.revalidated = false → req.via_trust_bridge = none → c_valid_export req = false` | Transfer gate: absent both paths, gate closes |
+| `missing_export_gate_blocks_import` | Adversarial/Concrete.lean | `c_valid_export req = false → c_import_deposit req = none` | Transfer gate soundness |
+| `V_spoof_blocks_cross_bubble_reliance` | Adversarial/Concrete.lean | `V = [] ∧ no reval ∧ no bridge → c_import_deposit req = none` | V-spoofing blocked at transfer gate |
+| `deposit_acl_blocks_import` | Adversarial/Concrete.lean | `c_deposit_allows_export = false → c_acl_import_deposit req = none` | ACL gate: deposit's own ACL denies presenter regardless of transfer gate |
+
+**Scope boundary:** these theorems prove gate conditions are un-bypassable *when invoked*. Whether an agent must invoke `c_can_withdraw` before constructing a `CExportRequest` is an agent-layer protocol obligation, not enforced by `EpArch.Adversarial.Concrete`. EpArch proves the gates are sound; agents prove the gates are invoked in the right order. The two export gates (`c_import_deposit` and `c_acl_import_deposit`) are independent: a deposit can pass the transfer gate yet still be blocked by the deposit's own ACL.
 
 ---
 

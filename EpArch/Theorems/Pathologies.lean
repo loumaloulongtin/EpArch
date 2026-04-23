@@ -380,8 +380,9 @@ def includes_artifact (e : extended_case) : Prop := e.artifact_included = true
 def artifact_in_bubble (e : extended_case) : Prop := e.artifact_included = true
 
 /-- Artifact is included in the bubble: derived from the structural invariant.
-    `includes_artifact` and `artifact_in_bubble` are definitionally equal;
-    no premises are needed beyond what is encoded at case construction. -/
+    Proof: direct extraction of the `artifact_is_included` field, which is a
+    structural invariant of `extended_case` — no premises needed beyond the
+    case constructor. -/
 theorem artifact_bubble_membership (e : extended_case) :
     includes_artifact e :=
   e.artifact_is_included
