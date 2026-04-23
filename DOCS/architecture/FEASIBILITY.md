@@ -26,7 +26,6 @@ The witness family lives in `EpArch/Concrete/`, split into focused modules:
 | `Concrete/Realizer.lean` | `Realizer` (8-commitment conjunction) and `SuccessfulSystem` |
 | `Concrete/VerificationDepth.lean` | `DepthClaim` constructive witness; `bounded_verify` |
 | `Concrete/NonVacuity.lean` | trace, legibility, and convergence witnesses |
-| `Concrete/WorkedTraces.lean` | worked traces used by theorem transport |
 | `WorldWitness.lean` | `WitnessCtx` — concrete `WorldCtx` satisfying all three W_* bundles |
 
 `WitnessCtx` discharges `holds_W_lies_possible`,
