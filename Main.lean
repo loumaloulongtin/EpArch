@@ -176,6 +176,7 @@ import EpArch.Mechanisms  -- Canonical mechanism predicates
 import EpArch.Semantics.ScopeIrrelevance  -- Scope/irrelevance theorems
 import EpArch.Agent.Constraints   -- AgentConstraints, PRP, PRP theorems
 import EpArch.Agent.Imposition    -- Design-forcing theorems
+import EpArch.Agent.PatternExamples -- Pedagogical annex: concrete pattern instantiations
 import EpArch.Agent.Resilience    -- Fault events, LTS, containment proofs
 import EpArch.Agent.Corroboration -- Multi-agent corroboration theorems
 import EpArch.Concrete.Realizer  -- Feasibility: System realizer interface
