@@ -29,6 +29,28 @@ a set-closure property, or a counting obstruction — that cannot be replaced
 by field extraction alone. That asymmetry is not a flaw. The theorems are
 exactly as deep as their claims require.
 
+**File layout.** The forcing chain for all eight dimensions spans four files:
+
+| File | Layer | Contents |
+|------|-------|----------|
+| `Minimality.lean` | Layer 1 | Abstract impossibility models (`AgentDisagreement`, `PrivateOnlyStorage`, `MonotonicLifecycle`, `DiscriminatingImport`, `BoundedVerification`, `ClosedEndorsement`, `TwoTierAccess`, `BoundedStorage`) and their impossibility theorems; also `WorkingSystem`, `Pressure`, `Has*` predicates |
+| `Scenarios.lean` | Layer 2 | `Represents*` scenario structures, `_without_*_embeds` and `_forces_*` theorem pairs |
+| `GroundedEvidence.lean` | Layer 3a | `GroundedX` / `GroundedXStrict` evidence structures that store consequences once a system carries the feature |
+| `Convergence.lean` | Layer 3b | `EvidenceConsequences`, `StructurallyForced`, `ForcingEmbedding`, `embedding_to_structurally_forced`, `convergence_structural`, `structural_impossibility`, `grounded_evidence_consequences` |
+
+---
+
+## Top-Level Aggregator (`Convergence.lean`)
+
+This is the entry point the README reading guide directs a reviewer to first.
+
+- **`EvidenceConsequences W`** — structure with one field per dimension. Each field takes a `GroundedXStrict` value and reads its impossibility consequence directly off it. The "Aggregator wiring" lines in each dimension section below are assignments to these fields inside `embedding_to_structurally_forced`.
+- **`StructurallyForced W`** — packages `forcing` (the eight `handles_* → Has*` implications, indexed by `Pressure`) and `evidence` (an `EvidenceConsequences`). The top-level certificate that a system is structurally forced.
+- **`ForcingEmbedding W`** — translation layer: for each dimension, either the system already has the feature or it embeds into the abstract impossibility model from `Minimality.lean`. `embedding_to_structurally_forced` builds a `StructurallyForced` from any `ForcingEmbedding`, constructively and without classical logic.
+- **`convergence_structural`** — main convergence theorem: `StructurallyForced W → SatisfiesAllProperties W → containsBankPrimitives W`.
+- **`structural_impossibility`** — missing any feature blocks `SatisfiesAllProperties`.
+- **`grounded_evidence_consequences`** — joint readout theorem: spells out all eight `GroundedXStrict` consequences simultaneously under `SatisfiesAllProperties`.
+
 ---
 
 ## Dimension 1: Scope — Bubbles
@@ -54,7 +76,7 @@ collapsing it — any flat resolver either over-accepts or over-rejects.
 - Bridge condition: the system hosts two agents with conflicting acceptance
   predicates and no bubble boundary to scope them
 
-**Layer 3 — Stored consequences (`GroundedBubblesStrict`)**
+**Layer 3 — Stored consequences (`GroundedBubblesStrict` in `GroundedEvidence.lean`)**
 - Stored field: `no_flat_resolver` — the impossibility witness carried forward
 - Aggregator wiring: `scope_consequence := fun G _h_ev => G.no_flat_resolver`
 - Proof weight note: Layer 3 is direct field extraction; the mathematical
@@ -83,7 +105,7 @@ accessible to more than one agent, making collective reliance impossible.
 - Bridge condition: the system has two agents that must share a ledger entry
   but no shared storage component
 
-**Layer 3 — Stored consequences (`GroundedBankStrict`)**
+**Layer 3 — Stored consequences (`GroundedBankStrict` in `GroundedEvidence.lean`)**
 - Stored field: `has_shared_entry` — a concrete shared ledger entry witness
 - Aggregator wiring: `bank_consequence := fun G _h_ev => G.has_shared_entry`
 - Proof weight note: interface-compositional readout from the grounded witness
@@ -115,7 +137,7 @@ accumulates invalid-but-irremovable deposits without bound.
 - Bridge condition: the system has a deposit that can become invalid and
   no revocation mechanism to remove it
 
-**Layer 3 — Stored consequences (`GroundedRevocationStrict`)**
+**Layer 3 — Stored consequences (`GroundedRevocationStrict` in `GroundedEvidence.lean`)**
 - Stored field: `has_invalid_revocable_witness` — existence of a claim
   that is revocable and currently invalid
 - Aggregator wiring: `revocation_consequence := fun G _h_ev => G.has_invalid_revocable_witness`
@@ -149,7 +171,7 @@ and complete across claims that differ only in their header content.
 - Bridge condition: the system must route claims by content but carries no
   header preservation guarantee
 
-**Layer 3 — Stored consequences (`GroundedHeadersStrict`)**
+**Layer 3 — Stored consequences (`GroundedHeadersStrict` in `GroundedEvidence.lean`)**
 - Stored field: `routing_invariant` — for any router, the extracted header
   is invariant under export
 - Aggregator wiring: `headers_consequence := fun G _h_ev => G.routing_invariant`
@@ -181,7 +203,7 @@ cannot handle those claims.
 - Bridge condition: the system imports across scope boundaries with a fixed
   verification budget and no trust-bridging mechanism
 
-**Layer 3 — Stored consequences (`GroundedTrustBridgesStrict`)**
+**Layer 3 — Stored consequences (`GroundedTrustBridgesStrict` in `GroundedEvidence.lean`)**
 - Stored field: `bridge_forces_acceptance` — for any downstream acceptance
   policy, the bridge witness forces acceptance
 - Aggregator wiring: `trust_consequence := fun G _h_ev => G.bridge_forces_acceptance`
@@ -214,7 +236,7 @@ is closed under the endorsement relation, so no external claim can enter it.
 - Bridge condition: the system endorses claims without an external
   redeemability anchor
 
-**Layer 3 — Stored consequences (`GroundedRedeemabilityStrict`)**
+**Layer 3 — Stored consequences (`GroundedRedeemabilityStrict` in `GroundedEvidence.lean`)**
 - Stored field: `has_constrained_redeemable_witness` — existence of a
   constrained claim that is also redeemable
 - Aggregator wiring: `redeemability_consequence := fun G _h_ev => G.has_constrained_redeemable_witness`
@@ -248,7 +270,7 @@ requires.
 - Bridge condition: the system has two agents that need different access
   levels but no granular ACL component
 
-**Layer 3 — Stored consequences (`GroundedAuthorizationStrict`)**
+**Layer 3 — Stored consequences (`GroundedAuthorizationStrict` in `GroundedEvidence.lean`)**
 - Stored field: `no_flat_tier` — no flat predicate can reproduce the
   differentiated access behavior
 - Aggregator wiring: `authorization_consequence := fun G _h_ev => G.no_flat_tier`
@@ -282,7 +304,7 @@ a structural necessity.
 - Bridge condition: the system operates under a bounded storage budget with
   no eviction or compaction mechanism
 
-**Layer 3 — Stored consequences (`GroundedStorageStrict`)**
+**Layer 3 — Stored consequences (`GroundedStorageStrict` in `GroundedEvidence.lean`)**
 - Stored field: `no_unbounded_accumulation` — the overflow state refutes
   the assumption that all states fit within the budget
 - Aggregator wiring: `storage_consequence := fun G _h_ev => G.no_unbounded_accumulation`
@@ -298,7 +320,7 @@ a structural necessity.
 | Scope / Bubbles | `flat_scope_impossible` | Contradiction | Genuinely semantic |
 | Coordination / Bank | `private_storage_no_sharing` | Contradiction (field) | Mostly definitional |
 | Adversarial / Revocation | `monotonic_no_exit` | Induction | Genuinely semantic |
-| Export / Headers | `routing_requires_header` | Algebraic obstruction | Interface-compositional |
+| Export / Headers | `no_sound_complete_uniform_import` | Contradiction | Interface-compositional |
 | Bounded verification / Trust bridges | `verification_only_import_incomplete` | Arithmetic obstruction | Mostly definitional |
 | Truth pressure / Redeemability | `closed_system_unfalsifiable` | Set-closure | Genuinely semantic |
 | Authorization / Granular ACL | `flat_authorization_impossible` | Contradiction | Genuinely semantic |
