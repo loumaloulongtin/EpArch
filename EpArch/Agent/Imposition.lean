@@ -16,7 +16,6 @@ that state certain combinations (goal + constraints + no mechanism) are impossib
 
 ## Contents
 
-- Mechanism and health goal structures
 - Counterexample constructions
 - PROVED necessity theorems (not axioms)
 
@@ -270,53 +269,6 @@ theorem ReliableExportGoal_implies_ExportGateEnforced
     (h_goal : ReliableExportGoal observationCorrect exportBlocked) :
     ExportGateEnforced exportBlocked := by
   exact h_goal h_incorrect
-
-
-/-! ## Legacy Structures (for backward compatibility) -/
-
-/-- Abstract mechanism predicates for design-imposition. -/
-structure Mechanisms where
-  /-- System has reversibility mechanism -/
-  hasReversibility : Prop
-  /-- System has cheap validator mechanism -/
-  hasCheapValidator : Prop
-  /-- System has export gate mechanism -/
-  hasExportGate : Prop
-  /-- System has revision hooks -/
-  hasRevisionHooks : Prop
-  /-- System has scoped audit surfaces -/
-  hasScopedAudit : Prop
-
-/-! ## Canonical Health Goals Integration
-
-**Design decision:**
-- Scenario-based goals (SafeWithdrawalGoal, SoundDepositsGoal, ReliableExportGoal above)
-  are for COUNTEREXAMPLE CONSTRUCTION — they take raw Prop parameters.
-- EpArch.Health defines CANONICAL system health goals over CoreModel.
-- The HealthGoals structure below is a PROP BUNDLE for agent-layer reasoning,
-  while EpArch.FullSystemHealth is the model-level specification.
-
-**Relationship:**
-- This module proves: AgentConstraints + scenario-goal → mechanism needed
-- EpArch.Health proves: CoreModel + definitional-goal → capability exists
-- Both are valid; scenario proofs are more direct, model proofs are more general.
--/
-
-/-- Abstract health goals (pure outcomes, not implementation).
-
-    This is the Prop-level bundle for agent reasoning.
-    For the canonical CoreModel-level definition, see EpArch.FullSystemHealth. -/
-structure HealthGoals where
-  /-- Withdrawals are safe (no unilateral extraction) -/
-  safeWithdrawal : Prop
-  /-- Deposits are sound (verified claims) -/
-  soundDeposits : Prop
-  /-- Exports are reliable (no silent corruption) -/
-  reliableExport : Prop
-
-/-- Bridge: Convert scenario-level goals to a HealthGoals bundle. -/
-def toHealthGoals (h_sw : Prop) (h_sd : Prop) (h_re : Prop) : HealthGoals :=
-  ⟨h_sw, h_sd, h_re⟩
 
 
 /-! ## Concrete State Pattern Theorems
