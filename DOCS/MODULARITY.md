@@ -45,6 +45,34 @@ A proposed ninth dimension is not a counterexample merely because it exists in s
 
 If it fails that test, it is outside EpArch's scope rather than against it. If it passes, the theory extends cleanly: add a new `Pressure` constructor and the compiler immediately flags every `cases P` site that requires the new forcing chain to be supplied. The exhaustiveness is architectural discipline, not a metaphysical claim about the number of pressures in the world.
 
+### Forcing surfaces outside the pressure-dimension cluster registry
+
+The 32-cluster registry is the user-facing certification surface for the eight pressure
+dimensions and their transport/world companions.  It does not cover every theorem family
+in the repository.  Two further forcing surfaces exist and are intentionally outside the
+cluster registry:
+
+**`AuthorizedWithdrawalGoal` (Health.lean)**
+A structural implication theorem for multi-agent differentiated certification, not a
+transport goal in the `certify` / `ClusterTag` surface.  The config-facing authorization
+story is carried by the `multi_agent_access` / `.authorization` pressure dimension and its
+Tier 2 forcing cluster (`uniform_access_forces_acl`, `flat_authorization_impossible`).
+`AuthorizedWithdrawalGoal` is not a `GoalTag`; adding it as one would force answering
+whether it transports like `SoundDepositsGoal` and whether it belongs in bank-goal
+compatibility bundles — neither of which is the right framing for a multi-agent
+structural implication.
+
+**Residual-risk / autonomy forcing surface (Health.lean, ResidualRiskMitigation.lean)**
+The results from T25–T29 are closed autonomy-regime consequences, not user-selected
+pressure dimensions.  They live over `AutonomyModel`, `RiskAutonomyModel`, and
+`PRPObligationStream`, not over the eight `WorkingSystem` pressure dimensions.
+Key names: `ResidualRiskMode`, `EpArchMechanism`, `MitigatesObligation`,
+`GroundedRiskMode`, `PRPObligationStream`, `GloballyRiskFreeBridgePolicy`,
+`no_global_risk_free_bridge_policy_under_witnessed_stream`.
+These remain documented in `Health.lean`, `ResidualRiskMitigation.lean`, and
+`DOCS/THEOREMS.md` rather than being exposed through `ClusterTag`.
+"Not in `certify`" does not mean forgotten — it means not user-configurable.
+
 ---
 
 ## 2. User-Facing vs. Internal
@@ -370,6 +398,9 @@ This means they are already halfway to being transport-safe — the predicate mo
 | `CorrigibleLedgerGoal` | `revise`, `hasRevision` | Health.lean | Not requiring it (→ `odometer_not_corrigible` in Meta/LeanKernel/OdometerModel.lean) |
 | `SoundDepositsGoal` | `verifyWithin`, `effectiveTime` | Health.lean | Not requiring it |
 | `SelfCorrectionGoal` | `selfCorrects`, `hasRevision` | Health.lean | Not requiring it |
+
+`AuthorizedWithdrawalGoal` is also in `Health.lean` but is not a config-selectable goal
+tag; see §1d above.
 
 **`RevisionGate`** (the competition gate) references only `selfCorrects`, `hasRevision` — the minimal slice needed for the revision gate.
 

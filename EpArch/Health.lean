@@ -97,7 +97,18 @@ def SelfCorrectionGoal (M : CoreModel) : Prop :=
 
     Only relevant in the multi-agent collaboration case.  A single agent
     managing their own bank trivially fails this goal (no second agent exists)
-    and does not need to satisfy it. -/
+    and does not need to satisfy it.
+
+    **Not a config-selectable GoalTag.** This goal is a structural implication
+    theorem for multi-agent differentiated certification, not a transport goal
+    in the `certify` / `ClusterTag` surface.  The config-facing authorization
+    story is carried by the `multi_agent_access` / `.authorization` pressure
+    dimension and its Tier 2 forcing cluster
+    (`uniform_access_forces_acl` / `flat_authorization_impossible`).
+    Adding it as a `GoalTag` would force answering whether it transports like
+    `SoundDepositsGoal` and whether it belongs in bank-goal compatibility
+    bundles — neither of which is the right framing for a multi-agent
+    structural implication. -/
 def AuthorizedWithdrawalGoal (M : CoreModel) : Prop :=
   ∃ (a₁ a₂ : M.sig.Agent), ∃ (B : M.sig.Bubble) (d : M.sig.Deposit),
     M.ops.submit a₁ B d ∧ ¬M.ops.submit a₂ B d
