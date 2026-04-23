@@ -48,11 +48,18 @@ storage management. The headline theorem is
 
 ## Main proof route
 
-`Minimality.lean` (per-dimension semantic obstructions) → `Scenarios.lean`
-(`Represents*` embeddings) → `GroundedEvidence.lean` (`GroundedXStrict`
-consequences) → `Convergence.lean` (`StructurallyForced`,
+The chain runs `Minimality.lean` (per-dimension semantic obstructions) →
+`Scenarios.lean` (`Represents*` embeddings) → `GroundedEvidence.lean`
+(`GroundedXStrict` consequences) → `Convergence.lean` (`StructurallyForced`,
 `convergence_structural`) → `WorldBridges.lean`
 (`bundled_structure_forces_bank_primitives`).
+
+Read it from the top down, not the bottom up. Start at the capstone in
+[`WorldBridges.lean`](../EpArch/WorldBridges.lean), then `convergence_structural`
+in [`Convergence.lean`](../EpArch/Convergence.lean), and only then descend into
+`Scenarios.lean`, `GroundedEvidence.lean`, and the per-dimension obstructions
+in `Minimality.lean`. The lower layers carry the mathematical content but
+front-load definitional scaffolding that is hard to read in isolation.
 
 The walkthrough lives in [PROOF-STRUCTURE.md](PROOF-STRUCTURE.md).
 
