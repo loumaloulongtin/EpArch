@@ -139,8 +139,6 @@ Key opaque primitives:
 | `exportDep` / `TrustBridge` / `Revalidate` / `RepairAction` | Bank.lean | Abstract behavioral hooks (cross-bubble export, trust bridge, revalidation, repair action type) |
 | Adversarial/Base.lean opaques | Adversarial/Base.lean | 17 opaques constituting the adversarial model: attack channel (`AuditChannel`, `channel_capacity`, `attack_volume`), DDoS state (`ladder_overloaded`, `V_channel_exhausted`, etc.), countermeasures (`trust_bridge_on_hand`, `E_includes_threat`, etc.), cost primitives (`export_cost`, `import_defense_cost`). Note: `cheap_validator_reachable`, `transaction_reversible`, and `constraint_cheaply_testable` are **`def`s** (grounded as `d.h.τ > 0` or `τ > 0`), not opaques — see §Adversarial Model in THEOREMS.md |
 
-Note: `reliance_level` and `blast_radius` are **`def`s** (not opaques), grounded in `DepositDynamics` struct fields (`dd.relying_agents` and `dd.cascade_agents` respectively). The behavioral theorems `success_driven_bypass` and `blast_radius_scales_with_reliance` are proved over these defs.
-
 Note: `certainty_L`, `hasDeposit`, and `deposited` are now **`def`s**, not opaques:
 - `certainty_L a P := ladder_stage a P = .Certainty` (Basic.lean)
 - `deposited B d := d.status = .Deposited ∧ d.bubble = B` (Bank.lean)
@@ -164,9 +162,6 @@ guarded struct-update definitions. Each operator is grounded in
 `deposited` and `hasDeposit` are now **`def`s** grounded in `DepositStatus` fields (not opaque):
 `deposited B d := d.status = .Deposited ∧ d.bubble = B`;
 `hasDeposit B P := ∃ S E V d, d.status = .Deposited ∧ d.bubble = B ∧ d.P = P`.
-Two behavioral theorems over concrete definitions
-(`success_driven_bypass` over `reliance_level`; `blast_radius_scales_with_reliance` over `blast_radius`)
-ground the reliance/cascade surface in `DepositDynamics` fields.
 
 ### Structural Commitments (formerly up to 12 axioms → 0)
 
@@ -206,7 +201,7 @@ which is a worked domain instantiation outside the core claim (see above).
 |--------|------|
 | `Basic.lean` | Core types |
 | `Header.lean` | S/E/V header structure |
-| `Bank.lean` | Bank substrate (concrete operators; `deposited`/`hasDeposit`/`knowledge_B`/`reliance_level`/`blast_radius` are defs; opaque: `exportDep`, `TrustBridge`, `Revalidate`, `RepairAction`) |
+| `Bank.lean` | Bank substrate (concrete operators; `deposited`/`hasDeposit`/`knowledge_B` are defs; opaque: `exportDep`, `TrustBridge`, `Revalidate`, `RepairAction`) |
 | `Commitments.lean` | Structural commitments (all 8 proved as standalone theorems) |
 | `Invariants.lean` | Grounded operational invariants |
 | `Semantics/StepSemantics.lean` | Concrete step semantics (LTS core) |
