@@ -52,8 +52,8 @@ def extendWithExtraState (C : CoreModel)
     revise := C.ops.revise
     hasRevision := C.ops.hasRevision
     selfCorrects := C.ops.selfCorrects
-    getAgentExtra := fun _ => default  -- Placeholder (unused by RevisionGate)
-    getWorldExtra := default           -- Placeholder (unused by RevisionGate)
+    getAgentExtra := fun _ => default  -- unused by RevisionGate; any total value works
+    getWorldExtra := default           -- unused by RevisionGate; any total value works
   }
   hasBubble := C.hasBubble
 
