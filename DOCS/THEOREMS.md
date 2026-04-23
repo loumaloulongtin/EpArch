@@ -271,7 +271,7 @@ have been retired in favour of these structural forms.
 
 ---
 
-## Bucket 9b: Abstract Structural Forcing Layer (Minimality.lean + Convergence.lean)
+## Bucket 9: Abstract Structural Forcing Layer (Minimality.lean + Convergence.lean)
 
 **Role:** Provide structurally-grounded proofs that each constraint forces its feature. The eight structural impossibility models in Minimality.lean independently justify each `handles_X → HasY` implication. The §1b–§8b alternative-dismissal theorems cover the completeness side: each evaluated alternative either reproduces the same impossibility or satisfies the forced-primitive definition.
 
@@ -343,7 +343,7 @@ Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_w
 
 ---
 
-## Bucket 9c: Observation-Boundary Equivalence (Theorems/BehavioralEquivalence.lean)
+## Bucket 9b: Observation-Boundary Equivalence (Theorems/BehavioralEquivalence.lean)
 
 **Role:** Proves that any two `GroundedBehavior` certificates produce identical observations on all inputs. `Behavior B i` is determined solely by the input constructor — not by the structural content of `B`. The step-bridge section operationally grounds this: for withdraw, challenge, and tick inputs, a concrete `Step` is constructed at Unit types and structurally consumed via `cases h`, so the equality is derived *through* an actual firing. For `ChallengeRequest`, `challenge_ready_state` constructs a concrete ready state (single `.Deposited` entry satisfying `isDeposited`) and the equality is derived through that firing.
 
@@ -365,7 +365,7 @@ Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_w
 
 ---
 
-## Bucket 9d: Kernel Verification Depth (Concrete/VerificationDepth.lean)
+## Bucket 9c: Kernel Verification Depth (Concrete/VerificationDepth.lean)
 
 **Role:** Provides a *constructive* kernel-level witness that `W_bounded_verification` is not an empirical world assumption but follows from the structural properties of the verification relation itself. `DepthClaim n` is a depth-indexed proposition family with exactly n constructors; a budget-d verifier traverses only d constructors and therefore cannot decide `DepthClaim (d+1)`, which is genuinely true. This justifies the bounded-audit forcing argument for trust bridges by construction rather than supposition.
 
@@ -386,7 +386,7 @@ Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_w
 
 ---
 
-## Bucket 9e: Bounded Recall — Recall-Admissibility Filtering as Forced Consequence (Minimality.lean §9)
+## Bucket 9d: Bounded Recall — Recall-Admissibility Filtering as Forced Consequence (Minimality.lean §9)
 
 **Role:** Extends the bounded-budget impossibility argument from the *import* direction (§2, `BoundedVerification`) to the *recall* (withdrawal) direction. When an agent recalls a banked deposit it must re-verify that the deposit's provenance chain is still intact. For any fixed recall budget, deposits with V-chain depth exceeding the budget cannot be re-verified. `RecallBudget` is the parallel structure to `BoundedVerification`; `recall_only_withdrawal_incomplete` is the parallel impossibility theorem. Bounded recall forces *some* recall-admissibility filter; τ-expiry is the canonical clock-based sufficient implementation, not the uniquely forced mechanism.
 
@@ -405,7 +405,7 @@ Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_w
 
 ---
 
-## Bucket 9f: Analogical Bridge — Scratch-Verification Insufficiency for Novel Inputs (Minimality.lean §10)
+## Bucket 9e: Analogical Bridge — Scratch-Verification Insufficiency for Novel Inputs (Minimality.lean §10)
 
 **Role:** Extends the bounded-budget impossibility argument to the *analogical import* direction. When an agent encounters a novel input whose scratch-verification cost exceeds its budget, scratch verification cannot supply coverage. An analogical bridge — a prior entry similar to the novel input from which bridge-based verification stays within budget — is the only in-scope alternative to escalation. `AnalogicalBridge` is the parallel structure to `BoundedVerification` (§2) and `RecallBudget` (§9); `scratch_verification_insufficient_for_novel_inputs` is the parallel impossibility theorem.
 
@@ -429,7 +429,7 @@ Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_w
 
 ---
 
-## Bucket 9g: Residual Risk Bridge — Certainty Gap for Budgeted Bridges (Minimality.lean §11)
+## Bucket 9f: Residual Risk Bridge — Certainty Gap for Budgeted Bridges (Minimality.lean §11)
 
 **Role:** Extends the analogical-bridge story with a residual-risk result. If scratch verification exceeds the budget and a similar bridge is budget-feasible, the `certainty_gap` structural invariant forces that bridge to carry residual risk: cost savings on verification are purchased with residual uncertainty. `ResidualRiskBridge` is the parallel structure to `AnalogicalBridge` (§10); it adds a `risk_free` predicate and replaces `bridge_sufficiency` with `certainty_gap`.
 
@@ -445,7 +445,7 @@ Proof pattern for each: `by_cases h : HasFeature W; exact h; exact (impossible_w
 
 ---
 
-## Bucket 9h: Residual Risk Mitigation Coverage and Minimality (ResidualRiskMitigation.lean)
+## Bucket 9g: Residual Risk Mitigation Coverage and Minimality (ResidualRiskMitigation.lean)
 
 **Role:** Four-layer classification / coverage / minimality theorem.
 
@@ -475,8 +475,8 @@ proves relative minimality: removing any mechanism leaves at least one designate
 obligation uncovered.  Together these constitute a relative minimal cover:
 every obligation is covered by the full surface, and no mechanism is superfluous.
 
-**Cross-references:** Bucket 9e (`recall_only_withdrawal_incomplete`),
-Bucket 9f (analogical bridge), Bucket 9g (`risk_not_eliminable_by_budgeted_bridge`),
+**Cross-references:** Bucket 9d (`recall_only_withdrawal_incomplete`),
+Bucket 9e (analogical bridge), Bucket 9f (`risk_not_eliminable_by_budgeted_bridge`),
 Bucket 14 (`no_escalation_forces_bridge`, `residual_risk_forced_when_no_scratch_no_escalation`).
 
 ### Types

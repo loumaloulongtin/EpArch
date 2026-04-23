@@ -54,10 +54,9 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | 6 | Case Bindings — Gettier, Fake Barn, Lottery (illustrative diagnoses) |
 | 7 | Invariant Preservation — Truth and gate invariants under trace induction |
 | 8 | Modal Properties — Safety/Sensitivity ↔ S/E/V header preservation |
-| 9 | Grounded Minimality — Each feature necessary for specific capabilities |
-| 9b | Abstract Structural Forcing — Eight per-dimension `*_forces_*` theorems (no `WellFormed`, no biconditionals) + `SystemOperationalBundle` / `WorldBridgeBundle`; headline `bundled_structure_forces_bank_primitives`; eight structural impossibility models + `StructurallyForced` / `convergence_structural` (`Minimality.lean` + `Convergence.lean`) |
-| 9c | Observation-Boundary Equivalence — Any two `GroundedBehavior` witnesses produce identical observations; step-bridge grounds withdraw/challenge/tick via `ReadyState` + `behavior_from_step` (`Theorems/BehavioralEquivalence.lean`) |
-| 9d | Kernel Verification Depth — `DepthClaim` constructive witness; `bounded_verify` budget decision procedure; `DepthWorldCtx` closes `W_bounded_verification` by construction (`Concrete/VerificationDepth.lean`) |
+| 9 | Abstract Structural Forcing — Eight per-dimension `*_forces_*` theorems (no `WellFormed`, no biconditionals) + `SystemOperationalBundle` / `WorldBridgeBundle`; headline `bundled_structure_forces_bank_primitives`; eight structural impossibility models + `StructurallyForced` / `convergence_structural` (`Minimality.lean` + `Convergence.lean`) |
+| 9b | Observation-Boundary Equivalence — Any two `GroundedBehavior` witnesses produce identical observations; step-bridge grounds withdraw/challenge/tick via `ReadyState` + `behavior_from_step` (`Theorems/BehavioralEquivalence.lean`) |
+| 9c | Kernel Verification Depth — `DepthClaim` constructive witness; `bounded_verify` budget decision procedure; `DepthWorldCtx` closes `W_bounded_verification` by construction (`Concrete/VerificationDepth.lean`) |
 | 10 | Adversarial Model — Attack structures, DDoS vectors, obligation theorems |
 | 11 | Repair Loop Semantics — Challenge-repair-revalidation cycle |
 | 12 | Withdrawal Gates — Abstract LTS single-gate model (Deposited); ACL and τ-currency are agent/concrete-layer concerns. |
