@@ -24,12 +24,15 @@ without redefining them.
 
 ## What the repo proves
 
-Eight world-level constraint bundles `W_*`, taken together with the system
-health goals, force any working system that satisfies them to contain the
-bank-primitive cluster — gates, header-preserving export, revision, scoping,
-storage management. The headline theorem is
-`bundled_structure_forces_bank_primitives` in
-[`WorldBridges.lean`](../EpArch/WorldBridges.lean).
+Eight architectural pressure dimensions, backed by structural impossibility
+witnesses, force any working system satisfying the corresponding operational
+and bridge properties to contain the bank-primitive cluster — gates,
+header-preserving export, revision, scoping, storage management. The headline
+theorem is `bundled_structure_forces_bank_primitives` in
+[`WorldBridges.lean`](../EpArch/WorldBridges.lean). Its signature is
+world-agnostic: it takes `SystemOperationalBundle`, `WorldBridgeBundle`, and
+`SatisfiesAllProperties` — not `W_*` bundles directly. World bundles are the
+natural source for the bridge data, but they are not formal preconditions.
 
 ## What the repo is made of
 
