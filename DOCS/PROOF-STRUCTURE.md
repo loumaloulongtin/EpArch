@@ -40,6 +40,31 @@ exactly as deep as their claims require.
 
 ---
 
+## Suggested First-Read Sequence
+
+A reviewer who wants to follow the proof burden from claim to evidence should
+read in this order:
+
+1. **This file** — understand the three-layer forcing chain, the file layout
+   table, and which dimensions are deep vs. definitional before opening any
+   Lean source.
+2. **`Convergence.lean`** — read `StructurallyForced`, `ForcingEmbedding`,
+   `embedding_to_structurally_forced`, and `convergence_structural`.  This is
+   the top-level certificate; everything downstream is evidence for it.
+3. **One or two Layer 1 models in `Minimality.lean`** — pick a "genuinely
+   semantic" dimension (Versioning or Closure/Corroboration) and trace the
+   impossibility argument.  The other dimensions follow the same pattern at
+   lower depth.
+4. **`Scenarios.lean`** — check a `_without_*_embeds` / `_forces_*` pair for
+   the same dimension.  This is where the abstract model meets the concrete
+   `WorkingSystem` type class.
+5. **`THEOREMS.md` and `MODULARITY.md`** — for the rest of the proof surface:
+   operational gates, health goals, world-bundle obligations, adversarial
+   obligations, and the `certify` routing layer.  Those files cover the proof
+   area that this file does not reach.
+
+---
+
 ## Top-Level Aggregator (`Convergence.lean`)
 
 This is the entry point the README reading guide directs a reviewer to first.

@@ -151,8 +151,8 @@ over the current `c_valid_export` definition, which dispatches on `CTrustBridgeA
 
 `c_import_deposit` is the transfer-legitimacy gate: it asks whether the presenting
 agent was authorised to make the cross-bubble assertion. A second gate,
-`c_acl_import_deposit`, asks whether the *deposit itself* permits the presenting
-agent to receive it. The two gates are independent. A deposit can pass the transfer
+`c_acl_import_deposit`, asks whether the *deposit itself* authorises the presenting
+agent to export it to the target bubble. The two gates are independent. A deposit can pass the transfer
 gate (revalidated or bridge passes) and still be blocked by the deposit's own ACL
 — this is the coconut oil pattern: a high-quality deposit the owner has chosen not
 to share. Conversely, a deposit whose ACL is open (empty entries list) passes the

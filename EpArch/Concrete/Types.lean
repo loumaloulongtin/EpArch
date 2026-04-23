@@ -35,7 +35,11 @@ deriving DecidableEq, Repr, Inhabited
 
 /-! ## Access Control List (ACL) -/
 
-/-- ACL entry: who can withdraw what from where. -/
+/-- ACL entry: a single authorization rule that names which agent may
+    perform an operation ("export", "withdraw", etc.) on matching claims
+    in matching bubbles.  Used both as a deposit-level export ACL
+    (checked by `c_deposit_allows_export`) and as a general permission
+    record via `c_has_permission` / `c_can_withdraw`. -/
 structure CACLEntry where
   agent_id : String
   bubble_id : String
@@ -43,7 +47,10 @@ structure CACLEntry where
   permission : String     -- "read", "withdraw", "export"
   deriving Repr, DecidableEq
 
-/-- ACL for a bubble. -/
+/-- An ACL is a list of `CACLEntry` rules.  Empty = unrestricted (open
+    access); non-empty = only the listed agents/bubbles/permissions are
+    authorised.  Used as both a bubble-level ACL and as `CDeposit.acl`
+    — the deposit-level export gate checked by `c_deposit_allows_export`. -/
 structure CACL where
   entries : List CACLEntry
   deriving Repr, DecidableEq, Inhabited

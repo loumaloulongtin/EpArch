@@ -78,8 +78,10 @@ example : c_header_stripped fully_stripped_deposit := Or.inl rfl
 
 /-- ACL restricted: a CDeposit marked for personal use only — the coconut oil pattern.
     The deposit is high-quality (S, E, V all present, τ fresh) but the ACL
-    restricts export to the owner only. No other agent may receive it.
-    All other header fields are valid; the restriction is a deliberate choice, not a defect. -/
+    restricts export to the owner only. No other agent may export it.
+    All other header fields are valid; the restriction is a deliberate choice, not a defect.
+    Note: `cs` carries a non-empty domain and test_procedure so the witness
+    also satisfies `c_redeemable` — keeping the "high-quality" narrative honest. -/
 def acl_restricted_deposit : CDeposit :=
   { claim := "secret-ingredient"
     S := 100
@@ -88,7 +90,7 @@ def acl_restricted_deposit : CDeposit :=
     τ := 1000
     acl := ⟨[{ agent_id := "owner", bubble_id := "*",
                claim_pattern := "*", permission := "export" }]⟩
-    cs := default }
+    cs := { domain := "culinary", test_procedure := "taste-test" } }
 
 /-! ========================================================================
     STEP 2 — THE GATES ARE STRUCTURALLY UN-BYPASSABLE
