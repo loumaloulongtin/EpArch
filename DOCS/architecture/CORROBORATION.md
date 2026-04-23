@@ -10,17 +10,18 @@ machine-checked.
 
 ## The goal toggle: no single point of failure
 
-The no-single-point-of-failure goal is encoded as an explicit hypothesis in
-`no_spof_requires_multi_source` (the design-principle label is
-`NoSinglePointFailure`, but it is not a named structure — it is the
-hypothesis `h_goal : ∀ s phi, SingleSourceAcceptance ... → TrueStmt phi`):
+The resilience goal is encoded as the hypothesis
+`h_goal : ∀ s phi, SingleSourceAcceptance ... → TrueStmt phi`
+in `no_spof_requires_multi_source`. There is no separate named structure or
+type for this goal — the hypothesis itself is the toggle.
 
-- if the goal includes resilience to single-source compromise, and
-- single-source attacks are possible (`SingleSourceAttack`),
+- if single-source attacks are possible (`SingleSourceAttack`), and
+- the acceptance policy is required to admit only true statements
+  (`h_goal`),
 - then single-attestation acceptance leads to a contradiction.
 
 This is conditional minimality: corroboration is not assumed universally —
-it is forced by an explicit goal hypothesis.
+it is forced by an explicit hypothesis.
 
 ---
 
@@ -67,14 +68,12 @@ conclude: corroboration needs *diversity*, not just multiplicity.
 
 ## Relation to PRP and agent constraints
 
-`Corroboration.lean` imports only `EpArch.Basic` and has no direct theorem
-connection to `Agent/Constraints.lean` or `Agent/Resilience.lean`. The
-connection is conceptual: PRP (Permanent Redeemability Pressure, defined in
-`Agent/Constraints.lean`) is the upstream framing that motivates multi-source
-attestation as a design goal. The corroboration theorems are what the
-formalization delivers when that goal is operationalized. The bank records
-what is presented; the agent decides what to present and through which
-sources.
+`Corroboration.lean` imports only `EpArch.Basic`. It has no formal connection
+to `Agent/Constraints.lean`, `Agent/Resilience.lean`, or the bank deposit
+lifecycle. PRP (Permanent Redeemability Pressure) is defined separately in
+`Agent/Constraints.lean`; the architectural motivation for multi-source
+attestation comes from that framing, but no theorem in `Corroboration.lean`
+has a proof dependency on it.
 
 ---
 
