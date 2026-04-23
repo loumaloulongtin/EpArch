@@ -272,9 +272,9 @@ have been retired in favour of these structural forms.
 
 ---
 
-## Bucket 9: Grounded Minimality (Semantics/LinkingAxioms.lean — Retired)
+## Bucket 9: Grounded Minimality (Retired — superseded by 9b)
 
-**Role:** This bucket listed theorems that formerly lived in `LinkingAxioms.lean`. That file is now retired. The operational groundings it provided are superseded by the structural forcing theorems in `Minimality.lean` and `Convergence.lean` (Bucket 9b). See `Semantics/LinkingAxioms.lean` for the retirement note.
+**Role:** This bucket listed theorems that formerly lived in `LinkingAxioms.lean`. That file has been deleted. The operational groundings it provided are superseded by the structural forcing theorems in `Minimality.lean` and `Convergence.lean` (Bucket 9b).
 
 | Theorem | Former File | Status |
 |---------|-------------|--------|

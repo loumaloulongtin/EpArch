@@ -211,7 +211,6 @@ which is a worked domain instantiation outside the core claim (see above).
 | `Commitments.lean` | Structural commitments (all 8 proved as standalone theorems) |
 | `Invariants.lean` | Grounded operational invariants |
 | `Semantics/StepSemantics.lean` | Concrete step semantics (LTS core) |
-| `Semantics/LinkingAxioms.lean` | Retired — operational groundings moved to `Minimality.lean` and `Convergence.lean` |
 | `Theorems/` | Derived theorems (11 sub-modules) |
 | `EpArch/Concrete/` | Constructive concrete model (8 modules: Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity, Realizer, VerificationDepth, WorkedTraces) |
 | All others | Theorem-bearing or definitional surfaces only |
