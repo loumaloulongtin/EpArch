@@ -63,7 +63,7 @@ compatibility bundles — neither of which is the right framing for a multi-agen
 structural implication.
 
 **Residual-risk / autonomy forcing surface (Health.lean, ResidualRiskMitigation.lean)**
-The results from T25–T29 are closed autonomy-regime consequences, not user-selected
+These are closed autonomy-regime consequences, not user-selected
 pressure dimensions.  They live over `AutonomyModel`, `RiskAutonomyModel`, and
 `PRPObligationStream`, not over the eight `WorkingSystem` pressure dimensions.
 Key names: `ResidualRiskMode`, `EpArchMechanism`, `MitigatesObligation`,
