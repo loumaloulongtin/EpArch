@@ -94,9 +94,9 @@ The formalization proves these claims:
       cf. `EpArch.Theorems.Cases.TypeErrors` for the type-error *diagnosis* side
     - **Diagnosability** — Observability-based diagnosability ordering
     - **BehavioralEquivalence** — Observation-boundary equivalence; `working_systems_equivalent`
-11. **EpArch/Concrete/** — Zero-axiom constructive witnesses split into eight focused
+11. **EpArch/Concrete/** — Zero-axiom constructive witnesses split into seven focused
     modules (Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity,
-    Realizer, VerificationDepth, WorkedTraces).
+    Realizer, VerificationDepth).
     Together they prove non-vacuity for all commitments.
 
 ## Architecture (Dependency Layers)
@@ -107,7 +107,7 @@ No file imports from a layer above its own.
 ```
 Layer 0 (Types):      Basic, Header
 Layer 1 (Substrate):  Bank, Semantics/LTS, WorldCtx
-Layer 2 (Semantics):  Semantics/StepSemantics, Semantics/RevisionSafety, Concrete/WorkedTraces
+Layer 2 (Semantics):  Semantics/StepSemantics, Semantics/RevisionSafety
 Layer 3 (Theory):     Commitments, SystemSpec, Invariants, Minimality, Convergence, Scenarios
 Layer 4 (Derived):    Theorems/{Withdrawal,Cases,Headers,Modal,Dissolutions,Pathologies,Strip,Corners,Diagnosability,BehavioralEquivalence}, Health, Semantics/ScopeIrrelevance
 Layer 5 (Agent):      ConditionalPredictions, Mechanisms, Agent/{Constraints, Imposition, Resilience, Corroboration}
@@ -156,7 +156,6 @@ import EpArch.Convergence
 import EpArch.Adversarial.Base  -- Base types/structures (no axioms)
 import EpArch.Adversarial.Concrete  -- Concrete attack mitigation proofs
 import EpArch.Invariants
-import EpArch.Concrete.WorkedTraces
 import EpArch.ConditionalPredictions
 import EpArch.Semantics.StepSemantics
 import EpArch.Theorems.Diagnosability  -- principled observability

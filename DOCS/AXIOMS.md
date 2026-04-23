@@ -206,5 +206,5 @@ which is a worked domain instantiation outside the core claim (see above).
 | `Invariants.lean` | Grounded operational invariants |
 | `Semantics/StepSemantics.lean` | Concrete step semantics (LTS core) |
 | `Theorems/` | Derived theorems (11 sub-modules) |
-| `EpArch/Concrete/` | Constructive concrete model (8 modules: Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity, Realizer, VerificationDepth, WorkedTraces) |
+| `EpArch/Concrete/` | Constructive concrete model (7 modules: Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity, Realizer, VerificationDepth) |
 | All others | Theorem-bearing or definitional surfaces only |
