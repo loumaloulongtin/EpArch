@@ -271,22 +271,6 @@ have been retired in favour of these structural forms.
 
 ---
 
-## Bucket 9: Grounded Minimality (Retired — superseded by 9b)
-
-**Role:** This bucket listed theorems that formerly lived in `LinkingAxioms.lean`. That file has been deleted. The operational groundings it provided are superseded by the structural forcing theorems in `Minimality.lean` and `Convergence.lean` (Bucket 9b).
-
-| Theorem | Former File | Status |
-|---------|-------------|--------|
-| `grounded_coordination_requires_bank` | Semantics/LinkingAxioms.lean | Retired — see `private_coordination_forces_bank` (Minimality.lean) |
-| `grounded_export_requires_headers` | Semantics/LinkingAxioms.lean | Retired — see `discriminating_import_forces_headers` (Convergence.lean) |
-| `grounded_bounded_audit_requires_bridges` | Semantics/LinkingAxioms.lean | Retired — see `bounded_verification_forces_trust_bridges` (Convergence.lean) |
-| `grounded_no_bridge_forces_revalidation` | Semantics/LinkingAxioms.lean | Retired |
-| `grounded_revocation_requires_quarantine` | Semantics/LinkingAxioms.lean | Retired — see `monotonic_lifecycle_forces_revocation` (Convergence.lean) |
-| `grounded_distributed_agents_require_bubbles` | Semantics/LinkingAxioms.lean | Retired — see `disagreement_forces_bubbles` (Convergence.lean) |
-| `grounded_truth_pressure_requires_redeemability` | Semantics/LinkingAxioms.lean | Retired — see `closed_endorsement_forces_redeemability` (Convergence.lean) |
-
----
-
 ## Bucket 9b: Abstract Structural Forcing Layer (Minimality.lean + Convergence.lean)
 
 **Role:** Provide structurally-grounded proofs that each constraint forces its feature. The eight structural impossibility models in Minimality.lean independently justify each `handles_X → HasY` implication. The §1b–§8b alternative-dismissal theorems cover the completeness side: each evaluated alternative either reproduces the same impossibility or satisfies the forced-primitive definition.
