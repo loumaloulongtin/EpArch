@@ -19,7 +19,7 @@ The witness family lives in `EpArch/Concrete/`, split into focused modules:
 
 | File | What it carries |
 |---|---|
-| `Concrete/Types.lean` | concrete claim/deposit/bubble types `CProp`, `CDeposit`, `CBubble` |
+| `Concrete/Types.lean` | concrete base types: `CProp`, `CDeposit`, `CBubble`, `CACL`, `CTrustBridge`, `CExportRequest`, `CAuditChannel`; ACL permission helpers; cost and freshness predicates |
 | `Concrete/Commitments.lean` | C1–C8 commitment witnesses; `all_commitments_satisfiable` |
 | `Concrete/WorkingSystem.lean` | `ConcreteWorkingSystem`, behavioral equivalence, grounding |
 | `Concrete/DeficientSystems.lean` | the eight deficient-system bridge-impossibility witnesses |
