@@ -122,7 +122,7 @@ The framework has three layers:
 |---|---|
 | `Basic.lean` | Core types: `Agent`, `Claim`, `Bubble`, `Deposit`, `DepositStatus`, `LadderStage` |
 | `Header.lean` | S/E/V header structure and factorization |
-| `Bank.lean` | Bank substrate, lifecycle operators, and bubble hygiene |
+| `Bank.lean` | Bank substrate and lifecycle operators |
 | `Bank/Dynamics.lean` | Runtime behavioral profiling: `DepositDynamics`, reliance/blast-radius theorems |
 | `Semantics/LTS.lean` | Generic labeled transition systems |
 | `Semantics/StepSemantics.lean` | Concrete step semantics for all lifecycle operators |

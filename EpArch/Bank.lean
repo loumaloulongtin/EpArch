@@ -3,9 +3,9 @@ EpArch.Bank — Bank (Shared Ledger Substrate)
 
 Defines the Bank substrate: the shared ledger of authorized deposits.
 Contains the core predicates (knowledge_B, deposited, hasDeposit), the
-export operators, the full lifecycle operator suite
-(Validate, Accept, Challenge, Repair, Revoke, Restore, Export, Import),
-status-transition theorems, and bubble hygiene structures.
+export operators, the concrete lifecycle operators
+(Promote_B, Challenge_B, Repair_B, Revoke_B, Restore_B, Export_B_C,
+Import_C, repair), and status-transition theorems.
 
 Lifecycle operators are guarded struct-update definitions: each takes a
 precondition on the deposit's current status and produces the expected
@@ -259,34 +259,6 @@ theorem full_lifecycle_pipeline (B : Bubble)
     (Repair_B B (Challenge_B B (Promote_B B d) f)).status = .Candidate :=
   fun h => challenge_repair_pipeline B (Promote_B B d) f
              (promote_pipeline B d h)
-
-
-/-! ## Bubble Hygiene -/
-
--- Operations for maintaining deposit freshness: τ refresh, deprecation, auditing.
-
-/-- τ refresh: update the currentness marker on a deposit.
-    Updates the τ field in the header; all other header fields are preserved. -/
-def τ_refresh (_B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) (t : Time) :
-    Deposit PropLike Standard ErrorModel Provenance := { d with h := { d.h with τ := t } }
-
-/-- Deprecation: mark deposit as stale (past TTL).
-    Sets status to Revoked. DepositStatus carries no Stale variant at this
-    abstraction level; the concrete model's CDepositStatus has Stale/Aging. -/
-def deprecate (_B : Bubble) (d : Deposit PropLike Standard ErrorModel Provenance) :
-    Deposit PropLike Standard ErrorModel Provenance := { d with status := .Revoked }
-
-/-- Audit policy: bubble's rules for hygiene frequency. -/
-structure AuditPolicy where
-  refresh_interval : Time
-  deprecation_threshold : Time
-  challenge_response_window : Time
-
-/-- Bubble hygiene state. -/
-structure HygieneState where
-  last_audit : Time
-  stale_count : Nat
-  pending_challenges : Nat
 
 
 end EpArch

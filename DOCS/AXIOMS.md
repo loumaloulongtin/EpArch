@@ -156,8 +156,7 @@ All theorems that use these primitives state their dependence explicitly via
 ### Bank Operators (formerly 18 axioms → 0)
 
 The lifecycle operators (`Promote_B`, `Challenge_B`, `Repair_B`,
-`Revoke_B`, `Restore_B`, `Export_B_C`, `Import_C`, `repair`, `τ_refresh`,
-`deprecate`) and their status postcondition theorems are now concrete
+`Revoke_B`, `Restore_B`, `Export_B_C`, `Import_C`, `repair`) and their status postcondition theorems are now concrete
 guarded struct-update definitions. Each operator is grounded in
 `Semantics/StepSemantics.lean` and witnessed by `EpArch/Concrete/`.
 
