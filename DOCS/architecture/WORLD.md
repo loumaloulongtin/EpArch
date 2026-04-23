@@ -14,9 +14,10 @@ the `W_*` antecedents do and do not commit the framework to. Other files
 ## What `WorldCtx` is
 
 `WorldCtx` is a record with parametric fields `World`, `Agent`, `Claim`,
-`Obs`, `Truth`, `Utter`, `obs`, `VerifyWithin`, `effectiveTime` (plus three
-inhabitedness witnesses). Theorems are stated over `(C : WorldCtx)` and
-access primitives as `C.Truth`, `C.obs`, `C.Agent`, etc.
+`Obs`, `Truth`, `Utter`, `obs`, `VerifyWithin`, `effectiveTime`, plus
+three inhabitedness witnesses (`world_inhabited`, `agent_inhabited`,
+`claim_inhabited`). Theorems are stated over `(C : WorldCtx)` and access
+primitives as `C.Truth`, `C.obs`, `C.Agent`, etc.
 
 A few derived notions are defined directly from the interface:
 
@@ -37,10 +38,11 @@ Three `W_*` structures in `WorldCtx.lean` package conditions on a
 `WorldCtx` and each independently forces one structural feature of the
 convergence chain. They are *conditions* — some instantiations satisfy
 them, others (like a degenerate `TrivialCtx` with `Truth w P = True`
-always) provably do not. `W_asymmetric_costs` is also defined in `WorldCtx.lean`. Additional
-adversarial `W_*` bundles (`W_spoofedV`, `W_lies_scale`, `W_ddos`, and
-others) live in `Adversarial/Obligations.lean` and enable the adversarial
-obligation theorems; they do not drive the structural convergence chain.
+always) provably do not. `W_asymmetric_costs` is also in `WorldCtx.lean`.
+Additional adversarial `W_*` bundles (`W_spoofedV`, `W_lies_scale`,
+`W_ddos`, and others) live in `Adversarial/Obligations.lean` and enable
+the adversarial obligation theorems; they do not drive the structural
+convergence chain.
 
 ### `W_lies_possible`
 ```
@@ -74,7 +76,7 @@ features inside `containsBankPrimitives`.
 
 ## Obligation-theorem shape
 
-Every world-conditioned theorem follows the same naming pattern:
+The standard pattern for world-conditioned obligation theorems is:
 
 | Pattern | Meaning |
 |---|---|
