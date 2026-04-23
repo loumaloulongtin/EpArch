@@ -91,6 +91,6 @@ systems. The broader scope-defense for the witness family is centralized in
 
 ## Go next
 
-- [MODULARITY.md](MODULARITY.md) — how the corroboration cluster is exposed
+- [MODULARITY.md](MODULARITY.md) — how config-facing theorem clusters are exposed
   through the certified-projection surface.
 - [../START-HERE.md](../START-HERE.md) — terminology and reading routes.

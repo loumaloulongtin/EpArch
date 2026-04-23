@@ -63,10 +63,10 @@ build-time bugs.
 
 | API | Lives in | Role |
 |---|---|---|
-| `EpArchConfig` | `Meta/Config.lean` | user-supplied `constraints`/`goals`/`worlds` lists |
+| `EpArchConfig` | `Meta/ClusterRegistry.lean` | user-supplied `constraints`/`goals`/`worlds` lists |
 | `ClusterTag` | `Meta/ClusterRegistry.lean` | the 32 cluster identifiers |
 | `certify` | `Meta/Config.lean` | `EpArchConfig → CertifiedProjection cfg` |
-| `showConfig` / `#eval` output | `Meta/Config.lean` | human-readable display |
+| `showConfig` / `#eval` output | `Meta/ClusterRegistry.lean` | human-readable display |
 
 `certify myConfig` returns a record with one indexed witness per family
 (`.goalWitnesses`, `.tier4Witnesses`, `.worldWitnesses`, ...).
