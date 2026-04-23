@@ -1891,7 +1891,7 @@ def sys_has_headers (s : SystemState PropLike Standard ErrorModel Provenance) : 
 def sys_has_revocation (s : SystemState PropLike Standard ErrorModel Provenance) : Prop :=
   ∃ d_idx, isQuarantined s d_idx
 
-/-! ## Active Count and Forget/Update Lifecycle Theorems (task 23b) -/
+/-! ## Active Count and Forget/Update Lifecycle Theorems -/
 
 /-- Count of deposits actively consuming storage: all entries with status not Revoked
     and not Forgotten. Revoked entries are excluded because the claim is epistemically closed;

@@ -29,8 +29,7 @@ Authorization is an agent-level concern; the bank enforces deposit-state structu
 
 /-- Bank consultation gate: deposit is actually in the bank (Deposited status).
     This is the operational meaning of "consulting the bank" — you're not just
-    relying on your ladder-side memory, you're checking the shared ledger.
-    Definitionally equal to `isDeposited`. -/
+    relying on your ladder-side memory, you're checking the shared ledger. -/
 def ConsultedBank_At (s : SystemState PropLike Standard ErrorModel Provenance) (d_idx : Nat) : Prop :=
   isDeposited s d_idx
 

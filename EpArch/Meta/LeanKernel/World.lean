@@ -965,6 +965,7 @@ def olean_as_deposit (r : OleanRecord) (path : CProp) : CDeposit :=
     E     := []                  -- CErrorModel = List String; no known failures at compile time
     V     := ["lean-kernel"]
     τ     := r.compiled_at
+    acl   := ⟨[]⟩               -- no receiver restrictions; lean-cache deposits are open
     cs    := { domain := "lean-cache", test_procedure := "lake build" } }
 
 /-- Source change = staleness: source epoch has advanced past τ. -/

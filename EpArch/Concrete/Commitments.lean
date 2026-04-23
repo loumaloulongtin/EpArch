@@ -44,6 +44,7 @@ def witness_knowledge_without_certainty : CAgent × CBubble × CProp :=
       E := ["outdated research", "transcription error"]
       V := ["peer review", "replication"]
       τ := 1000
+      acl := ⟨[]⟩
       cs := { domain := "biology", test_procedure := "cell inspection" }
     }]
   }
@@ -81,6 +82,7 @@ theorem commitment1_concrete :
                         E := ["outdated research", "transcription error"]
                         V := ["peer review", "replication"]
                         τ := 1000
+                        acl := ⟨[]⟩
                         cs := { domain := "biology", test_procedure := "cell inspection" } }
       case h_mem => exact List.Mem.head _
       case h_claim => rfl
@@ -109,9 +111,9 @@ def c_supports_coordination (G : CGlobalLedger) : Prop :=
 def witness_global_ledger_conflict : CGlobalLedger :=
   { all_deposits := [
       { claim := "P", S := 50, E := [], V := ["A"], τ := 100,
-        cs := { domain := "test", test_procedure := "check" } },
+        acl := ⟨[]⟩, cs := { domain := "test", test_procedure := "check" } },
       { claim := "¬P", S := 50, E := [], V := ["B"], τ := 100,
-        cs := { domain := "test", test_procedure := "check" } }
+        acl := ⟨[]⟩, cs := { domain := "test", test_procedure := "check" } }
     ]
     acceptance_threshold := 50 }
 
@@ -126,16 +128,16 @@ theorem commitment2_concrete :
   constructor
   · -- Innovation holds: "P" and "¬P" are distinct deposits in all_deposits
     let d1 : CDeposit := { claim := "P", S := 50, E := [], V := ["A"], τ := 100,
-                           cs := { domain := "test", test_procedure := "check" } }
+                           acl := ⟨[]⟩, cs := { domain := "test", test_procedure := "check" } }
     let d2 : CDeposit := { claim := "¬P", S := 50, E := [], V := ["B"], τ := 100,
-                           cs := { domain := "test", test_procedure := "check" } }
+                           acl := ⟨[]⟩, cs := { domain := "test", test_procedure := "check" } }
     exact ⟨d1, d2, List.Mem.head _, List.Mem.tail _ (List.Mem.head _), by decide⟩
   · -- Coordination fails: "P" and "¬P" are in the same domain "test"
     intro h_coord
     let d1 : CDeposit := { claim := "P", S := 50, E := [], V := ["A"], τ := 100,
-                           cs := { domain := "test", test_procedure := "check" } }
+                           acl := ⟨[]⟩, cs := { domain := "test", test_procedure := "check" } }
     let d2 : CDeposit := { claim := "¬P", S := 50, E := [], V := ["B"], τ := 100,
-                           cs := { domain := "test", test_procedure := "check" } }
+                           acl := ⟨[]⟩, cs := { domain := "test", test_procedure := "check" } }
     have h1 : d1 ∈ [d1, d2] := List.Mem.head _
     have h2 : d2 ∈ [d1, d2] := List.Mem.tail _ (List.Mem.head _)
     have h := h_coord d1 d2 h1 h2
@@ -153,6 +155,7 @@ def witness_SEV_deposit : CDeposit :=
     E := ["altitude variation", "impurities", "measurement error"]  -- Error model
     V := ["thermometer calibration", "replicated experiments"]      -- Provenance
     τ := 10000
+    acl := ⟨[]⟩
     cs := { domain := "physics", test_procedure := "boiling point measurement" } }
 
 /-- Commitment 3 holds: deposit has factored structure. -/
@@ -173,6 +176,7 @@ def witness_consensus_not_redeemable : CBubble × CDeposit :=
     E := []  -- No error model!
     V := []  -- No provenance!
     τ := 100
+    acl := ⟨[]⟩
     cs := { domain := "", test_procedure := "" }  -- No constraint surface!
   }
   let conspiracy_bubble : CBubble := {
@@ -214,6 +218,7 @@ def witness_ungated_export : CBubble × CBubble × CDeposit :=
       E := []
       V := ["blogger opinion"]
       τ := 50
+      acl := ⟨[]⟩
       cs := { domain := "", test_procedure := "" }
     }]
   }
@@ -262,6 +267,7 @@ def witness_repair_loop : CDeposit × CChallenge :=
     E := ["selection bias", "short trial"]
     V := ["Phase 2 trial", "Pharma-funded"]
     τ := 365
+    acl := ⟨[]⟩
     cs := { domain := "medicine", test_procedure := "Phase 3 trial" }
   }
   let challenge : CChallenge := {
@@ -289,6 +295,7 @@ def witness_header_comparison : CDeposit × CDeposit :=
     E := ["selection bias", "no control group", "data manipulation"]
     V := ["Wakefield 1998", "retracted"]
     τ := 0    -- Expired, but the header fields S/E/V are intact
+    acl := ⟨[]⟩
     cs := { domain := "medicine", test_procedure := "epidemiological study" }
   }
   let without_header : CDeposit := {
@@ -297,6 +304,7 @@ def witness_header_comparison : CDeposit × CDeposit :=
     E := []   -- No error model!
     V := []   -- No provenance!
     τ := 0
+    acl := ⟨[]⟩
     cs := { domain := "", test_procedure := "" }  -- No redeemability!
   }
   (with_header, without_header)
@@ -326,6 +334,7 @@ def witness_temporal_validity : CDeposit × CDeposit × CTime :=
     E := ["policy change", "market shift"]
     V := ["Fed announcement", "today"]
     τ := 100
+    acl := ⟨[]⟩
     cs := { domain := "finance", test_procedure := "check fed.gov" }
   }
   let stale_deposit : CDeposit := {
@@ -334,6 +343,7 @@ def witness_temporal_validity : CDeposit × CDeposit × CTime :=
     E := ["policy change", "market shift"]
     V := ["Fed announcement", "2020"]
     τ := 10   -- Low TTL
+    acl := ⟨[]⟩
     cs := { domain := "finance", test_procedure := "check fed.gov" }
   }
   (fresh_deposit, stale_deposit, 50)  -- Current time = 50
