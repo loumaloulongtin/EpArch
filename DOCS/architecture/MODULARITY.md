@@ -15,10 +15,12 @@ trust-bridge design notes; both auth modes are referenced below.
 ## High-level claim
 
 EpArch's theorem corpus is partitioned into **32 certified clusters** across
-seven families. Constraint, goal, and world clusters are *config-driven* —
+seven families. Constraint, goal, world, and autonomy clusters are *config-driven* —
 activated by the `EpArchConfig` the user supplies. Meta-modularity,
-lattice-stability, Tier 4, and the autonomy necessity cluster are *always-on*:
-they hold unconditionally and require no configuration.
+lattice-stability, and three of the five Tier 4 clusters are *always-on*:
+they hold unconditionally and require no configuration. The remaining two
+Tier 4 clusters (`tier4_bank_goals_compat`, `tier4_bank_goals_surj`) are
+gated on all five CoreModel goals being present in `cfg.goals`.
 
 | Family | Count | Role |
 |---|---|---|
@@ -73,8 +75,9 @@ build-time bugs.
 
 Owns `ClusterTag`, every `EnabledXxxCluster` enumeration, `clusterEnabled`,
 and every `toClusterTag` mapping. **No EpArch-specific imports** — pure
-metadata. Changing a cluster's description, family, or enabled status is an
-edit here only.
+metadata. Changing a cluster's description or `enabledBy` routing is an
+edit here only; changing which proof term a cluster carries is an edit to
+`Meta/Config.lean`.
 
 ### Proof-carrying layer (`Meta/Config.lean`)
 
@@ -129,9 +132,9 @@ the compiler-trust gap (Lean's compiler is not CompCert).
 
 Trust-bridge primitives (`CTrustBridgeAuth` in `Concrete/Types.lean`)
 support two auth modes — `.byAgent` (named presenter) and `.byToken`
-(credential-checked presenter) — both of which satisfy the same
-architectural invariant: **bubbles never communicate directly; an agent is
-always in the middle**. The two modes are two answers to the same gate
+(credential-checked presenter) — both of which encode an accountable
+presenter/gate check: an agent is always the boundary through which any
+cross-bubble assertion passes. The two modes are two answers to the same gate
 question: "is this agent authorised to make this cross-bubble assertion?"
 
 Multi-hop chains (`A ↔ Agent₁ ↔ Agent₂ ↔ B`) are handled naturally — each
