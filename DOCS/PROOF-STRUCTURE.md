@@ -313,6 +313,135 @@ a structural necessity.
 
 ---
 
+## Other Proof Layers
+
+The per-dimension forcing chain above is one axis of the proof structure.
+A reviewer will also care about the following layers, each of which builds
+on or runs parallel to the forcing chain.
+
+### Operational gates — `Theorems/Withdrawal.lean`
+
+The LTS step semantics defines a typed transition relation over deposit
+lifecycle states. The operational gate theorems prove that the relation's
+constructor conditions are not optional:
+
+- `withdrawal_gates` — `Step.withdraw` fires only when `hasACLPermission`,
+  `isCurrentDeposit`, and `isDeposited` all hold; proved by extracting the
+  constructor arguments
+- `repair_enforces_revalidation` — `Step.repair` sets status to `Candidate`,
+  not `Deposited`; repair does not short-circuit revalidation
+- `submit_enforces_revalidation` — same pattern for `Step.submit`
+- `repair_requires_prior_challenge` — a `Repair` action can only follow a
+  `Challenge`; the challenge is a prerequisite
+- `register_enters_deposited` — `Step.register` produces `Deposited` status;
+  the entry point of the lifecycle is typed
+
+These are purely structural theorems derived from the `Step` constructors in
+`StepSemantics.lean` — no model assumptions, no world bundles.
+
+### Health-goal transport — `Agent/Imposition.lean`, `Health.lean`
+
+The health-goal layer proves that the mechanisms the forcing chain produces
+are necessary for the stated system health goals. Two proof styles coexist:
+
+**Scenario-based (Agent/Imposition.lean):** Counterexample structures
+(`WithdrawalScenario`, `DepositScenario`, `ExportScenario`) are used to prove
+that specific mechanisms are necessary for specific goals:
+- `safe_withdrawal_needs_reversibility` — without reversibility, a
+  `SafeWithdrawalGoal` scenario has a concrete counterexample
+- `sound_deposits_need_cheap_validator` — without a cheap validator, a
+  `SoundDepositsGoal` scenario cannot be satisfied within budget
+- `reliable_export_needs_gate` — without an export gate, a
+  `ReliableExportGoal` scenario cannot block corrupt export
+
+**Model-based (Health.lean):** Over the canonical `CoreModel` / `CoreOps`,
+necessity theorems show which features are required for which goals:
+- `corrigible_needs_revision` — `CorrigibleLedgerGoal` requires a revision
+  mechanism
+- `self_correction_needs_revision` — `SelfCorrectionGoal` requires revision
+- `sound_deposits_needs_verification` — `SoundDepositsGoal` requires a
+  verification mechanism
+- `authorized_withdrawal_needs_differentiation` — safe withdrawal under
+  multi-agent access requires ACL differentiation
+- `autonomy_forces_bridge_or_escalation` — `AutonomyUnderPRPGoal` requires
+  either a bridge or an escalation path
+
+The two styles prove the same architectural necessity via different routes —
+the scenario proofs are more direct (concrete counterexample); the model
+proofs are more general (over the canonical type-class interface).
+
+### World-bundle obligations — `WorldBridges.lean`, `World.lean`, `WorldCtx.lean`
+
+The world layer connects explicit world assumptions (W-bundles) to required
+system behaviors. Each W-bundle is an obligation theorem of the form
+`W_* → Conclusion`:
+
+- `w_bounded_forces_incompleteness` — `W_bounded_verification` forces
+  verification incompleteness; trust bridges are needed
+- `w_lies_forces_revocation_need` — `W_lies_possible` forces the need for
+  revocation
+- `w_partial_obs_forces_redeemability` — `W_partial_observability` forces
+  the need for redeemability
+- `world_assumptions_force_bank_primitives` — all active W-bundles together
+  force all bank primitives (`WorldCtx` path)
+- `bundled_structure_forces_bank_primitives` — the world-assumption-free
+  path: `StructurallyForced` alone forces bank primitives without any W-bundle
+  hypothesis (`WorldBridges.lean`)
+
+`WorldCtx.lean` defines the `WorldCtx` type that bundles world assumptions;
+`WorldWitness.lean` provides concrete witnesses discharging those assumptions.
+The W-bundle path and the world-assumption-free path (`bundled_structure_forces_bank_primitives`)
+are logically independent routes to the same conclusion.
+
+### Certification surface — `Meta/Config.lean`, `Meta/ClusterRegistry.lean`
+
+The certification layer is the user-facing composition API. It does not
+introduce new mathematical content; it makes the proof structure selectable
+and auditable at a configuration level.
+
+- **`EpArchConfig`** — a user-supplied record: which `ConstraintTag`s,
+  `GoalTag`s, and `WorldTag`s are operative
+- **`certify cfg`** — produces a `CertifiedProjection cfg`: a record
+  carrying all proof witnesses for the enabled clusters. Fully computed at
+  definition time; no `sorry`, no axiom
+- **`clusterEnabled_sound`** — if a cluster is in `cfg.constraints` (etc.),
+  its proof is present in the certified projection
+- **`CertifiedProjection`** — carries `enabledConstraintWitnesses`,
+  `enabledGoalWitnesses`, `enabledWorldWitnesses`, `enabledTier4Witnesses`,
+  `enabledMetaModularWitnesses`, `enabledLatticeWitnesses`,
+  `enabledAutonomyWitnesses`
+
+The `Pressure` / `ClusterTag` / `GoalTag` inductives in `ClusterRegistry.lean`
+are the canonical dimension indices; Lean's exhaustiveness checking ensures
+every case is covered at every `cases` site across the whole build.
+
+### Adversarial obligations — `AdversarialBase.lean`, `AdversarialObligations.lean`
+
+Attack models (DDoS, spoofed provenance, lying-at-scale) are formalized as
+explicit structures. Obligation theorems have the form `W_* → attack_vector →
+Conclusion`: given the world assumption and a concrete attack, the system
+cannot maintain a named guarantee. These are the theorems that establish
+*why* the W-bundles exist as separate assumptions rather than being baked in.
+
+### Corroboration — `Agent/Corroboration.lean`
+
+Multi-source acceptance and common-mode failure theorems for agents operating
+under a no-single-point-of-failure goal:
+- Necessity: a single source can accept false; `NoSPoF` forces multi-source
+- Sufficiency under independence: `k`-of-`n` suffices when sources fail
+  independently
+- Common-mode failure: `k`-of-`n` breaks when sources share failure modes
+- Diversity requirement: common-mode failure forces source diversity
+
+### Non-vacuity witnesses — `Concrete/NonVacuity.lean`, `WorkedTraces.lean`
+
+Existence proofs that the abstract model is non-vacuous: concrete types
+instantiate all structures; explicit step traces from `initial` through
+`revoked` state show the lifecycle is realizable. These close the "maybe
+the model has no instances" attack on any abstract impossibility theorem.
+
+---
+
 ## Summary Table
 
 | Dimension | Layer 1 theorem | Proof technique | Proof weight |
