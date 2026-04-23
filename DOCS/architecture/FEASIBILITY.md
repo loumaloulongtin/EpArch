@@ -112,8 +112,10 @@ unconditional implications strictly imply the three guarded ones.
 
 The recall direction of bounded verification is a Minimality-layer
 consequence of the same bound: `RecallBudget` parallels
-`BoundedVerification`; `recallBudget_to_bounded` embeds the recall
-impossibility into the bounded-verification one. This is not a ninth
+`BoundedVerification`; the `def recallBudget_to_bounded` embeds the recall
+budget into a `BoundedVerification` record, and
+`recall_is_bounded_verification_instance` then closes via the same
+`verification_only_import_incomplete` path. This is not a ninth
 pressure — it is the same trust/audit dimension viewed at withdrawal time.
 
 ---

@@ -41,7 +41,7 @@ Promote · Forget · Update · Tick
 
 Every agent-initiated constructor records `(a : Agent)` so that traces are
 fully attributed. `Submit` and `Register` record `(a, d)` (no target bubble);
-the remaining six record `(a, B, ...)` with an explicit `Bubble`. `Tick`
+the remaining seven record `(a, B, ...)` with an explicit `Bubble`. `Tick`
 carries no payload in `Action`; the clock-monotonicity proof `h_mono :
 s.clock ≤ t'` is a constructor argument of `Step.tick`, not of `Action.Tick`. There are no ACL tables, bank-authority lists, or trust-bridge
 registries inside `SystemState`: trust is per-deposit (`d.h.acl`), and
