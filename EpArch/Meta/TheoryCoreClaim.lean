@@ -29,13 +29,8 @@ Then underdetermination transfers:
 - **No gerrymandering:** The meta token is definitionally an alias of an already-underdetermined claim.
 - **No axioms:** This module adds 0 axioms, 0 sorry.
 
-## Claim Budget
-
-- A literal "self-token" claim symbol you can point to in prose.
-- A crisp theorem: `NotDeterminedByObs theory_core` using the same obs surface.
-- Conservative alias only — the underdetermination result transfers from an
-  already-underdetermined base claim; no claim about real-world truth or
-  unique correctness.
+The underdetermination result transfers from an already-underdetermined base claim
+by conservative alias; no claim about real-world truth or unique correctness.
 
 -/
 
@@ -152,10 +147,6 @@ def theory_core_token (C : WorldCtx) (h : C.W_partial_observability) :
     This is the general form that removes witness-dependence. The witness-specific
     theorem `witness_theory_core_not_determined` becomes an instance of this schema.
 
-    **Claim Budget:**
-    - Buys: Universal pattern — works for any context satisfying the bundle
-    - Does NOT buy: Increased realism — still conservative internalization
-
     **Constraints:**
     - Obs surface unchanged (`obs := C.obs`)
     - Truth aliases existing claim (no circularity)
@@ -198,9 +189,7 @@ noncomputable def theory_core : WitnessTheoryCoreCtx.Claim :=
     This proves that in the extended witness context, the designated token
     `theory_core` is underdetermined by the observational surface.
 
-    **Claim Budget:**
-    - Buys: "There exists a designated claim token such that obs does not determine it."
-    - Does NOT buy: "The real world satisfies theory_core."
+    This does not buy: "The real world satisfies theory_core."
 
     **Design Constraints Satisfied:**
     - obs is unchanged from WitnessCtx (frozen)

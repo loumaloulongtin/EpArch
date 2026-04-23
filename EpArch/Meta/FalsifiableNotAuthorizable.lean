@@ -251,9 +251,8 @@ def credit_safe_under_extension := RevisionSafety.safe_extension_preserves
     - P2: The floor implies credit required (not fully authorizable from obs)
     - P3: Safe on credit (extension preserves safety)
 
-    **Claim Budget:**
-    - Buys: consistency, falsifiability, underdetermination exists, extension safety
-    - Does NOT buy: "the real world is this model", uniqueness, psychological claims -/
+    This does not guarantee that the real world is this model, uniqueness, or
+    psychological claims. -/
 theorem meta_status_proof_pack :
     -- P1a: Satisfiable (positive non-vacuity)
     TheoryFloor WorldWitness.WitnessCtx ∧

@@ -18,24 +18,16 @@ corroboration is required (conditional minimality) and when it fails
    can be compromised and k > t independent attestations are required, then
    acceptance is resilient to that attack class.
 
-## Claim Budget
-
-**Buys:**
-- Formal reason "why 2-3 independent attestations beats one" (under independence interface)
-- Formal reason "why corroboration can fail spectacularly" (common-mode)
-- Conditional minimality: if NoSinglePointFailure goal, corroboration is forced
-
-**Does NOT Buy:**
-- "Humans do this in practice" (no sociology)
-- "The real world satisfies the independence interface" (no realism)
-- "Corroboration guarantees truth" (only reduces risk under explicit constraints)
+This does not guarantee that humans apply corroboration in practice (no sociology),
+that the real world satisfies the independence interface (no realism), or that
+corroboration guarantees truth — it only reduces risk under explicit constraints.
 
 ## Design Principles
 
-- **MB-C1:** No sociology — everything about admissible models and explicit constraints
-- **MB-C2:** No Obs surface changes — orthogonal to NotDeterminedByObs
-- **MB-C3:** Independence is explicit and optional (parameter, not baked in)
-- **MB-C4:** Necessity driven by goal toggle (NoSinglePointFailure)
+- No sociology — everything about admissible models and explicit constraints
+- No Obs surface changes — orthogonal to NotDeterminedByObs
+- Independence is explicit and optional (parameter, not baked in)
+- Necessity driven by goal toggle (NoSinglePointFailure)
 
 -/
 

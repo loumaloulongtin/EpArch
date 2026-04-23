@@ -1327,9 +1327,6 @@ theorem strong_sev_localizes_to_core_fields
   let ⟨f, hf⟩ := h_broken
   ⟨f, hf, h_sev f hf⟩
 
--- NOTE: `monolithic_implies_opaque_failures` was moved to EpArch.Theorems
--- as `bridge_monolithic_opaque`.
-
 /-! ## Trace Metrics and Convergence
 
 Convergence is the property that disputes eventually resolve.
@@ -1403,9 +1400,6 @@ theorem all_challenges_field_specific
   | τ => exact List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _)))
   | redeemability => exact List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _))))
   | acl => exact List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.tail _ (List.Mem.head _)))))
-
--- NOTE: `stripped_challenges_lack_grounding` was moved to EpArch.Theorems
--- as `bridge_stripped_ungrounded`.
 
 /-! ## Step-Preserved Invariants
 

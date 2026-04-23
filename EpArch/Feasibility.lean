@@ -20,17 +20,9 @@ not carry the forcing story — that lives in EpArch.WorldBridges.
 - `existence_under_constraints_structural`: ∃ W, StructurallyForced W ∧ SatisfiesAllProperties W ∧ containsBankPrimitives W
 - `existence_under_constraints_embedding`: same, via ForcingEmbedding path
 
-## Claim Budget
-
-**Buys:**
-- "The constraint+objective package is consistent (nonempty)"
-- "There exists at least one working system meeting the success bundle"
-- Non-vacuity for world bundles, commitments, and existence
-
-**Does NOT buy:**
-- The forcing direction (W_* → containsBankPrimitives) — see EpArch.WorldBridges
-- "The real world literally is this model"
-- "Uniqueness" (many realizations can exist)
+This does not carry the forcing direction (W_* → containsBankPrimitives) — that lives
+in EpArch.WorldBridges. It does not claim the real world literally is this model,
+nor that working systems are unique (many realizations can exist).
 
 -/
 
