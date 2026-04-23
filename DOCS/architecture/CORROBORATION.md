@@ -10,15 +10,17 @@ machine-checked.
 
 ## The goal toggle: no single point of failure
 
-`NoSinglePointFailure` is a *goal* the system can adopt. Adopting it forces
-corroboration:
+The no-single-point-of-failure goal is encoded as an explicit hypothesis in
+`no_spof_requires_multi_source` (the design-principle label is
+`NoSinglePointFailure`, but it is not a named structure — it is the
+hypothesis `h_goal : ∀ s phi, SingleSourceAcceptance ... → TrueStmt phi`):
 
 - if the goal includes resilience to single-source compromise, and
 - single-source attacks are possible (`SingleSourceAttack`),
-- then single-attestation acceptance is forbidden.
+- then single-attestation acceptance leads to a contradiction.
 
 This is conditional minimality: corroboration is not assumed universally —
-it is forced by an explicit goal predicate.
+it is forced by an explicit goal hypothesis.
 
 ---
 
@@ -32,10 +34,12 @@ baked-in assumption. The design choice is load-bearing:
 - the assumption is an explicit hypothesis the caller must supply or
   refuse.
 
-`k_of_n_suffices_under_independence` is the positive form: with at most `t`
-compromised independent sources, any `k > t` independent attestations
-guarantee at least one honest attestation. The proof uses pigeonhole over
-the filtered attestation list.
+`k_of_n_suffices_under_independence` is the positive form: given
+`HonestImpliesTrue` (honest sources tell the truth) and `IndependenceBounded`
+(at most `t` independent sources compromised), requiring `k > t` independent
+attestations yields `TrueStmt phi`. The proof uses pigeonhole over the
+filtered attestation list to extract one honest witness, then applies
+`HonestImpliesTrue`.
 
 ---
 
@@ -53,20 +57,24 @@ Two theorems close the failure side:
 - `two_of_two_fails_under_common_mode`: even the minimal interesting case
   (2-of-2) is insufficient.
 
-`common_mode_requires_diversity` quantifies over all `k`: corroboration
-needs *diversity*, not just multiplicity.
+`common_mode_requires_diversity` quantifies over `k ≤ compromised_sources.length`:
+for any threshold up to the pool size, naive k-of-n fails. The unbounded
+form — where no threshold is safe regardless of pool size — is
+`common_mode_fails_regardless_of_k` (over `UnboundedCommonModeAttack`). Both
+conclude: corroboration needs *diversity*, not just multiplicity.
 
 ---
 
 ## Relation to PRP and agent constraints
 
-The independence interface is the formal locus where the agent-side
-constraints (`Agent/Constraints.lean`) and the resilience layer
-(`Agent/Resilience.lean`) connect to the bank's deposit lifecycle. The bank
-records what is presented; the agent decides what to present and through
-which sources. PRP (Permanent Redeemability Pressure) is the upstream
-framing: the corroboration theorems are what the formalization actually
-delivers when PRP is operationalized as multi-source attestation.
+`Corroboration.lean` imports only `EpArch.Basic` and has no direct theorem
+connection to `Agent/Constraints.lean` or `Agent/Resilience.lean`. The
+connection is conceptual: PRP (Permanent Redeemability Pressure, defined in
+`Agent/Constraints.lean`) is the upstream framing that motivates multi-source
+attestation as a design goal. The corroboration theorems are what the
+formalization delivers when that goal is operationalized. The bank records
+what is presented; the agent decides what to present and through which
+sources.
 
 ---
 
