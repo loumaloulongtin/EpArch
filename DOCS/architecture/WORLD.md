@@ -13,9 +13,10 @@ the `W_*` antecedents do and do not commit the framework to. Other files
 
 ## What `WorldCtx` is
 
-`WorldCtx` is a record with parametric fields `World`, `Claim`, `Truth`,
-`Utter`, `Obs`, `obs`, `VerifyWithin`, `effectiveTime`. Theorems are stated
-over `(C : WorldCtx)` and access primitives as `C.Truth`, `C.obs`, etc.
+`WorldCtx` is a record with parametric fields `World`, `Agent`, `Claim`,
+`Obs`, `Truth`, `Utter`, `obs`, `VerifyWithin`, `effectiveTime` (plus three
+inhabitedness witnesses). Theorems are stated over `(C : WorldCtx)` and
+access primitives as `C.Truth`, `C.obs`, `C.Agent`, etc.
 
 A few derived notions are defined directly from the interface:
 
@@ -36,9 +37,9 @@ Three `W_*` structures in `WorldCtx.lean` package conditions on a
 `WorldCtx` and each independently forces one structural feature of the
 convergence chain. They are *conditions* — some instantiations satisfy
 them, others (like a degenerate `TrivialCtx` with `Truth w P = True`
-always) provably do not. Additional adversarial `W_*` bundles
-(`W_asymmetric_costs`, `W_spoofedV`, `W_lies_scale`, `W_ddos`, and others)
-live in `Adversarial/Obligations.lean` and enable the adversarial
+always) provably do not. `W_asymmetric_costs` is also defined in `WorldCtx.lean`. Additional
+adversarial `W_*` bundles (`W_spoofedV`, `W_lies_scale`, `W_ddos`, and
+others) live in `Adversarial/Obligations.lean` and enable the adversarial
 obligation theorems; they do not drive the structural convergence chain.
 
 ### `W_lies_possible`
@@ -113,7 +114,7 @@ structural witnesses get a strictly stronger result. The
 `WorldSystemCompat` adapter (`WorldBridges.lean`) closes the gap explicitly:
 given a per-dimension certificate that the system genuinely operates under
 the W_* conditions, `world_deriving_bridge` assembles a `WorldBridgeBundle W`
-without spelling out the seven bridge-bundle fields by hand.
+without spelling out the bundle fields by hand.
 
 ---
 
