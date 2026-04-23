@@ -19,11 +19,13 @@ suggestions — every `Step` constructor that changes a deposit's status takes
 the previous status as an explicit hypothesis (`isDeposited`, `isQuarantined`,
 `isCandidate`).
 
-Once a deposit is `Deposited`, the only ways it can leave that state are
+Once a deposit is `Deposited`, the structured lifecycle offers two exits:
 `Challenge` (→ `Quarantined`) or `Forget` (→ `Forgotten`). There is no
-constructor that "exits" a `Deposited` deposit back to `Candidate`. This is the
-source of the absorbing-state behaviour the forcing chain in
-PROOF-STRUCTURE.md uses to derive the revocation primitive.
+structured constructor that exits a `Deposited` deposit back to `Candidate`.
+`Update` can overwrite any non-`Forgotten` slot to any status, but it opts
+the trace into the revision predicate (`Action.isRevision = true`). The
+absorbing-state behaviour the forcing chain uses to derive the revocation
+primitive is stated over revision-free traces, so `Update` does not undercut it.
 
 ---
 
@@ -101,7 +103,9 @@ are part of the always-on theorem surface (cf. the registry in
 deposit is `Deposited` again. Revalidation is forced.
 
 `Update` is the wholesale-replacement constructor: the slot's deposit becomes
-`d_new`, and `isRevision = true` is recorded. Revision safety theorems
+`d_new` in its entirety. The action is classified as a revision action by
+`Action.isRevision`, so any trace containing `Update` has
+`Trace.hasRevision = true`. Revision safety theorems
 (`Semantics/RevisionSafety.lean`) reason about exactly this constructor.
 
 ---
