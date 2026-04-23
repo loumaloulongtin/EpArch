@@ -15,10 +15,10 @@ trust-bridge design notes; both auth modes are referenced below.
 ## High-level claim
 
 EpArch's theorem corpus is partitioned into **32 certified clusters** across
-six families. Constraint, goal, and world clusters are *config-driven* —
+seven families. Constraint, goal, and world clusters are *config-driven* —
 activated by the `EpArchConfig` the user supplies. Meta-modularity,
-lattice-stability, and all Tier 4 clusters are *always-on*: they hold
-unconditionally and require no configuration.
+lattice-stability, Tier 4, and the autonomy necessity cluster are *always-on*:
+they hold unconditionally and require no configuration.
 
 | Family | Count | Role |
 |---|---|---|
@@ -28,6 +28,7 @@ unconditionally and require no configuration.
 | World obligations (Tier 1) | 8 | one per `W_*` bundle |
 | Meta-modularity | 1 | constraint-subset independence (`PartialWellFormed → projection_valid`) |
 | Lattice-stability | 3 | `graceful_degradation`, `sub_revision_safety`, `modularity_pack` |
+| Autonomy necessity | 1 | `autonomy_forces_bridge_or_escalation` (`goal_autonomyUnderPRP`) |
 
 The 32 `ClusterTag` values in `Meta/ClusterRegistry.lean` are the canonical
 names. The full per-cluster registry — tag, statement, witness — is in
@@ -78,8 +79,8 @@ edit here only.
 ### Proof-carrying layer (`Meta/Config.lean`)
 
 Owns the indexed witness inductives (`GoalWitness`, `Tier4Witness`,
-`WorldWitness`, `MetaModularWitness`, `LatticeWitness`) and the Tier 2 proof
-carriers (`ConstraintProof`, `ConstraintClusterSpec`). Each constructor
+`WorldWitness`, `MetaModularWitness`, `LatticeWitness`, `AutonomyWitness`) and
+the Tier 2 proof carriers (`ConstraintProof`, `ConstraintClusterSpec`). Each constructor
 holds the actual Lean type of the theorem being certified; each match arm
 wires a tag to its proof term.
 
@@ -178,9 +179,6 @@ copy-paste templates) lives in `Meta/ClusterRegistry.lean` and
 - **Routing, witnesses, and descriptions update together.** A mismatch
   between the registry description and what the witness carries is a
   documentation bug; the three layers must always agree.
-
-The registry's invariants (I1–I6) live in `Meta/ClusterRegistry.lean`'s
-file comment.
 
 ---
 
