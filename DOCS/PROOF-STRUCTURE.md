@@ -220,8 +220,8 @@ These are adjacency notes only; each layer is described in its own doc.
   expose the proof structure as a configurable, auditable composition API.
   No new mathematical content. Layer description:
   [architecture/MODULARITY.md](architecture/MODULARITY.md).
-- **Adversarial obligations.** [`AdversarialBase.lean`](../EpArch/AdversarialBase.lean)
-  and [`AdversarialObligations.lean`](../EpArch/AdversarialObligations.lean)
+- **Adversarial obligations.** [`Adversarial/Base.lean`](../EpArch/Adversarial/Base.lean)
+  and [`Adversarial/Obligations.lean`](../EpArch/Adversarial/Obligations.lean)
   formalize attack models as `W_* → attack_vector → Conclusion` obligations.
 - **Corroboration.** [`Agent/Corroboration.lean`](../EpArch/Agent/Corroboration.lean)
   proves multi-source acceptance, common-mode failure, diversity requirement.
