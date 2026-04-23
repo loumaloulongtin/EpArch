@@ -39,9 +39,11 @@ Submit · Register · Withdraw · Challenge · Repair · Revoke ·
 Promote · Forget · Update · Tick
 ```
 
-Every agent-initiated constructor records `(a : Agent) (B : Bubble)` so that
-traces are fully attributed. `Tick` carries only a clock-monotonicity witness
-`s.clock ≤ t'`. There are no ACL tables, bank-authority lists, or trust-bridge
+Every agent-initiated constructor records `(a : Agent)` so that traces are
+fully attributed. `Submit` and `Register` record `(a, d)` (no target bubble);
+the remaining six record `(a, B, ...)` with an explicit `Bubble`. `Tick`
+carries no payload in `Action`; the clock-monotonicity proof `h_mono :
+s.clock ≤ t'` is a constructor argument of `Step.tick`, not of `Action.Tick`. There are no ACL tables, bank-authority lists, or trust-bridge
 registries inside `SystemState`: trust is per-deposit (`d.h.acl`), and
 authorization is an agent-level concern.
 
@@ -82,17 +84,15 @@ by construction*: once step-level preservation is proved for an invariant
 The withdrawal gate is the canonical example. `isDeposited` is a pure
 status predicate (`∃ d, ledger.get? d_idx = some d ∧ d.status = .Deposited`)
 — it checks the ledger slot, nothing else. The withdrawal-gate theorem in
-`Theorems/Withdrawal.lean` is the structural projection: if `Step.Withdraw`
-fires, then ACL permission, current τ, and `Deposited` status all held in
-the source state. The ACL/τ conditions are what the gate theorem documents;
-they are not checked by `isDeposited` itself.
+`Theorems/Withdrawal.lean` (`withdrawal_gates`) extracts exactly one
+condition: `ConsultedBank_At s d_idx`, which is definitionally `isDeposited`.
+Authorization is an agent-level concern and is explicitly *not* a bank gate;
+`withdrawal_gates` says nothing about ACL or τ.
 
 The same pattern produces `Repair → Candidate` (revalidation), `Promote
 requires Candidate`, and the `Forget` / `Update` slot-existence gates. These
 sit in `Theorems/Withdrawal.lean` and are universally quantified over every
-`SystemState`/`Step` instance — no model parameter varies, so the LTS gates
-are part of the always-on theorem surface (cf. the registry in
-[reference/THEOREMS.md](../reference/THEOREMS.md)).
+`SystemState`/`Step` instance — no model parameter varies.
 
 ---
 
