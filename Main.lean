@@ -122,15 +122,18 @@ Layer 8 (Meta):       Meta/* (incl. Meta/Modular, Meta/Config, Meta/TheoremTrans
 
 ## Axiom Declarations
 
-The formalization contains **zero `axiom` declarations**. All 8 structural commitments
-are proved standalone theorems.  C1 (Traction/Authorization Split) is proved by
+The `Main.lean` import surface contains **zero `axiom` declarations**. All 8 structural
+commitments are proved standalone theorems.  C1 (Traction/Authorization Split) is proved by
 `innovation_allows_traction_without_authorization` and
 `caveated_authorization_does_not_force_certainty`.  Some domain primitives are
 `opaque` constants (e.g., `agentTraction`, `ignores_bank_signal`, `pushback`,
 `τ_compress`, `V_spoof`, and the performance/adversarial-pressure opaques in
 `Theorems.Dissolutions` / `Theorems.Pathologies` / `Adversarial.Base`); others, including `certainty_L` and
 `knowledge_B`, are ordinary `def`s grounded in their respective types.
-None are `axiom` declarations.
+One named axiom (`lean_kernel_verification_path`) exists in
+`EpArch/Meta/LeanKernel/VerificationPath.lean` — a worked domain-instantiation
+example not imported here and outside the core architectural claim.
+See DOCS/AXIOMS.md for the full account.
 -/
 
 import EpArch.Basic

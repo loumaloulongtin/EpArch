@@ -182,7 +182,7 @@ The framework has three layers:
 | Module | Purpose |
 |---|---|
 | `Main.lean` | Full build entry point |
-| `EpArch/Concrete/` | Zero-axiom constructive witness (8 modules: Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity, Realizer, VerificationDepth, WorkedTraces) |
+| `EpArch/Concrete/` | Zero-axiom constructive witness (7 modules: Types, Commitments, WorkingSystem, DeficientSystems, NonVacuity, Realizer, VerificationDepth) |
 
 ---
 
