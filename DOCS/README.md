@@ -20,6 +20,7 @@ This folder documents the Lean formalization of the Epistemic Architecture (EpAr
 | [SEMANTICS.md](SEMANTICS.md) | Step semantics and LTS overview |
 | [WITNESS-SCOPE.md](WITNESS-SCOPE.md) | What the concrete model witnesses (and doesn't) |
 | [MODULARITY.md](MODULARITY.md) | Modularity tiers: what survives disabling a constraint, health goal, or world bundle, and by what mechanism |
+| [PROOF-STRUCTURE.md](PROOF-STRUCTURE.md) | Per-dimension three-layer forcing chain: semantic obstruction → system embedding → stored consequences, with proof-weight classification for all eight dimensions |
 | [CASE-STUDIES.md](CASE-STUDIES.md) | Cross-domain convergence test: do real-world systems under pressure reinvent the same primitives? |
 | [SELF-APPLICATION-AI.md](SELF-APPLICATION-AI.md) | Self-application: Claude Opus 4.6 through the EpArch certification surface |
 
