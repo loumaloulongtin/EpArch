@@ -90,12 +90,14 @@ accumulates invalid-but-irremovable deposits without bound.
 
 **Layer 1 — Semantic obstruction**
 - Structure: `MonotonicLifecycle` in `Minimality.lean`
-- Theorem: `monotonic_no_exit` — in a monotonic lifecycle, every deposit
-  that ever fails validity still fails at step `n`, for all `n`
-- Proof technique: induction on `n` — the monotonicity hypothesis prevents
-  any repair step from breaking the accumulated invalidity
+- Theorem: `monotonic_no_exit` — in a monotonic lifecycle the accepted
+  state is absorbing: `iter M.step n M.accepted = M.accepted` for all `n`.
+  No sequence of transitions can escape it; an adversarial deposit that
+  passes acceptance stays accepted permanently
+- Proof technique: induction on `n` — the `absorbing` field (`step accepted
+  = accepted`) is applied at each successor step to preserve the invariant
 - Proof weight: genuinely semantic (the induction is not eliminable; each
-  step requires the monotonicity hypothesis to hold the invariant)
+  step requires `absorbing` to hold the invariant across the iteration)
 
 **Layer 2 — System embedding**
 - Structure: `RepresentsMonotonicLifecycle` in `Scenarios.lean`
@@ -122,13 +124,14 @@ and complete across claims that differ only in their header content.
 
 **Layer 1 — Semantic obstruction**
 - Structure: `DiscriminatingImport` in `Minimality.lean`
-- Theorem: `routing_requires_header` — a sound and complete discriminating
-  import function must inspect header content; no uniform routing works
-- Proof technique: arithmetic/algebraic obstruction — the sound and complete
-  conditions jointly force a discrimination that a uniform function cannot
-  provide
-- Proof weight: interface-compositional (the contradiction follows from
-  composing the soundness and completeness hypotheses on a witness pair)
+- Theorem: `no_sound_complete_uniform_import` — a uniform import function
+  that is also sound and complete derives `False`; uniformity and
+  soundness+completeness are jointly inconsistent
+- Proof technique: contradiction — `h_uniform` forces `f good = f bad`;
+  `h_sound` and `h_complete` force `f bad = false` and `f good = true`;
+  `Bool.noConfusion` closes the goal
+- Proof weight: interface-compositional (the contradiction is assembled
+  from three hypotheses; no new mathematical argument is introduced)
 
 **Layer 2 — System embedding**
 - Structure: `RepresentsDiscriminatingImport` in `Scenarios.lean`
@@ -254,12 +257,14 @@ a structural necessity.
 
 **Layer 1 — Semantic obstruction**
 - Structure: `BoundedStorage` in `Minimality.lean`
-- Theorem: `monotone_active_accumulation_overflows` — a monotonically
-  growing active set overflows any finite budget
-- Proof technique: arithmetic obstruction — the monotone growth and finite
-  budget jointly produce a count that exceeds the bound
-- Proof weight: genuinely semantic (the overflow argument requires tracking
-  the count across steps; it is not a single-step field extraction)
+- Theorem: `monotone_active_accumulation_overflows` — no fixed capacity
+  budget covers all states: applying the universal bound to `deep_state`
+  (which carries `exceeds_budget`) yields a contradiction via `Nat.not_le`
+- Proof technique: arithmetic obstruction from a single overflow witness —
+  one application of the universal to `deep_state`, one `Nat` inequality
+  contradiction
+- Proof weight: mostly definitional (the `deep_state` / `exceeds_budget`
+  fields supply the contradiction; no step-indexed induction is involved)
 
 **Layer 2 — System embedding**
 - Structure: `RepresentsBoundedCapacity` in `Scenarios.lean`
@@ -288,7 +293,7 @@ a structural necessity.
 | Bounded verification / Trust bridges | `verification_only_import_incomplete` | Arithmetic obstruction | Mostly definitional |
 | Truth pressure / Redeemability | `closed_system_unfalsifiable` | Set-closure | Genuinely semantic |
 | Authorization / Granular ACL | `flat_authorization_impossible` | Contradiction | Genuinely semantic |
-| Storage management / Bounded capacity | `monotone_active_accumulation_overflows` | Arithmetic obstruction | Genuinely semantic |
+| Storage management / Bounded capacity | `monotone_active_accumulation_overflows` | Arithmetic obstruction (single witness) | Mostly definitional |
 
 Four of the eight Layer 1 theorems require a genuine mathematical argument
 that cannot be collapsed into field extraction: `flat_scope_impossible`,
