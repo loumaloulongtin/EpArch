@@ -47,8 +47,9 @@ closed statement.
 
 There exists a working system that satisfies all operational properties and
 contains the bank primitives, with the forcing side witnessed by
-`StructurallyForced`. The witness is `ConcreteWorkingSystem`; the proof
-glues `concrete_structurally_forced` to `concrete_satisfies_all_properties`.
+`StructurallyForced`. The witness is `ConcreteWorkingSystem`; the three
+conjuncts are `concrete_structurally_forced`, `concrete_satisfies_all_properties`,
+and `concrete_structural_convergence` (for `containsBankPrimitives`).
 
 ### `existence_under_constraints_embedding` (`Feasibility.lean`)
 
@@ -58,9 +59,10 @@ glues `concrete_structurally_forced` to `concrete_satisfies_all_properties`.
 ```
 
 The strongest non-vacuity form. All design judgment is localised in
-`concrete_forcing_embedding`; the rest of the chain
-(`embedding_to_structurally_forced → convergence_structural →
-containsBankPrimitives`) is mechanical.
+`concrete_forcing_embedding`, which witnesses only the `ForcingEmbedding W`
+conjunct. The `containsBankPrimitives` conjunct is the same
+`concrete_structural_convergence` = `convergence_structural _ concrete_structurally_forced
+concrete_satisfies_all_properties` used in the structural version.
 
 ### `kernel_world_forces_bank_primitives` (`WorldBridges.lean`)
 
@@ -78,7 +80,7 @@ applies to?"
 
 ## World-bundle satisfiability
 
-Two non-vacuity facts close the world-layer satisfiability question:
+Three non-vacuity facts close the world-layer satisfiability question:
 
 | Theorem | What it says |
 |---|---|
