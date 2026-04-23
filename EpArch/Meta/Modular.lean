@@ -25,8 +25,8 @@ This file provides two pieces:
 ## Relationship to PartialWellFormed
 
   `PartialWellFormed W allConstraints` — all eight biconditionals required,
-  the strongest subset — is the natural replacement for the former `WellFormed`
-  predicate (which has been removed).  Every existing `WellFormed`-gated proof
+  the strongest subset — is the natural replacement for `WellFormed`.
+  Every existing `WellFormed`-gated proof
   can be re-stated as `PartialWellFormed W allConstraints`.
 
 ## What This Proves

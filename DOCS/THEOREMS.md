@@ -165,7 +165,6 @@ Note: τ-expiry is **not** a `Step.withdraw` gate. A bounded-budget agent decide
 | Theorem | File | Diagnosis |
 |---------|------|----------|
 | `fake_barn_is_E_failure` | Theorems/Cases/FakeBarn.lean | Fake Barn = E-field failure (unconditional; `e_certified` structural field) |
-| `fake_barn_profile_yields_E_failure` | Theorems/Cases/FakeBarn.lean | Alias demonstrating the structural certification pattern |
 | `canonical_fake_barn_is_fake_barn` | Theorems/Cases/FakeBarn.lean | Canonical fake barn satisfies FakeBarnCase |
 
 ### Standard Case (S-Field Failure)

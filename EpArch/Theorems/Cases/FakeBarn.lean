@@ -110,9 +110,7 @@ def IsFakeBarnCase (fb : FakeBarnCase (PropLike := PropLike)) : Prop :=
 /-- Fake Barn cases route to E-failure.
 
     Unconditional: the conclusion follows directly from the structural
-    `e_certified` field, which is certified at construction time.
-    Also known as `fake_barn_profile_yields_E_failure` (former alias,
-    consolidated here). -/
+    `e_certified` field, which is certified at construction time. -/
 theorem fake_barn_is_E_failure (fb : FakeBarnCase (PropLike := PropLike)) :
     barn_case_E_inadequate fb :=
   fb.e_certified

@@ -403,9 +403,7 @@ theorem intra_bubble_not_redeemable
     precondition applies. Provenance (source bubble, direct experience, etc.)
     belongs in d.h.V and is the agent's responsibility to record.
 
-    This replaces the former BridgeSubmitEntersDeposited theorem, which was
-    scoped to cross-bubble transfer; direct registration is the correct general
-    characterization. -/
+    Direct registration is the correct general characterization. -/
 theorem DirectRegisterEntersDeposited {Reason Evidence : Type u}
     (a : Agent) (d : Deposit PropLike Standard ErrorModel Provenance)
     (s : StepSemantics.SystemState PropLike Standard ErrorModel Provenance) :
@@ -981,8 +979,7 @@ theorem redeemability_requires_more_than_consensus
     - C7b: `header_stripping_harder` — stripped disputes are systematically harder to diagnose.
     - C8: `TemporalValidity` — refreshed and unrefreshed deposits are not equivalent.
     C1, C2, C5, C6b are proved as named theorems (see their respective sections).
-    C5 is now `DirectRegisterEntersDeposited` (direct agent registration → Deposited entry);
-    the former `ExportGating` theorem has been removed along with `Action.Export`. -/
+    C5 is now `DirectRegisterEntersDeposited` (direct agent registration → Deposited entry). -/
 theorem commitments_pack :
     (∀ (d : Deposit PropLike Standard ErrorModel Provenance),
         ∃ (s : Standard) (e : ErrorModel) (v : Provenance),

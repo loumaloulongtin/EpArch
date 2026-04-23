@@ -394,13 +394,6 @@ theorem behavior_from_step (B : GroundedBehavior) (i : Input) (s s' : CState)
     cases h
     simp [observe_step_action, Behavior]
 
-/-
-  (Retired) grounded_export_step: export is not a bank primitive.
-  Inter-bubble transfer is an agent-level workflow: Withdraw in B1, agent carries deposit,
-  direct registration in B2 (Step.register).
-  See DirectRegisterEntersDeposited in EpArch.Commitments for the C5 theorem.
--/
-
 end StepBridge
 
 /-! ## Main Equivalence Theorems -/

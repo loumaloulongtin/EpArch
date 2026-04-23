@@ -1436,8 +1436,7 @@ attribute-based ACL escape `flat_authorization_impossible`?
 
 This section instantiates each alternative, then shows it directly supplies
 a `GroundedAuthorization` instance (with both a positive and a negative witness).
-`GroundedAuthorizationStrict.no_flat_tier` then fires directly, or
-equivalently, `flat_authorization_impossible` fires via `groundedAuthorization_to_scenario`.
+`GroundedAuthorizationStrict.no_flat_tier` then fires directly.
 
 **RBAC.**  The commit tier is role-derived authorization; the submission tier is
 open (any agent may submit).  The restricted agent's role lacks commit permission;
@@ -1615,133 +1614,51 @@ they only depend on `GroundedX` fields).
   `ConcreteWorkingSystem`, and `PartialGroundedSpec.toWorkingSystem`.
 - `GroundedXStrict.mk' G` — thin alias: `mk' G := G.toStrict`.  Kept as the
   canonical citation-facing constructor; call it when you want the named-proof
-  route to appear in a proof term without inlining the derivation.
-- Named bridge theorems (`groundedBubbles_flat_impossible`, etc.) — available for
-  direct citation when a proof must explicitly invoke the structural impossibility.
-  No longer called by `mk'`, but remain at module scope for that purpose. -/
+  route to appear in a proof term without inlining the derivation. -/
 
 
 /-! ### §7.1  Bubbles ↔ AgentDisagreement -/
 
-/-- Convert `GroundedBubbles` to `AgentDisagreement`: the two scope resolvers
-    play the role of the two disagreeing agents. -/
-def groundedBubbles_to_disagreement (G : GroundedBubbles) : AgentDisagreement where
-  Claim          := G.Claim
-  accept₁        := G.scope₁
-  accept₂        := G.scope₂
-  witness        := G.witness
-  agent1_accepts := G.scope₁_accepts
-  agent2_rejects := G.scope₂_rejects
-
-/-- No flat resolver can faithfully represent both scopes.
-    Invokes `flat_scope_impossible` via the bridge conversion. -/
-theorem groundedBubbles_flat_impossible (G : GroundedBubbles) :
-    ¬∃ (f : G.Claim → Prop), (∀ c, f c ↔ G.scope₁ c) ∧ (∀ c, f c ↔ G.scope₂ c) :=
-  flat_scope_impossible (groundedBubbles_to_disagreement G)
-
-/-- Thin alias for `G.toStrict`.  Cite `groundedBubbles_flat_impossible` directly
-    when a proof must explicitly name the impossibility route. -/
+/-- Thin alias for `G.toStrict`. -/
 def GroundedBubblesStrict.mk' (G : GroundedBubbles) : GroundedBubblesStrict := G.toStrict
 
 
 /-! ### §7.2  TrustBridges: re-verify-only policy cannot exclude the bridge witness -/
 
-/-- A re-verify-only policy (downstream accepts only what it locally verified) is
-    inconsistent with a trust bridge: the bridge delivers the witness downstream
-    without local re-verification. -/
-theorem groundedTrustBridges_bridge_necessary (G : GroundedTrustBridges)
-    (locally_verified : G.Declaration → Prop)
-    (only_local      : ∀ d, G.downstream_accepts d → locally_verified d)
-    (not_local       : ¬locally_verified G.witness) : False :=
-  not_local (only_local G.witness G.downstream_via_bridge)
-
-/-- Thin alias for `G.toStrict`.  Cite `groundedTrustBridges_bridge_necessary` directly
-    when a proof must explicitly name the impossibility route. -/
+/-- Thin alias for `G.toStrict`. -/
 def GroundedTrustBridgesStrict.mk' (G : GroundedTrustBridges) : GroundedTrustBridgesStrict :=
   G.toStrict
 
 
 /-! ### §7.3  Headers: header preservation implies routing invariance -/
 
-/-- A header-based router cannot distinguish the witness from its exported form.
-    Any routing decision on the original is preserved after export. -/
-theorem groundedHeaders_router_consistent (G : GroundedHeaders) (router : G.Header → Bool) :
-    router (G.extract G.witness) = router (G.extract (G.export_datum G.witness)) :=
-  congrArg router G.header_preserved.symm
-
-/-- Thin alias for `G.toStrict`.  Cite `groundedHeaders_router_consistent` directly
-    when a proof must explicitly name the routing-invariance route. -/
+/-- Thin alias for `G.toStrict`. -/
 def GroundedHeadersStrict.mk' (G : GroundedHeaders) : GroundedHeadersStrict := G.toStrict
 
 
 /-! ### §7.4  Revocation: no-revocation policy fails at the invalid-but-revocable witness -/
 
-/-- A no-revocation policy (every revocable claim is valid) is refuted:
-    the witness is revocable (`can_revoke`) but demonstrably invalid (`witness_is_invalid`). -/
-theorem groundedRevocation_no_revocation_incorrect (G : GroundedRevocation)
-    (no_revoc : ∀ c, G.revocable c → G.valid c) : False :=
-  G.witness_is_invalid (no_revoc G.witness G.can_revoke)
-
-/-- Thin alias for `G.toStrict`.  Cite `groundedRevocation_no_revocation_incorrect`
-    directly when a proof must explicitly name the impossibility route. -/
+/-- Thin alias for `G.toStrict`. -/
 def GroundedRevocationStrict.mk' (G : GroundedRevocation) : GroundedRevocationStrict :=
   G.toStrict
 
 
 /-! ### §7.5  Bank: isolation assumption is contradicted by the shared entry -/
 
-/-- An isolation assumption (no entry simultaneously accessible to both agents) is
-    contradicted by the shared bank witness. -/
-theorem groundedBank_refutes_isolation (G : GroundedBank)
-    (iso : ∀ e : G.Entry, G.agent₁_produces e → ¬G.agent₂_consumes e) : False :=
-  iso G.witness G.produced G.consumed
-
-/-- Thin alias for `G.toStrict`.  Cite `groundedBank_refutes_isolation` directly
-    when a proof must explicitly name the isolation-refutation route. -/
+/-- Thin alias for `G.toStrict`. -/
 def GroundedBankStrict.mk' (G : GroundedBank) : GroundedBankStrict := G.toStrict
 
 
 /-! ### §7.6  Redeemability: closure assumption contradicted by constrained-and-redeemable witness -/
 
-/-- A closure assumption (no constrained claim has an external redeemability path) is
-    contradicted by the grounded witness. -/
-theorem groundedRedeemability_refutes_closure (G : GroundedRedeemability)
-    (closed : ∀ c : G.Claim, G.constrained c → ¬G.redeemable c) : False :=
-  closed G.witness G.is_constrained G.has_path
-
-/-- Thin alias for `G.toStrict`.  Cite `groundedRedeemability_refutes_closure` directly
-    when a proof must explicitly name the closure-refutation route. -/
+/-- Thin alias for `G.toStrict`. -/
 def GroundedRedeemabilityStrict.mk' (G : GroundedRedeemability) : GroundedRedeemabilityStrict :=
   G.toStrict
 
 
 /-! ### §7.7  Authorization ↔ TwoTierAccess -/
 
-/-- Convert `GroundedAuthorization` to `TwoTierAccess`.
-    The fields map directly: `can_propose`/`can_commit`/`submitter`/`committer`/`tier_claim`
-    and their proof witnesses `may_propose`/`cannot_commit`/`may_commit`. -/
-def groundedAuthorization_to_scenario (G : GroundedAuthorization) : TwoTierAccess where
-  Agent         := G.Agent
-  Claim         := G.Claim
-  can_propose   := G.can_propose
-  can_commit    := G.can_commit
-  submitter     := G.submitter
-  committer     := G.committer
-  tier_claim    := G.tier_claim
-  may_propose   := G.may_propose
-  cannot_commit := G.cannot_commit
-  may_commit    := G.may_commit
-
-/-- No flat authorization predicate can faithfully represent both tiers of a
-    `GroundedAuthorization`.  Invokes `flat_authorization_impossible` via the bridge. -/
-theorem groundedAuthorization_flat_impossible (G : GroundedAuthorization) :
-    ¬∃ (f : G.Agent → G.Claim → Prop),
-      (∀ a c, f a c ↔ G.can_propose a c) ∧
-      (∀ a c, f a c ↔ G.can_commit a c) :=
-  flat_authorization_impossible (groundedAuthorization_to_scenario G)
-
-/-- Thin alias for `G.toStrict`.  Cite `groundedAuthorization_flat_impossible` directly
-    when a proof must explicitly name the two-tier impossibility route. -/
+/-- Thin alias for `G.toStrict`. -/
 def GroundedAuthorizationStrict.mk' (G : GroundedAuthorization) : GroundedAuthorizationStrict :=
   G.toStrict
 
@@ -1945,8 +1862,7 @@ theorem partitioned_store_overflows (M : PartitionedStore) :
 /-! ### §8.8  Storage ↔ BoundedStorage -/
 
 /-- Convert `GroundedStorage` to `BoundedStorage`.
-    The fields map directly: `State`/`budget`/`count`/`overflow_state`→`deep_state`/`exceeds`→`exceeds_budget`.
-    Parallel to `groundedAuthorization_to_scenario` for the authorization dimension. -/
+    The fields map directly: `State`/`budget`/`count`/`overflow_state`→`deep_state`/`exceeds`→`exceeds_budget`. -/
 def groundedStorage_to_scenario (G : GroundedStorage) : BoundedStorage where
   State          := G.State
   budget         := G.budget
@@ -1955,8 +1871,7 @@ def groundedStorage_to_scenario (G : GroundedStorage) : BoundedStorage where
   exceeds_budget := G.exceeds
 
 /-- No fixed budget can cover all active-deposit states in a `GroundedStorage`.
-    Invokes `monotone_active_accumulation_overflows` via the bridge.
-    Parallel to `groundedAuthorization_flat_impossible` for the authorization dimension. -/
+    Invokes `monotone_active_accumulation_overflows` via the bridge. -/
 theorem groundedStorage_accumulation_impossible (G : GroundedStorage) :
     ¬∀ s : G.State, G.count s ≤ G.budget :=
   monotone_active_accumulation_overflows (groundedStorage_to_scenario G)

@@ -239,13 +239,9 @@ These definitions ground Commitment C2 ("no global ledger supports both innovati
 and coordination") as a **proved theorem** rather than a hypothesis.  The key
 insight is CAP-theoretic: under partial observability, no obs-based ledger can
 simultaneously accept all locally-true claims (innovation / availability) and
-reject all locally-false claims (coordination / consistency).
+reject all locally-false claims (coordination / consistency). -/
 
-Replaces the former opaque `GlobalLedger`, `supports_innovation`,
-`supports_coordination` with WorldCtx-grounded concrete definitions. -/
-
-/-- An abstract ledger over a WorldCtx: maps each (world, claim) pair to a verdict.
-    Replaces the former opaque `GlobalLedger` — now grounded in WorldCtx semantics. -/
+/-- An abstract ledger over a WorldCtx: maps each (world, claim) pair to a verdict. -/
 def WorldCtx.Ledger (C : WorldCtx) : Type u := C.World → C.Claim → Prop
 
 /-- Obs-based: observationally equivalent worlds receive the same verdict.
