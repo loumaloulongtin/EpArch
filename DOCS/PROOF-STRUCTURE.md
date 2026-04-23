@@ -93,7 +93,7 @@ unreachable.
 
 **Constraint pressure.** An adversary can arrange a deposit that becomes
 invalid after acceptance. In a monotonic lifecycle, the accepted state is
-absorbing; invalid deposits accumulate without bound.
+absorbing — once accepted, a deposit can never be exited or revoked.
 
 - **Layer 1.** `MonotonicLifecycle`; `monotonic_no_exit` —
   `iter M.step n M.accepted = M.accepted` for all `n` (induction; the
@@ -149,9 +149,9 @@ the redeemable set is closed under endorsement.
 
 ## Dimension 7: Authorization — Granular ACL
 
-**Constraint pressure.** A two-tier access scheme cannot express
-differential access for agents in the same tier; flat authorization is
-structurally incapable of that discrimination.
+**Constraint pressure.** Access control has two distinct tiers: submission
+and commit. A flat predicate cannot simultaneously represent both; it
+collapses the tier boundary by construction.
 
 - **Layer 1.** `TwoTierAccess`; `flat_authorization_impossible`
   (contradiction). *Genuinely semantic.*
@@ -207,8 +207,9 @@ These are adjacency notes only; each layer is described in its own doc.
   [architecture/SEMANTICS.md](architecture/SEMANTICS.md).
 - **Health-goal transport.** [`Agent/Imposition.lean`](../EpArch/Agent/Imposition.lean)
   (scenario style) and [`Health.lean`](../EpArch/Health.lean) (model style)
-  prove that the mechanisms the forcing chain produces are necessary for the
-  stated health goals. Same architectural conclusion via two routes.
+  are related necessity surfaces: both show that the mechanisms the forcing
+  chain produces are required by their respective health-goal predicates,
+  via different model types (`WorkingSystem` embeddings vs `AutonomyModel`).
 - **World-bundle obligations.** [`WorldBridges.lean`](../EpArch/WorldBridges.lean),
   [`WorldCtx.lean`](../EpArch/WorldCtx.lean), and
   [`WorldWitness.lean`](../EpArch/WorldWitness.lean) connect explicit
