@@ -52,9 +52,9 @@ read in this order:
    `embedding_to_structurally_forced`, and `convergence_structural`.  This is
    the top-level certificate; everything downstream is evidence for it.
 3. **One or two Layer 1 models in `Minimality.lean`** — pick a "genuinely
-   semantic" dimension (Versioning or Closure/Corroboration) and trace the
-   impossibility argument.  The other dimensions follow the same pattern at
-   lower depth.
+   semantic" dimension (Adversarial/Revocation or Truth pressure/Redeemability)
+   and trace the impossibility argument.  The other dimensions follow the same
+   pattern at lower depth.
 4. **`Scenarios.lean`** — check a `_without_*_embeds` / `_forces_*` pair for
    the same dimension.  This is where the abstract model meets the concrete
    `WorkingSystem` type class.
