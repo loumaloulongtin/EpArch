@@ -4,7 +4,7 @@ This file is a map. It tells an assistant where things are, so questions about t
 
 ## What this repo is
 
-Lean 4 formalization of an epistemic architecture framework. No Mathlib dependency. Zero `axiom` declarations and zero `sorry`s on the `Main.lean` import surface. Build entrypoint is `Main.lean`; build command is `lake build`. The headline claim is structural: under eight world-level constraint bundles, any working system contains the bank-primitive cluster.
+Lean 4 formalization of an epistemic architecture framework. No Mathlib dependency. Zero `axiom` declarations and zero `sorry`s on the `Main.lean` import surface. Build entrypoint is `Main.lean`; build command is `lake build`. The headline claim is structural: eight world-level constraint bundles are argued to be unavoidable features of any system coordinating knowledge under bounded verification, adversarial pressure, and multi-agent authorization; any working system satisfying them necessarily contains the bank-primitive cluster. The W_* bundles are explicit antecedents, not assumptions about any particular world — they are the constraints whose unavoidability is the domain-level argument.
 
 ## The capstone and the route to it
 
@@ -71,3 +71,5 @@ The DOCS tree is the canonical destination for prose. Use this table to route a 
 | Worked corroboration / cross-domain cases?    | [`DOCS/cases/CASE-STUDIES.md`](../DOCS/cases/CASE-STUDIES.md)                             |
 | Lean kernel as an EpArch instance?            | [`DOCS/optional/LEAN-KERNEL.md`](../DOCS/optional/LEAN-KERNEL.md)                         |
 | The DOCS index itself                         | [`DOCS/README.md`](../DOCS/README.md)                                                     |
+| What does the framework *not* claim?          | [`DOCS/architecture/WORLD.md`](../DOCS/architecture/WORLD.md), [`DOCS/reference/WITNESS-SCOPE.md`](../DOCS/reference/WITNESS-SCOPE.md) |
+| Are the constraints opt-in / avoidable?       | [`DOCS/architecture/WORLD.md`](../DOCS/architecture/WORLD.md)                             |
