@@ -293,7 +293,6 @@ both downward and upward (lattice-stability).
 - `modularity_pack` (`Meta/TheoremTransport.lean`) — full bidirectional lattice-stability.
 
 **Supporting.** `safe_extension_preserves`,
-`safety_preserved_under_contract_refinement`,
 `graceful_degradation`, `sub_revision_safety`,
 `quarantine_requires_challenge_structured`, `no_self_healing_bank`.
 
@@ -440,8 +439,10 @@ certificate, and the dependency narrative live in
   scope and what the token does and does not buy live in
   [WITNESS-SCOPE.md](WITNESS-SCOPE.md).
 - **Lean-kernel self-application.** `lean_kernel_existence`,
-  `lean_kernel_forces_bank_primitives`, `lean_kernel_no_tradeoff` in
-  [Meta/LeanKernel/World.lean](../../EpArch/Meta/LeanKernel/World.lean);
+  `lean_kernel_no_tradeoff` in
+  [Meta/LeanKernel/World.lean](../../EpArch/Meta/LeanKernel/World.lean)
+  (`lean_kernel_forces_bank_primitives` is a citability `def` alias for
+  `lean_implements_bank_primitives` in the same file, not a `theorem`);
   S-failure taxonomy in
   [Meta/LeanKernel/SFailure.lean](../../EpArch/Meta/LeanKernel/SFailure.lean);
   full S/E/V repair lifecycle in
