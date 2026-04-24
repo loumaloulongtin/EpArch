@@ -14,8 +14,9 @@ formalization. Every file imported transitively from `Main.lean` introduces ordi
 declarations such as `theorem`, `def`, `abbrev`, `structure`, `inductive`,
 and `opaque`; no `axiom` declarations occur in this surface.
 
-This is the trusted-base boundary for the core formalization. If a result is
-cited as "proved", its proof sits inside this import surface.
+This is the trusted-base boundary for the core formalization. If a core result
+is cited as "proved", its proof sits inside this import surface. Optional/stretch
+results may widen their own trusted base explicitly.
 
 ---
 
