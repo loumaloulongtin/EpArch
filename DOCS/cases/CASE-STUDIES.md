@@ -21,11 +21,13 @@ preserve these primitives should be more robust against the failure
 families the theory identifies, and removing the primitives should
 predictably recreate those failures.
 
+This is not proof by anecdote. It is a cross-domain convergence test.
+
 ---
 
 ## Reading rule
 
-Each case follows the same four-question format:
+Each case study should be read in the same format:
 
 1. What is the relevant epistemic pressure?
 2. Where are the EpArch primitives in the system?
@@ -40,202 +42,438 @@ reinventing the same control surfaces.
 
 ## Why one delta case matters
 
-Static convergence cases — a mature system under pressure happens to
-have EpArch-like primitives — are good corroboration but vulnerable to
-the selection-bias objection ("you picked systems that already look like
-your framework"). A before/after intervention case changes the shape of
-the claim from static resemblance to observed improvement after adding
-the primitive. That is harder to dismiss.
+A static case study shows convergence: a mature system under pressure
+happens to have EpArch-like primitives. That is good corroboration, but
+it leaves a rhetorical opening: "Maybe you just picked systems that
+already look like your framework." A before/after intervention case
+changes the shape of the claim from static resemblance to observed
+improvement after adding the primitive. That is much harder to dismiss
+as selection bias.
 
-**BCMA as intervention.** Pre-BCMA medication administration relied on
-nurse memory, manual label reading, and informal verification. The
-intervention adds a barcode-linked patient–medication match tied to an
-explicit administration record; each administration is logged in a
-durable eMAR trace. AHRQ reports a 41% reduction in non-timing
+### BCMA as intervention
+
+**Before**: medication administration relying on nurse memory, manual
+label reading, and informal verification.
+
+**Primitive added**: barcode-linked patient–medication verification tied
+to an explicit administration record. The nurse scans the patient
+wristband, scans the medication, and the system matches both against the
+active order before completing the administration event. Each
+administration is logged in a durable eMAR trace rather than recalled
+from memory.
+
+**Observed change**: AHRQ data shows a 41% reduction in non-timing
 medication errors and a 51% reduction in potential adverse drug events
-under BCMA. Workaround studies show roughly threefold higher medication
-error risk when the barcode path is circumvented. The system improved
-when an EpArch-like primitive was deliberately added and degraded
-predictably when the primitive was deliberately removed.
+under BCMA. Workaround studies show a threefold higher medication error
+risk when the barcode path is circumvented.
+
+**EpArch reading**: this is not just a system that resembles the
+architecture. It is a system that improved when an EpArch-like primitive
+was deliberately added, and degraded predictably when that primitive was
+deliberately removed by the agent. The pathology is not random. It
+tracks the presence or absence of provenance and scope discipline with
+enough regularity to be measured.
 
 ---
 
-## External cases
+## Case studies
 
-### 1. Hospital medication administration (BCMA / eMAR)
+### 1. Hospital medication administration
 
-- **Pressure.** Distributed-testimony medication delivery under
-  distraction, workflow friction, label ambiguity, and handoff error.
-- **Primitives.** S: the rights of administration (patient, medication,
-  dose, time, route). V: barcode scan of wristband and medication,
-  linked to eMAR. E: wrong-patient, wrong-dose, wrong-rate,
-  unreadable-barcode, pump misconfiguration. Scope: this patient, this
-  order, this event. Lifecycle: eMAR audit trail, not memory.
-- **Predicted pathology if thinned.** Regression toward wrong-patient,
-  wrong-dose, wrong-medication failure modes.
-- **Observed.** The BCMA evidence above.
+**Pressure.** Medication administration is adversarial in the weak but
+important sense: the system must remain safe under distraction, workflow
+friction, label ambiguity, handoff error, and local misperception. It is
+also a distributed-testimony environment: physician order, pharmacy
+verification, nurse administration, barcode system, and patient identity
+all have to line up.
+
+**EpArch primitives.**
+- **S**: the rights of administration — right patient, medication, time,
+  dose, route.
+- **V**: barcode scan of the patient wristband, barcode scan of the
+  medication, and linkage to the eMAR.
+- **E**: wrong-patient, wrong-dose, wrong-medication, wrong-rate,
+  unreadable barcode, missing label, broken workflow, pump
+  misconfiguration.
+- **Scope**: this patient, this medication order, this administration event.
+- **Lifecycle**: electronic MAR and audit trail, not nurse memory alone.
+
+**Predicted pathology if primitives weaken.** Regression toward classic
+wrong-patient, wrong-dose, and wrong-medication failure modes.
+
+**Observed.** BCMA systems reduce medication errors when the
+scan-and-ledger path is actually used. When nurses work around barcode
+checks, the risk of medication error rises sharply. The safer regime is
+the one with explicit provenance, scoped matching, and ledger-linked
+administration. The degraded regime is not medicine becoming
+metaphysically worse — it is the system dropping the epistemic control
+surfaces.
+
+---
 
 ### 2. Certificate Transparency / Web PKI
 
-- **Pressure.** Distributed-testimony attestation under active
-  adversarial pressure; relying parties cannot directly audit CAs.
-- **Primitives.** S: CA issuance policy. V: CA-to-certificate-to-subject
-  provenance. E: misissuance, inconsistent log views. Scope: domain
-  name and subject. Lifecycle: append-only public CT logs.
-- **Predicted pathology if thinned.** Silent misissuance easier to
-  hide, detect late, or contest poorly.
-- **Observed.** That is precisely what CT is designed to close.
+**Pressure.** Public-key infrastructure is a distributed-testimony
+system under active adversarial pressure. Certificate authorities issue
+attestations that browsers and users rely on, often without direct local
+verification of the issuing process.
+
+**EpArch primitives.**
+- **S**: explicit issuance standard under CA policy.
+- **V**: provenance of which CA issued which certificate, when, and for
+  what subject.
+- **E**: misissuance and inconsistent log views.
+- **Scope**: particular domain names and certificate subjects.
+- **Lifecycle**: append-only public certificate transparency logs.
+
+**Predicted pathology if primitives weaken.** If issuance provenance is
+not forced into an append-only public lifecycle, silent misissuance
+should be easier to hide, detect later, or contest poorly.
+
+**Observed.** That is exactly how Certificate Transparency is framed.
+The point of CT is not mystical trust. It is making issuance public,
+durable, and auditable so that hidden misissuance becomes harder.
+Without provenance forced into a public lifecycle, the relying party has
+a weaker epistemic object — the certificate may still exist, but the
+system has less ability to diagnose, challenge, or contain misissuance.
+
+---
 
 ### 3. Software supply-chain provenance (SLSA, Sigstore, in-toto)
 
-- **Pressure.** Users rely on artifacts they did not build, from
-  workflows they did not observe, with dependencies they did not inspect.
-- **Primitives.** S: build and release standard. V: verifiable build
-  provenance (where, when, how, by whom). E: tampering, substitution,
-  builder compromise, provenance gaps. Scope: repo, revision, workflow,
-  builder, artifact identity. Lifecycle: signed attestations in
-  transparency logs.
-- **Predicted pathology if thinned.** Consumers lose the ability to
-  distinguish authentic from substituted artifacts; diagnosis becomes
-  coarser after the fact.
-- **Observed.** The mature response across high-assurance software
-  ecosystems is not "trust harder" but stamp-plus-standard-plus-ledger.
+**Pressure.** Software supply chains are distributed-testimony systems
+under adversarial pressure. Users routinely rely on artifacts they did
+not build, produced by workflows they did not observe, with dependencies
+they did not inspect directly.
+
+**EpArch primitives.**
+- **S**: explicit build and release standard.
+- **V**: verifiable provenance of where, when, and how an artifact was
+  produced.
+- **E**: tampering, substitution, compromise of builders, provenance gaps.
+- **Scope**: repository, source revision, build workflow, builder
+  identity, artifact identity.
+- **Lifecycle**: signed attestations and transparency-log publication.
+
+**Predicted pathology if primitives weaken.** If the artifact circulates
+without verifiable provenance and a durable audit trail, consumers
+should be less able to distinguish authentic from substituted or
+tampered artifacts, and later diagnosis should be coarser.
+
+**Observed.** The mature response is not "trust harder." It is: stamp
+the artifact with provenance, make the build standard explicit, keep a
+durable audit trail, and define the consumer threshold for acceptance.
+The control surfaces that high-assurance software ecosystems converge on
+are very close to the primitives EpArch forces.
+
+---
 
 ### 4. Cockpit voice / flight data recorders
 
-- **Pressure.** High-stakes retrospective reconstruction under sparse,
-  noisy, adversarially incomplete evidence.
-- **Primitives.** S: investigation-grade evidence standard. V:
-  recorded cockpit and flight-state data. E: overwritten or
-  unavailable data. Scope: this aircraft, this flight, this window.
-  Lifecycle: recorder retention and post-incident retrieval.
-- **Predicted pathology if thinned.** Later diagnosis becomes strictly
-  worse — not because reality changed, but because the investigation
-  ledger lost state.
-- **Observed.** Overwritten-CVR cases show exactly this: the event is
-  fixed, the degradation is in retained epistemic access to it.
+**Pressure.** Aviation accident investigation is a high-stakes
+retrospective knowledge problem under sparse, noisy, adversarially
+incomplete evidence. Once the event has passed, the system needs durable
+provenance and time-bounded trace retention to reconstruct what happened.
+
+**EpArch primitives.**
+- **S**: standard for what counts as investigation-grade evidence.
+- **V**: provenance of recorded cockpit and flight-state data.
+- **E**: overwritten or unavailable data.
+- **Scope**: this aircraft, this cockpit, this flight, this time window.
+- **Lifecycle**: recorder retention and post-incident retrieval.
+
+**Predicted pathology if primitives weaken.** If the evidentiary
+lifecycle is too short or too fragile, later diagnosis becomes strictly
+worse — not because reality changed, but because the investigation
+ledger lost state.
+
+**Observed.** That is exactly what overwritten CVR cases show. The event
+is fixed. The degradation is in retained epistemic access to it. The
+pathology is not ordinary uncertainty — it is the collapse of the
+retained trace needed for later audit and reconstruction.
+
+---
 
 ### 5. Tacit knowledge transmission (apprenticeship, craft, oral tradition)
 
 This is the strongest attempted disconfirmation and so gets more space.
-A master craftsperson can transmit reliable know-how with no written S
-field, no documented E catalogue, no formal provenance ledger, and no
-explicit scope formalism. Medieval stonemasons built cathedrals. If
-this were a clean success case with no functional analogues of the
-primitives, the framework's scope would be narrower than reliable
-knowledge transmission as such.
 
-Where the objection bends: the system works specifically under high
+A master craftsperson can transmit genuine, reliable know-how across
+generations with no written S field, no documented E catalogue, no
+formal provenance ledger, and no explicit scope-boundary formalism. A
+medieval stonemason learned to build cathedrals. It worked. If this
+were a genuine success case with no functional equivalents of EpArch's
+primitives, it would be the sharpest pressure point in the file.
+
+**The apparent objection.** Maybe tacit craft knowledge works for
+reasons that have nothing to do with S/E/V structure — embodied skill,
+motor learning, and direct perceptual calibration routing around
+provenance, standards, error models, and ledger-like memory altogether.
+If that were right, EpArch would either need to absorb tacit knowledge
+on new terms or admit that its scope is narrower than reliable knowledge
+transmission as such.
+
+**Where the objection bends.** The system works specifically under high
 social bandwidth, repeated direct observation, narrow transmission
-channels, low scaling pressure, and low adversarial pressure inside the
-master–apprentice relation. When those conditions degrade — diaspora,
-discontinuity, commercialization, fake teachers, scale beyond direct
-observation — the architecture predicts V-gaps (who learned from whom),
-E-gaps (failure modes never externalized), scope collapse (local
-boundary breaks when shared context goes), and challenge/repair
-degradation.
+channels, low scaling pressure, and relatively low adversarial pressure
+inside the master–apprentice relation. When those conditions degrade —
+diaspora, discontinuity, commercialization, fake teachers, scale beyond
+direct observation, loss of shared context — the architecture predicts:
 
-One available response, within current scope, is a functional reading:
-the mechanisms are present but implemented neurally and socially rather
-than institutionally. V is the remembered transmission chain; E is
-updated on each demonstrated or described failure; S is the mastery
-threshold enforced by the craft relation; lifecycle is memory plus
-repetition plus correction history; scope is the bounded community.
+- **V-gaps**: who actually learned from whom becomes hard to verify;
+- **E-gaps**: failure modes are not transmitted because they were never
+  retained or externalized;
+- **scope collapse**: the implicit local boundary breaks when the
+  community context that maintained it disappears;
+- **challenge/repair degradation**: correction becomes harder once the
+  master–apprentice loop is weakened.
 
-This is offered as a possible response, not a proof that EpArch fully
-covers tacit knowledge. The case splits cleanly into three positions:
-(1) the functions are already present, implemented neurally/socially
-rather than institutionally — not a counterexample; (2) the functions
-are not present but can be introduced through disciplined practice —
-EpArch identifies an installable configuration; (3) a well-attested
-tacit system remains robust under scale, discontinuity, and adversarial
-pressure while genuinely lacking functional equivalents — the framework
-is wrong on that domain. The case does not permit a fourth "outside the
-scope" position. Which of 1–3 holds is empirical.
+**EpArch response.** One available response, within current scope, is a
+functional reading: the mechanisms may be present, implemented neurally
+and socially rather than institutionally.
 
-### 6. Prestige, credentialing, social-provenance games
+- **V** is the remembered transmission chain: the master taught me
+  this, I saw it done this way, I learned this correction from this
+  person.
+- **E** is updated whenever a failure mode is demonstrated, described,
+  or personally encountered.
+- **S** is the mastery threshold enforced by the craft relation itself:
+  this counts as proper practice, this does not.
+- **Lifecycle** is memory plus repetition plus correction history.
+- **Scope** is the bounded community and its local transmission norms.
 
-- **Pressure.** Social attribution of competence and authority under
-  selection, gaming, and reputation-laundering incentives.
-- **Primitives.** S: the ostensible credential standard. V: who
-  granted the credential and under what process. E: grade inflation,
-  credential theft, fraudulent signatures, laundered prestige. Scope:
-  the issuing institution's remit. Lifecycle: the credential record
-  and its later verifiability.
-- **Predicted pathology if thinned.** When V is opaque and lifecycle
-  is non-auditable, credentials drift from their standard and become
-  social-provenance tokens rather than epistemic objects. The failure
-  is not random: it targets V and S jointly.
-- **Observed.** Credential-fraud cases, accreditation-mill dynamics,
-  and prestige laundering in academic and professional pipelines track
-  the predicted degradation; countermeasures (public accreditation
-  ledgers, credential verification services, revocable digital
-  credentials) reintroduce V and lifecycle discipline.
+When the apprentice makes a mistake, learns from it, and later recalls
+the correction, that is functionally an E-field update stored in a
+biological bank.
+
+This reading is offered as a possible response to the objection — not
+as a proof that EpArch fully covers tacit knowledge. Whether biological
+and social hardware genuinely implements the same functions, or only
+approximates them under favorable conditions, is an empirical question
+in cognitive science and anthropology that the current architecture does
+not settle.
+
+**Why this matters.** The tacit-knowledge case forces a nontrivial
+distinction: either the mechanisms are genuinely absent and some other
+architecture explains reliable transmission, or the same functions are
+implemented on biological and social hardware rather than written
+institutional hardware. The functional reading holds the second open as
+a possibility.
+
+**Result.** The case splits cleanly into three positions:
+
+1. The relevant functions are already present in the tacit system —
+   implemented neurally and socially rather than institutionally. Not a
+   counterexample; a non-institutional implementation.
+2. The functions are not currently present but can be introduced through
+   disciplined practice. EpArch identifies an installable configuration.
+3. Neither holds: a well-attested tacit system remains robust under
+   scale, discontinuity, and adversarial pressure while genuinely
+   lacking functional equivalents. The framework is wrong on that
+   domain.
+
+The first two positions defuse the tacit case. The third converts it
+into a live empirical test. What the tacit discussion does not permit is
+a fourth position — that the case is simply outside EpArch's scope and
+therefore irrelevant. Either the architecture covers it (1 or 2) or it
+fails there (3). Which is true is an empirical question, not a
+philosophical one.
+
+---
+
+### 6. Prestige, credentialing, and social-provenance games
+
+**Pressure.** Distributed testimony under adversarial social conditions,
+where the agent making the claim is also the agent with the most to gain
+from its acceptance. The system must remain reliable under credential
+inflation, provenance fabrication, and selective suppression of
+error-model information. Unlike the engineering cases, there is no
+central ledger and no institution enforcing the primitives. The
+primitives exist as social expectations — which makes them gameable, and
+makes the gaming observable.
+
+**EpArch primitives.**
+- **S**: the implicit acceptance criterion a claim-consumer applies —
+  what counts as sufficient ground for taking a claim on board.
+- **V**: who said it, under what banner, trained by whom, affiliated
+  with what institution, with what track record.
+- **E**: the visible record of past failures, retractions, corrections,
+  and disconfirmations associated with the claimant.
+- **Scope**: the domain within which the claimant's authority actually
+  applies.
+- **Lifecycle**: the durable record — citations, corrections,
+  institutional affiliation history — that allows later audit and
+  challenge.
+
+Most consumers evaluate the social header before evaluating the claim
+itself: who said it, under what banner, with what apparent track record.
+That is provenance doing epistemic work.
+
+**Predicted pathology if primitives are gamed.** If the primitives are
+load-bearing, adversarial agents should concentrate effort on gaming
+exactly those fields. The predicted attack surface is not random — it
+should cluster around V, E, S, scope, and lifecycle, not around
+irrelevant properties of the claim.
+
+**The attack surface in practice.** This is a structural observation
+about where adversarial effort concentrates when the primitives are
+social expectations rather than enforced institutional controls:
+
+- **V-inflation**: credential laundering, name-dropping, prestige
+  borrowing, "worked with X," "published at Y," "trained by Z"
+- **E-suppression**: hiding error rates, omitting negative results,
+  curating feeds, keeping the visible failure model artificially light
+- **S-arbitrage**: getting claims accepted under a lenient standard
+  through status, affiliation, audience selection, or rhetorical framing
+- **trust-bridge borrowing**: using the right institution, recommender,
+  or platform to cross a threshold more cheaply than the raw work would
+  justify
+- **scope laundering**: passing niche credibility off as field-wide
+  authority
+- **τ / lifecycle gaming**: relying on stale prestige, burying
+  retractions, outrunning record updates
+
+The attack patterns are not random, and — crucially — they are not just
+generic status-seeking. Generic social competition would cluster around
+visibility, affect, volume, and dominance cues. What we see instead is
+sustained effort targeting provenance fields, error-model fields, and
+scope fields *as distinct targets*, in ways that map onto the
+architecture's separate primitives rather than onto a single
+undifferentiated "credibility" surface. That specificity is what the
+structural inference rests on.
+
+**EpArch reading.** This case is different in kind from the engineering
+cases. It is not a system that was designed to implement the primitives.
+It is a system where the primitives exist only as social expectations —
+and where adversarial behavior spontaneously reveals which fields are
+load-bearing by showing where structured effort concentrates. The
+argument is not "people game credibility, therefore credibility is
+load-bearing." The argument is that the gaming decomposes into
+recognizably distinct operations — each targeting a separate primitive
+— in a way that is predicted by the architecture but not by generic
+social-dominance accounts.
 
 ---
 
 ## Interim conclusion
 
-Across these six domains the pattern is consistent. Systems that
-preserve separation of S / E / V, explicit provenance, explicit scope,
-explicit standards, and a ledger-style lifecycle are more robust against
-the failure families EpArch names. Systems that thin those surfaces —
-by workaround, by design cut, or by social drift — regress toward the
-pathologies the theory predicts. This is convergence under pressure,
-not proof.
+Across very different domains, mature systems under pressure converge on
+the same pattern: explicit or functionally real standard; explicit or
+functionally real provenance; explicit or functionally real
+failure-modeling; explicit or functionally real scope; explicit or
+functionally real lifecycle / audit trail.
+
+When those primitives are weakened, bypassed, overwritten, or socially
+degraded, diagnosis gets worse in the exact ways EpArch predicts:
+
+- harder localization
+- hidden misissuance
+- wrong-agent reliance
+- unverifiable transfer
+- degraded post hoc reconstruction
+- loss of correction memory
+- breakdown of trusted transmission chains
+
+That is not a proof that EpArch is the final architecture of knowledge.
+It is strong corroborative evidence that EpArch is tracking real
+structural pressures that high-stakes systems repeatedly rediscover.
 
 ---
 
 ## Scope condition for genuine counterexamples
 
-A case only counts against EpArch if it meets all four conditions:
+Most weak counterexamples fail because they are not actually cases of
+the target phenomenon. A case study is not a real stress test for EpArch
+unless the target system has all of the following:
 
-1. The system is a knowledge-producing or knowledge-sustaining system
-   under non-trivial adversarial or distributed-testimony pressure.
-2. It demonstrably lacks functional equivalents of S, E, V, scope, and
-   lifecycle — not merely their institutional form.
-3. It remains robust against the failure families EpArch predicts,
-   including under scale, discontinuity, and adversarial pressure.
-4. Its robustness is not an artifact of unreported external scaffolding
-   (co-located expert, narrow bandwidth, etc.) that itself carries the
-   missing primitives.
+1. **Knowledge management rather than mere expression.**
+2. **Distributed testimony, delegation, or transmissible know-how.**
+3. **Adversarial pressure, contestability, or meaningful failure-cost.**
+4. **A need for later audit, challenge, correction, or recovery.**
 
-A case that fails (2) by implementing the primitives in
-non-institutional form is a non-institutional implementation, not a
-counterexample. A case that satisfies (1)–(4) would be a live empirical
-problem for the framework.
+If one of those is missing, the counterexample usually collapses into
+something trivial: a casual conversation, a personal hunch, a one-user
+toy system, a domain where nothing important is exported or relied on by
+others, or a low-pressure setting where memory loss or provenance
+ambiguity carries little cost. Those do not pressure the EpArch claim.
+They show that not every human practice needs the full externalized
+bank. That was never the thesis.
 
 ---
 
 ## What would count as a serious disconfirmation attempt
 
-- A longitudinal study where a mature system deliberately removes one
-  of the primitives and the predicted failure family does not appear.
-- A well-attested knowledge-sustaining system satisfying the four scope
-  conditions above, showing long-run robustness without functional
-  analogues of the primitives.
-- A domain where introducing the primitives measurably worsens
-  reliability rather than improving it — the inverse of the BCMA
-  intervention.
+### Candidate form A — Absence beats presence
 
-Anecdote, selection-biased convergence, and "my favorite institution
-happens to resemble EpArch" are not disconfirmation attempts; but they
-are not corroboration either, and the cases above are included only
-because each presents a specific, named pressure and a specific, named
-failure mode.
+Find a real institution or device operating under adversarial pressure
+or distributed testimony where provenance tracking is weak or absent,
+scope boundaries are loose, standards are implicit rather than explicit,
+and lifecycle or audit structure is minimal — and yet the predicted
+pathologies do not appear, or the system systematically outperforms
+comparable systems that preserve those primitives.
+
+### Candidate form B — Presence does not matter
+
+Find a high-stakes domain where the full EpArch-like stack exists, but
+removing one of the forced primitives does not make diagnosis,
+contestation, transfer, or recovery worse in any stable way.
+
+### Candidate form C — Wrong diagnosis
+
+Find a domain that clearly instantiates the pressure profile EpArch is
+about, but where the architecture's predicted pathology diagnosis is
+plainly wrong — not merely disputable in rhetoric, but wrong in
+structure.
+
+### Candidate form D — Tacit success with no functional equivalents
+
+Find a genuine tacit-knowledge system that remains robust under scale,
+discontinuity, charlatan pressure, and transfer beyond direct
+observation, while still lacking functional equivalents of provenance
+tracking, correction memory, accepted mastery standards, bounded
+transmission scope, and lifecycle update after failure. This is the
+strongest live disconfirmation target identified so far.
+
+### Stronger disconfirmation targets
+
+If a genuine disconfirmation section is developed, it should look at:
+
+- tacit craft traditions under diaspora and scaling stress;
+- informal but high-performing incident-response cultures;
+- safety-critical environments with unusually thin audit trails that
+  still outperform thicker ones;
+- scientific subdomains where lifecycle traceability is surprisingly
+  weak but error containment is still excellent;
+- reputation-heavy systems that seem to work with minimal explicit
+  provenance.
+
+The burden is to show that the missing EpArch primitive is not merely
+absent in appearance, but absent in the function EpArch cares about.
+That bar is higher than the informal appearance of these domains
+suggests.
 
 ---
 
 ## Recommended use in the repo
 
-Cite this file as corroboration, not as proof. The forcing direction
-("these primitives are necessary under the stated pressures") lives in
-[../reference/THEOREMS.md](../reference/THEOREMS.md) families F7 and
-F16 and in the proof route in
-[../PROOF-STRUCTURE.md](../PROOF-STRUCTURE.md). The formal case
-bindings for classical puzzles live in family F5 of the theorem
-registry. This file is the empirical-correspondence / stress-test
-surface, and nothing else.
+This file should be treated as a cross-domain corroboration document,
+not as a proof appendix and not as rhetorical padding. Its job is to
+answer a specific challenge: why think the formal architecture maps onto
+anything real? The answer is that independent high-stakes systems keep
+reinventing the same primitives under the same pressures, and the
+absence or degradation of those primitives keeps recreating the same
+families of failure.
+
+The tacit-knowledge case is the sharpest pressure point in the file. It
+does not undermine the corroboration from the other cases, but it does
+mark the honest boundary of what the current architecture explicitly
+covers — and the boundary where extension work would begin.
+
+The forcing direction ("these primitives are necessary under the stated
+pressures") lives in [../reference/THEOREMS.md](../reference/THEOREMS.md)
+families F7 and F16 and in [../PROOF-STRUCTURE.md](../PROOF-STRUCTURE.md).
+The formal case bindings for classical puzzles live in family F5 of the
+theorem registry.
 
 ---
 
