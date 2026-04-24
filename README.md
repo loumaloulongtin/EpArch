@@ -106,3 +106,8 @@ worked example.
 ## References
 
 > Longtin, L.-M. (2026). *Epistemic Architecture: A Constraints-and-Objectives Framework for Bounded Agents Under Adversarial Pressure.* PhilArchive: <https://philarchive.org/rec/LONEAA-7>
+>
+> *Working draft. The repository has evolved significantly since the version
+> reflected in the paper (see pinned commit). Some terminology and structure
+> may differ; the repository is the authoritative source for the current
+> formalization.*
