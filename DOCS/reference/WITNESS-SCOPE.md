@@ -38,7 +38,7 @@ Representative witnessed properties:
 | Structural forcing holds | `concrete_structurally_forced` |
 | Withdrawal-gate checks fire on the concrete model | `concrete_withdrawal_requires_gates` |
 | Headerless states are undiagnosable | `concrete_headerless_undiagnosable` |
-| Bounded-verification depth | `DepthClaim` (`Concrete/VerificationDepth.lean`) |
+| Bounded-verification depth | `depth_claim_provable`, `bounded_verify_incomplete` (`Concrete/VerificationDepth.lean`) |
 
 ---
 
