@@ -1,5 +1,7 @@
-{"version": 7,
- "packagesDir": ".lake/packages",
- "packages": [],
- "name": "EpArch",
- "lakeDir": ".lake"}
+{
+  "name": "EpArch",
+  "version": 7,
+  "lakeDir": ".lake",
+  "packagesDir": ".lake/packages",
+  "packages": []
+}
