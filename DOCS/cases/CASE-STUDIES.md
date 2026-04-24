@@ -236,3 +236,18 @@ F16 and in the proof route in
 bindings for classical puzzles live in family F5 of the theorem
 registry. This file is the empirical-correspondence / stress-test
 surface, and nothing else.
+
+---
+
+## Sources
+
+1. PSNet / AHRQ, Medication Administration Errors. <https://psnet.ahrq.gov/primer/medication-administration-errors>
+2. AHRQ Digital Healthcare Research, Bar-coded Medication Administration. <https://digital.ahrq.gov/bar-coded-medication-administration>
+3. Poon EG et al. Effect of bar-code technology on the safety of medication administration. *N Engl J Med.* 2010;362(18):1698–707. PMID 20445181. <https://pubmed.ncbi.nlm.nih.gov/20445181/>
+4. Truitt E et al. Effect of the Implementation of Barcode Technology and an Electronic Medication Administration Record on Adverse Drug Events. *Hosp Pharm.* 2016;51(6):474–83. PMID 27354749. <https://pubmed.ncbi.nlm.nih.gov/27354749/>
+5. Morriss FH Jr et al. Effectiveness of a barcode medication administration system in reducing preventable adverse drug events in a neonatal intensive care unit: a prospective cohort study. *J Pediatr.* 2009;154(3):363–8. PMID 18823912. <https://pubmed.ncbi.nlm.nih.gov/18823912/>
+6. Bonkowski J et al. Effect of barcode-assisted medication administration on emergency department medication errors. *Acad Emerg Med.* 2013;20(8):801–6. PMID 24033623. <https://pubmed.ncbi.nlm.nih.gov/24033623/>
+7. IETF RFC 9162, Certificate Transparency Version 2.0. <https://www.ietf.org/rfc/rfc9162.html>
+8. SLSA, Provenance v1.2. <https://slsa.dev/spec/v1.2/provenance>
+9. NTSB, Cockpit Voice Recorders and Flight Data Recorders. <https://www.ntsb.gov/news/Pages/cvr_fdr.aspx>
+10. NTSB, Press Release on CVR retention (February 2024). <https://www.ntsb.gov/news/press-releases/Pages/NR20240213.aspx>
