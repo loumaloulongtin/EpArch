@@ -234,9 +234,10 @@ forcing chain runs through these; see
   headline forcing theorems in `WorldBridges`. Remove `Scenarios` and
   `WorldBridges` does not build.
 - **`GroundedEvidence` is kernel.** Imported directly by `Minimality`;
-  its eight `GroundedXStrict` types are the fields of
-  `Minimality.GroundedBehavior`, the typed-evidence interface the
-  impossibility theorems consume.
+  it exports paired `GroundedX` / `GroundedXStrict` types for each of
+  the eight forcing dimensions. `Minimality.GroundedBehavior` holds the
+  plain variants as fields; `WorkingSystem` holds the strict variants as
+  `Option` fields. The impossibility theorems consume both.
 - **`Meta/ClusterRegistry` is bookkeeping.** Routing/display tables for
   cluster tags; consumed by `Meta/Config` but not itself a meta-theorem.
 - **`PatternExamples` is the only pure pedagogy file.** The case studies
