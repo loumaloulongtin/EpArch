@@ -67,9 +67,9 @@ Administration Record) trace rather than recalled from memory.
 
 **Observed change**: AHRQ (Agency for Healthcare Research and Quality)
 data shows a 41% reduction in non-timing medication errors and a 51%
-reduction in potential adverse drug events under BCMA (Barcode
-Medication Administration). Workaround studies show a threefold higher medication error
-risk when the barcode path is circumvented.
+reduction in potential adverse drug events under BCMA. Workaround
+studies show a threefold higher medication error risk when the barcode
+path is circumvented.
 
 **EpArch reading**: this is not just a system that resembles the
 architecture. It is a system that improved when an EpArch-like primitive
