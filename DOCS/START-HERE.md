@@ -51,26 +51,18 @@ natural source for the bridge data, but they are not formal preconditions.
 
 ## Main proof route
 
-The chain runs `Minimality.lean` (per-dimension semantic obstructions) →
-`Scenarios.lean` (`Represents*` embeddings) → `GroundedEvidence.lean`
-(`GroundedXStrict` consequences) → `Convergence.lean` (`StructurallyForced`,
-`convergence_structural`) → `WorldBridges.lean`
-(`bundled_structure_forces_bank_primitives`).
-
-Read it from the top down, not the bottom up. Start at the capstone in
-[`WorldBridges.lean`](../EpArch/WorldBridges.lean), then `convergence_structural`
-in [`Convergence.lean`](../EpArch/Convergence.lean), and only then descend into
-`Scenarios.lean`, `GroundedEvidence.lean`, and the per-dimension obstructions
-in `Minimality.lean`. The lower layers carry the mathematical content but
-front-load definitional scaffolding that is hard to read in isolation.
-
-The walkthrough lives in [PROOF-STRUCTURE.md](PROOF-STRUCTURE.md).
+The capstone is `bundled_structure_forces_bank_primitives` in
+[`WorldBridges.lean`](../EpArch/WorldBridges.lean). The full route through
+`Minimality` → `Scenarios` → `GroundedEvidence` → `Convergence` →
+`WorldBridges`, the recommended top-down reading order, and the
+per-dimension walkthrough live in
+[PROOF-STRUCTURE.md](PROOF-STRUCTURE.md).
 
 ## Three reading paths
 
 - **"I want the headline claim."** Read `bundled_structure_forces_bank_primitives`
-  in [`WorldBridges.lean`](../EpArch/WorldBridges.lean), then this file's
-  *Main proof route* section.
+  in [`WorldBridges.lean`](../EpArch/WorldBridges.lean), then
+  [PROOF-STRUCTURE.md](PROOF-STRUCTURE.md).
 - **"I want the operational model."** Read [architecture/SEMANTICS.md](architecture/SEMANTICS.md),
   then `Theorems/Withdrawal.lean`.
 - **"I want the meta / modularity side."** Read [architecture/MODULARITY.md](architecture/MODULARITY.md),
