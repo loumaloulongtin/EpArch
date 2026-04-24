@@ -1,7 +1,7 @@
 # File Inventory
 
-Complete inventory of every `.lean` file under `lean-formalization/`, with a
-role label and a route status. This is the file-role map; for the reading
+Complete inventory of every `.lean` file in the repository build surface,
+plus `lakefile.lean`, with a role label and a route status. This is the file-role map; for the reading
 order see [START-HERE.md](../START-HERE.md), and for the proof route see
 [PROOF-STRUCTURE.md](../PROOF-STRUCTURE.md).
 
@@ -46,7 +46,7 @@ headline forcing chain):
 
 Every core-route file is kernel, but not every kernel file is on the route.
 
-Counts: 67 `.lean` files (66 modules + `lakefile.lean`).
+Counts at this commit: 67 `.lean` files (66 modules + `lakefile.lean`).
 
 ---
 

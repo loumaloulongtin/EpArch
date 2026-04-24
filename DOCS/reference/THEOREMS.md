@@ -41,10 +41,10 @@ requires prior challenge and re-enters validation.
 
 ---
 
-## F2. Competition gate (revision ⇔ self-correction)
+## F2. Competition gate (self-correction requires revision)
 
-**Claim.** Self-correction is exactly the capability to revise; a domain that
-prohibits revision admits no demonstrating-self-correction trace.
+**Claim.** Self-correction requires revision; a domain that prohibits revision
+admits no demonstrating-self-correction trace.
 
 **Primary files.**
 [Semantics/StepSemantics.lean](../../EpArch/Semantics/StepSemantics.lean),
@@ -67,7 +67,7 @@ have zero observable fields and cannot target field-specific repair.
 [Theorems/Strip.lean](../../EpArch/Theorems/Strip.lean),
 [Theorems/Diagnosability.lean](../../EpArch/Theorems/Diagnosability.lean).
 
-**Entry theorem.** `strip_reduces_diagnosability` — strip lowers diagnosability monotonically.
+**Entry theorem.** `strip_reduces_diagnosability` (`Theorems/Diagnosability.lean`) — strip lowers diagnosability monotonically.
 
 **Supporting.** `no_strip_left_inverse`, `import_cannot_reconstruct`,
 `different_headers_same_strip`, `stripped_no_field_repair`,
@@ -201,7 +201,7 @@ relatively minimal.
 
 ## F9. Adversarial model and W ⇒ mechanism obligations
 
-**Claim.** Attack vocabulary is type-level (`AdversarialBase`); concrete
+**Claim.** Attack vocabulary is type-level and lives in `Adversarial/Base.lean`; concrete
 attacks are blocked at gates; `W_*` world bundles convert former mechanism
 axioms into conditional obligation theorems.
 
@@ -396,7 +396,7 @@ required.
 ## F18. Modularity meta-theorem and configurable certification
 
 **Claim.** Every subset of the eight constraints yields a partial
-well-formedness biconditional; `EpArchConfig` selects one of 32 theorem
+well-formedness projection theorem; `EpArchConfig` selects one of 32 theorem
 clusters and the certification engine returns a machine-checked
 `CertifiedProjection` for each enabled cluster.
 

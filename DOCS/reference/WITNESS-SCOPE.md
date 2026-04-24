@@ -14,7 +14,7 @@ things:
 
 1. **Satisfiability** — the property is not contradictory.
 2. **Realizability** — at least one concrete construction satisfies it.
-3. **Non-vacuity** — the corresponding theorem is not vacuously true.
+3. **Non-vacuity** — at least one concrete instantiation satisfies the corresponding theorem's hypotheses.
 
 It does not buy uniqueness, optimality, or empirical correspondence.
 
@@ -46,9 +46,10 @@ Representative witnessed properties:
 
 `WitnessCtx` is a concrete `WorldCtx` and `holds_W_lies_possible`,
 `holds_W_bounded_verification`, `holds_W_partial_observability` discharge the
-three world-bundle antecedents. Together with the concrete witness layer this
-closes `existence_under_constraints_structural` (`Feasibility.lean`) and
-`kernel_world_forces_bank_primitives` (`WorldBridges.lean`).
+three world-bundle antecedents. These world witnesses close the world-bundle
+satisfiability side; the concrete witness layer and `Feasibility.lean` package
+the broader existence results such as `existence_under_constraints_structural`
+and `kernel_world_forces_bank_primitives` (`WorldBridges.lean`).
 
 This is satisfiability of the world-side antecedents — not a claim that any
 particular real-world deployment satisfies them. See

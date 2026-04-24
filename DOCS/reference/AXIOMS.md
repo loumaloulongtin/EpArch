@@ -10,9 +10,9 @@ core architectural claim.
 ## The `Main.lean` import surface
 
 `lake build` (driven by `Main.lean`) is the single build target for the core
-formalization. Every file imported transitively from `Main.lean` introduces
-only `theorem`, `def`, `structure`, `inductive`, and `opaque` declarations.
-There are **no `axiom` declarations** in this surface.
+formalization. Every file imported transitively from `Main.lean` introduces ordinary Lean
+declarations such as `theorem`, `def`, `abbrev`, `structure`, `inductive`,
+and `opaque`; no `axiom` declarations occur in this surface.
 
 This is the trusted-base boundary for the core formalization. If a result is
 cited as "proved", its proof sits inside this import surface.
