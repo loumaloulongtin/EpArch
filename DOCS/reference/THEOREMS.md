@@ -214,8 +214,9 @@ axioms into conditional obligation theorems.
 **Entry theorems.**
 - `concrete_attack_succeeds`, `ddos_V_channel_collapse_blocks_withdrawal`
   (`Adversarial/Concrete.lean`) — gates fire on concrete instances.
-- `lie_possible_of_W`, `bounded_audit_fails`, `cost_asymmetry_of_W`,
-  `partial_obs_no_omniscience` (`WorldCtx.lean`) — world-bundle obligations.
+- `WorldCtx.lie_possible_of_W`, `WorldCtx.bounded_audit_fails`,
+  `WorldCtx.cost_asymmetry_of_W`, `WorldCtx.partial_obs_no_omniscience`
+  (`WorldCtx.lean`) — world-bundle obligations.
 
 **Supporting.** `τ_compressed_deposit_blocked`,
 `V_spoof_deposit_blocked`, `overwhelmed_channel_collapses_V`,
@@ -385,7 +386,8 @@ required.
 **Supporting.** `theory_floor_satisfiable`, `theory_floor_falsifiable`,
 `theory_floor_not_fully_authorizable`,
 `witness_not_fully_authorizable`,
-`credit_safe_under_extension`, `trivial_has_no_lies`.
+`credit_safe_under_extension` (def alias for `safe_extension_preserves`),
+`trivial_has_no_lies`.
 
 **Vocabulary.** Allowed: "not fully authorizable from obs",
 "underdetermined", "credit required". Avoid: "never provable true",
