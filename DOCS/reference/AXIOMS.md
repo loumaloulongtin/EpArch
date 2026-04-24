@@ -47,17 +47,80 @@ declarations: they introduce a name with a type but no body, and any concrete
 inhabitant must be supplied by an instantiation. Theorems that use them state
 the dependence in their hypotheses.
 
-The opaque primitives in the core surface (representative, not exhaustive):
+Complete opaque inventory (26 declarations, 6 files):
 
-| Primitive | File | Role |
+**`Basic.lean`**
+
+| Name | Type | Role |
 |---|---|---|
-| `agentTraction` | `Basic.lean` | Agent's private traction assignment (Claim → LadderStage) |
-| `ignores_bank_signal` | `Basic.lean` | Whether the agent's review channel is closed |
-| `header_preserved` | `Header.lean` | Deposit header intact (vs stripped) |
-| `vindication_evidence` | `Commitments.lean` | Surface-relative vindication witness for redeemability |
-| `pushback` | `Commitments.lean` | Agent-level contestation primitive |
-| `exportDep` / `TrustBridge` / `Revalidate` / `RepairAction` | `Bank.lean` | Cross-bubble and lifecycle hooks |
-| Adversarial primitives | `Adversarial/Base.lean` | Attack-channel, DDoS, countermeasure, and cost primitives |
+| `agentTraction` | `Agent → (Claim → LadderStage)` | Agent's private traction function; different agent types implement it differently without affecting any revision-gate theorem |
+| `ignores_bank_signal` | `Agent → Claim → Prop` | Agent's review channel is closed for a claim; separate from `certainty_L` — reaching Certainty does not close the channel |
+
+**`Bank.lean`**
+
+| Name | Type | Role |
+|---|---|---|
+| `exportDep` | `Bubble → Bubble → Deposit … → Prop` | Deposit crosses from bubble B1 to B2 (testimony / trust-boundary transfer) |
+| `TrustBridge` | `Bubble → Bubble → Prop` | B1 and B2 have an established trust relationship permitting export without full revalidation |
+| `Revalidate` | `Bubble → Bubble → Deposit … → Prop` | B2 re-runs its acceptance protocol on a deposit received from B1 |
+| `RepairAction` | `Type u` | An action that modifies a specific field of a deposit; `repair` applies it and sets status to `Candidate` |
+
+**`Header.lean`**
+
+| Name | Type | Role |
+|---|---|---|
+| `header_preserved` | `Deposit P S E V → Prop` | Deposit header is intact; `header_stripped` is defined as `¬header_preserved`, making mutual exclusion a theorem |
+
+**`Commitments.lean`**
+
+| Name | Type | Role |
+|---|---|---|
+| `vindication_evidence` | `Deposit … → ConstraintSurface → Prop` | Surface-relative vindication witness; domain instantiators discharge it by axiom or by building a concrete non-opaque witness (see `VerificationPath.lean`) |
+| `pushback` | `Deposit … → Prop` | Agent-level contestation primitive; used in the repair-loop (Commitment 6) family |
+
+**`ConditionalPredictions.lean`**
+
+| Name | Type | Role |
+|---|---|---|
+| `import_gated` | `Agent → Bubble → Claim → Prop` | Bubble's admission policy blocks disconfirming deposits from outside approved provenance chains; the import-side trust boundary |
+
+**`Adversarial/Base.lean`** (16 opaques)
+
+*Attack primitives — deposit/agent level*
+
+| Name | Type | Role |
+|---|---|---|
+| `V_spoof` | `Deposit … → Prop` | Attacker injects fake provenance header |
+| `amplify_cues` | `Deposit … → Prop` | Attacker amplifies cheap-to-process cues as substitutes for expensive checks |
+| `consultation_suppressed` | `Agent → Prop` | Attacker blocks victim's access to validators |
+| `expertise_gap` | `Agent → Prop` | Victim cannot distinguish surface checks from deep checks |
+
+*Audit-channel / DDoS primitives*
+
+| Name | Type | Role |
+|---|---|---|
+| `AuditChannel` | `Type` | The verification pathway type; `channel_capacity` and `attack_volume` are defined over it |
+| `channel_capacity` | `AuditChannel → Nat` | How much verification can be processed on a channel |
+| `attack_volume` | `AuditChannel → Nat` | How much the attacker is pushing through a channel |
+| `ladder_overloaded` | `Agent → Prop` | Traction commits before V can be checked (high-salience flooding) |
+| `V_channel_exhausted` | `Agent → Prop` | Provenance checking too costly or slow to keep pace with incoming claims |
+| `E_field_poisoned` | `Agent → Prop` | Noise injected so error signals become ubiquitous |
+| `denial_triggered` | `Agent → Prop` | Generalized distrust induced, blocking all external import |
+
+*Boundary / countermeasure primitives*
+
+| Name | Type | Role |
+|---|---|---|
+| `trust_centralized` | `Agent → Prop` | Agent delegates to a single "trusted" authority (single-point-of-failure structure) |
+| `trust_bridge_on_hand` | `Agent → Prop` | Victim has pre-established expertise access (attack-failure condition) |
+| `E_includes_threat` | `Agent → Prop` | Victim models this attack pattern in its error field (attack-failure condition) |
+
+*Cost scalars*
+
+| Name | Type | Role |
+|---|---|---|
+| `export_cost` | `Nat` | Attacker's per-deposit export cost; used in cost-asymmetry theorems |
+| `import_defense_cost` | `Nat` | Defender's per-deposit import-defense cost; paired with `export_cost` |
 
 The following names are **`def`s, not opaques** — they are computed from other
 data and have inspectable bodies:
