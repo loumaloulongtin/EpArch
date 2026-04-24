@@ -16,6 +16,9 @@ The primitives at stake:
 - explicit **standards / thresholds** for acceptance;
 - a **ledger-style lifecycle** rather than free-floating memory or assertion.
 
+S, E, V, and other EpArch-specific terms are defined in the
+[START-HERE.md glossary](../START-HERE.md).
+
 The empirical wager: if EpArch is tracking something real, systems that
 preserve these primitives should be more robust against the failure
 families the theory identifies, and removing the primitives should
@@ -59,12 +62,13 @@ label reading, and informal verification.
 to an explicit administration record. The nurse scans the patient
 wristband, scans the medication, and the system matches both against the
 active order before completing the administration event. Each
-administration is logged in a durable eMAR trace rather than recalled
-from memory.
+administration is logged in a durable eMAR (electronic Medication
+Administration Record) trace rather than recalled from memory.
 
-**Observed change**: AHRQ data shows a 41% reduction in non-timing
-medication errors and a 51% reduction in potential adverse drug events
-under BCMA. Workaround studies show a threefold higher medication error
+**Observed change**: AHRQ (Agency for Healthcare Research and Quality)
+data shows a 41% reduction in non-timing medication errors and a 51%
+reduction in potential adverse drug events under BCMA (Barcode
+Medication Administration). Workaround studies show a threefold higher medication error
 risk when the barcode path is circumvented.
 
 **EpArch reading**: this is not just a system that resembles the
@@ -119,7 +123,7 @@ attestations that browsers and users rely on, often without direct local
 verification of the issuing process.
 
 **EpArch primitives.**
-- **S**: explicit issuance standard under CA policy.
+- **S**: explicit issuance standard under CA (Certificate Authority) policy.
 - **V**: provenance of which CA issued which certificate, when, and for
   what subject.
 - **E**: misissuance and inconsistent log views.
@@ -147,7 +151,7 @@ not build, produced by workflows they did not observe, with dependencies
 they did not inspect directly.
 
 **EpArch primitives.**
-- **S**: explicit build and release standard.
+- **S**: explicit build and release standard (SLSA formalizes tiered levels for this).
 - **V**: verifiable provenance of where, when, and how an artifact was
   produced.
 - **E**: tampering, substitution, compromise of builders, provenance gaps.
@@ -187,7 +191,7 @@ lifecycle is too short or too fragile, later diagnosis becomes strictly
 worse — not because reality changed, but because the investigation
 ledger lost state.
 
-**Observed.** That is exactly what overwritten CVR cases show. The event
+**Observed.** That is exactly what overwritten CVR (Cockpit Voice Recorder) cases show. The event
 is fixed. The degradation is in retained epistemic access to it. The
 pathology is not ordinary uncertainty — it is the collapse of the
 retained trace needed for later audit and reconstruction.
@@ -330,7 +334,7 @@ social expectations rather than enforced institutional controls:
   justify
 - **scope laundering**: passing niche credibility off as field-wide
   authority
-- **τ / lifecycle gaming**: relying on stale prestige, burying
+- **τ / lifecycle gaming** (τ = EpArch temporal validity, F4): relying on stale prestige, burying
   retractions, outrunning record updates
 
 The attack patterns are not random, and — crucially — they are not just
