@@ -116,8 +116,9 @@ because its realization varies across domains, across subsystems within
 a domain, and across deposits within the same system. Other domains
 supply their own analogous statement; this is the Lean domain's.
 
-`lean_kernel_path_is_redeemable` is the only theorem in this subtree
-that sits behind the axiom. Everything else listed above — including
+`lean_kernel_path_is_redeemable` and the downstream
+`redeemable_deposits_exist` (which calls it directly) both sit behind
+the axiom. Everything else listed above — including
 `lean_kernel_satisfies_bundles`, `lean_kernel_no_tradeoff`,
 `lean_kernel_existence`, the odometer family, and Part A's
 `lean_redeemable_deposits_exist` — is axiom-free.
