@@ -399,7 +399,7 @@ def explainConfig (cfg : EpArchConfig) : List ClusterTag :=
 
 /-- Human-readable list of enabled cluster tags for `cfg`.
     Each tag is shown by its constructor name (from `Repr ClusterTag`).
-    Full descriptions of each cluster live in `DOCS/MODULARITY.md`. -/
+    Full descriptions of each cluster live in `DOCS/architecture/MODULARITY.md`. -/
 def showConfig (cfg : EpArchConfig) : List String :=
   (explainConfig cfg).map reprStr
 

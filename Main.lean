@@ -133,7 +133,7 @@ commitments are proved standalone theorems.  C1 (Traction/Authorization Split) i
 One named axiom (`lean_kernel_verification_path`) exists in
 `EpArch/Meta/LeanKernel/VerificationPath.lean` — a worked domain-instantiation
 example not imported here and outside the core architectural claim.
-See DOCS/AXIOMS.md for the full account.
+See DOCS/reference/AXIOMS.md for the full account.
 -/
 
 import EpArch.Basic
