@@ -2,7 +2,7 @@ import Lake
 open Lake DSL
 
 package «EpArch» where
-  -- add package configuration options here
+  -- Build target: Main.lean (core); MainPaper.lean (paper-facing surface)
 
 lean_lib «EpArch» where
   -- add library configuration options here

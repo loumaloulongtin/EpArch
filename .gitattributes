@@ -1,4 +1,4 @@
-# Normalize line endings to LF in the repo
+# Line-ending policy for the EpArch repository
 * text=auto eol=lf
 
 # Lean source files — always LF
