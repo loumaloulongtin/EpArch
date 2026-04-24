@@ -481,6 +481,13 @@ theorem registry.
 
 ---
 
+## Go next
+
+- [../START-HERE.md](../START-HERE.md) — terminology and reading routes for
+  the rest of the documentation.
+
+---
+
 ## Sources
 
 1. PSNet / AHRQ, Medication Administration Errors. <https://psnet.ahrq.gov/primer/medication-administration-errors>
