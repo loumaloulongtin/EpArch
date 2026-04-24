@@ -41,7 +41,7 @@ The exact boundary lives in [DOCS/reference/AXIOMS.md](DOCS/reference/AXIOMS.md)
 ## Repository shape
 
 ```
-lean-formalization/
+EpArch/
   Main.lean              build entry point — defines the core import surface
   EpArch/                kernel, theorem library, witnesses, meta layer
     Basic, Header, Bank, Commitments, ...
@@ -91,8 +91,8 @@ worked example.
 
 - The forcing claim is conditional on the stated constraint, goal, and
   bridge data. EpArch does *not* assert that the real world satisfies the
-  W-bundles; it asserts that any system genuinely operating under those
-  conditions will satisfy them.
+  W-bundles; W-bundles are explicit assumptions/witnessed contexts used by
+  the relevant theorems.
 - The bundled-existence theorems witness inhabitation. They do *not* assert
   that the concrete realization is unique or canonical — other realizations
   satisfying the same signatures are admissible.
