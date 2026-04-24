@@ -14,9 +14,8 @@ formalization. Every file imported transitively from `Main.lean` introduces
 only `theorem`, `def`, `structure`, `inductive`, and `opaque` declarations.
 There are **no `axiom` declarations** in this surface.
 
-This is the boundary that every other claim in the docs implicitly relies on.
-If a result is cited as "proved", its proof (and every lemma it depends on)
-sits inside this import-surface.
+This is the trusted-base boundary for the core formalization. If a result is
+cited as "proved", its proof sits inside this import surface.
 
 ---
 
@@ -34,9 +33,8 @@ witness for `redeemable`. Other domains (RLHF, peer challenge, institutional
 assessment, observation over time) would each name their own analogous axiom
 or build a non-axiomatic witness.
 
-No file in the `Main.lean` transitive import closure imports
-`VerificationPath.lean`. Importing it explicitly in a downstream client
-widens that client's trusted base; the core build does not.
+`VerificationPath.lean` is not in the `Main.lean` transitive import closure;
+downstream clients may import it explicitly as an optional worked instance.
 
 ---
 
