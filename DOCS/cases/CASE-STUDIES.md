@@ -14,7 +14,7 @@ The primitives at stake:
 - explicit or functionally implemented **provenance tracking**;
 - explicit or functionally implemented **scope boundaries**;
 - explicit **standards / thresholds** for acceptance;
-- a **ledger-style lifecycle** rather than free-floating memory or assertion.
+- a **bank / ledger substrate with explicit lifecycle status**, rather than free-floating memory or assertion.
 
 S, E, V, and other EpArch-specific terms are defined in the
 [START-HERE.md glossary](../START-HERE.md).
@@ -53,7 +53,7 @@ changes the shape of the claim from static resemblance to observed
 improvement after adding the primitive. That is much harder to dismiss
 as selection bias.
 
-### BCMA as intervention
+### Barcode Medication Administration (BCMA) as intervention
 
 **Before**: medication administration relying on nurse memory, manual
 label reading, and informal verification.
