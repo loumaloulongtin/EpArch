@@ -1,7 +1,7 @@
 /-
 EpArch.Meta.TheoremTransport — Generic Theorem Transport Schema
 
-This module formalizes the modularity story from DOCS/MODULARITY.md Tier 3 and
+This module formalizes the modularity story from DOCS/architecture/MODULARITY.md Tier 3 and
 closes the gap described there: it proves that every `CoreModel`-level health goal
 predicate is **transport-safe** under compatible extensions.
 
@@ -37,7 +37,7 @@ lattice-stability for the full health-goal layer.
 
 `VacuousOp_*` predicates formally define what it means for an operation to be
 "disabled" in a model (always false / always trivially satisfied). These correspond
-to the "disabling a constraint or health goal" story in DOCS/MODULARITY.md.
+to the "disabling a constraint or health goal" story in DOCS/architecture/MODULARITY.md.
 
 ## Headline theorem
 
@@ -172,7 +172,7 @@ theorem transport_corrigible_ledger (E : ExtModel) (C : CoreModel)
 /-! ## 5. Disabled Operations (Vacuous Predicates)
 
 Formally defines what it means for an operation to be "disabled" (vacuously false)
-in a CoreModel. Corresponds to the disabling story in DOCS/MODULARITY.md Tiers 2–3. -/
+in a CoreModel. Corresponds to the disabling story in DOCS/architecture/MODULARITY.md Tiers 2–3. -/
 
 /-- No bubble self-corrects. Disabling the self-correction operation. -/
 def VacuousSelfCorrects (M : CoreModel) : Prop :=
@@ -248,7 +248,7 @@ The two key claims:
 
 /-- All ∀-health-goals are transport-safe under plain Compatible extension.
 
-    This is the Tier 3 closure theorem from DOCS/MODULARITY.md:
+    This is the Tier 3 closure theorem from DOCS/architecture/MODULARITY.md:
     for any CoreModel C satisfying a health goal, any compatible extension
     E of C still satisfies that goal (via the forgetful projection). -/
 theorem health_goal_transport_pack :
