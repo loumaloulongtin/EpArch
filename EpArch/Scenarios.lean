@@ -243,17 +243,19 @@ acceptance, no transition can remove it.  `monotonic_no_exit` proves
 number of steps.
 
 `RepresentsMonotonicLifecycle` enriches a `WorkingSystem` with a
-concrete lifecycle (states, transition function, absorbing accepted state)
-and an adversarial witness: a bad deposit that reaches the accepted state.
-When `¬HasRevocation`, the system is in the `MonotonicLifecycle` scenario. -/
+concrete lifecycle (states, transition function, absorbing accepted state).
+When `¬HasRevocation`, the system is in the `MonotonicLifecycle` scenario.
+The adversarial witness is supplied by the caller in the forcing theorem,
+not stored in the struct. -/
 
 /-- A system represents a monotonic lifecycle if, absent revocation,
     its deposit lifecycle has an absorbing "accepted" state: once a
     deposit is accepted, no transition can remove it.
 
-    The `bad_deposit_accepted` field is the adversarial witness:
-    a deposit that should not be accepted but reaches the accepted
-    state.  Without revocation, it stays there permanently. -/
+    The adversarial witness (a bad deposit that reaches the accepted
+    state and stays there permanently) is not stored in this struct;
+    it is supplied by the caller as `h_escape` in the forcing theorem
+    `monotonic_lifecycle_forces_revocation`. -/
 structure RepresentsMonotonicLifecycle (W : WorkingSystem) where
   /-- The lifecycle state type. -/
   State : Type
