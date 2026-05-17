@@ -110,6 +110,7 @@ theorem concrete_export_requires_auth (req : CExportRequest) :
     cases h_tb : req.via_trust_bridge with
     | none =>
       simp only [h_tb, Option.any] at h
+      exact Bool.noConfusion h
     | some _ => exact Or.inr rfl
 
 /-- Theorem: Withdrawal requires deposit-found and status-liveness (concrete model).
@@ -129,7 +130,7 @@ theorem concrete_export_requires_auth (req : CExportRequest) :
 theorem list_find?_implies {α : Type _} {p : α → Bool} {l : List α} {x : α}
     (h : l.find? p = some x) : x ∈ l ∧ p x = true := by
   induction l with
-  | nil => simp only [List.find?] at h
+  | nil => simp only [List.find?] at h; nomatch h
   | cons head tail ih =>
     simp only [List.find?] at h
     split at h

@@ -104,7 +104,7 @@ structure ConstraintProof : Type 1 where
 /-- Registry entry for a Tier 2 constraint-forcing cluster.
     Extends the metadata record from `ClusterRegistry` with a machine-checked
     proof — the proof layer genuinely derived from the metadata layer. -/
-structure ConstraintClusterSpec extends ConstraintClusterMeta : Type 1 where
+structure ConstraintClusterSpec : Type 1 extends ConstraintClusterMeta where
   witness : ConstraintProof
 
 /-- Authoritative per-constraint spec.  Extends `constraintMeta` (metadata source
@@ -198,23 +198,23 @@ def goalWitness : (c : EnabledGoalCluster) → GoalWitness c
 /-! ## §4d  World Witness Carrier
 
 Indexed proof carrier for world-bundle clusters.
-Constructor arguments are Prop-valued (∀ over `WorldCtx` instantiations),
+Constructor arguments are Prop-valued (∀ over `WorldCtx.{0}` instantiations),
 so `WorldWitness` lives in `Type 1`. -/
 
 /-- Indexed proof carrier for world-bundle clusters. -/
 inductive WorldWitness : EnabledWorldCluster → Type 1 where
   | liesPossible :
-      (∀ (C : WorldCtx) (_ : C.W_lies_possible), ∃ w a P, C.Lie w a P) →
+      (∀ (C : WorldCtx.{0}) (_ : C.W_lies_possible), ∃ w a P, C.Lie w a P) →
       WorldWitness .world_lies_possible
   | boundedAudit :
-      (∀ (C : WorldCtx) (w : C.World) (P : C.Claim) (k t : Nat),
+      (∀ (C : WorldCtx.{0}) (w : C.World) (P : C.Claim) (k t : Nat),
         C.RequiresSteps w P k → t < k → ¬C.VerifyWithin w P t) →
       WorldWitness .world_bounded_audit
   | asymmetricCosts :
-      (∀ (C : WorldCtx) (W : C.W_asymmetric_costs), W.export_cost < W.defense_cost) →
+      (∀ (C : WorldCtx.{0}) (W : C.W_asymmetric_costs), W.export_cost < W.defense_cost) →
       WorldWitness .world_asymmetric_costs
   | partialObservability :
-      (∀ (C : WorldCtx) (_ : C.W_partial_observability), ∃ P, C.NotDeterminedByObs P) →
+      (∀ (C : WorldCtx.{0}) (_ : C.W_partial_observability), ∃ P, C.NotDeterminedByObs P) →
       WorldWitness .world_partial_observability
   | spoofedV :
       (∀ {PL SL EL PrL : Type}
@@ -440,54 +440,54 @@ def autonomyWitness : (c : EnabledAutonomyCluster) → AutonomyWitness c
 /-! ## §4g-pre  Universe-grounded cluster propositions (private)
 
 Each `prop_*` def stores one blocked cluster's theorem statement with every
-universe-polymorphic type pinned to `.{0}`.  With all universes concrete,
+universe-polymorphic type pinned to ``.  With all universes concrete,
 no free universe variable appears and the def compiles as a plain `Prop`.
 These serve as the match-arm values in `clusterValid` for the 16 clusters
-whose proposition types live at `Type (u+1)` (Goal, WorldCtx, Tier4-bank,
+whose proposition types live at `Type (u+1)` (Goal, WorldCtx.{0}, Tier4-bank,
 Lattice, Autonomy families). -/
 
 private def prop_goal_safeWithdrawal : Prop :=
-  ∀ (E : ExtModel.{0}) (C : CoreModel.{0}),
-    Compatible.{0} E C → SafeWithdrawalGoal.{0} C → SafeWithdrawalGoal.{0} (forget.{0} E)
+  ∀ (E : ExtModel) (C : CoreModel),
+    Compatible E C → SafeWithdrawalGoal C → SafeWithdrawalGoal (forget E)
 private def prop_goal_reliableExport : Prop :=
-  ∀ (E : ExtModel.{0}) (C : CoreModel.{0}),
-    Compatible.{0} E C → ReliableExportGoal.{0} C → ReliableExportGoal.{0} (forget.{0} E)
+  ∀ (E : ExtModel) (C : CoreModel),
+    Compatible E C → ReliableExportGoal C → ReliableExportGoal (forget E)
 private def prop_goal_soundDeposits : Prop :=
-  ∀ (E : ExtModel.{0}) (C : CoreModel.{0}),
-    Compatible.{0} E C → SoundDepositsGoal.{0} C → SoundDepositsGoal.{0} (forget.{0} E)
+  ∀ (E : ExtModel) (C : CoreModel),
+    Compatible E C → SoundDepositsGoal C → SoundDepositsGoal (forget E)
 private def prop_goal_selfCorrection : Prop :=
-  ∀ (E : ExtModel.{0}) (C : CoreModel.{0}),
-    Compatible.{0} E C → SelfCorrectionGoal.{0} C → SelfCorrectionGoal.{0} (forget.{0} E)
+  ∀ (E : ExtModel) (C : CoreModel),
+    Compatible E C → SelfCorrectionGoal C → SelfCorrectionGoal (forget E)
 private def prop_goal_corrigible_universal : Prop :=
-  ∀ (E : ExtModel.{0, 0}) (C : CoreModel.{0}),
-    Compatible.{0, 0, 0} E C → CorrigibleLedgerGoal.{0} C →
-    ∀ (B_E : (forget.{0, 0} E).sig.Bubble), (forget.{0, 0} E).ops.hasRevision B_E →
-    ∀ (d_E d'_E : (forget.{0, 0} E).sig.Deposit),
-    (forget.{0, 0} E).ops.revise B_E d_E d'_E → (forget.{0, 0} E).ops.truth B_E d'_E
+  ∀ (E : ExtModel) (C : CoreModel),
+    Compatible E C → CorrigibleLedgerGoal C →
+    ∀ (B_E : (forget E).sig.Bubble), (forget E).ops.hasRevision B_E →
+    ∀ (d_E d'_E : (forget E).sig.Deposit),
+    (forget E).ops.revise B_E d_E d'_E → (forget E).ops.truth B_E d'_E
 private def prop_goal_corrigible_full : Prop :=
-  ∀ (E : ExtModel.{0}) (C : CoreModel.{0}),
-    SurjectiveCompatible.{0} E C → CorrigibleLedgerGoal.{0} C →
-    CorrigibleLedgerGoal.{0} (forget.{0} E)
+  ∀ (E : ExtModel) (C : CoreModel),
+    SurjectiveCompatible E C → CorrigibleLedgerGoal C →
+    CorrigibleLedgerGoal (forget E)
 private def prop_tier4_bank_goals_compat : Prop :=
-  ∀ (E : ExtModel.{0, 0}) (C : CoreModel.{0}),
-    Compatible.{0, 0, 0} E C →
-    SafeWithdrawalGoal.{0} C → ReliableExportGoal.{0} C →
-    SoundDepositsGoal.{0} C → SelfCorrectionGoal.{0} C →
-    CorrigibleLedgerGoal.{0} C →
-    SafeWithdrawalGoal.{0} (forget.{0, 0} E) ∧ ReliableExportGoal.{0} (forget.{0, 0} E) ∧
-    SoundDepositsGoal.{0} (forget.{0, 0} E) ∧ SelfCorrectionGoal.{0} (forget.{0, 0} E) ∧
-    (∀ B_E : (forget.{0, 0} E).sig.Bubble, (forget.{0, 0} E).ops.hasRevision B_E →
-     ∀ d_E d'_E : (forget.{0, 0} E).sig.Deposit,
-     (forget.{0, 0} E).ops.revise B_E d_E d'_E → (forget.{0, 0} E).ops.truth B_E d'_E)
+  ∀ (E : ExtModel) (C : CoreModel),
+    Compatible E C →
+    SafeWithdrawalGoal C → ReliableExportGoal C →
+    SoundDepositsGoal C → SelfCorrectionGoal C →
+    CorrigibleLedgerGoal C →
+    SafeWithdrawalGoal (forget E) ∧ ReliableExportGoal (forget E) ∧
+    SoundDepositsGoal (forget E) ∧ SelfCorrectionGoal (forget E) ∧
+    (∀ B_E : (forget E).sig.Bubble, (forget E).ops.hasRevision B_E →
+     ∀ d_E d'_E : (forget E).sig.Deposit,
+     (forget E).ops.revise B_E d_E d'_E → (forget E).ops.truth B_E d'_E)
 private def prop_tier4_bank_goals_surj : Prop :=
-  ∀ (E : ExtModel.{0, 0}) (C : CoreModel.{0}),
-    SurjectiveCompatible.{0, 0, 0} E C →
-    SafeWithdrawalGoal.{0} C → ReliableExportGoal.{0} C →
-    SoundDepositsGoal.{0} C → SelfCorrectionGoal.{0} C →
-    CorrigibleLedgerGoal.{0} C →
-    SafeWithdrawalGoal.{0} (forget.{0, 0} E) ∧ ReliableExportGoal.{0} (forget.{0, 0} E) ∧
-    SoundDepositsGoal.{0} (forget.{0, 0} E) ∧ SelfCorrectionGoal.{0} (forget.{0, 0} E) ∧
-    CorrigibleLedgerGoal.{0} (forget.{0, 0} E)
+  ∀ (E : ExtModel) (C : CoreModel),
+    SurjectiveCompatible E C →
+    SafeWithdrawalGoal C → ReliableExportGoal C →
+    SoundDepositsGoal C → SelfCorrectionGoal C →
+    CorrigibleLedgerGoal C →
+    SafeWithdrawalGoal (forget E) ∧ ReliableExportGoal (forget E) ∧
+    SoundDepositsGoal (forget E) ∧ SelfCorrectionGoal (forget E) ∧
+    CorrigibleLedgerGoal (forget E)
 private def prop_world_lies_possible : Prop :=
   ∀ (C : WorldCtx.{0}) (_ : C.W_lies_possible), ∃ w a P, C.Lie w a P
 private def prop_world_bounded_audit : Prop :=
@@ -498,24 +498,24 @@ private def prop_world_asymmetric_costs : Prop :=
 private def prop_world_partial_observability : Prop :=
   ∀ (C : WorldCtx.{0}) (_ : C.W_partial_observability), ∃ P, C.NotDeterminedByObs P
 private def prop_lattice_graceful : Prop :=
-  ∀ (M : CoreModel.{0}), NoSelfCorrection.{0} M → RevisionGate.{0} M
+  ∀ (M : CoreModel), NoSelfCorrection M → RevisionGate M
 private def prop_lattice_sub_safety : Prop :=
-  ∀ (S : SubBundle.{0}) (E : ExtModel.{0}),
-    Compatible.{0} E S.model → RevisionGate.{0} S.model → RevisionGate.{0} (forget.{0} E)
+  ∀ (S : SubBundle) (E : ExtModel),
+    Compatible E S.model → RevisionGate S.model → RevisionGate (forget E)
 private def prop_lattice_pack : Prop :=
-  (∀ (M : CoreModel.{0}), NoSelfCorrection.{0} M → RevisionGate.{0} M) ∧
-  (∀ (S : SubBundle.{0}) (E : ExtModel.{0}),
-     Compatible.{0} E S.model → RevisionGate.{0} S.model → RevisionGate.{0} (forget.{0} E)) ∧
-  (∀ (C : CoreModel.{0}) (R : RevisionSafeExtension.{0} C),
-     RevisionGate.{0} C → RevisionGate.{0} (forget.{0} R.ext))
+  (∀ (M : CoreModel), NoSelfCorrection M → RevisionGate M) ∧
+  (∀ (S : SubBundle) (E : ExtModel),
+     Compatible E S.model → RevisionGate S.model → RevisionGate (forget E)) ∧
+  (∀ (C : CoreModel) (R : RevisionSafeExtension C),
+     RevisionGate C → RevisionGate (forget R.ext))
 
 /-- Autonomy necessity cluster proposition, pinned at universe 0.
     `AutonomyModel` inherits `CoreSig`'s universe polymorphism; this def
-    pins every type at `.{0}` to eliminate the free universe variable that
+    pins every type at `` to eliminate the free universe variable that
     would otherwise block use as a `clusterValid` match-arm value. -/
 private def prop_goal_autonomyUnderPRP : Prop :=
-  ∀ (M : AutonomyModel.{0})
-    (_h_auto : AutonomyUnderPRPGoal.{0} M)
+  ∀ (M : AutonomyModel)
+    (_h_auto : AutonomyUnderPRPGoal M)
     (B : M.sig.Bubble) (d : M.sig.Deposit),
     M.ops.mustHandle B d →
     ¬M.ops.verifyWithin B d (M.ops.effectiveTime B) →
@@ -538,7 +538,7 @@ private def prop_goal_autonomyUnderPRP : Prop :=
 - Autonomy (1): `prop_goal_autonomyUnderPRP` — necessity theorem at universe 0.
 
 **Universe escape hatch:** the 16 blocked clusters use private `prop_*` defs
-(§4g-pre) where every universe-polymorphic type is explicitly pinned to `.{0}`.
+(§4g-pre) where every universe-polymorphic type is explicitly pinned to ``.
 This eliminates all free universe variables, allowing the defs to appear as
 match-arm values of `clusterValid : ClusterTag → Prop`. -/
 
@@ -611,7 +611,7 @@ def clusterValid (c : ClusterTag) : Prop :=
   -- Tier 4 bank_goals (2): theorems at universe 0
   | .tier4_bank_goals_compat => prop_tier4_bank_goals_compat
   | .tier4_bank_goals_surj   => prop_tier4_bank_goals_surj
-  -- World (4 WorldCtx via prop_* + 4 inline adversarial)
+  -- World (4 WorldCtx.{0} via prop_* + 4 inline adversarial)
   | .world_lies_possible        => prop_world_lies_possible
   | .world_bounded_audit        => prop_world_bounded_audit
   | .world_asymmetric_costs     => prop_world_asymmetric_costs
@@ -853,7 +853,7 @@ def certify (cfg : EpArchConfig) : CertifiedProjection cfg where
   complete            := rfl
   sound               := fun c h => clusterEnabled_sound cfg c (by
     -- Prove clusterEnabled cfg c = true from c ∈ allClusters.filter (clusterEnabled cfg).
-    -- List.mem_filter is not available in Lean 4.3.0 core; proved by induction.
+    -- List.mem_filter is not available in Lean core; proved by induction.
     suffices ∀ l : List ClusterTag, c ∈ l.filter (clusterEnabled cfg) →
         clusterEnabled cfg c = true from
       this allClusters h

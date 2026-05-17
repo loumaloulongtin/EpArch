@@ -123,26 +123,33 @@ theorem pwf_add_bubbles (W : WorkingSystem) (S : ConstraintSubset)
   { wf_distributed    := fun _ => by
         simp [handles_distributed_agents, HasBubbles, WorkingSystem.addBubbles, Option.isSome]
     wf_bounded_audit  := fun hb => by
-        simp [handles_bounded_audit, HasTrustBridges, WorkingSystem.addBubbles]
-        exact h.wf_bounded_audit hb
+        have := h.wf_bounded_audit hb
+        simp [handles_bounded_audit, HasTrustBridges, WorkingSystem.addBubbles] at this ⊢
+        exact this
     wf_export         := fun he => by
-        simp [handles_export, HasHeaders, WorkingSystem.addBubbles]
-        exact h.wf_export he
+        have := h.wf_export he
+        simp [handles_export, HasHeaders, WorkingSystem.addBubbles] at this ⊢
+        exact this
     wf_adversarial    := fun ha => by
-        simp [handles_adversarial, HasRevocation, WorkingSystem.addBubbles]
-        exact h.wf_adversarial ha
+        have := h.wf_adversarial ha
+        simp [handles_adversarial, HasRevocation, WorkingSystem.addBubbles] at this ⊢
+        exact this
     wf_coordination   := fun hc => by
-        simp [handles_coordination, HasBank, WorkingSystem.addBubbles]
-        exact h.wf_coordination hc
+        have := h.wf_coordination hc
+        simp [handles_coordination, HasBank, WorkingSystem.addBubbles] at this ⊢
+        exact this
     wf_truth_pressure := fun ht => by
-        simp [handles_truth_pressure, HasRedeemability, WorkingSystem.addBubbles]
-        exact h.wf_truth_pressure ht
+        have := h.wf_truth_pressure ht
+        simp [handles_truth_pressure, HasRedeemability, WorkingSystem.addBubbles] at this ⊢
+        exact this
     wf_multi_agent    := fun hm => by
-        simp [handles_multi_agent, HasGranularACL, WorkingSystem.addBubbles]
-        exact h.wf_multi_agent hm
+        have := h.wf_multi_agent hm
+        simp [handles_multi_agent, HasGranularACL, WorkingSystem.addBubbles] at this ⊢
+        exact this
     wf_storage        := fun hs => by
-        simp [handles_storage, HasStorageManagement, WorkingSystem.addBubbles]
-        exact h.wf_storage hs }
+        have := h.wf_storage hs
+        simp [handles_storage, HasStorageManagement, WorkingSystem.addBubbles] at this ⊢
+        exact this }
 
 /-- Adding trust-bridge evidence activates the `bounded_audit` biconditional.
 
@@ -152,28 +159,35 @@ theorem pwf_add_trust_bridges (W : WorkingSystem) (S : ConstraintSubset)
     (h : PartialWellFormed W S) (ev : GroundedTrustBridgesStrict) :
     PartialWellFormed (W.addTrustBridges ev) { S with bounded_audit := true } :=
   { wf_distributed    := fun hd => by
-        simp [handles_distributed_agents, HasBubbles, WorkingSystem.addTrustBridges]
-        exact h.wf_distributed hd
+     have := h.wf_distributed hd
+     simp [handles_distributed_agents, HasBubbles, WorkingSystem.addTrustBridges] at this ⊢
+     exact this
     wf_bounded_audit  := fun _ => by
         simp [handles_bounded_audit, HasTrustBridges, WorkingSystem.addTrustBridges, Option.isSome]
     wf_export         := fun he => by
-        simp [handles_export, HasHeaders, WorkingSystem.addTrustBridges]
-        exact h.wf_export he
+        have := h.wf_export he
+        simp [handles_export, HasHeaders, WorkingSystem.addTrustBridges] at this ⊢
+        exact this
     wf_adversarial    := fun ha => by
-        simp [handles_adversarial, HasRevocation, WorkingSystem.addTrustBridges]
-        exact h.wf_adversarial ha
+        have := h.wf_adversarial ha
+        simp [handles_adversarial, HasRevocation, WorkingSystem.addTrustBridges] at this ⊢
+        exact this
     wf_coordination   := fun hc => by
-        simp [handles_coordination, HasBank, WorkingSystem.addTrustBridges]
-        exact h.wf_coordination hc
+        have := h.wf_coordination hc
+        simp [handles_coordination, HasBank, WorkingSystem.addTrustBridges] at this ⊢
+        exact this
     wf_truth_pressure := fun ht => by
-        simp [handles_truth_pressure, HasRedeemability, WorkingSystem.addTrustBridges]
-        exact h.wf_truth_pressure ht
+        have := h.wf_truth_pressure ht
+        simp [handles_truth_pressure, HasRedeemability, WorkingSystem.addTrustBridges] at this ⊢
+        exact this
     wf_multi_agent    := fun hm => by
-        simp [handles_multi_agent, HasGranularACL, WorkingSystem.addTrustBridges]
-        exact h.wf_multi_agent hm
+        have := h.wf_multi_agent hm
+        simp [handles_multi_agent, HasGranularACL, WorkingSystem.addTrustBridges] at this ⊢
+        exact this
     wf_storage        := fun hs => by
-        simp [handles_storage, HasStorageManagement, WorkingSystem.addTrustBridges]
-        exact h.wf_storage hs }
+        have := h.wf_storage hs
+        simp [handles_storage, HasStorageManagement, WorkingSystem.addTrustBridges] at this ⊢
+        exact this }
 
 /-- Adding header evidence activates the `export_across` biconditional.
 
@@ -183,28 +197,35 @@ theorem pwf_add_headers (W : WorkingSystem) (S : ConstraintSubset)
     (h : PartialWellFormed W S) (ev : GroundedHeadersStrict) :
     PartialWellFormed (W.addHeaders ev) { S with export_across := true } :=
   { wf_distributed    := fun hd => by
-        simp [handles_distributed_agents, HasBubbles, WorkingSystem.addHeaders]
-        exact h.wf_distributed hd
+     have := h.wf_distributed hd
+     simp [handles_distributed_agents, HasBubbles, WorkingSystem.addHeaders] at this ⊢
+     exact this
     wf_bounded_audit  := fun hb => by
-        simp [handles_bounded_audit, HasTrustBridges, WorkingSystem.addHeaders]
-        exact h.wf_bounded_audit hb
+        have := h.wf_bounded_audit hb
+        simp [handles_bounded_audit, HasTrustBridges, WorkingSystem.addHeaders] at this ⊢
+        exact this
     wf_export         := fun _ => by
         simp [handles_export, HasHeaders, WorkingSystem.addHeaders, Option.isSome]
     wf_adversarial    := fun ha => by
-        simp [handles_adversarial, HasRevocation, WorkingSystem.addHeaders]
-        exact h.wf_adversarial ha
+        have := h.wf_adversarial ha
+        simp [handles_adversarial, HasRevocation, WorkingSystem.addHeaders] at this ⊢
+        exact this
     wf_coordination   := fun hc => by
-        simp [handles_coordination, HasBank, WorkingSystem.addHeaders]
-        exact h.wf_coordination hc
+        have := h.wf_coordination hc
+        simp [handles_coordination, HasBank, WorkingSystem.addHeaders] at this ⊢
+        exact this
     wf_truth_pressure := fun ht => by
-        simp [handles_truth_pressure, HasRedeemability, WorkingSystem.addHeaders]
-        exact h.wf_truth_pressure ht
+        have := h.wf_truth_pressure ht
+        simp [handles_truth_pressure, HasRedeemability, WorkingSystem.addHeaders] at this ⊢
+        exact this
     wf_multi_agent    := fun hm => by
-        simp [handles_multi_agent, HasGranularACL, WorkingSystem.addHeaders]
-        exact h.wf_multi_agent hm
+        have := h.wf_multi_agent hm
+        simp [handles_multi_agent, HasGranularACL, WorkingSystem.addHeaders] at this ⊢
+        exact this
     wf_storage        := fun hs => by
-        simp [handles_storage, HasStorageManagement, WorkingSystem.addHeaders]
-        exact h.wf_storage hs }
+        have := h.wf_storage hs
+        simp [handles_storage, HasStorageManagement, WorkingSystem.addHeaders] at this ⊢
+        exact this }
 
 /-- Adding revocation evidence activates the `adversarial` biconditional.
 
@@ -214,28 +235,35 @@ theorem pwf_add_revocation (W : WorkingSystem) (S : ConstraintSubset)
     (h : PartialWellFormed W S) (ev : GroundedRevocationStrict) :
     PartialWellFormed (W.addRevocation ev) { S with adversarial := true } :=
   { wf_distributed    := fun hd => by
-        simp [handles_distributed_agents, HasBubbles, WorkingSystem.addRevocation]
-        exact h.wf_distributed hd
+     have := h.wf_distributed hd
+     simp [handles_distributed_agents, HasBubbles, WorkingSystem.addRevocation] at this ⊢
+     exact this
     wf_bounded_audit  := fun hb => by
-        simp [handles_bounded_audit, HasTrustBridges, WorkingSystem.addRevocation]
-        exact h.wf_bounded_audit hb
+        have := h.wf_bounded_audit hb
+        simp [handles_bounded_audit, HasTrustBridges, WorkingSystem.addRevocation] at this ⊢
+        exact this
     wf_export         := fun he => by
-        simp [handles_export, HasHeaders, WorkingSystem.addRevocation]
-        exact h.wf_export he
+        have := h.wf_export he
+        simp [handles_export, HasHeaders, WorkingSystem.addRevocation] at this ⊢
+        exact this
     wf_adversarial    := fun _ => by
         simp [handles_adversarial, HasRevocation, WorkingSystem.addRevocation, Option.isSome]
     wf_coordination   := fun hc => by
-        simp [handles_coordination, HasBank, WorkingSystem.addRevocation]
-        exact h.wf_coordination hc
+        have := h.wf_coordination hc
+        simp [handles_coordination, HasBank, WorkingSystem.addRevocation] at this ⊢
+        exact this
     wf_truth_pressure := fun ht => by
-        simp [handles_truth_pressure, HasRedeemability, WorkingSystem.addRevocation]
-        exact h.wf_truth_pressure ht
+        have := h.wf_truth_pressure ht
+        simp [handles_truth_pressure, HasRedeemability, WorkingSystem.addRevocation] at this ⊢
+        exact this
     wf_multi_agent    := fun hm => by
-        simp [handles_multi_agent, HasGranularACL, WorkingSystem.addRevocation]
-        exact h.wf_multi_agent hm
+        have := h.wf_multi_agent hm
+        simp [handles_multi_agent, HasGranularACL, WorkingSystem.addRevocation] at this ⊢
+        exact this
     wf_storage        := fun hs => by
-        simp [handles_storage, HasStorageManagement, WorkingSystem.addRevocation]
-        exact h.wf_storage hs }
+        have := h.wf_storage hs
+        simp [handles_storage, HasStorageManagement, WorkingSystem.addRevocation] at this ⊢
+        exact this }
 
 /-- Adding bank evidence activates the `coordination` biconditional.
 
@@ -245,28 +273,35 @@ theorem pwf_add_bank (W : WorkingSystem) (S : ConstraintSubset)
     (h : PartialWellFormed W S) (ev : GroundedBankStrict) :
     PartialWellFormed (W.addBank ev) { S with coordination := true } :=
   { wf_distributed    := fun hd => by
-        simp [handles_distributed_agents, HasBubbles, WorkingSystem.addBank]
-        exact h.wf_distributed hd
+     have := h.wf_distributed hd
+     simp [handles_distributed_agents, HasBubbles, WorkingSystem.addBank] at this ⊢
+     exact this
     wf_bounded_audit  := fun hb => by
-        simp [handles_bounded_audit, HasTrustBridges, WorkingSystem.addBank]
-        exact h.wf_bounded_audit hb
+        have := h.wf_bounded_audit hb
+        simp [handles_bounded_audit, HasTrustBridges, WorkingSystem.addBank] at this ⊢
+        exact this
     wf_export         := fun he => by
-        simp [handles_export, HasHeaders, WorkingSystem.addBank]
-        exact h.wf_export he
+        have := h.wf_export he
+        simp [handles_export, HasHeaders, WorkingSystem.addBank] at this ⊢
+        exact this
     wf_adversarial    := fun ha => by
-        simp [handles_adversarial, HasRevocation, WorkingSystem.addBank]
-        exact h.wf_adversarial ha
+        have := h.wf_adversarial ha
+        simp [handles_adversarial, HasRevocation, WorkingSystem.addBank] at this ⊢
+        exact this
     wf_coordination   := fun _ => by
         simp [handles_coordination, HasBank, WorkingSystem.addBank, Option.isSome]
     wf_truth_pressure := fun ht => by
-        simp [handles_truth_pressure, HasRedeemability, WorkingSystem.addBank]
-        exact h.wf_truth_pressure ht
+        have := h.wf_truth_pressure ht
+        simp [handles_truth_pressure, HasRedeemability, WorkingSystem.addBank] at this ⊢
+        exact this
     wf_multi_agent    := fun hm => by
-        simp [handles_multi_agent, HasGranularACL, WorkingSystem.addBank]
-        exact h.wf_multi_agent hm
+        have := h.wf_multi_agent hm
+        simp [handles_multi_agent, HasGranularACL, WorkingSystem.addBank] at this ⊢
+        exact this
     wf_storage        := fun hs => by
-        simp [handles_storage, HasStorageManagement, WorkingSystem.addBank]
-        exact h.wf_storage hs }
+        have := h.wf_storage hs
+        simp [handles_storage, HasStorageManagement, WorkingSystem.addBank] at this ⊢
+        exact this }
 
 /-- Adding redeemability evidence activates the `truth_pressure` biconditional.
 
@@ -276,28 +311,35 @@ theorem pwf_add_redeemability (W : WorkingSystem) (S : ConstraintSubset)
     (h : PartialWellFormed W S) (ev : GroundedRedeemabilityStrict) :
     PartialWellFormed (W.addRedeemability ev) { S with truth_pressure := true } :=
   { wf_distributed    := fun hd => by
-        simp [handles_distributed_agents, HasBubbles, WorkingSystem.addRedeemability]
-        exact h.wf_distributed hd
+     have := h.wf_distributed hd
+     simp [handles_distributed_agents, HasBubbles, WorkingSystem.addRedeemability] at this ⊢
+     exact this
     wf_bounded_audit  := fun hb => by
-        simp [handles_bounded_audit, HasTrustBridges, WorkingSystem.addRedeemability]
-        exact h.wf_bounded_audit hb
+        have := h.wf_bounded_audit hb
+        simp [handles_bounded_audit, HasTrustBridges, WorkingSystem.addRedeemability] at this ⊢
+        exact this
     wf_export         := fun he => by
-        simp [handles_export, HasHeaders, WorkingSystem.addRedeemability]
-        exact h.wf_export he
+        have := h.wf_export he
+        simp [handles_export, HasHeaders, WorkingSystem.addRedeemability] at this ⊢
+        exact this
     wf_adversarial    := fun ha => by
-        simp [handles_adversarial, HasRevocation, WorkingSystem.addRedeemability]
-        exact h.wf_adversarial ha
+        have := h.wf_adversarial ha
+        simp [handles_adversarial, HasRevocation, WorkingSystem.addRedeemability] at this ⊢
+        exact this
     wf_coordination   := fun hc => by
-        simp [handles_coordination, HasBank, WorkingSystem.addRedeemability]
-        exact h.wf_coordination hc
+        have := h.wf_coordination hc
+        simp [handles_coordination, HasBank, WorkingSystem.addRedeemability] at this ⊢
+        exact this
     wf_truth_pressure := fun _ => by
         simp [handles_truth_pressure, HasRedeemability, WorkingSystem.addRedeemability, Option.isSome]
     wf_multi_agent    := fun hm => by
-        simp [handles_multi_agent, HasGranularACL, WorkingSystem.addRedeemability]
-        exact h.wf_multi_agent hm
+        have := h.wf_multi_agent hm
+        simp [handles_multi_agent, HasGranularACL, WorkingSystem.addRedeemability] at this ⊢
+        exact this
     wf_storage        := fun hs => by
-        simp [handles_storage, HasStorageManagement, WorkingSystem.addRedeemability]
-        exact h.wf_storage hs }
+        have := h.wf_storage hs
+        simp [handles_storage, HasStorageManagement, WorkingSystem.addRedeemability] at this ⊢
+        exact this }
 
 /-- Adding authorization evidence activates the `multi_agent` biconditional.
 
@@ -307,28 +349,35 @@ theorem pwf_add_authorization (W : WorkingSystem) (S : ConstraintSubset)
     (h : PartialWellFormed W S) (ev : GroundedAuthorizationStrict) :
     PartialWellFormed (W.addAuthorization ev) { S with multi_agent := true } :=
   { wf_distributed    := fun hd => by
-        simp [handles_distributed_agents, HasBubbles, WorkingSystem.addAuthorization]
-        exact h.wf_distributed hd
+     have := h.wf_distributed hd
+     simp [handles_distributed_agents, HasBubbles, WorkingSystem.addAuthorization] at this ⊢
+     exact this
     wf_bounded_audit  := fun hb => by
-        simp [handles_bounded_audit, HasTrustBridges, WorkingSystem.addAuthorization]
-        exact h.wf_bounded_audit hb
+        have := h.wf_bounded_audit hb
+        simp [handles_bounded_audit, HasTrustBridges, WorkingSystem.addAuthorization] at this ⊢
+        exact this
     wf_export         := fun he => by
-        simp [handles_export, HasHeaders, WorkingSystem.addAuthorization]
-        exact h.wf_export he
+        have := h.wf_export he
+        simp [handles_export, HasHeaders, WorkingSystem.addAuthorization] at this ⊢
+        exact this
     wf_adversarial    := fun ha => by
-        simp [handles_adversarial, HasRevocation, WorkingSystem.addAuthorization]
-        exact h.wf_adversarial ha
+        have := h.wf_adversarial ha
+        simp [handles_adversarial, HasRevocation, WorkingSystem.addAuthorization] at this ⊢
+        exact this
     wf_coordination   := fun hc => by
-        simp [handles_coordination, HasBank, WorkingSystem.addAuthorization]
-        exact h.wf_coordination hc
+        have := h.wf_coordination hc
+        simp [handles_coordination, HasBank, WorkingSystem.addAuthorization] at this ⊢
+        exact this
     wf_truth_pressure := fun ht => by
-        simp [handles_truth_pressure, HasRedeemability, WorkingSystem.addAuthorization]
-        exact h.wf_truth_pressure ht
+        have := h.wf_truth_pressure ht
+        simp [handles_truth_pressure, HasRedeemability, WorkingSystem.addAuthorization] at this ⊢
+        exact this
     wf_multi_agent    := fun _ => by
         simp [handles_multi_agent, HasGranularACL, WorkingSystem.addAuthorization, Option.isSome]
     wf_storage        := fun hs => by
-        simp [handles_storage, HasStorageManagement, WorkingSystem.addAuthorization]
-        exact h.wf_storage hs }
+        have := h.wf_storage hs
+        simp [handles_storage, HasStorageManagement, WorkingSystem.addAuthorization] at this ⊢
+        exact this }
 
 /-- Adding storage-management evidence activates the `bounded_storage` biconditional.
 
@@ -338,26 +387,33 @@ theorem pwf_add_storage_management (W : WorkingSystem) (S : ConstraintSubset)
     (h : PartialWellFormed W S) (ev : GroundedStorageStrict) :
     PartialWellFormed (W.addStorageManagement ev) { S with bounded_storage := true } :=
   { wf_distributed    := fun hd => by
-        simp [handles_distributed_agents, HasBubbles, WorkingSystem.addStorageManagement]
-        exact h.wf_distributed hd
+     have := h.wf_distributed hd
+     simp [handles_distributed_agents, HasBubbles, WorkingSystem.addStorageManagement] at this ⊢
+     exact this
     wf_bounded_audit  := fun hb => by
-        simp [handles_bounded_audit, HasTrustBridges, WorkingSystem.addStorageManagement]
-        exact h.wf_bounded_audit hb
+        have := h.wf_bounded_audit hb
+        simp [handles_bounded_audit, HasTrustBridges, WorkingSystem.addStorageManagement] at this ⊢
+        exact this
     wf_export         := fun he => by
-        simp [handles_export, HasHeaders, WorkingSystem.addStorageManagement]
-        exact h.wf_export he
+        have := h.wf_export he
+        simp [handles_export, HasHeaders, WorkingSystem.addStorageManagement] at this ⊢
+        exact this
     wf_adversarial    := fun ha => by
-        simp [handles_adversarial, HasRevocation, WorkingSystem.addStorageManagement]
-        exact h.wf_adversarial ha
+        have := h.wf_adversarial ha
+        simp [handles_adversarial, HasRevocation, WorkingSystem.addStorageManagement] at this ⊢
+        exact this
     wf_coordination   := fun hc => by
-        simp [handles_coordination, HasBank, WorkingSystem.addStorageManagement]
-        exact h.wf_coordination hc
+        have := h.wf_coordination hc
+        simp [handles_coordination, HasBank, WorkingSystem.addStorageManagement] at this ⊢
+        exact this
     wf_truth_pressure := fun ht => by
-        simp [handles_truth_pressure, HasRedeemability, WorkingSystem.addStorageManagement]
-        exact h.wf_truth_pressure ht
+        have := h.wf_truth_pressure ht
+        simp [handles_truth_pressure, HasRedeemability, WorkingSystem.addStorageManagement] at this ⊢
+        exact this
     wf_multi_agent    := fun hm => by
-        simp [handles_multi_agent, HasGranularACL, WorkingSystem.addStorageManagement]
-        exact h.wf_multi_agent hm
+        have := h.wf_multi_agent hm
+        simp [handles_multi_agent, HasGranularACL, WorkingSystem.addStorageManagement] at this ⊢
+        exact this
     wf_storage        := fun _ => by
         simp [handles_storage, HasStorageManagement, WorkingSystem.addStorageManagement, Option.isSome] }
 

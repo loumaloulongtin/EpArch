@@ -66,12 +66,9 @@ theorem commitment1_concrete :
     · -- c_certainty einstein "E=mc²"
       unfold c_certainty
       simp
-      decide
     · -- ¬c_knowledge physics_1905 "E=mc²"
       unfold c_knowledge
       simp
-      intro ⟨d, hd, _, _⟩
-      cases hd
   · -- Witness 1b: textbook has knowledge, student lacks certainty
     constructor
     · -- c_knowledge textbook "Mitochondria is powerhouse of cell"

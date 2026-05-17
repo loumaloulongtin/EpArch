@@ -995,7 +995,7 @@ packages the deposit with the auth credential. The epoch-staleness fields
     Equality is checked via `decide (bytes.data = r.sourceHash.data)`: comparing
     the underlying `Array UInt8` fields, since `Array UInt8` has `DecidableEq`
     (via `UInt8 : Fin 256`) while `ByteArray` lacks a synthesized `BEq` or
-    `DecidableEq` instance in Lean 4.3.0. -/
+    `DecidableEq` instance in Lean core. -/
 def olean_trust_bridge (r : OleanRecord) : CTrustBridge :=
   { auth  := .byToken (fun bytes => decide (bytes.data = r.sourceHash.data))
     scope := [] }

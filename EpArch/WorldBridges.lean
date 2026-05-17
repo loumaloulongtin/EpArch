@@ -448,7 +448,7 @@ structure WorldSystemCompat (C : WorldCtx) (W : WorkingSystem) where
     **Proof strategy:** Extract each Represents* witness and bridge hypothesis
     from the compat fields; destructure endorsement_witness for the dependent
     triple ⟨c_re, h_endorsed, h_fals⟩; assemble the WorldBridgeBundle record. -/
-theorem world_deriving_bridge
+def world_deriving_bridge
     (C : WorldCtx)
     (W : WorkingSystem)
     (compat : WorldSystemCompat C W)

@@ -354,7 +354,7 @@ def goodExtension (WorldExtra : Type) [Inhabited WorldExtra] : ExtModel where
   hasBubble := C.hasBubble
 
 /-- Good extension passes Compatible: all commuting laws hold. -/
-theorem goodExtension_compatible (WorldExtra : Type) [Inhabited WorldExtra] :
+def goodExtension_compatible (WorldExtra : Type) [Inhabited WorldExtra] :
     Compatible (goodExtension C WorldExtra) C where
   πBubble := id
   πDeposit := id

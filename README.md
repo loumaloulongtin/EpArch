@@ -53,7 +53,7 @@ EpArch/
     Meta/                modularity, transport, cluster registry, optional kernel
   DOCS/                  reader-facing documentation (kernel's own map of itself)
   theory/                optional prose companion (narrative walk of the architecture)
-  lakefile.lean          build manifest (Lean 4.3.0, no Mathlib)
+  lakefile.lean          build manifest (Lean 4.29.1, no Mathlib)
 ```
 
 The full file-by-file map is in [DOCS/reference/FILE-INVENTORY.md](DOCS/reference/FILE-INVENTORY.md).
@@ -66,7 +66,7 @@ The full file-by-file map is in [DOCS/reference/FILE-INVENTORY.md](DOCS/referenc
 lake build
 ```
 
-Requires Lean 4.3.0; no Mathlib dependency. The build target is `Main.lean`.
+Requires Lean 4.29.1; no Mathlib dependency. The build target is `Main.lean`.
 The core import surface (everything `Main.lean` transitively imports) contains
 **zero `axiom` declarations** and **zero `sorry`**. One named axiom
 (`lean_kernel_verification_path`) exists in the optional Lean-kernel subtree

@@ -880,7 +880,6 @@ theorem no_factorization_minimizes :
 theorem factorization_increases_diagnosability (f : Field) :
     (diagnosabilityFromField (some f)).score > header_stripped_diagnosability.score := by
   simp [diagnosabilityFromField, header_stripped_diagnosability]
-  decide
 
 
 /-- A dispute "localizes" when failures can be attributed to specific fields.

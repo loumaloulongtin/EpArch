@@ -59,7 +59,7 @@ def extendWithExtraState (C : CoreModel)
 
 /-- `extendWithExtraState C` is `Compatible` with `C`: identity projections on all
     shared types; `Iff.refl` commuting laws because all ops are copied unchanged. -/
-theorem extra_state_compatible (C : CoreModel)
+def extra_state_compatible (C : CoreModel)
     (AgentExtra : Type) [Inhabited AgentExtra]
     (WorldExtra : Type) [Inhabited WorldExtra] :
     Compatible (extendWithExtraState C AgentExtra WorldExtra) C where

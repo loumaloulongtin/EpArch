@@ -30,6 +30,18 @@ import EpArch.Basic
 import EpArch.Header
 import EpArch.Bank
 
+/-! `List.get?` was removed from Lean core after v4.x in favour of
+    `getElem?`. This module's proofs were written against the original
+    structural definition and rely on its definitional unfolding behaviour
+    in `simp`. We re-introduce it locally as the same structural definition
+    so the existing proofs continue to discharge unchanged. -/
+namespace List
+def get? : List α → Nat → Option α
+  | [],      _     => none
+  | a :: _,  0     => some a
+  | _ :: as, n + 1 => get? as n
+end List
+
 namespace EpArch.StepSemantics
 
 universe u
@@ -122,10 +134,12 @@ def depositHasHeader (s : SystemState PropLike Standard ErrorModel Provenance) (
 
 /-! ### List Helper Lemmas
 
-NOTE: Lean 4.3.0 without Mathlib does not provide named lemmas for
+NOTE: Lean core without Mathlib does not provide named lemmas for
 `List.get?_append_left`, `List.get?_set_eq`, `List.mem_append`, etc.
-The lemmas below are proven from scratch. They can be replaced with
-Mathlib equivalents if the project ever adopts Mathlib. -/
+(In current Lean cores `List.get?` itself is no longer exported; a local
+shim is supplied near the top of this file.) The lemmas below are proven
+from scratch. They can be replaced with Mathlib equivalents if the project
+ever adopts Mathlib. -/
 
 /-- List append membership: a ∈ l₁ ++ l₂ ↔ a ∈ l₁ ∨ a ∈ l₂ -/
 theorem mem_append_iff {α : Type _} (a : α) (l₁ l₂ : List α) :
@@ -200,10 +214,11 @@ theorem get?_implies_lt {α : Type _} (l : List α) (i : Nat) (x : α)
   | nil => simp [List.get?] at h
   | cons a as ih =>
     cases i with
-    | zero => simp [List.length]; exact Nat.zero_lt_succ _
+    | zero => exact Nat.zero_lt_succ _
     | succ j =>
-      simp [List.length, List.get?] at h ⊢
-      exact Nat.succ_lt_succ (ih j h)
+      simp only [List.get?] at h
+      have := ih j h
+      simp [List.length]; omega
 
 /-- If l.length ≤ i, then l.get? i = none -/
 theorem get?_eq_none' {α : Type _} (l : List α) (i : Nat) (h : l.length ≤ i) :
@@ -216,10 +231,9 @@ theorem get?_eq_none' {α : Type _} (l : List α) (i : Nat) (h : l.length ≤ i)
       have : as.length + 1 ≤ 0 := h
       exact absurd this (Nat.not_succ_le_zero as.length)
     | succ j =>
-      simp [List.get?]
+      simp only [List.get?]
       apply ih
-      simp [List.length] at h
-      exact Nat.le_of_succ_le_succ h
+      simp [List.length] at h; omega
 
 /-- (l.set i v).get? i = some v when i < l.length -/
 theorem get?_set_eq {α : Type _} (l : List α) (i : Nat) (v : α) (hi : i < l.length) :
@@ -230,8 +244,9 @@ theorem get?_set_eq {α : Type _} (l : List α) (i : Nat) (v : α) (hi : i < l.l
     cases i with
     | zero => simp [List.set, List.get?]
     | succ j =>
-      simp [List.set, List.get?, List.length] at hi ⊢
-      exact ih j (Nat.lt_of_succ_lt_succ hi)
+      simp only [List.set, List.get?]
+      apply ih
+      simp [List.length] at hi; omega
 
 /-- (l.set j v).get? i = l.get? i when i ≠ j -/
 theorem get?_set_ne {α : Type _} (l : List α) (i j : Nat) (v : α) (hne : i ≠ j) :
@@ -262,8 +277,7 @@ theorem get?_append_left {α : Type _} (l₁ l₂ : List α) (i : Nat) (h : i < 
     | succ j =>
       simp only [List.get?, List.cons_append]
       apply ih
-      simp [List.length] at h
-      exact Nat.lt_of_succ_lt_succ h
+      simp [List.length] at h; omega
 
 /-- Membership in set list: y ∈ l.set i v ↔ (y = v ∧ i < l.length) ∨ ∃ j ≠ i, l.get? j = some y -/
 theorem mem_set {α : Type _} (l : List α) (i : Nat) (v : α) (y : α) :
@@ -277,7 +291,7 @@ theorem mem_set {α : Type _} (l : List α) (i : Nat) (v : α) (y : α) :
     -- j = i: y was the set value
     rw [heq] at hj
     have hi : i < l.length := by
-      have hlen : (l.set i v).length = l.length := List.length_set l i v
+      have hlen : (l.set i v).length = l.length := List.length_set
       have hj_lt : i < (l.set i v).length := get?_implies_lt _ _ _ hj
       rw [hlen] at hj_lt
       exact hj_lt
@@ -307,7 +321,7 @@ theorem modifyAt_length {α : Type _} (l : List α) (i : Nat) (f : α → α) :
     (modifyAt l i f).length = l.length := by
   unfold modifyAt
   split
-  · exact List.length_set l i _
+  · exact List.length_set
   · rfl
 
 /-- Key lemma: get? at modified index returns f applied to original. -/
@@ -779,13 +793,13 @@ theorem step_non_revision_preserves_non_revoked
     exact h_not_revoked d hd h_status
   | challenge _ _ _ _ _ =>
     -- Challenge is revision, but h_not_rev rules it out
-    simp only [Action.isRevision] at h_not_rev
+    simp [Action.isRevision] at h_not_rev
   | tick _ _ =>
     -- Tick only changes clock, ledger unchanged
     exact h_not_revoked d hd h_status
   | revoke _ _ _ _ =>
     -- Revoke is revision, but h_not_rev rules it out
-    simp only [Action.isRevision] at h_not_rev
+    simp [Action.isRevision] at h_not_rev
   | repair _ _ d_repair_idx _ h_quarantined =>
     -- Repair: updateDepositStatus to Candidate
     -- Case split on whether d_idx is the repaired index
@@ -845,7 +859,7 @@ theorem step_non_revision_preserves_non_revoked
       exact h_not_revoked d hd h_status
   | update _ _ _ _ _ _ _ =>
     -- update is a revision action; h_not_rev contradicts Action.isRevision = false
-    simp only [Action.isRevision] at h_not_rev
+    simp [Action.isRevision] at h_not_rev
 
 /-- Key lemma: traces without revision preserve non-Revoked status.
     Proof by induction on trace. -/
@@ -903,11 +917,11 @@ theorem step_no_revision_preserves_non_revoked_slot
   | withdraw _ _ _ _ =>
     exact ⟨d, h_get, h_ne_rev⟩
   | challenge _ _ _ _ _ =>
-    simp only [Action.isRevision] at h_not_rev
+    simp [Action.isRevision] at h_not_rev
   | tick _ _ =>
     exact ⟨d, h_get, h_ne_rev⟩
   | revoke _ _ _ _ =>
-    simp only [Action.isRevision] at h_not_rev
+    simp [Action.isRevision] at h_not_rev
   | repair _ _ d_repair_idx _ h_quarantined =>
     cases Nat.decEq d_idx d_repair_idx with
     | isTrue heq =>
@@ -942,7 +956,7 @@ theorem step_no_revision_preserves_non_revoked_slot
       exact ⟨d, (get?_updateDepositStatus_ne s.ledger d_for d_idx .Forgotten hne).trans h_get, h_ne_rev⟩
   | update _ _ _ _ _ _ _ =>
     -- update is a revision action; h_not_rev contradicts Action.isRevision = false
-    simp only [Action.isRevision] at h_not_rev
+    simp [Action.isRevision] at h_not_rev
 
 /-- .Forgotten is an absorbing status: no Step can transition away from it.
 
@@ -1866,8 +1880,8 @@ theorem repair_resets_to_candidate
     -- (modifyAt returns original when get? is none)
     -- So (updateDepositStatus s.ledger d_idx .Candidate).get? d_idx = s.ledger.get? d_idx = none
     unfold updateDepositStatus modifyAt at hd
-    -- After simp, hd becomes type (none = some d) which is contradictory
     simp only [h_orig] at hd
+    nomatch hd
 
 /-! ## Feature Predicates (Operational Definitions) -/
 

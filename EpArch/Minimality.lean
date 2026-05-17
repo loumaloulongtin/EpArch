@@ -491,7 +491,7 @@ structure CapabilitySystem where
     The two agents disagree on the witness claim: agent 1 accepts it (holds token),
     agent 2 rejects it (lacks token).  `flat_scope_impossible` then applies
     directly — no flat acceptance function can represent both. -/
-theorem capability_system_gives_disagreement (C : CapabilitySystem) :
+def capability_system_gives_disagreement (C : CapabilitySystem) :
     AgentDisagreement where
   Claim      := C.Claim
   accept₁ c  := C.agent1_holds (C.required_token c)
@@ -525,7 +525,7 @@ structure FederatedNamespace where
 
 /-- A federated namespace with conflicting local policies instantiates
     AgentDisagreement — the per-scope policies ARE per-agent acceptance criteria. -/
-theorem federated_namespace_gives_disagreement (F : FederatedNamespace) :
+def federated_namespace_gives_disagreement (F : FederatedNamespace) :
     AgentDisagreement where
   Claim      := F.Claim
   accept₁    := F.local_policy F.scope₁
@@ -561,7 +561,7 @@ structure ParameterizedGate where
 /-- A parameterized gate whose two parameter bundles disagree on a witness claim
     instantiates AgentDisagreement — the curried functions `gate params₁` and
     `gate params₂` are the two differing acceptance criteria. -/
-theorem parameterized_gate_gives_disagreement (G : ParameterizedGate) :
+def parameterized_gate_gives_disagreement (G : ParameterizedGate) :
     AgentDisagreement where
   Claim      := G.Claim
   accept₁    := G.gate G.params₁
