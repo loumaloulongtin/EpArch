@@ -148,3 +148,4 @@ Prevalence and scaling claims are separate.
   bundles and the closed-form convergence corollary.
 - [PROOF-STRUCTURE.md](../PROOF-STRUCTURE.md) — how each bundle plugs into
   its corresponding pressure dimension.
+- *Companion in theory:* [../../theory/world/world.md](../../theory/world/world.md) — the same world-layer commitments walked as a narrative (friends-and-the-window opener, bridges, scale-model witness).

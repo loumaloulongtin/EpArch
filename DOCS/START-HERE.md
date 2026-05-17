@@ -58,7 +58,7 @@ The capstone is `bundled_structure_forces_bank_primitives` in
 per-dimension walkthrough live in
 [PROOF-STRUCTURE.md](PROOF-STRUCTURE.md).
 
-## Three reading paths
+## Reading paths
 
 - **"I want the headline claim."** Read `bundled_structure_forces_bank_primitives`
   in [`WorldBridges.lean`](../EpArch/WorldBridges.lean), then
@@ -67,6 +67,10 @@ per-dimension walkthrough live in
   then `Theorems/Withdrawal.lean`.
 - **"I want the meta / modularity side."** Read [architecture/MODULARITY.md](architecture/MODULARITY.md),
   then [reference/THEOREMS.md](reference/THEOREMS.md).
+- **"I want the architectural intuition."** Read [../theory/README.md](../theory/README.md)
+  and follow the forward links cluster by cluster. This is an optional but
+  recommended companion path — a prose walk of the architecture in a register
+  the kernel does not speak. It does not replace any of the routes above.
 
 ## Boundaries
 

@@ -137,3 +137,4 @@ particular realization, or empirical correspondence between
   these existence theorems make non-vacuous.
 - [reference/WITNESS-SCOPE.md](../reference/WITNESS-SCOPE.md) — what the
   concrete witness family is and is not intended to model.
+- *Companion in theory:* [../../theory/concrete/concrete.md](../../theory/concrete/concrete.md) — why exhibiting inhabitants matters, the realizer / OdometerModel story, and the honest non-inhabitants.

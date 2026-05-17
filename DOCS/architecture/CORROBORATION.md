@@ -94,3 +94,4 @@ systems. The broader scope-defense for the witness family is centralized in
 - [MODULARITY.md](MODULARITY.md) — how config-facing theorem clusters are exposed
   through the certified-projection surface.
 - [../START-HERE.md](../START-HERE.md) — terminology and reading routes.
+- *Companion in theory:* [../../theory/forcing/forcing.md](../../theory/forcing/forcing.md) — the eight-pressure argument in narrative form, including the corroboration-relevant corners (*people-disagree*, *checking-takes-work*).

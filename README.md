@@ -51,7 +51,8 @@ EpArch/
     Adversarial/         attack/defense obligations
     Agent/               agent constraints, imposition, corroboration
     Meta/                modularity, transport, cluster registry, optional kernel
-  DOCS/                  reader-facing documentation
+  DOCS/                  reader-facing documentation (kernel's own map of itself)
+  theory/                optional prose companion (narrative walk of the architecture)
   lakefile.lean          build manifest (Lean 4.3.0, no Mathlib)
 ```
 
@@ -84,6 +85,33 @@ worked example.
 | Reviewing the proof                        | [DOCS/PROOF-STRUCTURE.md](DOCS/PROOF-STRUCTURE.md)                  |
 | Looking up a theorem                       | [DOCS/reference/THEOREMS.md](DOCS/reference/THEOREMS.md)            |
 | Browsing the docs index                    | [DOCS/README.md](DOCS/README.md)                                    |
+| Wanting the architectural intuition        | [theory/README.md](theory/README.md)                                |
+
+---
+
+## Two registers: DOCS and theory
+
+The repository carries two prose layers alongside the Lean source, and they
+do different jobs:
+
+- **[DOCS/](DOCS/)** is the kernel's own map of itself. It is reference
+  material — reader routes, theorem registries, layer descriptions, scope
+  statements — written for someone who is reading the proof and needs to
+  know where each piece lives and what it claims. Required reading for
+  review.
+- **[theory/](theory/)** is the architecture's running commentary on
+  itself, in a register the proof does not speak. It is a narrative walk
+  (world → bubble → agent → forcing → goals → autonomy → concrete → meta),
+  one file at a time, with forward links between siblings. It explains
+  *why* the structural pieces are forced, which silences are deliberate,
+  what credit is being carried, and what the architecture refuses to
+  decide. Optional, but recommended.
+
+The two layers are complementary, not redundant. theory goes beyond the
+formalization in places where intuition is what is needed; the kernel
+proves things in places where prose translation would not earn its keep.
+Neither subsumes the other. Read them alongside each other, before, or
+after — whichever suits.
 
 ---
 

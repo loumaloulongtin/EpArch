@@ -132,3 +132,4 @@ runtime implementation.
   per-pressure forcing chains.
 - [WORLD.md](WORLD.md) — the world-side semantic interface that obligation
   theorems quantify over.
+- *Companion in theory:* [../../theory/bubble/bubble.md](../../theory/bubble/bubble.md) — the bank, deposits, headers, and lifecycle walked as a narrative (bubble cluster, then the bank sub-cluster).

@@ -215,3 +215,4 @@ the theory cleanly — adding it is a typed extension, not a refutation.
 - [reference/THEOREMS.md](../reference/THEOREMS.md) — full per-cluster
   registry of statements and witnesses.
 - [../START-HERE.md](../START-HERE.md) — terminology and reading routes.
+- *Companion in theory:* [../../theory/meta/meta.md](../../theory/meta/meta.md) — the modularity meta-theorem walked as a narrative, with the configurations / transport / grounded-evidence / falsifiability files that follow.

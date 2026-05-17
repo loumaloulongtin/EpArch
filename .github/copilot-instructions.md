@@ -73,3 +73,63 @@ The DOCS tree is the canonical destination for prose. Use this table to route a 
 | The DOCS index itself                         | [`DOCS/README.md`](../DOCS/README.md)                                                     |
 | What does the framework *not* claim?          | [`DOCS/architecture/WORLD.md`](../DOCS/architecture/WORLD.md), [`DOCS/reference/WITNESS-SCOPE.md`](../DOCS/reference/WITNESS-SCOPE.md) |
 | Are the constraints opt-in / avoidable?       | [`DOCS/architecture/WORLD.md`](../DOCS/architecture/WORLD.md)                             |
+| Want the architectural intuition (prose walk) | [`theory/README.md`](../theory/README.md)                                                 |
+
+## The `theory/` companion — a third register
+
+The repository carries a third prose layer alongside the Lean source and DOCS:
+the [`theory/`](../theory/) tree. It is **optional but recommended**, and it
+does a job neither the kernel nor DOCS does.
+
+| Layer       | Job                                                                                              |
+|-------------|--------------------------------------------------------------------------------------------------|
+| Lean source | Authoritative — what is forced, machine-checked, and what each constructor commits to.           |
+| `DOCS/`     | The kernel's own map of itself — reader routes, theorem registry, layer descriptions, scope.     |
+| `theory/`   | The architecture's running commentary on itself — narrative walk in a register the proof avoids. |
+
+The three layers are **complementary, not redundant**. The kernel proves more
+than `theory/` translates back; `theory/` explains more than the kernel needs
+to say in its own register; `DOCS/` indexes both. A reader may take them in
+any order or alongside each other.
+
+### Conventions for `theory/`
+
+`theory/` operates under a deliberately **different discipline** from
+`DOCS/`. The DOCS anti-patterns about "process narration", "scope
+disclaimers", and "what you won't find here" sections **do not transfer**
+to `theory/` — that register is built on exactly those moves and uses them
+as load-bearing. Specifically, in `theory/`:
+
+- Files are **narrative**, with named opening stories ("the friends and the
+  window", "the night-nurse story", "the scale model story"). This voice is
+  intentional and should be preserved.
+- Each cluster has a **hub file** (`theory/<cluster>/<cluster>.md`) plus
+  spokes. The hub opens with a cluster list; spokes carry `← prev`, `↑ hub`,
+  `next →` navigation.
+- Files end with a **forward link** to the next file in the walk. The chain
+  is: `world → bubble → agent → forcing → goals → autonomy → concrete → meta`.
+- Each cluster hub ends with a single **`*Proof-side companion: …*`** line
+  pointing into `DOCS/` or to a named Lean entry theorem. Add one when
+  creating a new hub; do not bloat it into a full cross-reference table.
+
+The discipline that **does** transfer from DOCS to `theory/`:
+
+- No task or sprint references (`T25`, `§T26a`) — reference named items.
+- No version history or authorship lines.
+- No theorem-count quotations that will go stale (use "current count is in
+  `lake build`" if the count is needed at all).
+- Scope notes (the "does not buy" / "what this leaves open" sections) are
+  **load-bearing** and must be preserved, exactly as in DOCS. They close
+  overclaiming and underspecifying attacks on the prose.
+
+### Cross-register rules
+
+- `theory/` may cite Lean files for what is forced and DOCS files for what is
+  registered, but should not duplicate either's job. Do not paste theorem
+  registries into `theory/`; do not paste `theory/` narrative into DOCS.
+- DOCS architecture files may carry a single `*Companion in theory: …*`
+  bullet in their `## Go next` section pointing to the matching theory hub.
+  This is the only DOCS-side mention of `theory/` that belongs in the
+  architecture files; the README and START-HERE carry the broader framing.
+- `theory/` is read as Markdown. Do not add a build target, PDF artefact,
+  or any reference to one inside this repository.
