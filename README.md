@@ -9,6 +9,7 @@ validity, storage management — are *forced* by the combination of agent
 constraints and system health goals, not chosen.
 
 [![CI](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml/badge.svg)](https://github.com/loumaloulongtin/EpArch/actions/workflows/ci.yml)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20261867.svg)](https://doi.org/10.5281/zenodo.20261867)
 
 `lake build` — **0 axiom declarations** in the core import surface, **0 sorries**.
 The exact boundary lives in [DOCS/reference/AXIOMS.md](DOCS/reference/AXIOMS.md).
